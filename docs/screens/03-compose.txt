@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1190061581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Compose (2) ────────────────────────────────────────────────────────────────┐┌─ 4 Events ────────────────────────── ● live ─┐
+┃  Containers    12┃│  PROJECT                       CONTAINERS   RUNNING  WORKING DIR               ││Waiting for engine events…                    │
+┃  Images        14┃│▸ blog                                   2         0  /home/dev/src/blog        ││Everything the daemon does                    │
+┃  Volumes        7┃│  shop                                   4         3  /home/dev/src/shop        ││shows up here as it happens.                  │
+┃  Networks       7┃│                                                                                ││                                              │
+┃▸ Compose        2┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃  ● 7 running     ┃│                                                                                ││                                              │
+┃  ‖ 1 paused      ┃│                                                                                ││                                              │
+┃  ○ 4 stopped     ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃└────────────────────────────────────────────────────────────────────────────────┘│                                              │
+┃                  ┃┌─ 3 Details: blog ───────────────────────────────────────────────────── [Info] ─┐│                                              │
+┃                  ┃│Project       blog                                                              ││                                              │
+┃                  ┃│Containers    2, 0 running                                                      ││                                              │
+┃                  ┃│Working dir   /home/dev/src/blog                                                ││                                              │
+┃                  ┃│Config files  /home/dev/src/blog/compose.yaml                                   ││                                              │
+┃                  ┃│Grouped by the com.docker.compose.project label. The paths above are            ││                                              │
+┃                  ┃│what the labels record; Docker Desk never reads or runs compose files.          ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│Services                                                                        ││                                              │
+┃                  ┃│  ○ app             blog-app-1  Exited (0) 15 hours ago                         ││                                              │
+┃                  ┃│  ○ db              blog-db-1  Exited (0) 15 hours ago                          ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│Networks and volumes carrying this project's label                              │└──────────────────────────────────────────────┘
+┃                  ┃│  network  blog_default                                                         │┌─ 5 Jobs ─────────────────────────────────────┐
+┃                  ┃│  volume   blog_db                                                              ││No jobs yet.                                  │
+┃                  ┃│  (never removed with the project; see their own kinds)                         ││Everything that changes the daemon            │
+┃                  ┃│                                                                                ││runs here, in the background.                 │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┗━━━━━━━━━━━━━━━━━━┛└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+
+ ↑↓ pick a kind  Enter go to list                                                                                            Tab pane  ? keys  q quit

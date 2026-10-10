@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1190061581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: redis ━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│▸ Containers    12│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│07:46:29 ctr kill sig 15 shop-web-1           │
+│  Images        15│┃▸ redis-cache      redis:7        ● running    11.9%    423MiB  Up 26 hours     ┃│07:46:29 ctr die exit 0 shop-web-1            │
+│  Volumes        5│┃                                                                                ┃│07:46:29 net disconnect shop_default  ← shop-…│
+│  Networks       7│┃                                                                                ┃│07:46:29 ctr stop       shop-web-1            │
+│  Compose        2│┃                                                                                ┃│07:46:30 net connect    shop_default  ← shop-…│
+│                  │┃                                                                                ┃│07:46:30 ctr start      shop-web-1            │
+│  ● 7 running     │┃                                                                                ┃│07:46:30 img pull       hello-world           │
+│  ‖ 1 paused      │┃                                                                                ┃│07:46:31 vol destroy    337d154abf4b…         │
+│  ○ 4 stopped     │┃                                                                                ┃│07:46:31 vol destroy    43ee5206a7f7…         │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┗━━━━━━━━━━━┏━ ◆ Remove container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
+│                  │┌─ 3 Details┃                                                                                    ┃                               │
+│                  ││Name     re┃ container  redis-cache  (64e248f41721)                                             ┃                               │
+│                  ││ID       64┃ daemon     unix:///tmp/ddfake1190061581/d.sock  (context default)                  ┃                               │
+│                  ││Image    re┃                                                                                    ┃                               │
+│                  ││State    ● ┃ • The container and its writable layer are permanently deleted.                    ┃                               │
+│                  ││Command  re┃                                                                                    ┃                               │
+│                  ││Created  20┃ ✗ REFUSED — nothing will be sent to the daemon                                     ┃                               │
+│                  ││           ┃   redis-cache is running. Docker Desk never force-removes: stop or kill it first.  ┃                               │
+│                  ││Ports      ┃                                                                                    ┃                               │
+│                  ││  0.0.0.0:6┃ Esc close                                                                          ┃                               │
+│                  ││           ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                               │
+│                  ││Networks                                                                        ││                                              │
+│                  ││  bridge  172.17.0.2  gw 172.17.0.1                                             │└──────────────────────────────────────────────┘
+│                  ││  staging  172.20.0.2  gw 172.20.0.1                                            │┌─ 5 Jobs ──────────────────────────── 4 done ─┐
+│                  ││                                                                                ││▸ ✓ prune volumes 2 volumes                1ms│
+│                  ││Mounts                                                                          ││  ✓ pull image hello-world:latest        424ms│
+│                  ││  none                                                                          ││  ✓ start container shop-web-1             1ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              0ms│
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+ ✓ prune volumes 2 volumes
+ ↑↓ move  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell                     Tab pane  ? keys  q quit

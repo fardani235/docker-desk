@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1190061581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-web ━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│▸ Containers    12│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│07:46:29 ctr kill sig 15 shop-web-1           │
+│  Images        14│┃▸ shop-web-1       nginx:1.27     ● running    90.0%    683MiB  Up 0 seconds    ┃│07:46:29 ctr die exit 0 shop-web-1            │
+│  Volumes        7│┃                                                                                ┃│07:46:29 net disconnect shop_default  ← shop-…│
+│  Networks       7│┃                                                                                ┃│07:46:29 ctr stop       shop-web-1            │
+│  Compose        2│┃                                                                                ┃│07:46:30 net connect    shop_default  ← shop-…│
+│                  │┃                                                                                ┃│07:46:30 ctr start      shop-web-1            │
+│  ● 7 running     │┃                                                                                ┃│                                              │
+│  ‖ 1 paused      │┃                                                                                ┃│                                              │
+│  ○ 4 stopped     │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                              │
+│                  │┌─ 3 Details: shop-web-1 ──────────────────────────── Info Logs [Stats] Inspect ─┐│                                              │
+│                  ││CPU     90.0%   peak 90.0%   (100% = one core)                                  ││                                              │
+│                  ││                                                                               █││                                              │
+│                  ││MEM     683MiB / 16.0GiB   4.2% of limit                                        ││                                              │
+│                  ││                                                                               █││                                              │
+│                  ││NET   ↓ 163kB/s    ↑ 3.4kB/s     total ↓ 18.6kB ↑ 384B                          ││                                              │
+│                  ││  ↓                                                                            █││                                              │
+│                  ││  ↑                                                                            █││                                              │
+│                  ││DISK  r 999kB/s    w 632kB/s     total r 114kB w 72.1kB                         ││                                              │
+│                  ││  r                                                                            █││                                              │
+│                  ││  w                                                                            █││                                              │
+│                  ││PIDS  24                                                                        ││                                              │
+│                  ││                                                                                │└──────────────────────────────────────────────┘
+│                  ││1 samples, about one per second; newest on the right.                           │┌─ 5 Jobs ──────────────────────────── 2 done ─┐
+│                  ││                                                                                ││▸ ✓ start container shop-web-1             1ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              0ms│
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+ ✓ start container shop-web-1
+ ↑↓ move  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell                     Tab pane  ? keys  q quit
