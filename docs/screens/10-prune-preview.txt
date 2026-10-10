@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1190061581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Volumes (7) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│  Containers    12│┃  NAME                                   DRIVER   IN USE                CREATED ┃│07:46:29 ctr kill sig 15 shop-web-1           │
+│  Images        15│┃▸ blog_db                                local    blog-db-1                  1h ┃│07:46:29 ctr die exit 0 shop-web-1            │
+│▸ Volumes        7│┃  old-backups                            local    unused                     1h ┃│07:46:29 net disconnect shop_default  ← shop-…│
+│  Networks       7│┃  shop_pgdata                            local    shop-db-1                  1h ┃│07:46:29 ctr stop       shop-web-1            │
+│  Compose        2│┃  shop_uploads                           local    shop-api-1                 1h ┃│07:46:30 net connect    shop_default  ← shop-…│
+│                  │┃  337d154abf4b… (anonymous)              local    unused                     1h ┃│07:46:30 ctr start      shop-web-1            │
+│  ● 7 running     │┃  43ee5206a7f7… (anonymous)              local    unused                     1h ┃│07:46:30 img pull       hello-world           │
+│  ‖ 1 paused      │┃  b88cb99671f3… (anonymous)              local    old-migration              1h ┃│                                              │
+│  ○ 4 stopped     │┃                                                                                ┃│                                              │
+│                  │┃           ┏━ ◆ Prune volumes ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
+│                  │┃           ┃                                                                                    ┃                               │
+│                  │┃           ┃ volumes    2 volumes                                                               ┃                               │
+│                  │┃           ┃ daemon     unix:///tmp/ddfake1190061581/d.sock  (context default)                  ┃                               │
+│                  │┗━━━━━━━━━━━┃ scope      anonymous volumes no container references                               ┃                               │
+│                  │┌─ 3 Details┃            Tab switch to all unused                                                ┃                               │
+│                  ││Name       ┃                                                                                    ┃                               │
+│                  ││Kind       ┃ • Exactly the volumes listed below, and all data in them, are permanently deleted. ┃                               │
+│                  ││Driver     ┃ • One request each, never forced; anything that became in use is refused by the    ┃                               │
+│                  ││Scope      ┃   daemon and left alone.                                                           ┃                               │
+│                  ││Mountpoint ┃                                                                                    ┃                               │
+│                  ││Created    ┃ Exactly these 2 will be deleted:                                                   ┃                               │
+│                  ││           ┃   remove  337d154abf4b… (anonymous)                                                ┃                               │
+│                  ││Referenced ┃   remove  43ee5206a7f7… (anonymous)                                                ┃                               │
+│                  ││  ○ blog-db┃                                                                                    ┃                               │
+│                  ││           ┃ Type prune and press Enter to proceed:                                             ┃                               │
+│                  ││Labels     ┃ >                                                                                  ┃                               │
+│                  ││  com.docke┃                                                                                    ┃───────────────────────────────┘
+│                  ││  com.docke┃ Enter proceed  Esc cancel                                                          ┃────────────────────── 3 done ─┐
+│                  ││           ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛hello-world:latest        424ms│
+│                  ││                                                                                ││  ✓ start container shop-web-1             1ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              0ms│
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+ ✓ pull image hello-world:latest
+ ↑↓ move  / filter  ⏎ actions  n new  d remove  X prune                                                                      Tab pane  ? keys  q quit

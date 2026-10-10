@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1190061581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Conta┏━ ◆ Keys ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓────────────────────── ● live ─┐
+│▸ Containers    12│┃  NAME     ┃                                                                                    ┃ll sig 15 shop-web-1           │
+│  Images        15│┃  distroles┃   X                remove unused networks, after showing exactly which             ┃e exit 0 shop-web-1            │
+│  Volumes        5│┃  noisy-log┃   c                attach a container to this network                              ┃sconnect shop_default  ← shop-…│
+│  Networks       7│┃  paused-ba┃   D                detach a container from this network                            ┃op       shop-web-1            │
+│  Compose        2│┃  redis-cac┃                                                                                    ┃nnect    shop_default  ← shop-…│
+│                  │┃▸ shop-api-┃ Compose (List or Details pane focused)                                             ┃art      shop-web-1            │
+│  ● 7 running     │┃  shop-db-1┃   t                stop every running container of the project                     ┃ll       hello-world           │
+│  ‖ 1 paused      │┃  shop-web-┃   d                remove every container of the project (not networks or volumes) ┃stroy    337d154abf4b…         │
+│  ○ 4 stopped     │┃  slow-stop┃                                                                                    ┃stroy    43ee5206a7f7…         │
+│                  │┃  blog-app-┃ Events pane                                                                        ┃ec_create shop-api-1  sh -c co…│
+│                  │┃  blog-db-1┃   ↑ ↓ PgUp PgDn    scroll back (new events keep being recorded)                    ┃ec_start shop-api-1  sh -c com…│
+│                  │┃  old-migra┃   G or f           return to the newest event and follow                           ┃ec_die exit 0 shop-api-1       │
+│                  │┃  shop-work┃                                                                                    ┃                               │
+│                  │┗━━━━━━━━━━━┃ Jobs pane                                                                          ┃                               │
+│                  │┌─ 3 Details┃   Enter            read the job's full output                                      ┃                               │
+│                  ││Name     sh┃   c                cancel the highlighted running job                              ┃                               │
+│                  ││ID       e9┃   x                clear finished jobs                                             ┃                               │
+│                  ││Image    sh┃                                                                                    ┃                               │
+│                  ││State    ● ┃ How changes are confirmed                                                          ┃                               │
+│                  ││Compose  sh┃   No key changes anything by itself. Every action above opens a dialog that        ┃                               │
+│                  ││Started  20┃   names the exact object, the effect and the daemon.                               ┃                               │
+│                  ││Command  no┃     • start, stop, restart, pause, unpause, kill, connect, disconnect,             ┃                               │
+│                  ││Restart  no┃       stop project: press y. Enter does nothing.                                   ┃                               │
+│                  ││Runtime  tt┃     • anything that deletes (remove, prune, remove project): type the word         ┃                               │
+│                  ││Created  20┃       shown and press Enter.                                                       ┃                               │
+│                  ││           ┃     • pull, new volume/network, shell: you type the name; Enter submits.           ┃                               │
+│                  ││Ports      ┃   A dialog ignores those keys for its first quarter of a second, and a key         ┃───────────────────────────────┘
+│                  ││  0.0.0.0:3┃   pressed while a confirmation is still being prepared drops it: nothing typed     ┃────────────────────── 4 done ─┐
+│                  ││           ┃   ahead, or typed for something else, can consent. Esc always works at once.       ┃es 2 volumes                1ms│
+│                  ││Networks   ┃   Nothing is ever forced. If something is in use the dialog says by what and       ┃hello-world:latest        424ms│
+│                  ││  shop_defa┃   refuses. A prune lists exactly what it will delete and deletes only that.        ┃iner shop-web-1             1ms│
+│                  ││           ┃                                                                                    ┃ner shop-web-1              0ms│
+│                  ││Mounts     ┃ Inside a shell (e)                                                                 ┃                               │
+│                  ││  volume sh┃   exit, Ctrl-D     back to the desk                                                ┃                               │
+│                  ││           ┃   Ctrl-] ×3        leave at once, even if the daemon has stopped answering         ┃                               │
+│                  ││           ┃                                                                                    ┃                               │
+│                  ││           ┃ ↑↓ PgUp PgDn scroll  Esc close  50–83 of 83                                        ┃                               │
+└──────────────────┘└───────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───────────────────────────────┘
+ Back from the shell in shop-api-1 (476ms).
+ ↑↓ move  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell                     Tab pane  ? keys  q quit

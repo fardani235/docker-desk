@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1190061581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-api ━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│▸ Containers    12│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│07:46:29 ctr kill sig 15 shop-web-1           │
+│  Images        15│┃▸ shop-api-1       shop/api:dev   ● running   151.4%    453MiB  Up 3 hours      ┃│07:46:29 ctr die exit 0 shop-web-1            │
+│  Volumes        5│┃                                                                                ┃│07:46:29 net disconnect shop_default  ← shop-…│
+│  Networks       7│┃                                                                                ┃│07:46:29 ctr stop       shop-web-1            │
+│  Compose        2│┃                                                                                ┃│07:46:30 net connect    shop_default  ← shop-…│
+│                  │┃                                                                                ┃│07:46:30 ctr start      shop-web-1            │
+│  ● 7 running     │┃                                                                                ┃│07:46:30 img pull       hello-world           │
+│  ‖ 1 paused      │┃                                                                                ┃│07:46:31 vol destroy    337d154abf4b…         │
+│  ○ 4 stopped     │┃                                                                                ┃│07:46:31 vol destroy    43ee5206a7f7…         │
+│                  │┃                                                                                ┃│07:46:32 ctr exec_create shop-api-1  sh -c co…│
+│                  │┃                                                                                ┃│07:46:32 ctr exec_start shop-api-1  sh -c com…│
+│                  │┃                                                                                ┃│07:46:33 ctr exec_die exit 0 shop-api-1       │
+│                  │┃                                                                                ┃│                                              │
+│                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                              │
+│                  │┌─ 3 Details: shop-api-1 ──────────────────────────── [Info] Logs Stats Inspect ─┐│                                              │
+│                  ││Name     shop-api-1                                                             ││                                              │
+│                  ││ID       e9b5282f33bd                                                           ││                                              │
+│                  ││Image    shop/api:dev                                                           ││                                              │
+│                  ││State    ● running   Up 3 hours                                                 ││                                              │
+│                  ││Compose  shop / api                                                             ││                                              │
+│                  ││Started  2026-10-10 04:46:28                                                    ││                                              │
+│                  ││Command  node server.js                                                         ││                                              │
+│                  ││Restart  no (restarted 0×)                                                      ││                                              │
+│                  ││Runtime  tty=false  privileged=false  env vars=1                                ││                                              │
+│                  ││Created  2026-10-10 04:46:28                                                    ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││Ports                                                                           │└──────────────────────────────────────────────┘
+│                  ││  0.0.0.0:3000 → 3000/tcp                                                       │┌─ 5 Jobs ──────────────────────────── 4 done ─┐
+│                  ││                                                                                ││▸ ✓ prune volumes 2 volumes                1ms│
+│                  ││Networks                                                                        ││  ✓ pull image hello-world:latest        424ms│
+│                  ││  shop_default  172.18.0.3  gw 172.18.0.1                                       ││  ✓ start container shop-web-1             1ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              0ms│
+│                  ││Mounts                                                                          ││                                              │
+│                  ││  volume shop_uploads → /data/shop_uploads (rw)                                 ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+ Back from the shell in shop-api-1 (476ms).
+ ↑↓ move  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell                     Tab pane  ? keys  q quit

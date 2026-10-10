@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1190061581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (14, 15 refs) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│  Containers    12│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│07:46:29 ctr kill sig 15 shop-web-1           │
+│▸ Images        14│┃▸ alpine                  3.20          bbfb6bb5502a    54.6MB    24h     2 ctr ┃│07:46:29 ctr die exit 0 shop-web-1            │
+│  Volumes        7│┃  busybox                 1.36          b227a1c6d0d2    57.7MB    24h     1 ctr ┃│07:46:29 net disconnect shop_default  ← shop-…│
+│  Networks       7│┃  gcr.io/distroless/sta…  nonroot       37588eec338e     121MB    24h     1 ctr ┃│07:46:29 ctr stop       shop-web-1            │
+│  Compose        2│┃  ghost                   5             da2f78b4d6ff    42.0MB    24h     1 ctr ┃│07:46:30 net connect    shop_default  ← shop-…│
+│                  │┃  mysql                   8             11a7b13fbf86    42.0MB    24h     1 ctr ┃│07:46:30 ctr start      shop-web-1            │
+│  ● 7 running     │┃  nginx                   1.27          f673addec473    51.4MB    24h     1 ctr ┃│                                              │
+│  ‖ 1 paused      │┃  node                    22-alpine     3b9daf1cabe0     154MB    40d         - ┃│                                              │
+│  ○ 4 stopped     │┃  node                    lts-alpine    3b9daf1cabe0     154MB    40d         - ┃│                                              │
+│                  │┃  postgres                16            bf2c21e18612    54.6MB    24h     1 ctr ┃│                                              │
+│                  │┃  python                  3.12-slim     90db23bd5600     131MB    14d         - ┃│                                              │
+│                  │┃  redis                   7             742705926f80    42.0MB    24h     1 ctr ┃│                                              │
+│                  │┃  shop/api                dev           073fe9aeb752    57.7MB    24h     2 ctr ┃│                                              │
+│                  │┗━━━━━━━━━━━┏━ ◆ Pull image ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
+│                  │┌─ 3 Details┃                                                                                    ┃                               │
+│                  ││Reference  ┃ daemon     unix:///tmp/ddfake1190061581/d.sock  (context default)                  ┃                               │
+│                  ││ID         ┃                                                                                    ┃                               │
+│                  ││Size       ┃ Image reference:                                                                   ┃                               │
+│                  ││Created    ┃ > hello-world                                                                      ┃                               │
+│                  ││Platform   ┃                                                                                    ┃                               │
+│                  ││Layers     ┃ Will pull exactly: hello-world:latest                                              ┃                               │
+│                  ││Command    ┃ The image is downloaded into this daemon's image store, as a background job.       ┃                               │
+│                  ││Workdir    ┃                                                                                    ┃                               │
+│                  ││           ┃ Enter pull  Esc cancel                                                             ┃                               │
+│                  ││References ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                               │
+│                  ││  alpine:3.20                                                                   ││                                              │
+│                  ││                                                                                │└──────────────────────────────────────────────┘
+│                  ││Used by                                                                         │┌─ 5 Jobs ──────────────────────────── 2 done ─┐
+│                  ││  ● noisy-logger  running                                                       ││▸ ✓ start container shop-web-1             1ms│
+│                  ││  ‖ paused-batch  paused                                                        ││  ✓ stop container shop-web-1              0ms│
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+ ✓ start container shop-web-1
+ ↑↓ move  / filter  ⏎ actions  P pull  d remove  X prune                                                                     Tab pane  ? keys  q quit

@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1190061581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Volumes (7) ────────────────────────────────────────────────────────────────┐┌─ 4 Events ────────────────────────── ● live ─┐
+┃  Containers    12┃│  NAME                                   DRIVER   IN USE                CREATED ││07:46:29 ctr kill sig 15 shop-web-1           │
+┃  Images        14┃│▸ blog_db                                local    blog-db-1                  1h ││07:46:29 ctr die exit 0 shop-web-1            │
+┃▸ Volumes        7┃│  old-backups                            local    unused                     1h ││07:46:29 net disconnect shop_default  ← shop-…│
+┃  Networks       7┃│  shop_pgdata                            local    shop-db-1                  1h ││07:46:29 ctr stop       shop-web-1            │
+┃  Compose        2┃│  shop_uploads                           local    shop-api-1                 1h ││07:46:30 net connect    shop_default  ← shop-…│
+┃                  ┃│  337d154abf4b… (anonymous)              local    unused                     1h ││07:46:30 ctr start      shop-web-1            │
+┃  ● 7 running     ┃│  43ee5206a7f7… (anonymous)              local    unused                     1h ││                                              │
+┃  ‖ 1 paused      ┃│  b88cb99671f3… (anonymous)              local    old-migration              1h ││                                              │
+┃  ○ 4 stopped     ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃└────────────────────────────────────────────────────────────────────────────────┘│                                              │
+┃                  ┃┌─ 3 Details: blog_db ────────────────────────────────────────── [Info] Inspect ─┐│                                              │
+┃                  ┃│Name        blog_db                                                             ││                                              │
+┃                  ┃│Kind        named                                                               ││                                              │
+┃                  ┃│Driver      local                                                               ││                                              │
+┃                  ┃│Scope       local                                                               ││                                              │
+┃                  ┃│Mountpoint  /var/lib/fake-docker/volumes/blog_db/_data                          ││                                              │
+┃                  ┃│Created     2026-10-10 06:46:28  (1h ago)                                       ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│Referenced by                                                                   ││                                              │
+┃                  ┃│  ○ blog-db-1  exited at /data/blog_db                                          ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│Labels                                                                          ││                                              │
+┃                  ┃│  com.docker.compose.project=blog                                               │└──────────────────────────────────────────────┘
+┃                  ┃│  com.docker.compose.volume=db                                                  │┌─ 5 Jobs ─────────────────────── ⠼ 1 running ─┐
+┃                  ┃│                                                                                ││▸ ⠼ pull image hello-world:latest — 7131… 42ms│
+┃                  ┃│                                                                                ││  ✓ start container shop-web-1             1ms│
+┃                  ┃│                                                                                ││  ✓ stop container shop-web-1              0ms│
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┃                  ┃│                                                                                ││                                              │
+┗━━━━━━━━━━━━━━━━━━┛└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+ started: pull image hello-world:latest
+ ↑↓ pick a kind  Enter go to list                                                                                            Tab pane  ? keys  q quit

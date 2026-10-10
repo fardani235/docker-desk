@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1190061581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-web ━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│▸ Containers    12│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│07:46:29 ctr kill sig 15 shop-web-1           │
+│  Images        14│┃▸ shop-web-1       nginx:1.27     ○ exited                      Exited (0) 0 …  ┃│07:46:29 ctr die exit 0 shop-web-1            │
+│  Volumes        7│┃                                                                                ┃│07:46:29 net disconnect shop_default  ← shop-…│
+│  Networks       7│┃                                                                                ┃│07:46:29 ctr stop       shop-web-1            │
+│  Compose        2│┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│  ● 6 running     │┃                                                                                ┃│                                              │
+│  ‖ 1 paused      │┃                                                                                ┃│                                              │
+│  ○ 5 stopped     │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                              │
+│                  │┌─ 3 Details: shop-web-1 ──────────────────────────── [Info] Logs Stats Inspect ─┐│                                              │
+│                  ││Name      shop-web-1                                                            ││                                              │
+│                  ││ID        f948ec4de9e4                                                          ││                                              │
+│                  ││Image     nginx:1.27                                                            ││                                              │
+│                  ││State     ○ exited   Exited (0) 0 seconds ago                                   ││                                              │
+│                  ││Compose   shop / web                                                            ││                                              │
+│                  ││Started   2026-10-10 04:46:28                                                   ││                                              │
+│                  ││Finished  2026-10-10 07:46:29   exit code 0                                     ││                                              │
+│                  ││Command   nginx -g daemon off;                                                  ││                                              │
+│                  ││Restart   no (restarted 0×)                                                     ││                                              │
+│                  ││Runtime   tty=false  privileged=false  env vars=1                               ││                                              │
+│                  ││Created   2026-10-10 04:46:28                                                   ││                                              │
+│                  ││                                                                                │└──────────────────────────────────────────────┘
+│                  ││Ports                                                                           │┌─ 5 Jobs ──────────────────────────── 1 done ─┐
+│                  ││  none                                                                          ││▸ ✓ stop container shop-web-1              0ms│
+│                  ││                                                                                ││                                              │
+│                  ││Networks                                                                        ││                                              │
+│                  ││  shop_default  (no address: not running)                                       ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││Mounts                                                                          ││                                              │
+│                  ││  none                                                                          ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+ ✓ stop container shop-web-1
+ ↑↓ move  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell                     Tab pane  ? keys  q quit

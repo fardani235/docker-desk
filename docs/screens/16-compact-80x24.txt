@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake2625096051/d.sock  ctx default  ● connected
+┌─ 1 Kinds ──────┐┏━ ◆ 2 Containers (12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+│▸ Containers  12│┃  NAME            IMAGE         STATE          CPU       MEM┃
+│  Images      14│┃▸ distroless-svc  gcr.io/dist…  ● running        …         …┃
+│  Volumes      7│┃  noisy-logger    alpine:3.20   ● running        …         …┃
+│  Networks     7│┃  paused-batch    alpine:3.20   ‖ paused                    ┃
+│  Compose      2│┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+│                │┌─ 3 Details: distroless-svc ──── [Info] Logs Stats Inspect ─┐
+│  ● 7 running   ││Name     distroless-svc                                     │
+│  ‖ 1 paused    ││ID       86f975de6cbb                                       │
+│  ○ 4 stopped   ││Image    gcr.io/distroless/static:nonroot                   │
+│                ││State    ● running   Up 5 hours                             │
+│                ││Command  /svc                                               │
+│                ││Created  2026-10-10 02:46:35                                │
+│                ││                                                            │
+└────────────────┘└────────────────────────────────────────────────────────────┘
+┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ───────────────────────┐
+│Waiting for engine events…                  ││No jobs yet.                    │
+│Everything the daemon does                  ││Everything that changes the dae…│
+│shows up here as it happens.                ││runs here, in the background.   │
+│                                            ││                                │
+└────────────────────────────────────────────┘└────────────────────────────────┘
+
+ ↑↓ move  / filter  ⏎ actions  s start  t stop  R res… Tab pane  ? keys  q quit

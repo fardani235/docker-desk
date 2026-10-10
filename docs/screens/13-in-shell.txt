@@ -1,0 +1,6 @@
+── docker-desk: sh in shop-api-1 — exit (or Ctrl-D) returns to the desk; Ctrl-] three times forces it ──
+root@e9b5282f33bd:/# echo inside-ok
+inside-ok
+root@e9b5282f33bd:/# stty size
+42 150
+root@e9b5282f33bd:/#
