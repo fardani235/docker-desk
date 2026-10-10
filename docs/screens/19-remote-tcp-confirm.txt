@@ -1,0 +1,40 @@
+ Docker Desk  tcp://127.0.0.1:35757  ctx default  Engine 29.0.0-fake  on far-away  ● connected  [tcp, NO TLS]
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-web ━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│▸ Containers    12│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│Waiting for engine events…                    │
+│  Images        14│┃▸ shop-web-1       nginx:1.27     ● running    74.1%    488MiB  Up 3 hours      ┃│Everything the daemon does                    │
+│  Volumes        7│┃                                                                                ┃│shows up here as it happens.                  │
+│  Networks       7│┃                                                                                ┃│                                              │
+│  Compose        2│┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│  ● 7 running     │┃                                                                                ┃│                                              │
+│  ‖ 1 paused      │┃                                                                                ┃│                                              │
+│  ○ 4 stopped     │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┗━━━━━━━━━━━┏━ ◆ Stop container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
+│                  │┌─ 3 Details┃                                                                                    ┃                               │
+│                  ││Name     sh┃ container  shop-web-1  (f948ec4de9e4)                                              ┃                               │
+│                  ││ID       f9┃ daemon     tcp://127.0.0.1:35757  (context default)  [tcp, NO TLS]                 ┃                               │
+│                  ││Image    ng┃                                                                                    ┃                               │
+│                  ││State    ● ┃ • The container is sent its stop signal (SIGTERM unless configured otherwise).     ┃                               │
+│                  ││Compose  sh┃ • If it has not exited after its grace period (10 s by default) the daemon kills   ┃                               │
+│                  ││Command  ng┃   it.                                                                              ┃                               │
+│                  ││Created  20┃                                                                                    ┃                               │
+│                  ││           ┃ y proceed  n / Esc cancel   (Enter does nothing here)                              ┃                               │
+│                  ││Ports      ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                               │
+│                  ││  0.0.0.0:8080 → 80/tcp                                                         ││                                              │
+│                  ││                                                                                │└──────────────────────────────────────────────┘
+│                  ││Networks                                                                        │┌─ 5 Jobs ─────────────────────────────────────┐
+│                  ││  shop_default  172.18.0.2  gw 172.18.0.1                                       ││No jobs yet.                                  │
+│                  ││                                                                                ││Everything that changes the daemon            │
+│                  ││Mounts                                                                          ││runs here, in the background.                 │
+│                  ││  none                                                                          ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+
+ ↑↓ move  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell                     Tab pane  ? keys  q quit

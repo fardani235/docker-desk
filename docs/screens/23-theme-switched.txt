@@ -1,0 +1,40 @@
+ Docker Desk  unix:///tmp/ddfake3574256806/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ────────────────────── ● live ─┐
+│▸ Containers    12│┃  NAME           IMAGE        STATE          CPU       MEM  STATUS        ┃│Waiting for engine events…                │
+│  Images        14│┃▸ distroless-s…  gcr.io/dis…  ● running        …         …  Up 5 hours    ┃│Everything the daemon does                │
+│  Volumes        7│┃  noisy-logger   alpine:3.20  ● running        …         …  Up 12 minutes ┃│shows up here as it happens.              │
+│  Networks       7│┃  paused-batch   alpine:3.20  ‖ paused                      Up 50 minute… ┃│                                          │
+│  Compose        2│┃  redis-cache    redis:7      ● running        …         …  Up 26 hours   ┃│                                          │
+│                  │┃  shop-api-1     shop/api:d…  ● running        …         …  Up 3 hours    ┃│                                          │
+│  ● 7 running     │┃  shop-db-1      postgres:16  ● running        …         …  Up 3 hours (… ┃│                                          │
+│  ‖ 1 paused      │┃  shop-web-1     nginx:1.27   ● running        …         …  Up 3 hours    ┃│                                          │
+│  ○ 4 stopped     │┃  slow-stopper   busybox:1.…  ● running        …         …  Up 40 minutes ┃│                                          │
+│                  │┃  blog-app-1     ghost:5      ○ exited                      Exited (0) 1… ┃│                                          │
+│                  │┃  blog-db-1      mysql:8      ○ exited                      Exited (0) 1… ┃│                                          │
+│                  │┃  old-migration  shop/api:d…  ○ exited                      Exited (0) 3… ┃│                                          │
+│                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                          │
+│                  │┌─ 3 Details: distroless-svc ────────────────── [Info] Logs Stats Inspect ─┐│                                          │
+│                  ││Name     distroless-svc                                                   ││                                          │
+│                  ││ID       86f975de6cbb                                                     ││                                          │
+│                  ││Image    gcr.io/distroless/static:nonroot                                 ││                                          │
+│                  ││State    ● running   Up 5 hours                                           ││                                          │
+│                  ││Started  2026-10-10 06:57:05                                              ││                                          │
+│                  ││Command  /svc                                                             ││                                          │
+│                  ││Restart  no (restarted 0×)                                                ││                                          │
+│                  ││Runtime  tty=false  privileged=false  env vars=1                          ││                                          │
+│                  ││Created  2026-10-10 06:57:05                                              ││                                          │
+│                  ││                                                                          ││                                          │
+│                  ││Ports                                                                     │└──────────────────────────────────────────┘
+│                  ││  none                                                                    │┌─ 5 Jobs ─────────────────────────────────┐
+│                  ││                                                                          ││No jobs yet.                              │
+│                  ││Networks                                                                  ││Everything that changes the daemon        │
+│                  ││  bridge  172.17.0.5  gw 172.17.0.1                                       ││runs here, in the background.             │
+│                  ││                                                                          ││                                          │
+│                  ││Mounts                                                                    ││                                          │
+│                  ││  none                                                                    ││                                          │
+│                  ││                                                                          ││                                          │
+│                  ││                                                                          ││                                          │
+│                  ││                                                                          ││                                          │
+└──────────────────┘└──────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────┘
+ Theme: nord — keep it with --theme nord or DOCKER_DESK_THEME=nord.
+ ↑↓ move  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell           Tab pane  ? keys  q quit

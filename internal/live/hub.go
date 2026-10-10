@@ -74,6 +74,10 @@ type Hub struct {
 	// Backoff bounds for re-establishing the event stream; tests shorten them.
 	MinBackoff time.Duration
 	MaxBackoff time.Duration
+	// PingTimeout is how long the daemon gets to answer while the hub waits
+	// for it to come back. Two seconds is plenty for a local socket; a
+	// daemon a slow link and a TLS handshake away is given longer.
+	PingTimeout time.Duration
 }
 
 type statStream struct {
@@ -88,14 +92,15 @@ type statStream struct {
 func NewHub(eng engine.Engine) *Hub {
 	ctx, cancel := context.WithCancel(context.Background())
 	h := &Hub{
-		eng:        eng,
-		ctx:        ctx,
-		cancel:     cancel,
-		Events:     NewRing[EventEntry](EventLines, nil),
-		logRing:    NewRing[string](LogLines, nil),
-		stats:      map[string]*statStream{},
-		MinBackoff: 250 * time.Millisecond,
-		MaxBackoff: 5 * time.Second,
+		eng:         eng,
+		ctx:         ctx,
+		cancel:      cancel,
+		Events:      NewRing[EventEntry](EventLines, nil),
+		logRing:     NewRing[string](LogLines, nil),
+		stats:       map[string]*statStream{},
+		MinBackoff:  250 * time.Millisecond,
+		MaxBackoff:  5 * time.Second,
+		PingTimeout: 2 * time.Second,
 	}
 	h.connected.Store(true)
 	return h
@@ -196,7 +201,7 @@ func (h *Hub) eventLoop() {
 				return
 			case <-time.After(backoff):
 			}
-			pctx, cancel := context.WithTimeout(h.ctx, 2*time.Second)
+			pctx, cancel := context.WithTimeout(h.ctx, h.PingTimeout)
 			perr := h.eng.Ping(pctx)
 			cancel()
 			if perr == nil {

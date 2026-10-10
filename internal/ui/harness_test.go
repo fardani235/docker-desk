@@ -51,6 +51,14 @@ type benchOpts struct {
 	// arm is the confirmation arming delay; the default (0) disables it so
 	// that tests do not have to wait. TestConfirmationsMustBeReadFirst sets it.
 	arm time.Duration
+	// endpoint, when set, is what the desk is told it talks to, while the
+	// engine underneath stays the fake: how a remote daemon is presented can
+	// be tested without one.
+	endpoint *dockerctx.Endpoint
+	// theme names the palette ("" leaves the default).
+	theme string
+	// linkProblem stands in for the SSH tunnel's report on itself.
+	linkProblem func() string
 }
 
 func newBench(t testing.TB, o benchOpts) *bench {
@@ -81,11 +89,23 @@ func newBench(t testing.TB, o benchOpts) *bench {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ep := dockerctx.Endpoint{Host: srv.Host(), Context: "default", Source: "test"}
+	if o.endpoint != nil {
+		ep = *o.endpoint
+	}
+	var theme Theme
+	if o.theme != "" {
+		if theme, err = ThemeByName(o.theme); err != nil {
+			t.Fatal(err)
+		}
+	}
 	m := New(Options{
 		Engine:        eng,
-		Endpoint:      dockerctx.Endpoint{Host: srv.Host(), Context: "default", Source: "test"},
+		Endpoint:      ep,
 		Info:          engine.Info{Name: "sandbox", ServerVersion: fakeengine.EngineVersion, APIVersion: "1.56"},
 		ReadOnly:      o.readOnly,
+		Theme:         theme,
+		LinkProblem:   o.linkProblem,
 		FrameInterval: o.frame,
 		Debounce:      20 * time.Millisecond,
 		PollInterval:  time.Hour, // tests refresh through events, or ask

@@ -1,5 +1,6 @@
 // Package fakeengine is an in-memory Docker Engine that serves the real
-// Engine HTTP API on a unix socket.
+// Engine HTTP API on a unix socket — or, to stand in for a remote daemon, on
+// a loopback TCP port with or without TLS.
 //
 // It exists so that every mutating path of the desk can be exercised through
 // Docker's own client library without a real daemon ever receiving a mutating
@@ -14,6 +15,7 @@ package fakeengine
 
 import (
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -93,8 +95,12 @@ type Server struct {
 	listener net.Listener
 	httpSrv  *http.Server
 	socket   string
-	closed   chan struct{}
-	wg       sync.WaitGroup
+	// tcpAddr and tlsConf are set when the fake listens on TCP instead of
+	// a unix socket; see network.go.
+	tcpAddr string
+	tlsConf *tls.Config
+	closed  chan struct{}
+	wg      sync.WaitGroup
 }
 
 type injectedFailure struct {
@@ -176,7 +182,12 @@ func (s *Server) StartTemp() (cleanup func(), err error) {
 func (s *Server) Socket() string { return s.socket }
 
 // Host returns the endpoint URL to give to a Docker client.
-func (s *Server) Host() string { return "unix://" + s.socket }
+func (s *Server) Host() string {
+	if s.tcpAddr != "" {
+		return "tcp://" + s.tcpAddr
+	}
+	return "unix://" + s.socket
+}
 
 // Stop stops serving and severs every open connection (streams included) but
 // keeps the engine state, like a daemon being stopped. Restart resumes it.
@@ -192,8 +203,11 @@ func (s *Server) Stop() {
 	s.dropAllStreams()
 }
 
-// Restart serves again on the same socket after Stop.
+// Restart serves again on the same socket (or TCP address) after Stop.
 func (s *Server) Restart() error {
+	if s.tcpAddr != "" {
+		return s.listenTCP(s.tcpAddr)
+	}
 	return s.Start(s.socket)
 }
 

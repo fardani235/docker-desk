@@ -79,6 +79,14 @@ type Options struct {
 	Endpoint dockerctx.Endpoint
 	Info     engine.Info
 	ReadOnly bool
+	// Theme is the palette. The zero value picks dark or light from the
+	// terminal's background.
+	Theme Theme
+	// LinkProblem, when set, reports why the transport underneath the
+	// engine — the SSH tunnel — is down, or "" while it is up. The desk
+	// shows it next to "disconnected", which by itself cannot tell a daemon
+	// that stopped from a tunnel that fell.
+	LinkProblem func() string
 
 	// Timing; zero values select the defaults. Tests shorten them.
 	FrameInterval time.Duration // how often live data is looked at (50 ms)
@@ -97,6 +105,7 @@ type Model struct {
 	hub      *live.Hub
 	jobs     *jobs.Manager
 	endpoint dockerctx.Endpoint
+	link     dockerctx.Link
 	info     engine.Info
 	readOnly bool
 	st       styles
@@ -162,6 +171,7 @@ type Model struct {
 	drawn        drawnVersions
 	frames       uint64 // number of frames actually rendered
 	wasConnected bool
+	linkProblem  string // the transport problem last reported in the status line
 	quitting     bool
 	started      bool
 }
@@ -200,6 +210,10 @@ func New(opts Options) *Model {
 	if opts.ArmDelay == 0 {
 		opts.ArmDelay = 250 * time.Millisecond
 	}
+	theme := opts.Theme
+	if theme.Name == "" {
+		theme, _ = ThemeByName(AutoTheme)
+	}
 	in := textinput.New()
 	in.Prompt = "/"
 	in.CharLimit = 80
@@ -208,9 +222,10 @@ func New(opts Options) *Model {
 		hub:          live.NewHub(opts.Engine),
 		jobs:         jobs.NewManager(),
 		endpoint:     opts.Endpoint,
+		link:         opts.Endpoint.Link(),
 		info:         opts.Info,
 		readOnly:     opts.ReadOnly || engine.IsReadOnly(opts.Engine),
-		st:           newStyles(),
+		st:           newStyles(theme),
 		opts:         opts,
 		focus:        PaneList,
 		kind:         KindContainers,
@@ -223,6 +238,12 @@ func New(opts Options) *Model {
 	}
 	m.info1.wrap = true
 	m.inspect.wrap = true
+	if m.link.Transport != dockerctx.TransportUnix {
+		// "Is it back?" is asked with a short timeout. Over a network a
+		// new connection can take longer than that to set up, and the desk
+		// would then call a slow daemon a missing one for ever.
+		m.hub.PingTimeout = 10 * time.Second
+	}
 	return m
 }
 
@@ -427,6 +448,18 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		m.setStatus(toneBad, "Lost the connection to the Docker daemon at "+m.endpoint.Host+" — retrying. Data on screen may be stale.")
 	}
 	m.wasConnected = connected
+	if m.opts.LinkProblem != nil {
+		// A fallen tunnel explains itself a moment after the streams it
+		// carried have failed; say so once per distinct reason.
+		problem := ""
+		if !connected {
+			problem = m.opts.LinkProblem()
+		}
+		if problem != "" && problem != m.linkProblem {
+			m.setStatus(toneBad, "The "+m.link.Transport.String()+" link to "+m.endpoint.Host+" is down — retrying: "+problem)
+		}
+		m.linkProblem = problem
+	}
 
 	// 5. Did anything visible change?
 	v := drawnVersions{

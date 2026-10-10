@@ -35,10 +35,11 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 	// operator has moved on. Drop the pending request, so that its dialog
 	// cannot appear under keys typed for something else — the `y` of a
 	// filter word must never land in a "stop container?" that opened late.
+	dropped := m.preparing
 	if m.preparing {
 		m.planSeq++
 		m.preparing = false
-		m.setStatus(toneDim, "Dropped the pending action: a key was pressed before its confirmation appeared.")
+		m.setStatus(toneDim, droppedNotice)
 	}
 	if m.filtering {
 		return m.onFilterKey(k)
@@ -73,6 +74,14 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 		}
 		m.setStatus(toneDim, "Refreshing every list…")
 		return nil
+	case "T":
+		m.setTheme(nextTheme(m.st.theme))
+		if dropped {
+			// Changing the theme writes to the status line too; that an
+			// action was dropped is the more important thing to have read.
+			m.setStatus(toneWarn, droppedNotice+" (Theme: "+m.st.theme+".)")
+		}
+		return nil
 	}
 
 	switch m.focus {
@@ -88,6 +97,19 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 		return m.onJobsKey(key)
 	}
 	return nil
+}
+
+const droppedNotice = "Dropped the pending action: a key was pressed before its confirmation appeared."
+
+// setTheme repaints the desk in another palette. Nothing is stored: every
+// frame is drawn from the styles, so the next one is in the new colours.
+func (m *Model) setTheme(t Theme) {
+	m.st = newStyles(t)
+	note := ""
+	if !m.st.color {
+		note = " This terminal shows no colour (NO_COLOR?), so themes look alike."
+	}
+	m.setStatus(toneAccent, "Theme: "+t.Name+" — keep it with --theme "+t.Name+" or DOCKER_DESK_THEME="+t.Name+"."+note)
 }
 
 // requestQuit quits, or asks first when jobs are still running.

@@ -343,7 +343,7 @@ func (m *Model) renderDialog() (lines []string, w, h int) {
 		title, body = m.menuBody(d, inner)
 	case dlgHelp:
 		title = "Keys"
-		d.text.set(m.helpLines())
+		d.text.set(m.helpLines(inner))
 		body = d.text.render(inner, maxBody-2)
 		pos := d.text.position(maxBody - 2)
 		body = append(append([]string{}, body...), "", m.hints("↑↓ PgUp PgDn", "scroll", "Esc", "close")+"  "+m.st.tone(toneDim, pos))
@@ -389,10 +389,19 @@ func bullets(st styles, glyph string, t tone, items []string, w int) []string {
 	return out
 }
 
+// planBody lays out a confirmation so that it always fits the terminal.
+//
+// Three parts are never scrolled or cut: what is acted on and where (ident),
+// and how to proceed — the refusal, or the prompt, the input and the keys
+// (tail). What lies between them — the effects, the warnings, and for a set
+// the exact objects — takes the room that is left. Normally that is enough
+// for everything but a long list, which then scrolls by itself. On a small
+// terminal with a long confirmation it is not; then the whole middle scrolls
+// as one, rather than pushing the prompt and the input off the screen.
 func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 	p := d.plan
 	st := m.st
-	var head, tail []string
+	var ident, info, tail []string
 
 	// What, exactly, and where.
 	if p.Target.Name != "" {
@@ -400,28 +409,30 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 		if p.Target.ID != "" {
 			line += st.tone(toneDim, "  ("+p.Target.ID+")")
 		}
-		head = append(head, line)
+		ident = append(ident, line)
 	}
-	head = append(head, st.tone(toneDim, fit("daemon", 10))+" "+m.endpoint.Host+st.tone(toneDim, "  (context "+m.endpoint.Context+")"))
+	ident = append(ident, m.daemonLines(w, true)...)
 	if p.Scope != "" {
 		line := st.tone(toneDim, fit("scope", 10)) + " " + p.Scope
-		head = append(head, line)
+		ident = append(ident, line)
 		if d.scope != nil {
 			other := "all unused"
 			if d.scopeAll {
 				other = "the default scope"
 			}
-			head = append(head, strings.Repeat(" ", 11)+m.hints("Tab", "switch to "+other))
+			ident = append(ident, strings.Repeat(" ", 11)+m.hints("Tab", "switch to "+other))
 		}
 	}
-	head = append(head, "")
+
+	// What it does.
+	info = append(info, "")
 	if p.Nothing != "" {
-		head = append(head, p.Nothing)
+		info = append(info, p.Nothing)
 	}
-	head = append(head, bullets(st, "•", toneNormal, p.Effects, w)...)
+	info = append(info, bullets(st, "•", toneNormal, p.Effects, w)...)
 	if len(p.Warnings) > 0 {
-		head = append(head, "")
-		head = append(head, bullets(st, "▲", toneWarn, p.Warnings, w)...)
+		info = append(info, "")
+		info = append(info, bullets(st, "▲", toneWarn, p.Warnings, w)...)
 	}
 
 	// How to proceed.
@@ -446,14 +457,10 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 	}
 
 	// The exact objects, when the plan is a set.
-	var list []string
-	if p.Listed && len(p.Steps) > 0 {
-		room := maxBody - len(head) - len(tail) - 3
-		if room < 3 {
-			room = 3
-		}
-		total := len(p.Steps)
-		d.listOff = clamp(d.listOff, 0, max(total-room, 0))
+	listed := p.Listed && len(p.Steps) > 0
+	total := len(p.Steps)
+	headline := ""
+	if listed {
 		outcome := "acted on"
 		switch p.Steps[0].Op {
 		case plan.OpRemoveContainer, plan.OpRemoveImage, plan.OpRemoveVolume, plan.OpRemoveNetwork:
@@ -461,35 +468,67 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 		case plan.OpStop:
 			outcome = "stopped"
 		}
-		headline := fmt.Sprintf("Exactly these %d will be %s:", total, outcome)
+		headline = fmt.Sprintf("Exactly these %d will be %s:", total, outcome)
 		if p.TotalSize > 0 {
 			headline = fmt.Sprintf("Exactly these %d will be %s (about %s):", total, outcome, humanBytes(p.TotalSize))
 		}
-		list = append(list, "", st.dialogTitle.Render(headline))
-		end := min(d.listOff+room, total)
-		for i := d.listOff; i < end; i++ {
-			s := p.Steps[i]
-			line := fmt.Sprintf("  %-7s %s", s.Op.String(), s.Name)
-			meta := s.Detail
-			if s.Size > 0 {
-				meta = strings.TrimSpace(meta + "  " + humanBytes(s.Size))
-			}
-			if meta != "" {
-				line = fit(line, w-len([]rune(meta))-2) + "  " + st.tone(toneDim, meta)
-			}
-			list = append(list, line)
-		}
-		if total > room {
-			list = append(list, st.tone(toneDim, fmt.Sprintf("  rows %d–%d of %d · ↑↓ PgUp PgDn scroll the list", d.listOff+1, end, total)))
-		}
+		headline = st.dialogTitle.Render(headline)
 	}
-	body := append(append(head, list...), tail...)
+	row := func(i int) string {
+		s := p.Steps[i]
+		line := fmt.Sprintf("  %-7s %s", s.Op.String(), s.Name)
+		meta := s.Detail
+		if s.Size > 0 {
+			meta = strings.TrimSpace(meta + "  " + humanBytes(s.Size))
+		}
+		if meta != "" {
+			line = fit(line, w-len([]rune(meta))-2) + "  " + st.tone(toneDim, meta)
+		}
+		return line
+	}
+
+	fixed := len(ident) + len(info) + len(tail)
+	listRoom := maxBody - fixed - 3 // a blank line, the headline, the position
+	var middle []string
+	switch {
+	case !listed && fixed <= maxBody:
+		middle = info
+
+	case listed && listRoom >= min(total, 3):
+		// The usual case: everything is shown, and a long list scrolls.
+		d.listOff = clamp(d.listOff, 0, max(total-listRoom, 0))
+		middle = append(append(middle, info...), "", headline)
+		last := min(d.listOff+listRoom, total)
+		for i := d.listOff; i < last; i++ {
+			middle = append(middle, row(i))
+		}
+		if total > listRoom {
+			middle = append(middle, st.tone(toneDim, fmt.Sprintf("  rows %d–%d of %d · ↑↓ PgUp PgDn scroll the list", d.listOff+1, last, total)))
+		}
+
+	default:
+		// Not enough room: the effects, the warnings and the list scroll
+		// together, between an identity and a prompt that stay put.
+		all := append([]string{}, info...)
+		if listed {
+			all = append(all, "", headline)
+			for i := 0; i < total; i++ {
+				all = append(all, row(i))
+			}
+		}
+		room := max(maxBody-len(ident)-len(tail)-1, 3)
+		d.listOff = clamp(d.listOff, 0, max(len(all)-room, 0))
+		last := min(d.listOff+room, len(all))
+		middle = append(middle, all[d.listOff:last]...)
+		middle = append(middle, st.tone(toneDim, fmt.Sprintf("  lines %d–%d of %d · ↑↓ PgUp PgDn scroll — read all of it", d.listOff+1, last, len(all))))
+	}
+	body := append(append(ident, middle...), tail...)
 	return p.Title, body
 }
 
 func (m *Model) formBody(d *dialog, w int) (string, []string) {
 	st := m.st
-	daemon := st.tone(toneDim, fit("daemon", 10)) + " " + m.endpoint.Host + st.tone(toneDim, "  (context "+m.endpoint.Context+")")
+	daemon := strings.Join(m.daemonLines(w, true), "\n")
 	var title, prompt, verb string
 	var notes []string
 	text := d.input.Value()
@@ -538,7 +577,7 @@ func (m *Model) formBody(d *dialog, w int) (string, []string) {
 
 func (m *Model) pickerBody(d *dialog, w, maxBody int) (string, []string) {
 	st := m.st
-	body := []string{st.tone(toneDim, fit("daemon", 10)) + " " + m.endpoint.Host}
+	body := m.daemonLines(w, false)
 	if d.pickNote != "" {
 		body = append(body, st.tone(toneDim, d.pickNote))
 	}

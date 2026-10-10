@@ -137,7 +137,7 @@ func (m *Model) renderTooSmall() []string {
 		fmt.Sprintf("The desk needs at least %d×%d", MinWidth, MinHeight),
 		"to show all its panes.",
 		"",
-		"daemon: " + m.endpoint.Host,
+		"daemon: " + m.endpoint.Host + m.linkSuffix(),
 		"",
 		"Enlarge the window, or q to quit.",
 		"(No other key does anything while",
@@ -166,12 +166,19 @@ func (m *Model) renderHeader() string {
 	eng := st.headerKey.Render("Engine ") + m.info.ServerVersion
 	host := st.headerKey.Render("on ") + m.info.Name
 	conn := st.tone(toneGood, "● connected")
+	connShort := conn
 	if !m.hub.Connected() {
 		conn = st.headerAlert.Render("✗ DISCONNECTED — retrying")
+		connShort = st.headerAlert.Render("✗ DISCONNECTED")
 	}
 	var flags string
+	if m.link.Label != "" {
+		// Never dropped, like the endpoint: on a daemon that is not this
+		// machine's own socket, that is the first thing to know.
+		flags = sep + st.tone(m.linkTone(), "["+m.link.Label+"]")
+	}
 	if m.readOnly {
-		flags = sep + st.tone(toneWarn, "[READ-ONLY]")
+		flags += sep + st.tone(toneWarn, "[READ-ONLY]")
 	}
 	// Try progressively shorter headers.
 	variants := [][]string{
@@ -180,6 +187,7 @@ func (m *Model) renderHeader() string {
 		{title, endpoint, ctx, conn},
 		{title, endpoint, conn},
 		{endpoint, conn},
+		{endpoint, connShort},
 	}
 	for _, v := range variants {
 		line := strings.Join(v, sep) + flags
@@ -187,7 +195,84 @@ func (m *Model) renderHeader() string {
 			return fit(line, m.width)
 		}
 	}
-	return fit(endpoint+sep+conn+flags, m.width)
+	// Still too long: the endpoint itself gives way — in its middle. Its
+	// beginning says which machine and its end which socket, and what
+	// follows it (connected or not, remote, read-only) is never what gets
+	// cut off. The whole of it is in the help and in every dialog.
+	tail := sep + connShort + flags
+	room := max(m.width-ansi.StringWidth(tail), 12)
+	return fit(st.tone(toneAccent, middleTruncate(m.endpoint.Host, room))+tail, m.width)
+}
+
+// middleTruncate shortens s to w cells by replacing its middle with an
+// ellipsis, sharing the room between the beginning and the end.
+func middleTruncate(s string, w int) string {
+	r := []rune(s)
+	if len(r) <= w || w < 5 {
+		return s
+	}
+	tail := (w - 1) / 2
+	head := w - 1 - tail
+	return string(r[:head]) + "…" + string(r[len(r)-tail:])
+}
+
+// linkTone is the colour of the "how is this daemon reached" tag: caution for
+// a daemon on another machine, alarm when the link itself is not safe.
+func (m *Model) linkTone() tone {
+	switch {
+	case m.link.Insecure:
+		return toneBad
+	case m.link.Remote:
+		return toneWarn
+	}
+	return toneDim
+}
+
+// linkSuffix is the same tag as plain text, for places without styling.
+func (m *Model) linkSuffix() string {
+	if m.link.Label == "" {
+		return ""
+	}
+	return "  [" + m.link.Label + "]"
+}
+
+// daemonLines names the daemon inside a dialog of inner width w: the
+// endpoint, the context and — when it is not a local socket — how it is
+// reached, so that a confirmation says "this is another machine" in its own
+// text. Nothing of it is ever cut off: each of the three goes beside what is
+// already there when it fits and onto a line of its own when it does not,
+// and one that is longer than a line is continued on the next.
+func (m *Model) daemonLines(w int, withContext bool) []string {
+	st := m.st
+	const label = 11 // "daemon" padded, and a space
+	room := max(w-label, 8)
+	indent := strings.Repeat(" ", label)
+
+	var lines []string
+	for i, part := range wrapLine(m.endpoint.Host, room) {
+		if i == 0 {
+			lines = append(lines, st.tone(toneDim, fit("daemon", label-1))+" "+part)
+		} else {
+			lines = append(lines, indent+part)
+		}
+	}
+	add := func(text string, t tone) {
+		last := len(lines) - 1
+		if ansi.StringWidth(lines[last])+2+ansi.StringWidth(text) <= w {
+			lines[last] += "  " + st.tone(t, text)
+			return
+		}
+		for _, part := range wrapLine(text, room) {
+			lines = append(lines, indent+st.tone(t, part))
+		}
+	}
+	if withContext {
+		add("(context "+m.endpoint.Context+")", toneDim)
+	}
+	if m.link.Label != "" {
+		add("["+m.link.Label+"]", m.linkTone())
+	}
+	return lines
 }
 
 func (m *Model) renderStatus() string {
@@ -247,20 +332,25 @@ func (m *Model) renderHints() string {
 }
 
 // helpLines is the content of the help overlay: every key, by pane and kind.
-func (m *Model) helpLines() []string {
+func (m *Model) helpLines(w int) []string {
 	st := m.st
 	var out []string
 	sect := func(title string) { out = append(out, "", st.tone(toneAccent, title)) }
 	row := func(k, v string) { out = append(out, "  "+st.hintKey.Render(fit(k, 16))+" "+v) }
 
-	out = append(out, "Docker Desk talks to one daemon: "+m.endpoint.Host)
-	out = append(out, st.tone(toneDim, "chosen by: "+m.endpoint.Source))
+	out = append(out, wrapWords("Docker Desk talks to one daemon: "+m.endpoint.Host, w)...)
+	for _, line := range []string{"chosen by: " + m.endpoint.Source, "reached over: " + m.link.Words} {
+		for _, part := range wrapWords(line, w) {
+			out = append(out, st.tone(toneDim, part))
+		}
+	}
 
 	sect("Everywhere")
 	row("Tab / Shift+Tab", "next / previous pane")
 	row("1 2 3 4 5", "focus Kinds / List / Details / Events / Jobs")
 	row("[  ]", "previous / next Details tab")
 	row("r", "refresh every list now")
+	row("T", "next colour theme ("+m.st.theme+" now)")
 	row("?", "this help")
 	row("q, Ctrl+C", "quit (asks first if jobs are running)")
 
