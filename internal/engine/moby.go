@@ -3,6 +3,8 @@ package engine
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +13,8 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
+	"net/url"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -25,13 +29,61 @@ import (
 
 // Options configures the connection to the daemon.
 type Options struct {
-	// Host is the endpoint, e.g. unix:///var/run/docker.sock.
+	// Host is the endpoint the client dials: unix:///var/run/docker.sock,
+	// or tcp://host:port. (An ssh:// daemon is dialled through the local
+	// socket of its tunnel; see internal/sshtunnel.)
 	Host string
+	// TLS secures a tcp:// endpoint. Nil means plain HTTP.
+	TLS *TLS
 	// ReadOnly makes every mutating method fail locally and additionally
 	// rejects any HTTP request that is not GET or HEAD before it is sent.
 	ReadOnly bool
 	// UserAgent identifies the desk in the daemon's logs.
 	UserAgent string
+	// ShownAs is the endpoint as the operator named it, when that is not
+	// Host: error messages then name it instead of the address dialled.
+	ShownAs string
+}
+
+// TLS is the client side of a TLS connection to the daemon.
+type TLS struct {
+	// CAFile verifies the daemon's certificate. Empty means the system's
+	// root certificates.
+	CAFile string
+	// CertFile and KeyFile are this client's certificate; both or neither.
+	CertFile string
+	KeyFile  string
+	// SkipVerify accepts any server certificate.
+	SkipVerify bool
+}
+
+// config builds the TLS client configuration. Files are read here, once, so
+// that a missing or malformed certificate is a launch error and not the
+// reason some later request fails.
+func (t *TLS) config() (*tls.Config, error) {
+	cfg := &tls.Config{MinVersion: tls.VersionTLS12, InsecureSkipVerify: t.SkipVerify}
+	if t.CAFile != "" && !t.SkipVerify {
+		pem, err := os.ReadFile(t.CAFile)
+		if err != nil {
+			return nil, fmt.Errorf("reading the CA certificate: %w", err)
+		}
+		pool := x509.NewCertPool()
+		if !pool.AppendCertsFromPEM(pem) {
+			return nil, fmt.Errorf("%s contains no PEM certificate", t.CAFile)
+		}
+		cfg.RootCAs = pool
+	}
+	if t.CertFile != "" || t.KeyFile != "" {
+		if t.CertFile == "" || t.KeyFile == "" {
+			return nil, errors.New("a client certificate needs both its certificate and its key")
+		}
+		cert, err := tls.LoadX509KeyPair(t.CertFile, t.KeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("loading the client certificate (%s, %s): %w", t.CertFile, t.KeyFile, err)
+		}
+		cfg.Certificates = []tls.Certificate{cert}
+	}
+	return cfg, nil
 }
 
 // New connects to the daemon at opts.Host through Docker's own client
@@ -44,11 +96,34 @@ func New(opts Options) (Engine, error) {
 	if ua == "" {
 		ua = "docker-desk"
 	}
-	clientOpts := []client.Opt{
+	var clientOpts []client.Opt
+	if opts.TLS != nil {
+		if !strings.HasPrefix(opts.Host, "tcp://") {
+			return nil, fmt.Errorf("TLS applies to tcp:// endpoints, not to %s", opts.Host)
+		}
+		cfg, err := opts.TLS.config()
+		if err != nil {
+			return nil, fmt.Errorf("configuring TLS for %s: %w", opts.Host, err)
+		}
+		// The same transport settings the library gives its own default
+		// client, with the TLS configuration added; WithHost, below,
+		// installs the dialer on it. This must come first.
+		clientOpts = append(clientOpts, client.WithHTTPClient(&http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: cfg, MaxIdleConns: 6, IdleConnTimeout: 30 * time.Second,
+				// A peer that accepts the connection and then says
+				// nothing must not hold a request — or the event
+				// stream, which has no deadline of its own — for ever.
+				TLSHandshakeTimeout: 15 * time.Second,
+			},
+			CheckRedirect: client.CheckRedirect,
+		}))
+	}
+	clientOpts = append(clientOpts,
 		client.WithHost(opts.Host),
 		client.WithAPIVersionNegotiation(),
 		client.WithUserAgent(ua),
-	}
+	)
 	if opts.ReadOnly {
 		clientOpts = append(clientOpts, client.WithHTTPRequestHook(rejectMutatingRequest))
 	}
@@ -56,7 +131,7 @@ func New(opts Options) (Engine, error) {
 	if err != nil {
 		return nil, fmt.Errorf("creating Docker client for %s: %w", opts.Host, err)
 	}
-	var e Engine = &mobyEngine{cli: cli}
+	var e Engine = &mobyEngine{cli: cli, dialed: opts.Host, shownAs: opts.ShownAs}
 	if opts.ReadOnly {
 		e = ReadOnly(e)
 	}
@@ -75,6 +150,11 @@ func rejectMutatingRequest(req *http.Request) error {
 
 type mobyEngine struct {
 	cli *client.Client
+	// dialed is what the client connects to and shownAs what the operator
+	// calls the daemon. They differ for an ssh:// daemon, which is dialled
+	// through the local socket of its tunnel; see wrap.
+	dialed  string
+	shownAs string
 }
 
 func (m *mobyEngine) Close() error { return m.cli.Close() }
@@ -111,17 +191,36 @@ func wrap(op string, err error) error {
 	return &Error{Kind: kind, Op: op, Msg: cleanMessage(err), Err: err}
 }
 
+// wrap classifies a client-library error and makes its message name the
+// daemon as the operator knows it. The client library quotes the address it
+// dialled; for an ssh:// daemon that is a socket in a temporary directory,
+// which would read as if the desk were talking to something else.
+func (m *mobyEngine) wrap(op string, err error) error {
+	err = wrap(op, err)
+	var e *Error
+	if m.shownAs == "" || m.shownAs == m.dialed || !errors.As(err, &e) {
+		return err
+	}
+	path := strings.TrimPrefix(m.dialed, "unix://")
+	e.Msg = strings.NewReplacer(
+		"http://"+url.PathEscape(path), m.shownAs,
+		m.dialed, m.shownAs,
+		path, m.shownAs,
+	).Replace(e.Msg)
+	return err
+}
+
 // ---- identity -------------------------------------------------------------
 
 func (m *mobyEngine) Ping(ctx context.Context) error {
 	_, err := m.cli.Ping(ctx, client.PingOptions{NegotiateAPIVersion: true})
-	return wrap("ping", err)
+	return m.wrap("ping", err)
 }
 
 func (m *mobyEngine) Info(ctx context.Context) (Info, error) {
 	res, err := m.cli.Info(ctx, client.InfoOptions{})
 	if err != nil {
-		return Info{}, wrap("info", err)
+		return Info{}, m.wrap("info", err)
 	}
 	i := res.Info
 	return Info{
@@ -182,7 +281,7 @@ func convertMounts(in []container.MountPoint) []Mount {
 func (m *mobyEngine) Containers(ctx context.Context) ([]Container, error) {
 	res, err := m.cli.ContainerList(ctx, client.ContainerListOptions{All: true})
 	if err != nil {
-		return nil, wrap("list containers", err)
+		return nil, m.wrap("list containers", err)
 	}
 	out := make([]Container, 0, len(res.Items))
 	for _, s := range res.Items {
@@ -250,7 +349,7 @@ func sortPorts(p []Port) {
 func (m *mobyEngine) Images(ctx context.Context) ([]Image, error) {
 	res, err := m.cli.ImageList(ctx, client.ImageListOptions{})
 	if err != nil {
-		return nil, wrap("list images", err)
+		return nil, m.wrap("list images", err)
 	}
 	// Ask the daemon which images it considers dangling instead of inferring
 	// it from RepoTags.
@@ -258,7 +357,7 @@ func (m *mobyEngine) Images(ctx context.Context) ([]Image, error) {
 		Filters: client.Filters{}.Add("dangling", "true"),
 	})
 	if err != nil {
-		return nil, wrap("list images", err)
+		return nil, m.wrap("list images", err)
 	}
 	dangling := make(map[string]bool, len(dres.Items))
 	for _, s := range dres.Items {
@@ -283,7 +382,7 @@ func (m *mobyEngine) Images(ctx context.Context) ([]Image, error) {
 func (m *mobyEngine) Volumes(ctx context.Context) ([]Volume, error) {
 	res, err := m.cli.VolumeList(ctx, client.VolumeListOptions{})
 	if err != nil {
-		return nil, wrap("list volumes", err)
+		return nil, m.wrap("list volumes", err)
 	}
 	out := make([]Volume, 0, len(res.Items))
 	for _, v := range res.Items {
@@ -303,7 +402,7 @@ func (m *mobyEngine) Volumes(ctx context.Context) ([]Volume, error) {
 func (m *mobyEngine) Networks(ctx context.Context) ([]Network, error) {
 	res, err := m.cli.NetworkList(ctx, client.NetworkListOptions{})
 	if err != nil {
-		return nil, wrap("list networks", err)
+		return nil, m.wrap("list networks", err)
 	}
 	out := make([]Network, 0, len(res.Items))
 	for _, s := range res.Items {
@@ -333,7 +432,7 @@ func (m *mobyEngine) Networks(ctx context.Context) ([]Network, error) {
 func (m *mobyEngine) InspectContainer(ctx context.Context, id string) (ContainerDetail, error) {
 	res, err := m.cli.ContainerInspect(ctx, id, client.ContainerInspectOptions{})
 	if err != nil {
-		return ContainerDetail{}, wrap("inspect container", err)
+		return ContainerDetail{}, m.wrap("inspect container", err)
 	}
 	in := res.Container
 	d := ContainerDetail{Raw: res.Raw}
@@ -415,7 +514,7 @@ func (m *mobyEngine) InspectImage(ctx context.Context, ref string) (ImageDetail,
 	var raw bytes.Buffer
 	res, err := m.cli.ImageInspect(ctx, ref, client.ImageInspectWithRawResponse(&raw))
 	if err != nil {
-		return ImageDetail{}, wrap("inspect image", err)
+		return ImageDetail{}, m.wrap("inspect image", err)
 	}
 	d := ImageDetail{Raw: raw.Bytes()}
 	d.ID = res.ID
@@ -444,7 +543,7 @@ func (m *mobyEngine) InspectImage(ctx context.Context, ref string) (ImageDetail,
 func (m *mobyEngine) InspectVolume(ctx context.Context, name string) (VolumeDetail, error) {
 	res, err := m.cli.VolumeInspect(ctx, name, client.VolumeInspectOptions{})
 	if err != nil {
-		return VolumeDetail{}, wrap("inspect volume", err)
+		return VolumeDetail{}, m.wrap("inspect volume", err)
 	}
 	v := res.Volume
 	return VolumeDetail{
@@ -464,7 +563,7 @@ func (m *mobyEngine) InspectVolume(ctx context.Context, name string) (VolumeDeta
 func (m *mobyEngine) InspectNetwork(ctx context.Context, id string) (NetworkDetail, error) {
 	res, err := m.cli.NetworkInspect(ctx, id, client.NetworkInspectOptions{})
 	if err != nil {
-		return NetworkDetail{}, wrap("inspect network", err)
+		return NetworkDetail{}, m.wrap("inspect network", err)
 	}
 	s := res.Network
 	d := NetworkDetail{Raw: res.Raw, Options: s.Options}
@@ -504,43 +603,43 @@ func (m *mobyEngine) InspectNetwork(ctx context.Context, id string) (NetworkDeta
 
 func (m *mobyEngine) StartContainer(ctx context.Context, id string) error {
 	_, err := m.cli.ContainerStart(ctx, id, client.ContainerStartOptions{})
-	return wrap("start container", err)
+	return m.wrap("start container", err)
 }
 
 func (m *mobyEngine) StopContainer(ctx context.Context, id string) error {
 	_, err := m.cli.ContainerStop(ctx, id, client.ContainerStopOptions{})
-	return wrap("stop container", err)
+	return m.wrap("stop container", err)
 }
 
 func (m *mobyEngine) RestartContainer(ctx context.Context, id string) error {
 	_, err := m.cli.ContainerRestart(ctx, id, client.ContainerRestartOptions{})
-	return wrap("restart container", err)
+	return m.wrap("restart container", err)
 }
 
 func (m *mobyEngine) PauseContainer(ctx context.Context, id string) error {
 	_, err := m.cli.ContainerPause(ctx, id, client.ContainerPauseOptions{})
-	return wrap("pause container", err)
+	return m.wrap("pause container", err)
 }
 
 func (m *mobyEngine) UnpauseContainer(ctx context.Context, id string) error {
 	_, err := m.cli.ContainerUnpause(ctx, id, client.ContainerUnpauseOptions{})
-	return wrap("unpause container", err)
+	return m.wrap("unpause container", err)
 }
 
 func (m *mobyEngine) KillContainer(ctx context.Context, id string) error {
 	_, err := m.cli.ContainerKill(ctx, id, client.ContainerKillOptions{Signal: "SIGKILL"})
-	return wrap("kill container", err)
+	return m.wrap("kill container", err)
 }
 
 func (m *mobyEngine) RemoveContainer(ctx context.Context, id string) error {
 	_, err := m.cli.ContainerRemove(ctx, id, client.ContainerRemoveOptions{})
-	return wrap("remove container", err)
+	return m.wrap("remove container", err)
 }
 
 func (m *mobyEngine) PullImage(ctx context.Context, ref string, progress func(PullProgress)) error {
 	resp, err := m.cli.ImagePull(ctx, ref, client.ImagePullOptions{})
 	if err != nil {
-		return wrap("pull image", err)
+		return m.wrap("pull image", err)
 	}
 	defer resp.Close()
 
@@ -549,7 +648,7 @@ func (m *mobyEngine) PullImage(ctx context.Context, ref string, progress func(Pu
 	var agg PullProgress
 	for msg, err := range resp.JSONMessages(ctx) {
 		if err != nil {
-			return wrap("pull image", err)
+			return m.wrap("pull image", err)
 		}
 		if msg.Error != nil {
 			return &Error{Kind: KindOther, Op: "pull image", Msg: msg.Error.Message, Err: errors.New(msg.Error.Message)}
@@ -598,7 +697,7 @@ func (m *mobyEngine) RemoveImage(ctx context.Context, ref string) ([]ImageDelete
 	// nothing else references go with the image. Force stays false.
 	res, err := m.cli.ImageRemove(ctx, ref, client.ImageRemoveOptions{PruneChildren: true})
 	if err != nil {
-		return nil, wrap("remove image", err)
+		return nil, m.wrap("remove image", err)
 	}
 	out := make([]ImageDelete, 0, len(res.Items))
 	for _, it := range res.Items {
@@ -610,7 +709,7 @@ func (m *mobyEngine) RemoveImage(ctx context.Context, ref string) ([]ImageDelete
 func (m *mobyEngine) CreateVolume(ctx context.Context, name string) (Volume, error) {
 	res, err := m.cli.VolumeCreate(ctx, client.VolumeCreateOptions{Name: name, Driver: "local"})
 	if err != nil {
-		return Volume{}, wrap("create volume", err)
+		return Volume{}, m.wrap("create volume", err)
 	}
 	v := res.Volume
 	return Volume{
@@ -621,30 +720,30 @@ func (m *mobyEngine) CreateVolume(ctx context.Context, name string) (Volume, err
 
 func (m *mobyEngine) RemoveVolume(ctx context.Context, name string) error {
 	_, err := m.cli.VolumeRemove(ctx, name, client.VolumeRemoveOptions{})
-	return wrap("remove volume", err)
+	return m.wrap("remove volume", err)
 }
 
 func (m *mobyEngine) CreateNetwork(ctx context.Context, name string) (string, error) {
 	res, err := m.cli.NetworkCreate(ctx, name, client.NetworkCreateOptions{Driver: "bridge"})
 	if err != nil {
-		return "", wrap("create network", err)
+		return "", m.wrap("create network", err)
 	}
 	return res.ID, nil
 }
 
 func (m *mobyEngine) RemoveNetwork(ctx context.Context, id string) error {
 	_, err := m.cli.NetworkRemove(ctx, id, client.NetworkRemoveOptions{})
-	return wrap("remove network", err)
+	return m.wrap("remove network", err)
 }
 
 func (m *mobyEngine) ConnectNetwork(ctx context.Context, networkID, containerID string) error {
 	_, err := m.cli.NetworkConnect(ctx, networkID, client.NetworkConnectOptions{Container: containerID})
-	return wrap("connect network", err)
+	return m.wrap("connect network", err)
 }
 
 func (m *mobyEngine) DisconnectNetwork(ctx context.Context, networkID, containerID string) error {
 	_, err := m.cli.NetworkDisconnect(ctx, networkID, client.NetworkDisconnectOptions{Container: containerID})
-	return wrap("disconnect network", err)
+	return m.wrap("disconnect network", err)
 }
 
 // ---- streams ----------------------------------------------------------------
@@ -663,7 +762,7 @@ func (m *mobyEngine) Events(ctx context.Context, since time.Time, fn func(Event)
 			if err == nil {
 				err = io.EOF
 			}
-			return wrap("events", err)
+			return m.wrap("events", err)
 		case msg := <-res.Messages:
 			t := time.Unix(0, msg.TimeNano)
 			if msg.TimeNano == 0 {
@@ -685,7 +784,7 @@ func (m *mobyEngine) Logs(ctx context.Context, id string, tail int, follow bool,
 	// a TTY, which only inspect can tell.
 	insp, err := m.cli.ContainerInspect(ctx, id, client.ContainerInspectOptions{})
 	if err != nil {
-		return wrap("logs", err)
+		return m.wrap("logs", err)
 	}
 	tty := insp.Container.Config != nil && insp.Container.Config.Tty
 
@@ -696,7 +795,7 @@ func (m *mobyEngine) Logs(ctx context.Context, id string, tail int, follow bool,
 		Tail:       strconv.Itoa(tail),
 	})
 	if err != nil {
-		return wrap("logs", err)
+		return m.wrap("logs", err)
 	}
 	defer rc.Close()
 
@@ -708,13 +807,13 @@ func (m *mobyEngine) Logs(ctx context.Context, id string, tail int, follow bool,
 	if err != nil && ctx.Err() != nil {
 		return ctx.Err()
 	}
-	return wrap("logs", err)
+	return m.wrap("logs", err)
 }
 
 func (m *mobyEngine) Stats(ctx context.Context, id string, fn func(RawStats)) error {
 	res, err := m.cli.ContainerStats(ctx, id, client.ContainerStatsOptions{Stream: true})
 	if err != nil {
-		return wrap("stats", err)
+		return m.wrap("stats", err)
 	}
 	defer res.Body.Close()
 	dec := json.NewDecoder(res.Body)
@@ -727,7 +826,7 @@ func (m *mobyEngine) Stats(ctx context.Context, id string, fn func(RawStats)) er
 			if errors.Is(err, io.EOF) {
 				return nil // the container stopped; the daemon ended the stream
 			}
-			return wrap("stats", err)
+			return m.wrap("stats", err)
 		}
 		fn(rawStats(s))
 	}
@@ -783,7 +882,7 @@ func (m *mobyEngine) ExecCreate(ctx context.Context, containerID string, cmd []s
 		Cmd:          cmd,
 	})
 	if err != nil {
-		return "", wrap("exec", err)
+		return "", m.wrap("exec", err)
 	}
 	return res.ID, nil
 }
@@ -797,26 +896,50 @@ func (c *hijackConn) Write(p []byte) (int, error) { return c.h.Conn.Write(p) }
 func (c *hijackConn) CloseWrite() error           { return c.h.CloseWrite() }
 func (c *hijackConn) Close() error                { c.h.Close(); return nil }
 
+// ExecAttach is bounded by ctx even where the client library is not: for a
+// TLS endpoint it dials the hijacked connection without a context, so a peer
+// that accepts and then stalls would otherwise hold the caller — and with it
+// the terminal the shell was handed — indefinitely.
 func (m *mobyEngine) ExecAttach(ctx context.Context, execID string, rows, cols uint) (ExecConn, error) {
-	res, err := m.cli.ExecAttach(ctx, execID, client.ExecAttachOptions{
-		TTY:         true,
-		ConsoleSize: client.ConsoleSize{Height: rows, Width: cols},
-	})
-	if err != nil {
-		return nil, wrap("exec", err)
+	type result struct {
+		res client.ExecAttachResult
+		err error
 	}
-	return &hijackConn{h: res.HijackedResponse}, nil
+	done := make(chan result, 1)
+	go func() {
+		res, err := m.cli.ExecAttach(ctx, execID, client.ExecAttachOptions{
+			TTY:         true,
+			ConsoleSize: client.ConsoleSize{Height: rows, Width: cols},
+		})
+		done <- result{res, err}
+	}()
+	select {
+	case r := <-done:
+		if r.err != nil {
+			return nil, m.wrap("exec", r.err)
+		}
+		return &hijackConn{h: r.res.HijackedResponse}, nil
+	case <-ctx.Done():
+		// Whenever the library does come back, nobody is waiting: a
+		// connection that got through after all is closed again.
+		go func() {
+			if r := <-done; r.err == nil {
+				r.res.Close()
+			}
+		}()
+		return nil, m.wrap("exec", fmt.Errorf("the daemon did not attach the process in time: %w", ctx.Err()))
+	}
 }
 
 func (m *mobyEngine) ExecResize(ctx context.Context, execID string, rows, cols uint) error {
 	_, err := m.cli.ExecResize(ctx, execID, client.ExecResizeOptions{Height: rows, Width: cols})
-	return wrap("resize exec", err)
+	return m.wrap("resize exec", err)
 }
 
 func (m *mobyEngine) ExecInspect(ctx context.Context, execID string) (ExecStatus, error) {
 	res, err := m.cli.ExecInspect(ctx, execID, client.ExecInspectOptions{})
 	if err != nil {
-		return ExecStatus{}, wrap("inspect exec", err)
+		return ExecStatus{}, m.wrap("inspect exec", err)
 	}
 	return ExecStatus{Running: res.Running, ExitCode: res.ExitCode}, nil
 }

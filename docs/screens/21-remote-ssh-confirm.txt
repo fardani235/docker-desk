@@ -1,0 +1,42 @@
+ Docker Desk  ssh://127.0.0.1:40527/tmp/ddfake2732531589/d.sock  ctx default  Engine 29.0.0-fake  on far-away  ● connected  [ssh]
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-web ━┓┌─ 4 Events ──────────────────────────────── ● live ─┐
+│▸ Containers    12│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          PORTS         ┃│Waiting for engine events…                          │
+│  Images        14│┃▸ shop-web-1       nginx:1.27     ● running    86.0%    496MiB  Up 3 hours      8080→80/tcp   ┃│Everything the daemon does                          │
+│  Volumes        7│┃                                                                                              ┃│shows up here as it happens.                        │
+│  Networks       7│┃                                                                                              ┃│                                                    │
+│  Compose        2│┃                                                                                              ┃│                                                    │
+│                  │┃                                                                                              ┃│                                                    │
+│  ● 7 running     │┃                                                                                              ┃│                                                    │
+│  ‖ 1 paused      │┃                                                                                              ┃│                                                    │
+│  ○ 4 stopped     │┃                                                                                              ┃│                                                    │
+│                  │┃                                                                                              ┃│                                                    │
+│                  │┃                                                                                              ┃│                                                    │
+│                  │┃                                                                                              ┃│                                                    │
+│                  │┃                                                                                              ┃│                                                    │
+│                  │┗━━━━━━━━━━━━━━━━━━━━━┏━ ◆ Stop container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                         │
+│                  │┌─ 3 Details: shop-web┃                                                                                    ┃                                         │
+│                  ││Name     shop-web-1  ┃ container  shop-web-1  (f948ec4de9e4)                                              ┃                                         │
+│                  ││ID       f948ec4de9e4┃ daemon     ssh://127.0.0.1:40527/tmp/ddfake2732531589/d.sock  (context default)    ┃                                         │
+│                  ││Image    nginx:1.27  ┃            [ssh]                                                                   ┃                                         │
+│                  ││State    ● running   ┃                                                                                    ┃                                         │
+│                  ││Compose  shop / web  ┃ • The container is sent its stop signal (SIGTERM unless configured otherwise).     ┃                                         │
+│                  ││Started  2026-10-10 0┃ • If it has not exited after its grace period (10 s by default) the daemon kills   ┃                                         │
+│                  ││Command  nginx -g dae┃   it.                                                                              ┃                                         │
+│                  ││Restart  no (restarte┃                                                                                    ┃                                         │
+│                  ││Runtime  tty=false  p┃ y proceed  n / Esc cancel   (Enter does nothing here)                              ┃                                         │
+│                  ││Created  2026-10-10 0┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                                         │
+│                  ││                                                                                              ││                                                    │
+│                  ││Ports                                                                                         │└────────────────────────────────────────────────────┘
+│                  ││  0.0.0.0:8080 → 80/tcp                                                                       │┌─ 5 Jobs ───────────────────────────────────────────┐
+│                  ││                                                                                              ││No jobs yet.                                        │
+│                  ││Networks                                                                                      ││Everything that changes the daemon                  │
+│                  ││  shop_default  172.18.0.2  gw 172.18.0.1                                                     ││runs here, in the background.                       │
+│                  ││                                                                                              ││                                                    │
+│                  ││Mounts                                                                                        ││                                                    │
+│                  ││  none                                                                                        ││                                                    │
+│                  ││                                                                                              ││                                                    │
+│                  ││                                                                                              ││                                                    │
+│                  ││                                                                                              ││                                                    │
+└──────────────────┘└──────────────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────────────┘
+
+ ↑↓ move  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell                                         Tab pane  ? keys  q quit

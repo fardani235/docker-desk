@@ -111,10 +111,21 @@ func (d *desk) consent(keys ...string) {
 	d.keys(keys...)
 }
 
-// shot records the current screen under a name.
+// shot records the current screen under a name. It waits for the screen to
+// hold still for a moment first: the text a test waited for can be on screen
+// while the rest of that frame is still arriving, and a capture taken then is
+// torn (docs/screens/12-shell-form.txt was, until round two).
 func (d *desk) shot(name string) string {
 	d.t.Helper()
 	screen := d.term.Screen()
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); {
+		time.Sleep(40 * time.Millisecond)
+		again := d.term.Screen()
+		if again == screen {
+			break
+		}
+		screen = again
+	}
 	if *showScreens {
 		fmt.Printf("\n===== %s =====\n%s\n", name, screen)
 	}
@@ -490,7 +501,8 @@ func TestDoesNotOpenWithoutADaemon(t *testing.T) {
 		want       []string
 	}{
 		{"missing socket", "unix:///tmp/docker-desk-e2e-no-such.sock", []string{"the Docker daemon is not reachable", "unix:///tmp/docker-desk-e2e-no-such.sock", "does not exist", "The workspace was not opened"}},
-		{"remote endpoint", "tcp://192.0.2.10:2375", []string{"refusing to start", "tcp://192.0.2.10:2375", "only talks to a local daemon", "The workspace was not opened"}},
+		{"a scheme the desk does not speak", "npipe:////./pipe/docker_engine", []string{"cannot use this Docker endpoint", "npipe:////./pipe/docker_engine", "unix://, ssh:// and tcp://", "The workspace was not opened"}},
+		{"nothing listening on a TCP port", "tcp://" + closedPort(t), []string{"the Docker daemon is not reachable", "via        TCP to 127.0.0.1:", "without TLS", "connection refused at 127.0.0.1:", "The workspace was not opened"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

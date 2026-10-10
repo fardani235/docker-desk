@@ -238,3 +238,200 @@ daemon it had started was fully gone. The recipe now waits for it.
 `docker` CLI passes; the end-to-end suite was run six times in a row without a failure; the
 real daemon was compared with the baseline once more at the very end (see TESTING.md). Nothing
 was committed and nothing was installed outside the repository (DECISIONS B12, B13).
+
+---
+
+# Round two: remote daemons and themes
+
+The request, in full: *"existing docker desk can only connect to local docker daemon. make it
+can connect to remote docker daemon through ssh or any other communication protocols. document
+all changes and decisions. additional task: applying theme."* Decisions are in
+[DECISIONS.md](DECISIONS.md#round-two--remote-daemons-and-themes) (R1–R12, T1–T5); the spec is
+`openspec/changes/remote-daemons-and-themes/`.
+
+## 13. Before writing anything
+
+**Read what was there.** The refusal of remote endpoints was not an omission; it was a decision
+(D5) with a reason: a context left pointing at another machine is how things get deleted on the
+wrong one. The request reverses it. So the first design question was not "how to connect" but
+"what replaces the refusal" — answered in R1: say that the daemon is remote, in the place where
+the decision to act is made.
+
+**Looked at the machine.** OpenSSH 9.6, client *and* server binaries; the `docker` CLI; the
+real daemon from round one, still not to be touched. A server binary means the SSH path does
+not have to be argued for — it can be run.
+
+**Counted connections.** The Docker CLI reaches `ssh://` by running `ssh host docker system
+dial-stdio` per connection. The desk holds dozens of connections open. That arithmetic (R2)
+decided the transport before any code: one tunnel, not one ssh per connection.
+
+**Two readings of the request were written down** rather than left implicit: "any other
+communication protocols" means the Docker CLI's (SSH, TCP, TLS); "applying theme" means colour
+themes.
+
+## 14. What a real sshd taught, before and during the build
+
+A throwaway `sshd` on a loopback port, with its own host key and one throwaway client key,
+forwarding to the fake daemon's socket. The first prototype was a dozen lines of shell; it
+became `internal/sshtest`. Four things I believed about OpenSSH were wrong or missing:
+
+1. **The client cannot say why the far end did not open.** A missing socket, a socket the user
+   may not open, and a server that forbids forwarding all produce exactly
+   `channel 1: open failed: connect failed: open failed`. The plan had been to read ssh's
+   stderr for the reason. Instead the remote machine is asked (R8) — and when even that cannot
+   decide, the message lists what remains.
+2. **`AllowTcpForwarding no` forbids forwarding to unix sockets too.** I had restricted the
+   test server with it, expecting `AllowStreamLocalForwarding local` to be what governs
+   sockets; every connection was refused. Later the same happened with `PermitOpen none`. Both
+   went into the launch message's hint and into the README: those are the settings a hardened
+   server will have.
+3. **ssh leaves its listening socket file behind when terminated.** Hence
+   `StreamLocalBindUnlink=yes`, and the supervisor removing the file itself so that "no tunnel"
+   reads as "no such socket" rather than "connection refused".
+4. **sshd serves each connection from a child in its own session.** Killing the listener, or
+   its process group, leaves established connections alive. The test helper's "the machine
+   goes away" first did nothing, and then *hung*: `Wait` was waiting for a log pipe that the
+   surviving child still held. The helper now ends the whole tree and logs to a file.
+
+None of these would have been found with a stand-in ssh written from my own understanding.
+The stand-in exists as well (the test binary, re-executed as "ssh") — for the supervisor's
+paths, which must run everywhere — but it came second and was written to imitate what the real
+one had been seen to do.
+
+## 15. The transports
+
+**Resolution** (`internal/dockerctx`). `--host`/`--context` with the CLI's precedence; TLS from
+the environment or from the context store; endpoint parsing for the three schemes; the "how is
+it reached" tag. The parsing refuses a host or user beginning with `-` — which `ssh` would read
+as an option — and the destination is passed after `--` as well.
+
+**TLS** (`internal/engine`). The client library's TLS option has no "do not verify", which the
+CLI's rules need (`DOCKER_TLS`, `SkipTLSVerify`), so the configuration is built here and handed
+over. Files are read at construction: a bad certificate is a launch error naming the file.
+
+**The fake daemon on TCP and TLS** (`internal/fakeengine`). A loopback listener, and one with a
+throwaway CA requiring client certificates, writing `ca.pem`/`cert.pem`/`key.pem` as Docker
+names them. Everything passed on the first run — including the hijacked exec over TLS, which
+the library dials by a different code path (`tls.Dial`, ignoring the transport's dialer) and
+which I had expected to be the thing that broke.
+
+**The tunnel** (`internal/sshtunnel`). Start ssh; wait for the local socket to answer (it
+exists only once ssh has authenticated); supervise; restart in batch mode; clean up.
+
+**The launch sequence** (`cmd/docker-desk`). Resolve → parse → open the way (check the socket /
+dial the port / open the tunnel) → ping → info → only then the terminal.
+
+## 16. Findings, in the order they turned up
+
+- **The client library hides why a TCP connection failed.** `DOCKER_HOST=tcp://127.0.0.1:1`
+  produced "Cannot connect to the Docker daemon at tcp://127.0.0.1:1. Is the docker daemon
+  running?" — with no `ECONNREFUSED` underneath for the classifier to find. The port is now
+  dialled once directly first (R8).
+- **The remote tag was cut off the confirmation.** The first end-to-end run over SSH failed
+  waiting for `(context default)  [ssh]`: the screen showed `…d.sock  (context def…`. The one
+  thing R1 depends on had been truncated by the very endpoint it describes. Fixed in the dialog
+  and, on inspection, in the header, which had the same fault in its last fall-back (R11).
+- **A help line broke a word in half** ("client certif / icate") — the same lesson as round
+  one's dialog prose. The three head lines of the help are now word-wrapped, and the phrases
+  were shortened.
+- **A data race, found by the detector in the launch tests.** ssh's stderr was still being
+  passed through to the program's stderr while the program wrote its own "not reachable"
+  message to it. With a real terminal that is interleaved output; with the test's buffer it is
+  a race. ssh's output is now cut off from the terminal as soon as the tunnel is up — a mutex
+  makes "cut off" mean that nothing is in flight — and kept for the explanation instead.
+- **A message that claimed more than it knew.** When the remote probe finds the socket present
+  and openable, the first wording said "the SSH server refuses to forward". A socket that
+  nobody listens on — the daemon stopped, a stale file — gives the same result. The message now
+  names both; a test builds a stale socket to hold it to that.
+- **A test that passed without the thing it tested.** `TestKilledDeskTakesItsSSHAlong` passed
+  with the parent-death signal removed. The harness starts the program as the terminal's
+  session leader, so killing it hangs up the terminal, and *that* ended ssh. The test now
+  starts the desk from a shell that outlives it, as in real use; with the mechanism removed it
+  fails ("ssh (pid …) outlived the desk that was killed"), with it, it passes.
+- **My own comment was wrong.** I had written that reverse video keeps the highlighted row
+  visible under `NO_COLOR`. The test said no: without colour the renderer emits no attributes
+  at all. The `▸` glyph is what marks the row, as round one designed (T5).
+- **Two theme tests compared two desks and found differences that were not the theme's** —
+  scroll positions, the time of day. They now redraw one unmoving desk in each theme.
+- **A colour one digit off.** `#44475a` arrives at the terminal as `68;71;89`, not `…;90`:
+  the colour library converts through floating point. The end-to-end assertion was loosened to
+  the two leading components rather than pretend the output is something it is not.
+
+## 17. Themes
+
+One function builds every style from a palette of seven meanings (T1). `dark` is the original
+palette; a test pins it. The named palettes were then measured for contrast against their own
+schemes' backgrounds, which changed several of them (T4): Dracula's hint colour, Solarized's
+green and yellow on light, four border colours, Solarized's selection background.
+
+`T` cycles themes in the running desk. It went in after the dialog and filter routing, like
+every other global key, and a test checks the three things that matter for a new key in this
+program: it is a letter inside the filter, it does nothing under an overlay, and it is bound to
+no action.
+
+## 18. The independent review
+
+As in round one (B30), the new code was handed to a separate reviewer with the rules it must
+obey and no account of why I believed it did. This one ran what it suspected, with scratch
+tests of its own kept outside the repository. Sixteen findings came back; the table, and what
+was done about each, is in
+[DECISIONS.md](DECISIONS.md#r13--an-independent-review-of-the-new-ways-in). The ones that
+changed how I think about the design:
+
+- **A prompt underneath the desk, after all.** I had a test proving that a reconnection does
+  not ask for a passphrase (§16) and believed the property held. It held for *the ssh I
+  started*. Reach the host through a jump host and ssh starts a second ssh, which does not
+  inherit batch mode: the reviewer got a passphrase prompt written onto the desk's bottom
+  line, and a `q` that no longer quit. The property I had tested was "my process does not
+  ask"; the property that matters is "nothing can ask". The fix makes the second one true
+  the only way it can be — no terminal to ask on — and the reviewer's scenario is now a test.
+- **A path is not just a path.** I had validated the remote socket path against what I knew
+  ssh's forwarding syntax does with it: split on `:`, unescape `\`. ssh also *expands* it —
+  `${VAR}` from the environment, `%`-tokens — and sends the result to the server. A context
+  file with the right host string would have sent an environment variable to a machine of its
+  author's choosing. The first rule was a list of known dangers; the fix is a list of known
+  safe characters, which does not need me to know every feature of ssh. I checked the
+  expansion myself afterwards: `ssh -G -L '/l:/tmp/${X}/%i.sock'` prints the expanded path.
+- **Three of Docker's rules were not what I had written down.** The default port with TLS is
+  2375, not 2376; `--context default` follows `DOCKER_HOST`; TLS variables without a host mean
+  `tcp://localhost:2376`. I had "followed the CLI's rules" from memory. Each was settled by
+  running `docker` against a closed loopback port and reading the address in its error — the
+  cheapest oracle there is, and one I should have used before writing R6.
+- **The first fix for the truncated tag was the minimum that made its test pass.** A long
+  context name still cut the tag; the header still cut the end of the endpoint; and with the
+  extra lines, three confirmations no longer fitted 80×24 — the prompt and the input drawn
+  below the last row. One of them had not fitted before round two either. Fixing it meant
+  restructuring a round-one dialog, which is more than was asked for; a typed confirmation
+  whose input line is off screen seemed worse than exceeding the brief.
+- **Messages that said more than was known**, again (§16 had one). A daemon that accepted the
+  connection and said nothing was explained as an SSH server refusing to forward. A socket in
+  a directory the user may not enter was "no socket — is Docker running?".
+- **Four of my tests could not fail** for the reason they existed. The Ctrl+C test passed
+  without the code that ends ssh, because the terminal interrupts ssh by itself — the same
+  mistake as the kill test in §16, which I had caught there and repeated here.
+
+Two points were kept as they were, and say so in the README: a loopback address is not called
+remote, and through a proxy the shell's connection goes direct.
+
+The fixes were then themselves checked the way the original rules were: for four of them the
+test was run with the fix removed and seen to fail. They were not sent back for a second
+review; TESTING.md says so.
+
+A note on working conditions: the reviewer and I were working in the same directory at the
+same time. Where its line numbers and mine disagreed, its report said which state of the tree
+it had read.
+
+## 19. Final state
+
+`go vet`, `go test ./...` (399 tests and subtests, none skipped but the two opt-in ones) and
+`go test -race ./...` are clean; `make crosscheck` passes its 61 assertions; both OpenSpec
+changes validate. Screens 19 to 23 are new; 12 was re-captured, because the committed one
+turned out to have been taken in the middle of a frame (the capture now waits for the screen
+to hold still). The other captures were left as they were: re-taking them changes only
+temporary paths and CPU figures.
+
+See [TESTING.md](TESTING.md) for what is proven and what is not. As in round one, nothing was
+committed and nothing was installed outside the repository. The real daemon on this machine
+was not sent a single request by any of this work: every run of the binary named the fake with
+`--host` or `DOCKER_HOST`, and the `docker` CLI was only ever pointed at the fake, at a
+context store in a temporary directory, or at a closed port.

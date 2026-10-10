@@ -1,0 +1,42 @@
+ Docker Desk  ssh://127.0.0.1:40527/tmp/ddfake2732531589/d.sock  ctx default  Engine 29.0.0-fake  on far-away  ✗ DISCONNECTED — retrying  [ssh]
+┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Images (14, 15 refs) ─────────────────────────────────────────────────────────────────────┐┌─ 4 Events ──────────────────────── ✗ disconnected ─┐
+┃  Containers    12┃│  REPOSITORY                        TAG                IMAGE ID          SIZE    AGE   USED BY││11:56:51 ctr kill sig 15 shop-web-1                 │
+┃▸ Images        14┃│▸ alpine                            3.20               bbfb6bb5502a    54.6MB    24h     2 ctr││11:56:51 ctr die exit 0 shop-web-1                  │
+┃  Volumes        7┃│  busybox                           1.36               b227a1c6d0d2    57.7MB    24h     1 ctr││11:56:51 net disconnect shop_default  ← shop-web-1  │
+┃  Networks       7┃│  gcr.io/distroless/static          nonroot            37588eec338e     121MB    24h     1 ctr││11:56:51 ctr stop       shop-web-1                  │
+┃  Compose        2┃│  ghost                             5                  da2f78b4d6ff    42.0MB    24h     1 ctr││11:56:52 ctr exec_create shop-api-1  sh -c command …│
+┃                  ┃│  mysql                             8                  11a7b13fbf86    42.0MB    24h     1 ctr││11:56:52 ctr exec_start shop-api-1  sh -c command -…│
+┃  ● 6 running     ┃│  nginx                             1.27               f673addec473    51.4MB    24h     1 ctr││11:56:52 ctr exec_die exit 0 shop-api-1             │
+┃  ‖ 1 paused      ┃│  node                              22-alpine          3b9daf1cabe0     154MB    40d         -││11:56:52 ── event stream interrupted: events: unexp…│
+┃  ○ 5 stopped     ┃│  node                              lts-alpine         3b9daf1cabe0     154MB    40d         -││                                                    │
+┃                  ┃│  postgres                          16                 bf2c21e18612    54.6MB    24h     1 ctr││                                                    │
+┃                  ┃│  python                            3.12-slim          90db23bd5600     131MB    14d         -││                                                    │
+┃                  ┃│  redis                             7                  742705926f80    42.0MB    24h     1 ctr││                                                    │
+┃                  ┃│  shop/api                          dev                073fe9aeb752    57.7MB    24h     2 ctr││                                                    │
+┃                  ┃└──────────────────────────────────────────────────────────────────────────────────────────────┘│                                                    │
+┃                  ┃┌─ 3 Details: alpine:3.20 ──────────────────────────────────────────────────── [Info] Inspect ─┐│                                                    │
+┃                  ┃│Reference  alpine:3.20                                                                        ││                                                    │
+┃                  ┃│ID         bbfb6bb5502a                                                                       ││                                                    │
+┃                  ┃│Size       54.6MB                                                                             ││                                                    │
+┃                  ┃│Created    2026-10-09 11:56:50  (24h ago)                                                     ││                                                    │
+┃                  ┃│                                                                                              ││                                                    │
+┃                  ┃│References                                                                                    ││                                                    │
+┃                  ┃│  alpine:3.20                                                                                 ││                                                    │
+┃                  ┃│                                                                                              ││                                                    │
+┃                  ┃│Used by                                                                                       ││                                                    │
+┃                  ┃│  ● noisy-logger  running                                                                     ││                                                    │
+┃                  ┃│  ‖ paused-batch  paused                                                                      ││                                                    │
+┃                  ┃│                                                                                              │└────────────────────────────────────────────────────┘
+┃                  ┃│                                                                                              │┌─ 5 Jobs ────────────────────────────────── 1 done ─┐
+┃                  ┃│                                                                                              ││▸ ✓ stop container shop-web-1                    3ms│
+┃                  ┃│                                                                                              ││                                                    │
+┃                  ┃│                                                                                              ││                                                    │
+┃                  ┃│                                                                                              ││                                                    │
+┃                  ┃│                                                                                              ││                                                    │
+┃                  ┃│                                                                                              ││                                                    │
+┃                  ┃│                                                                                              ││                                                    │
+┃                  ┃│                                                                                              ││                                                    │
+┃                  ┃│                                                                                              ││                                                    │
+┗━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────────────┘
+ The ssh link to ssh://127.0.0.1:40527/tmp/ddfake2732531589/d.sock is down — retrying: Connection to 127.0.0.1 closed by remote host.
+ ↑↓ pick a kind  Enter go to list                                                                                                                Tab pane  ? keys  q quit

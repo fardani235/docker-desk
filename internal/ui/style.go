@@ -23,9 +23,12 @@ const (
 // styles holds every style the desk uses. Colour is never the only carrier
 // of meaning: focus also changes the border weight and adds a marker,
 // selection adds a cursor glyph, states are spelled out. With NO_COLOR (or a
-// terminal without colour) all of these render as plain text.
+// terminal without colour) all of these render as plain text, whatever the
+// theme.
 type styles struct {
 	color bool
+	// theme is the name of the theme the styles were built from.
+	theme string
 
 	tones [6]lipgloss.Style
 
@@ -48,34 +51,47 @@ type styles struct {
 	danger      lipgloss.Style
 }
 
-func newStyles() styles {
-	s := styles{color: lipgloss.ColorProfile() != termenv.Ascii}
-	accent := lipgloss.Color("39")
-	dim := lipgloss.Color("244")
+// newStyles builds every style from a theme. Colours come only from the
+// theme; weight, underline and reverse video are the same in all of them.
+func newStyles(t Theme) styles {
+	s := styles{color: lipgloss.ColorProfile() != termenv.Ascii, theme: t.Name}
+	// A colour the theme leaves out is simply not applied.
+	fg := func(c lipgloss.TerminalColor) lipgloss.Style {
+		if c == nil {
+			return lipgloss.NewStyle()
+		}
+		return lipgloss.NewStyle().Foreground(c)
+	}
 	s.tones = [6]lipgloss.Style{
 		toneNormal: lipgloss.NewStyle(),
-		toneDim:    lipgloss.NewStyle().Foreground(dim),
-		toneGood:   lipgloss.NewStyle().Foreground(lipgloss.Color("42")),
-		toneWarn:   lipgloss.NewStyle().Foreground(lipgloss.Color("214")),
-		toneBad:    lipgloss.NewStyle().Foreground(lipgloss.Color("203")),
-		toneAccent: lipgloss.NewStyle().Foreground(accent),
+		toneDim:    fg(t.Dim),
+		toneGood:   fg(t.Good),
+		toneWarn:   fg(t.Warn),
+		toneBad:    fg(t.Bad),
+		toneAccent: fg(t.Accent),
 	}
-	s.borderFocus = lipgloss.NewStyle().Foreground(accent).Bold(true)
-	s.borderBlur = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	s.titleFocus = lipgloss.NewStyle().Foreground(accent).Bold(true)
-	s.titleBlur = lipgloss.NewStyle().Foreground(lipgloss.Color("250"))
+	s.borderFocus = fg(t.Accent).Bold(true)
+	s.borderBlur = fg(t.Border)
+	s.titleFocus = fg(t.Accent).Bold(true)
+	s.titleBlur = fg(t.Title)
 	s.header = lipgloss.NewStyle().Bold(true)
-	s.headerKey = lipgloss.NewStyle().Foreground(dim)
-	s.headerAlert = lipgloss.NewStyle().Foreground(lipgloss.Color("203")).Bold(true)
+	s.headerKey = fg(t.Dim)
+	s.headerAlert = fg(t.Bad).Bold(true)
+	// The highlighted row: the theme's own selection colours when it has
+	// them, reverse video otherwise. (A terminal without colour is sent
+	// neither; there the ▸ cursor marks the row, as it always has.)
 	s.selected = lipgloss.NewStyle().Reverse(true).Bold(true)
+	if t.SelBg != nil {
+		s.selected = fg(t.SelFg).Background(t.SelBg).Bold(true)
+	}
 	s.selectedDim = lipgloss.NewStyle().Bold(true)
-	s.colHeader = lipgloss.NewStyle().Foreground(dim).Bold(true)
+	s.colHeader = fg(t.Dim).Bold(true)
 	s.tabActive = lipgloss.NewStyle().Bold(true).Underline(true)
-	s.tabInactive = lipgloss.NewStyle().Foreground(dim)
+	s.tabInactive = fg(t.Dim)
 	s.hintKey = lipgloss.NewStyle().Bold(true)
-	s.hintText = lipgloss.NewStyle().Foreground(dim)
+	s.hintText = fg(t.Dim)
 	s.dialogTitle = lipgloss.NewStyle().Bold(true)
-	s.danger = lipgloss.NewStyle().Foreground(lipgloss.Color("203")).Bold(true)
+	s.danger = fg(t.Bad).Bold(true)
 	return s
 }
 

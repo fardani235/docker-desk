@@ -40,6 +40,12 @@ type Term struct {
 
 // Start runs bin on a new pty of the given size. env is appended to a
 // minimal environment; the caller's DOCKER_* variables are never inherited.
+//
+// That minimal environment also names a daemon that cannot exist and a
+// configuration directory that does not: a program started here without
+// being told which daemon to use fails loudly, instead of finding the
+// operator's real one through their Docker context. (Later entries win, so
+// env overrides both.)
 func Start(rows, cols int, env []string, bin string, args ...string) (*Term, error) {
 	cmd := exec.Command(bin, args...)
 	cmd.Env = append([]string{
@@ -47,6 +53,8 @@ func Start(rows, cols int, env []string, bin string, args ...string) (*Term, err
 		"HOME=" + os.Getenv("HOME"),
 		"PATH=" + os.Getenv("PATH"),
 		"LANG=C.UTF-8",
+		"DOCKER_HOST=unix:///nonexistent/docker-desk-tests-must-not-reach-a-real-daemon.sock",
+		"DOCKER_CONFIG=/nonexistent/docker-desk-tests-read-no-docker-config",
 	}, env...)
 	ptmx, err := pty.StartWithSize(cmd, &pty.Winsize{Rows: uint16(rows), Cols: uint16(cols)})
 	if err != nil {

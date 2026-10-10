@@ -1,26 +1,23 @@
-// Package dockerctx works out which Docker daemon the operator's current
-// context points at, using the same precedence as the Docker CLI, and checks
-// that the daemon is a local one that actually answers.
+// Package dockerctx works out which Docker daemon the operator means, using
+// the same precedence as the Docker CLI, how that daemon is reached (a local
+// socket, SSH, or TCP with or without TLS), and — when it cannot be reached —
+// why, in plain words.
 //
 // It deliberately does not import docker/cli: the rules are small and stable,
 // and the desk needs to report where the endpoint came from, which the CLI's
-// store does not expose in one place. See docs/DECISIONS.md, D4 and D5.
+// store does not expose in one place. See docs/DECISIONS.md, D4, R1 and R6.
 package dockerctx
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
-	"time"
 )
 
 const (
@@ -28,46 +25,115 @@ const (
 	DefaultContext = "default"
 	// DefaultHost is the endpoint of the implicit context on Linux and macOS.
 	DefaultHost = "unix:///var/run/docker.sock"
+	// DefaultTLSHost is what the Docker CLI uses instead when TLS is asked
+	// for and no host is named.
+	DefaultTLSHost = "tcp://localhost:2376"
 )
 
 // Endpoint is the daemon the desk will talk to and how it was chosen.
 type Endpoint struct {
-	// Host is the endpoint URL, e.g. unix:///var/run/docker.sock.
+	// Host is the endpoint URL as the operator wrote it, e.g.
+	// unix:///var/run/docker.sock, ssh://ops@prod-1 or tcp://10.0.0.5:2376.
 	Host string
 	// Context is the Docker context name ("default" when none is configured).
 	Context string
 	// Source says, in words, which setting selected this endpoint.
 	Source string
+	// TLS is how a tcp:// endpoint is secured; nil means it is not. It is
+	// never set for unix:// and ssh:// endpoints.
+	TLS *TLS
+}
+
+// TLS is the client side of a TLS connection to a tcp:// daemon. Empty file
+// names mean "none": no client certificate, or the system's root CAs.
+type TLS struct {
+	CAFile   string
+	CertFile string
+	KeyFile  string
+	// SkipVerify accepts any server certificate. The connection is
+	// encrypted but the daemon's identity is not checked.
+	SkipVerify bool
+	// Source says, in words, which setting asked for TLS.
+	Source string
+}
+
+// Selection is what the operator asked for on the command line. Both fields
+// are optional; they take precedence over the environment.
+type Selection struct {
+	// Host is the value of --host.
+	Host string
+	// Context is the value of --context.
+	Context string
 }
 
 // Env is the part of the process environment that resolution depends on.
 // It is a function so tests never touch the real environment.
 type Env func(key string) string
 
-// Resolve returns the endpoint of the current Docker context.
+// Resolve returns the endpoint the operator means.
 //
 // Precedence, identical to the Docker CLI's:
 //
-//  1. DOCKER_HOST                      → that host, context "default"
-//  2. DOCKER_CONTEXT                   → the named context
-//  3. currentContext in config.json    → the named context
-//  4. otherwise                        → the default socket
+//  1. --context                        → the named context
+//  2. --host                           → that host, context "default"
+//  3. DOCKER_HOST                      → that host, context "default"
+//  4. DOCKER_CONTEXT                   → the named context
+//  5. currentContext in config.json    → the named context
+//  6. otherwise                        → the default context
 //
-// The config directory is $DOCKER_CONFIG, or ~/.docker.
-func Resolve(env Env, homeDir string) (Endpoint, error) {
-	if h := strings.TrimSpace(env("DOCKER_HOST")); h != "" {
-		return Endpoint{Host: h, Context: DefaultContext, Source: "DOCKER_HOST environment variable"}, nil
+// --host and --context together are refused, as the CLI refuses them. The
+// config directory is $DOCKER_CONFIG, or ~/.docker.
+//
+// The "default" context is not a stored one. As in the CLI it means
+// DOCKER_HOST when that is set — so `--context default` does not get past
+// DOCKER_HOST — and otherwise the local socket; or, when DOCKER_TLS_VERIFY or
+// DOCKER_TLS is set and no host is named anywhere, tcp://localhost:2376.
+// That last rule is an odd one, but it is where `docker` would go, and the
+// desk must never be looking at a different daemon than `docker` is.
+//
+// TLS for a tcp:// endpoint comes from where the endpoint came from: for a
+// host given directly, from DOCKER_TLS_VERIFY, DOCKER_TLS and
+// DOCKER_CERT_PATH; for a named context, from the context store.
+func Resolve(sel Selection, env Env, homeDir string) (Endpoint, error) {
+	ep, err := resolve(sel, env, homeDir)
+	if err != nil {
+		return Endpoint{}, err
+	}
+	// The endpoint and the context name are printed — on the terminal
+	// before the desk opens, and on its top line afterwards. A context file
+	// is not always the operator's own writing; nothing in it may be a way
+	// of sending control sequences to their terminal.
+	if safe(ep.Host) != ep.Host || safe(ep.Context) != ep.Context {
+		return Endpoint{}, fmt.Errorf("the endpoint %q (context %q, selected by %s) contains control characters", ep.Host, ep.Context, ep.Source)
+	}
+	return ep, nil
+}
+
+func resolve(sel Selection, env Env, homeDir string) (Endpoint, error) {
+	sel.Host, sel.Context = strings.TrimSpace(sel.Host), strings.TrimSpace(sel.Context)
+	if sel.Host != "" && sel.Context != "" {
+		return Endpoint{}, errors.New("--host and --context cannot be used together: one names a daemon directly, the other names a stored context")
 	}
 
 	cfgDir := strings.TrimSpace(env("DOCKER_CONFIG"))
-	if cfgDir == "" {
+	if cfgDir == "" && homeDir != "" {
 		cfgDir = filepath.Join(homeDir, ".docker")
 	}
+	envHost := strings.TrimSpace(env("DOCKER_HOST"))
 
 	name, source := "", ""
-	if c := strings.TrimSpace(env("DOCKER_CONTEXT")); c != "" {
-		name, source = c, "DOCKER_CONTEXT environment variable"
-	} else {
+	switch {
+	case sel.Context != "":
+		name, source = sel.Context, "--context flag"
+	case sel.Host != "":
+		return directEndpoint(sel.Host, "--host flag", env, cfgDir)
+	case envHost != "":
+		return directEndpoint(envHost, "DOCKER_HOST environment variable", env, cfgDir)
+	case strings.TrimSpace(env("DOCKER_CONTEXT")) != "":
+		name, source = strings.TrimSpace(env("DOCKER_CONTEXT")), "DOCKER_CONTEXT environment variable"
+	case cfgDir != "":
+		// Without a home directory and without DOCKER_CONFIG there is no
+		// configuration to read — and no relative path is tried instead.
 		cur, err := currentContextFromConfig(cfgDir)
 		if err != nil {
 			return Endpoint{}, err
@@ -78,17 +144,77 @@ func Resolve(env Env, homeDir string) (Endpoint, error) {
 	}
 
 	if name == "" || name == DefaultContext {
-		if source == "" {
-			source = "Docker default (no context configured)"
-		}
-		return Endpoint{Host: DefaultHost, Context: DefaultContext, Source: source}, nil
+		return defaultEndpoint(source, envHost, env, cfgDir)
+	}
+	if cfgDir == "" {
+		return Endpoint{}, fmt.Errorf("docker context %q (selected by %s): there is no Docker configuration directory to look it up in (HOME and DOCKER_CONFIG are both unset)", name, source)
 	}
 
-	host, err := contextHost(cfgDir, name)
+	ep, err := contextEndpoint(cfgDir, name)
 	if err != nil {
 		return Endpoint{}, fmt.Errorf("docker context %q (selected by %s): %w", name, source, err)
 	}
-	return Endpoint{Host: host, Context: name, Source: source}, nil
+	ep.Context, ep.Source = name, source
+	return ep, nil
+}
+
+// defaultEndpoint is the "default" context: DOCKER_HOST when set, else the
+// CLI's default host — which depends on whether TLS was asked for.
+func defaultEndpoint(source, envHost string, env Env, cfgDir string) (Endpoint, error) {
+	selected := ""
+	if source != "" {
+		selected = " (the default context, selected by " + source + ")"
+	}
+	if envHost != "" {
+		return directEndpoint(envHost, "DOCKER_HOST environment variable"+selected, env, cfgDir)
+	}
+	if env("DOCKER_TLS_VERIFY") != "" || env("DOCKER_TLS") != "" {
+		return directEndpoint(DefaultTLSHost, "the Docker CLI's default when DOCKER_TLS_VERIFY or DOCKER_TLS is set and no host is named"+selected, env, cfgDir)
+	}
+	if source == "" {
+		source = "Docker default (no context configured)"
+	}
+	return Endpoint{Host: DefaultHost, Context: DefaultContext, Source: source}, nil
+}
+
+// directEndpoint is an endpoint named by its URL rather than by a context.
+// Like the CLI, it belongs to the "default" context and takes its TLS
+// settings from the environment.
+func directEndpoint(host, source string, env Env, cfgDir string) (Endpoint, error) {
+	ep := Endpoint{Host: host, Context: DefaultContext, Source: source}
+	if !strings.HasPrefix(host, "tcp://") {
+		return ep, nil
+	}
+	verify := env("DOCKER_TLS_VERIFY") != ""
+	if !verify && env("DOCKER_TLS") == "" {
+		return ep, nil
+	}
+	certDir := strings.TrimSpace(env("DOCKER_CERT_PATH"))
+	if certDir == "" {
+		certDir = cfgDir
+	}
+	t := &TLS{SkipVerify: !verify, Source: "DOCKER_TLS (the server's certificate is not verified)"}
+	if verify {
+		// The CLI insists on this file when verifying; so does the desk,
+		// rather than silently trusting some other set of roots.
+		t.Source = "DOCKER_TLS_VERIFY"
+		t.CAFile = filepath.Join(certDir, "ca.pem")
+		if _, err := os.Stat(t.CAFile); err != nil {
+			return Endpoint{}, fmt.Errorf("DOCKER_TLS_VERIFY is set, but the CA certificate to verify %s with cannot be read: %w (certificates are looked for in DOCKER_CERT_PATH, or %s)", host, err, cfgDir)
+		}
+	}
+	// A client certificate is used when both halves are there.
+	cert, key := filepath.Join(certDir, "cert.pem"), filepath.Join(certDir, "key.pem")
+	if fileExists(cert) && fileExists(key) {
+		t.CertFile, t.KeyFile = cert, key
+	}
+	ep.TLS = t
+	return ep, nil
+}
+
+func fileExists(path string) bool {
+	st, err := os.Stat(path)
+	return err == nil && !st.IsDir()
 }
 
 func currentContextFromConfig(cfgDir string) (string, error) {
@@ -109,106 +235,60 @@ func currentContextFromConfig(cfgDir string) (string, error) {
 	return strings.TrimSpace(cfg.CurrentContext), nil
 }
 
-// contextHost reads the docker endpoint of a named context from the CLI's
-// context store: contexts/meta/<sha256(name)>/meta.json.
-func contextHost(cfgDir, name string) (string, error) {
+// contextEndpoint reads the docker endpoint of a named context from the CLI's
+// context store: contexts/meta/<sha256(name)>/meta.json for the host, and
+// contexts/tls/<sha256(name)>/docker/{ca,cert,key}.pem for its TLS material.
+func contextEndpoint(cfgDir, name string) (Endpoint, error) {
 	sum := sha256.Sum256([]byte(name))
-	path := filepath.Join(cfgDir, "contexts", "meta", hex.EncodeToString(sum[:]), "meta.json")
+	id := hex.EncodeToString(sum[:])
+	path := filepath.Join(cfgDir, "contexts", "meta", id, "meta.json")
 	data, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
-		return "", fmt.Errorf("context not found (no metadata at %s)", path)
+		return Endpoint{}, fmt.Errorf("context not found (no metadata at %s)", path)
 	}
 	if err != nil {
-		return "", fmt.Errorf("reading context metadata: %w", err)
+		return Endpoint{}, fmt.Errorf("reading context metadata: %w", err)
 	}
 	var meta struct {
 		Name      string `json:"Name"`
 		Endpoints map[string]struct {
-			Host string `json:"Host"`
+			Host          string `json:"Host"`
+			SkipTLSVerify bool   `json:"SkipTLSVerify"`
 		} `json:"Endpoints"`
 	}
 	if err := json.Unmarshal(data, &meta); err != nil {
-		return "", fmt.Errorf("parsing context metadata %s: %w", path, err)
+		return Endpoint{}, fmt.Errorf("parsing context metadata %s: %w", path, err)
 	}
-	ep, ok := meta.Endpoints["docker"]
-	if !ok || strings.TrimSpace(ep.Host) == "" {
+	dock, ok := meta.Endpoints["docker"]
+	host := strings.TrimSpace(dock.Host)
+	if !ok || host == "" {
 		// The CLI treats an endpoint without a host as the default socket.
-		return DefaultHost, nil
+		return Endpoint{Host: DefaultHost}, nil
 	}
-	return strings.TrimSpace(ep.Host), nil
-}
-
-// ErrRemote is returned for endpoints that are not a local unix socket.
-var ErrRemote = errors.New("only local unix-socket daemons are supported")
-
-// SocketPath returns the filesystem path of a unix:// endpoint, or ErrRemote
-// for anything else (tcp://, ssh://, npipe://, fd://, …).
-func SocketPath(host string) (string, error) {
-	const scheme = "unix://"
-	if !strings.HasPrefix(host, scheme) {
-		return "", ErrRemote
+	ep := Endpoint{Host: host}
+	if !strings.HasPrefix(host, "tcp://") {
+		return ep, nil
 	}
-	path := strings.TrimPrefix(host, scheme)
-	if path == "" {
-		return "", fmt.Errorf("endpoint %q has no socket path", host)
+	// As in the CLI: a context uses TLS when it stores any TLS material or
+	// asks to skip verification, and plain TCP otherwise. "Any" matters: a
+	// store holding only half of a client key pair still means TLS — with
+	// the system's authorities and no client certificate — never a silent
+	// fall-back to an unencrypted connection.
+	dir := filepath.Join(cfgDir, "contexts", "tls", id, "docker")
+	t := &TLS{SkipVerify: dock.SkipTLSVerify, Source: "the context's stored TLS material"}
+	ca, cert, key := filepath.Join(dir, "ca.pem"), filepath.Join(dir, "cert.pem"), filepath.Join(dir, "key.pem")
+	if fileExists(ca) {
+		t.CAFile = ca
 	}
-	return path, nil
-}
-
-// Unreachable describes why a local daemon could not be contacted.
-type Unreachable struct {
-	Endpoint Endpoint
-	// Reason is a short, plain statement of what is wrong.
-	Reason string
-	// Hint is an optional suggestion; empty when there is nothing useful to say.
-	Hint string
-	Err  error
-}
-
-func (u *Unreachable) Error() string {
-	return fmt.Sprintf("Docker daemon is not reachable at %s: %s", u.Endpoint.Host, u.Reason)
-}
-
-func (u *Unreachable) Unwrap() error { return u.Err }
-
-// CheckSocket verifies that something accepts connections on the endpoint's
-// socket. It does not speak HTTP; the engine ping does that next.
-func CheckSocket(ctx context.Context, ep Endpoint, timeout time.Duration) error {
-	path, err := SocketPath(ep.Host)
-	if err != nil {
-		return err
+	if fileExists(cert) && fileExists(key) {
+		t.CertFile, t.KeyFile = cert, key
 	}
-	if _, err := os.Stat(path); err != nil {
-		return Classify(ep, err)
+	if !fileExists(ca) && !fileExists(cert) && !fileExists(key) && !t.SkipVerify {
+		return ep, nil
 	}
-	d := net.Dialer{Timeout: timeout}
-	conn, err := d.DialContext(ctx, "unix", path)
-	if err != nil {
-		return Classify(ep, err)
+	if t.SkipVerify {
+		t.Source = "the context (SkipTLSVerify: the server's certificate is not verified)"
 	}
-	_ = conn.Close()
-	return nil
-}
-
-// Classify turns a low-level connection error into a plain explanation.
-func Classify(ep Endpoint, err error) *Unreachable {
-	u := &Unreachable{Endpoint: ep, Err: err}
-	path, _ := SocketPath(ep.Host)
-	var netErr net.Error
-	switch {
-	case errors.Is(err, fs.ErrNotExist) || errors.Is(err, syscall.ENOENT):
-		u.Reason = fmt.Sprintf("the socket %s does not exist", path)
-		u.Hint = "Is the Docker daemon installed and running? (e.g. `sudo systemctl start docker`)"
-	case errors.Is(err, fs.ErrPermission) || errors.Is(err, syscall.EACCES):
-		u.Reason = fmt.Sprintf("permission denied opening %s", path)
-		u.Hint = "Your user may need to be in the `docker` group, or the socket belongs to another user."
-	case errors.Is(err, syscall.ECONNREFUSED):
-		u.Reason = fmt.Sprintf("connection refused on %s (the socket exists but nothing is listening)", path)
-		u.Hint = "The daemon appears to be stopped."
-	case errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &netErr) && netErr.Timeout()):
-		u.Reason = "the daemon did not answer in time"
-	default:
-		u.Reason = err.Error()
-	}
-	return u
+	ep.TLS = t
+	return ep, nil
 }
