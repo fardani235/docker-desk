@@ -1,4 +1,4 @@
-# Security gate for a GitHub Actions repository.
+# Security gate for a GitHub Actions repository (PL-0001).
 #
 #   gate     every push and pull request: scan the source, ask the control plane.
 #   release  main only: build and sign the image, then gate the artifact for staging.
