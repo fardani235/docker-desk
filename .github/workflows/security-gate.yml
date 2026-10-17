@@ -1,4 +1,4 @@
-# Security gate for a GitHub Actions repository (copied from examples).
+# Security gate for a GitHub Actions repository.
 #
 #   gate     every push and pull request: scan the source, ask the control plane.
 #   release  main only: build and sign the image, then gate the artifact for staging.
