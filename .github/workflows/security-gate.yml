@@ -7,7 +7,7 @@ permissions:
   id-token: write   # lets the job prove its identity to the control plane (no stored secret)
 
 env:
-  SGATE_URL: https://gate.local
+  SGATE_URL: https://gate.g20tech.site
   SGATE_PIPELINE: PL-00001
 
 jobs:
