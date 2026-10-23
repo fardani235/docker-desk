@@ -296,7 +296,9 @@ func TestSession(t *testing.T) {
 	d.gone("REFUSED")
 
 	// --- the shell: the terminal is handed over, and handed back --------------------
-	d.keys(ptyscreen.Esc, "/", "s", "h", "o", "p", "-", "a", "p", "i", P)
+	// The Esc above cleared the filter (Enter had closed the refusal); a
+	// second Esc in the list would now leave it for Kinds, so focus it.
+	d.keys("2", "/", "s", "h", "o", "p", "-", "a", "p", "i", P)
 	d.see("3 Details: shop-api-1")
 	d.keys("e")
 	d.see("Open a shell", "shop-api-1", "Command to run inside the container:", "exec bash || exec sh")

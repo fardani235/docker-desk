@@ -225,8 +225,11 @@ Press `?` inside the desk for the same list.
 | `1` `2` `3` `4` `5` | focus Kinds / List / Details / Events / Jobs |
 | `[` `]` | previous / next Details tab |
 | `↑` `↓` or `k` `j`, `PgUp` `PgDn`, `g` `G` | move / page / first / last |
-| `/` | filter the list as you type (Enter keeps, Esc undoes; Esc in the list clears) |
-| `Enter` | in the List: a menu of what you can do to the highlighted object |
+| `/` | filter the list as you type (Enter keeps, Esc undoes) |
+| `Space` | in the List: select / unselect the highlighted row (Containers, Images, Volumes, Networks) |
+| `a` | in the List: select every row the filter shows |
+| `Esc` | in the List: clear the selection; again, clear the filter; again, back to Kinds |
+| `Enter` | in the List: a menu of what you can do to the highlighted object, or to the selection |
 | `r` | refresh every list now |
 | `T` | next colour theme |
 | `?` | help |
@@ -241,6 +244,16 @@ Press `?` inside the desk for the same list.
 | Volumes | `n` new · `d` remove · `X` prune |
 | Networks | `n` new · `d` remove · `X` prune · `c` connect a container · `D` disconnect a container |
 | Compose | `t` stop the whole project · `d` remove the whole project |
+
+**Acting on a selection.** Mark rows with `Space` (or `a` for everything the filter shows):
+they get a `✓` in the gutter and the title says how many, e.g. `2 Containers (12) - 3 selected`.
+The selection belongs to its kind and follows its objects across refreshes; an object that
+disappears leaves it. While a kind has a selection, `s` `t` `R` `p` `u` `K` `d` on Containers
+and `d` on Images, Volumes and Networks apply to every selected object instead of the
+highlighted one. `e` shell, `c` connect and `D` disconnect work on one object only and refuse
+(nothing is sent); `X` prune chooses its own objects and refuses too; `P` pull and `n` new are
+unaffected. The selection is cleared when the job starts, and kept if you decline. `Space`
+still pages in the Details and Events panes.
 
 **Details**: `←` `→` switch tab · `f` pause/resume following (Logs) · `w` toggle wrapping.
 **Events**: scroll back with the movement keys — new events keep being recorded — `G` to
@@ -275,6 +288,16 @@ being careful.
   - anything that deletes — remove, prune, remove project → type the word shown (`remove` or
     `prune`) and press Enter.
   - pull, new volume, new network, shell → you type the name yourself; Enter submits.
+  - **a selection** (`Space` / `a` in the list), whatever the action → type the verb *and the
+    count* shown, e.g. `stop 3` or `remove 7`, and press Enter. One key never consents to
+    many objects, and the number is what you have to have read.
+- **A selection shows every object, and every object it leaves out.** The dialog lists each
+  object that will be acted on — one request each, never forced — and under **Not included**
+  each selected object the single-object rules would not allow, with the reason: a running
+  container you asked to remove, a volume, image or network something uses, a container that
+  is already stopped, one that has vanished. Nothing is left out silently, and nothing
+  refused is sent. If one request fails the rest still run, and the job reports how many
+  failed (`1 of 3 failed`) with the daemon's message for each.
 - **Only what you press after reading counts.** A dialog ignores `y`, the typed word and Enter
   for its first quarter of a second, and if you press anything else while a confirmation is
   still being prepared, that action is dropped instead of popping up under your fingers. Keys

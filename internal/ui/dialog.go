@@ -61,6 +61,10 @@ type dialog struct {
 	// scope. Until the new preview arrives nothing can be confirmed: what is
 	// on screen is about to be replaced.
 	recomputing bool
+	// fromSet marks the confirmation of a selection (of setKind); starting
+	// its job clears that selection.
+	fromSet bool
+	setKind Kind
 
 	// text input (typed confirmations and forms)
 	hasInput bool
@@ -84,6 +88,7 @@ type dialog struct {
 	menuSel    int
 	menuRow    row
 	menuHasRow bool
+	menuSet    []row
 
 	// dlgHelp, dlgJob
 	title  string
@@ -104,6 +109,8 @@ type planMsg struct {
 	fromForm bool
 	scope    func(plan.Snapshot, bool) plan.Plan
 	scopeAll bool
+	fromSet  bool
+	setKind  Kind
 }
 
 type pickMsg struct {
@@ -186,10 +193,11 @@ func (m *Model) onPlan(msg planMsg) tea.Cmd {
 		}
 		return nil
 	}
-	d := &dialog{kind: dlgPlan, plan: msg.plan, scope: msg.scope, scopeAll: msg.scopeAll, openedAt: time.Now()}
+	d := &dialog{kind: dlgPlan, plan: msg.plan, scope: msg.scope, scopeAll: msg.scopeAll, openedAt: time.Now(),
+		fromSet: msg.fromSet, setKind: msg.setKind}
 	if msg.plan.Tier == plan.TierTyped && msg.plan.Runnable() {
 		d.hasInput = true
-		d.input = newInput("", 16) // no placeholder: nothing may look pre-typed
+		d.input = newInput("", 24) // no placeholder: nothing may look pre-typed
 	}
 	m.dlg = d
 	return nil
@@ -447,6 +455,10 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 		tail = append(tail, "", m.hints("Esc", "close"))
 	case p.Tier == plan.TierTyped:
 		prompt := "Type " + st.dialogTitle.Render(p.Word) + " and press Enter to proceed:"
+		if d.fromSet {
+			// The word carries the count: what has to be read is how many.
+			prompt = "Type " + st.dialogTitle.Render(p.Word) + " to confirm, then press Enter:"
+		}
 		tail = append(tail, "", prompt, d.input.View())
 		if d.mismatch {
 			tail = append(tail, st.tone(toneBad, fmt.Sprintf("That is not %q. Nothing was sent.", p.Word)))
@@ -456,25 +468,66 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 		tail = append(tail, "", m.hints("y", "proceed", "n / Esc", "cancel")+st.tone(toneDim, "   (Enter does nothing here)"))
 	}
 
-	// The exact objects, when the plan is a set.
-	listed := p.Listed && len(p.Steps) > 0
-	total := len(p.Steps)
+	// The exact objects, when the plan is a set — and, for a selection, the
+	// selected objects it leaves out, each with its reason.
+	steps := len(p.Steps)
+	var skipLines []string
+	if len(p.Skipped) > 0 {
+		skipLines = append(skipLines, st.tone(toneWarn, fmt.Sprintf("Not included (%d) — nothing is sent for these:", len(p.Skipped))))
+		for _, sk := range p.Skipped {
+			for i, part := range wrapWords(sk.Name+" — "+sk.Reason, w-4) {
+				prefix := "  ✗ "
+				if i > 0 {
+					prefix = "    "
+				}
+				skipLines = append(skipLines, st.tone(toneDim, prefix+part))
+			}
+		}
+	}
+	listed := p.Listed && steps+len(skipLines) > 0
+	total := steps
+	if len(skipLines) > 0 {
+		total += len(skipLines)
+		if steps > 0 {
+			total++ // a blank line between the two
+		}
+	}
 	headline := ""
-	if listed {
+	if listed && steps > 0 {
 		outcome := "acted on"
 		switch p.Steps[0].Op {
 		case plan.OpRemoveContainer, plan.OpRemoveImage, plan.OpRemoveVolume, plan.OpRemoveNetwork:
 			outcome = "deleted"
 		case plan.OpStop:
 			outcome = "stopped"
+		case plan.OpStart:
+			outcome = "started"
+		case plan.OpRestart:
+			outcome = "restarted"
+		case plan.OpPause:
+			outcome = "paused"
+		case plan.OpUnpause:
+			outcome = "unpaused"
+		case plan.OpKill:
+			outcome = "killed"
 		}
-		headline = fmt.Sprintf("Exactly these %d will be %s:", total, outcome)
+		headline = fmt.Sprintf("Exactly these %d will be %s:", steps, outcome)
 		if p.TotalSize > 0 {
-			headline = fmt.Sprintf("Exactly these %d will be %s (about %s):", total, outcome, humanBytes(p.TotalSize))
+			headline = fmt.Sprintf("Exactly these %d will be %s (about %s):", steps, outcome, humanBytes(p.TotalSize))
 		}
 		headline = st.dialogTitle.Render(headline)
 	}
 	row := func(i int) string {
+		if i >= steps {
+			i -= steps
+			if steps > 0 {
+				if i == 0 {
+					return ""
+				}
+				i--
+			}
+			return skipLines[i]
+		}
 		s := p.Steps[i]
 		line := fmt.Sprintf("  %-7s %s", s.Op.String(), s.Name)
 		meta := s.Detail
@@ -498,6 +551,9 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 		// The usual case: everything is shown, and a long list scrolls.
 		d.listOff = clamp(d.listOff, 0, max(total-listRoom, 0))
 		middle = append(append(middle, info...), "", headline)
+		if headline == "" {
+			middle = middle[:len(middle)-1]
+		}
 		last := min(d.listOff+listRoom, total)
 		for i := d.listOff; i < last; i++ {
 			middle = append(middle, row(i))
@@ -511,7 +567,10 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 		// together, between an identity and a prompt that stay put.
 		all := append([]string{}, info...)
 		if listed {
-			all = append(all, "", headline)
+			all = append(all, "")
+			if headline != "" {
+				all = append(all, headline)
+			}
 			for i := 0; i < total; i++ {
 				all = append(all, row(i))
 			}
@@ -618,7 +677,10 @@ func (m *Model) menuBody(d *dialog, w int) (string, []string) {
 	body = append(body, "", st.tone(toneDim, "Every action that changes something asks for confirmation first."))
 	body = append(body, m.hints("↑↓", "choose", "Enter", "run", "Esc", "close"))
 	title := "Actions"
-	if d.menuRow.name != "" {
+	switch {
+	case len(d.menuSet) > 0:
+		title += fmt.Sprintf(": %d selected", len(d.menuSet))
+	case d.menuRow.name != "":
 		title += ": " + d.menuRow.name
 	}
 	return title, body
