@@ -281,12 +281,30 @@ func (m *Model) ensureRows(k Kind) {
 		}
 	}
 
+	// The selection follows its objects: each mark is refreshed from the
+	// new data, and the marks of objects that are gone go with them. Only a
+	// list that loaded can say what is gone.
+	marks := m.marks[k]
+	reconcile := len(marks) > 0 && m.loaded[listOf(k)]
+	present := map[string]bool{}
+
 	needle := strings.ToLower(strings.TrimSpace(m.filter[k]))
 	out := rows[:0]
-	for _, r := range rows {
+	for i, r := range rows {
 		r.search = strings.ToLower(strings.Join(r.cells, " "))
+		if _, marked := marks[r.key]; reconcile && marked {
+			marks[r.key] = mark{r: r, pos: i}
+			present[r.key] = true
+		}
 		if needle == "" || strings.Contains(r.search, needle) {
 			out = append(out, r)
+		}
+	}
+	if reconcile {
+		for key := range marks {
+			if !present[key] {
+				delete(marks, key)
+			}
 		}
 	}
 	m.rows[k] = out
@@ -342,6 +360,101 @@ func (m *Model) selectIndex(i int) {
 	s := &m.sel[m.kind]
 	s.idx = clamp(i, 0, len(rows)-1)
 	s.key = rows[s.idx].key
+}
+
+// selectable reports whether the rows of a kind can be selected as a set.
+// A compose project is already a set of containers; its actions are not
+// applied to several projects at once.
+func selectable(k Kind) bool { return k != KindCompose }
+
+// toggleMark adds the highlighted row to its kind's selection, or takes it
+// out again.
+func (m *Model) toggleMark() {
+	k := m.kind
+	if !selectable(k) {
+		m.setStatus(toneWarn, kindNames[k]+" cannot be selected as a set: each project is acted on as a whole.")
+		return
+	}
+	r, ok := m.currentRow()
+	if !ok {
+		return
+	}
+	if m.marks[k] == nil {
+		m.marks[k] = map[string]mark{}
+	}
+	if _, marked := m.marks[k][r.key]; marked {
+		delete(m.marks[k], r.key)
+		return
+	}
+	m.marks[k][r.key] = mark{r: r, pos: m.sel[k].idx}
+	m.invalidateRows(k) // positions are reconciled against the whole list
+}
+
+// markAll selects every row the filter lets through.
+func (m *Model) markAll() {
+	k := m.kind
+	if !selectable(k) {
+		m.setStatus(toneWarn, kindNames[k]+" cannot be selected as a set: each project is acted on as a whole.")
+		return
+	}
+	if len(m.rows[k]) == 0 {
+		return
+	}
+	if m.marks[k] == nil {
+		m.marks[k] = map[string]mark{}
+	}
+	for i, r := range m.rows[k] {
+		if _, marked := m.marks[k][r.key]; !marked {
+			m.marks[k][r.key] = mark{r: r, pos: i}
+		}
+	}
+	m.invalidateRows(k)
+}
+
+// clearMarks empties a kind's selection and reports whether there was one.
+func (m *Model) clearMarks(k Kind) bool {
+	n := len(m.marks[k])
+	m.marks[k] = nil
+	return n > 0
+}
+
+// markedRows returns a kind's selection in list order — including marked
+// rows the filter currently hides: the selection is what was marked, and the
+// confirmation lists every one of them.
+func (m *Model) markedRows(k Kind) []row {
+	if len(m.marks[k]) == 0 {
+		return nil
+	}
+	ms := make([]mark, 0, len(m.marks[k]))
+	for _, mk := range m.marks[k] {
+		ms = append(ms, mk)
+	}
+	sort.Slice(ms, func(i, j int) bool {
+		if ms[i].pos != ms[j].pos {
+			return ms[i].pos < ms[j].pos
+		}
+		return ms[i].r.key < ms[j].r.key
+	})
+	out := make([]row, len(ms))
+	for i, mk := range ms {
+		out[i] = mk.r
+	}
+	return out
+}
+
+// member is how the planner finds a row's object.
+func (r row) member() plan.Member {
+	switch {
+	case r.containerID != "":
+		return plan.Member{ID: r.containerID, Name: r.name}
+	case r.imageID != "":
+		return plan.Member{ID: r.imageID, Ref: r.imageRef, Name: r.name}
+	case r.volume != "":
+		return plan.Member{ID: r.volume, Name: r.name}
+	case r.networkID != "":
+		return plan.Member{ID: r.networkID, Name: r.name}
+	}
+	return plan.Member{ID: r.key, Name: r.name}
 }
 
 // kindCount returns how many objects of a kind exist (unfiltered).
@@ -506,13 +619,26 @@ func (m *Model) renderList(w, h int, focused bool) []string {
 			sb.WriteString(cell(cells[idx[ci]], ci))
 		}
 		text := sb.String()
+		// The gutter: the highlight's cursor, then the selection's marker.
+		_, marked := m.marks[k][r.key]
+		gutter := "  "
+		switch {
+		case i == s.idx && marked:
+			gutter = "▸✓"
+		case i == s.idx:
+			gutter = "▸ "
+		case marked:
+			gutter = " ✓"
+		}
 		switch {
 		case i == s.idx && focused:
-			lines = append(lines, m.st.selected.Render("▸ "+text))
+			lines = append(lines, m.st.selected.Render(gutter+text))
 		case i == s.idx:
-			lines = append(lines, m.st.selectedDim.Render("▸ "+text))
+			lines = append(lines, m.st.selectedDim.Render(gutter+text))
+		case marked:
+			lines = append(lines, m.st.tone(toneAccent, gutter+text))
 		default:
-			lines = append(lines, "  "+m.st.tone(r.tone, text))
+			lines = append(lines, gutter+m.st.tone(r.tone, text))
 		}
 	}
 	return lines
@@ -548,6 +674,9 @@ func (m *Model) listTitle() (title, right string) {
 		} else {
 			title += fmt.Sprintf(" (%d)", n)
 		}
+	}
+	if n := len(m.marks[k]); n > 0 {
+		title += fmt.Sprintf(" - %d selected", n)
 	}
 	switch {
 	case m.filtering:

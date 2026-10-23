@@ -12,6 +12,9 @@ Entries marked **R** (remote daemons) and **T** (themes) belong to the second ch
 relaxes a first-round decision, the older entry says so and is kept, because the reasoning it
 records is still the reasoning the newer one had to answer.
 
+Entries marked **S** (selection) belong to the third change, `openspec/changes/multi-select/`,
+and are collected in [their own section](#round-three--acting-on-a-selection).
+
 Where a decision costs something, the cost is stated. Nothing here is presented as free.
 
 ---
@@ -102,7 +105,8 @@ would add a keystroke and no safety.
 ### B6 — The filter filters as you type
 
 **Decided:** `/` filters rows on every keystroke; Enter keeps the filter, Esc restores what
-was there before; Esc in the list clears it.
+was there before; Esc in the list clears it. (Since S5, Esc in the list first clears a
+selection, then the filter, then leaves the pane.)
 
 **Why:** a filter you have to submit before seeing its effect is a search box. Keys typed into
 the filter are text and can never reach an action (tested).
@@ -1195,6 +1199,128 @@ so, rather than appear to do nothing.
 bold, not reverse video. I had written that reverse video is what keeps the highlighted row
 visible without colour; it is not. The `▸` glyph is, exactly as the first round designed
 ("selection adds a cursor glyph"). The comment was corrected and the test asserts the glyph.
+
+## Round three — acting on a selection
+
+The request: add multi-object selection to the List pane. The planner was already
+multi-object (prunes and compose projects are sets); only the UI acted on one object. Fixed
+by the request: no `engine.Engine` signature changes, no new dependency, no force flag, no
+Docker prune endpoints, and `plan.Execute` unchanged. Where the request left a choice open,
+the choice is recorded here.
+
+### S1 — A selection is one plan, built by the single-object constructors
+
+**Decided:** `plan.Set(op, snapshot, members)` plans every selected object with the very
+constructor a single object would get (`plan.Container`, `plan.ImageRemove`,
+`plan.VolumeRemove`, `plan.NetworkRemove`), from one fresh snapshot, and concatenates their
+steps into one `Listed` plan. The dialog renders it and `plan.Execute` sends it, unchanged.
+
+**Alternative:** one job per object, or a loop of single-object dialogs.
+
+**Why:** a second set of rules for "many" would drift from the rules for "one". Reusing the
+constructors means a set can never include anything a single confirmation would refuse, and
+the D11 property — the dialog shows exactly what the job sends — holds for a set by
+construction. One plan is also one confirmation and one job with `i/n` progress.
+
+### S2 — What cannot be included is named, not a reason to refuse the set
+
+**Decided:** a member whose constructor returns `NotApplicable` (already running, vanished…)
+or a plan with blockers (in use, running, predefined) is left out and recorded in the new
+`Plan.Skipped` with that reason. The dialog shows it under **Not included**. The remaining
+members still run. Only when nothing remains is the plan not runnable, and then it says
+"Nothing to do" and lists every reason.
+
+**Alternative:** refuse the whole set if any member is blocked (as "remove project" does).
+
+**Why:** the request says so, and a selection made with `a` over a filter routinely contains
+a few objects in use; making the operator hunt them down one by one invites unselecting the
+wrong ones. Nothing is silent: each left-out object is named with the planner's reason, in
+the dialog, before anything is sent. "Remove project" keeps refusing: there the project is
+the object.
+
+**Cost:** a confirmation can act on fewer objects than were selected. The headline counts
+what will be acted on ("Exactly these 2 will be stopped"), the ident line says "2 containers
+· 1 not included", and the typed word carries the smaller number.
+
+### S3 — Every set confirmation is typed, with the count in the word
+
+**Decided:** a set plan is always `TierTyped`, and its word is the verb and the number of
+requests: `stop 3`, `remove 7`. The prompt reads "Type remove 7 to confirm, then press
+Enter". A single object keeps its own tier and wording.
+
+**Alternative:** keep D12's tiers — `y` for reversible actions, the bare word for deletions.
+
+**Why:** "a set confirmation types the count" was asked for, and it is right for reversible
+actions too: one keystroke must not stop thirty containers, and the number is the thing the
+operator has to have read. The count is of requests, which is also the number in the
+headline, so what is typed matches what is listed. Matching is exact; `stop  2`, `STOP 2` and
+`stop 3` are refused with "Nothing was sent".
+
+**Cost:** stopping two containers takes more typing than stopping one.
+
+### S4 — Selecting every reference of an image deletes the image
+
+**Decided:** image rows are grouped by image. When the selection holds every reference of a
+multi-tag image, it is planned the way `ImagePrune` plans it: one untag per reference, the
+last of which carries the size and the in-use re-check (`MustBeUnused`) and deletes the
+image. If anything uses the image, every one of those rows is left out with that reason.
+A selection holding only some references plans each as the single-object untag ("untag
+only" in the list).
+
+**Why:** planned one by one, each reference is an untag that *promises to keep the data*
+(B16, B28). After the first, the second reference has become the last, and `Execute` would
+correctly refuse it — the operator who selected both tags of an image would get a failed job
+and an image still there. The rule follows what selecting every name of an image means.
+
+### S5 — Keys: Space, `a`, and Esc one step at a time
+
+**Decided:** in the List pane `Space` toggles the highlighted row and does not move the
+highlight; `a` adds every row the filter shows; `Esc` clears the selection, then the filter,
+then moves focus to Kinds. `Space` keeps paging in Details and Events. Compose projects
+cannot be selected: each is already a set, acted on as a whole. Marking is allowed in
+read-only mode; acting is not.
+
+**Why:** `Space` is the conventional mark key, and moving after toggling would make the
+highlight — which the Details pane follows — jump on its own. `a` was free in every kind.
+The Esc ladder undoes the most recent kind of narrowing first, so the selection, which is
+what an action key would now apply to, is never left behind by accident.
+
+### S6 — Single-object actions, and prune, refuse a selection
+
+**Decided:** with a selection, `e` shell, `c` connect and `D` disconnect show why they refuse
+("works on one object at a time and 3 are selected: Esc clears the selection. Nothing was
+sent.") and send nothing. `X` prune refuses as well; `P` pull and `n` new ignore the
+selection. The action menu, opened on a selection, offers only what applies to it and is
+titled "Actions: 3 selected". Actions pressed in the Details pane apply to the selection too.
+
+**Alternative:** let these act on the highlighted row, ignoring the selection.
+
+**Why:** with a selection visible, an action key that quietly falls back to the highlighted
+row would act on an object the operator did not mean. Prune chooses its own objects; pressing
+it while a selection is shown is most likely the mistaken belief that it removes the
+selection.
+
+### S7 — The selection is keyed by identity, includes what the filter hides, and is used up
+
+**Decided:** a mark is stored under the row's key — container ID, image ID and reference,
+volume name, network ID — with the row it was taken from. Each list rebuild refreshes it and
+drops marks whose objects are gone (only once the list has loaded: a failed refresh drops
+nothing). Marked rows the filter hides stay selected and are listed in the confirmation. The
+selection of a kind is cleared when the job confirmed from it starts, and kept when the
+dialog is declined.
+
+**Why:** the same identity rule as the highlight (the object, not the position). Keeping
+hidden marks follows from the selection being what was marked, not what is on screen; the
+confirmation lists every one, which is the safeguard. Clearing on start means the next action
+key means the highlighted row again, instead of re-applying to objects that were just
+removed or stopped.
+
+### S8 — The fake daemon's log generator no longer panics on a backwards tick
+
+**Found while testing this change:** under load the whole suite once panicked in the fake
+daemon (`makeslice: len out of range`): a ticker value earlier than the previously read clock
+made the elapsed time negative. The generator now clamps it to zero. Test double only; no
+product code was involved.
 
 ## Process
 

@@ -118,7 +118,7 @@ func (s *Server) generateLogs(c *Container, done chan struct{}) {
 			if rate <= 0 {
 				return
 			}
-			elapsed := now.Sub(last).Seconds()
+			elapsed := max(now.Sub(last).Seconds(), 0) // a tick's time can trail the clock read before it
 			last = now
 			if state != "running" {
 				continue
@@ -126,7 +126,7 @@ func (s *Server) generateLogs(c *Container, done chan struct{}) {
 			carry += elapsed * float64(rate)
 			count := int(carry)
 			carry -= float64(count)
-			if count == 0 {
+			if count <= 0 {
 				continue
 			}
 			batch := make([]logEntry, count)
