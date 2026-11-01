@@ -300,6 +300,11 @@ func (m *Model) renderHints() string {
 	case m.focus == PaneList || m.focus == PaneDetails:
 		if m.focus == PaneList {
 			add("↑↓", "move")
+			if n := len(m.marks[m.kind]); n > 0 {
+				add("Esc", fmt.Sprintf("clear %d selected", n))
+			} else if selectable(m.kind) {
+				add("Space", "select")
+			}
 			add("/", "filter")
 			add("⏎", "actions")
 		} else {
@@ -361,8 +366,15 @@ func (m *Model) helpLines(w int) []string {
 
 	sect("List pane")
 	row("/", "filter rows as you type (Enter keeps, Esc undoes)")
-	row("Esc", "clear the filter")
-	row("Enter", "menu of the actions available on the highlighted object")
+	row("Space", "select / unselect the highlighted row (not Compose)")
+	row("a", "select every row the filter shows")
+	row("Esc", "clear the selection; then the filter; then back to Kinds")
+	row("Enter", "menu of the actions available on the highlighted object or selection")
+	out = append(out,
+		"  With a selection, an action key applies to every selected object of that",
+		"  kind: start, stop, restart, pause, unpause, kill, remove. shell, connect and",
+		"  disconnect work on one object only and refuse; prune refuses too.",
+	)
 
 	sect("Details pane")
 	row("← →  or  h l", "switch tab")
@@ -393,6 +405,9 @@ func (m *Model) helpLines(w int) []string {
 		"      stop project: press y. Enter does nothing.",
 		"    • anything that deletes (remove, prune, remove project): type the word",
 		"      shown and press Enter.",
+		"    • a selection, whatever the action: type the word with the count shown",
+		"      (stop 3, remove 7) and press Enter. The dialog lists every object, and",
+		"      under \"Not included\" each selected one left out, with the reason.",
 		"    • pull, new volume/network, shell: you type the name; Enter submits.",
 		"  A dialog ignores those keys for its first quarter of a second, and a key",
 		"  pressed while a confirmation is still being prepared drops it: nothing typed",

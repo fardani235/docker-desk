@@ -123,8 +123,11 @@ type Plan struct {
 	// Steps are exactly the requests that will be sent, in order.
 	Steps []Step
 	// Listed is true when the dialog must show every step individually
-	// (prunes and whole-project actions).
+	// (prunes, whole-project actions and selections).
 	Listed bool
+	// Skipped names the selected objects a set plan leaves out, each with
+	// the reason the single-object rules gave. Nothing is sent for them.
+	Skipped []Skip
 	// Nothing explains why there is nothing to do; such a plan cannot run.
 	Nothing string
 	Tier    Tier

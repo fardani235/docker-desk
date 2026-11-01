@@ -171,10 +171,21 @@ func (m *Model) onListKey(key string) tea.Cmd {
 		m.filterIn.SetValue(m.filter[m.kind])
 		m.filterIn.CursorEnd()
 		m.filterIn.Focus()
+	case " ":
+		m.toggleMark()
+	case "a":
+		m.markAll()
 	case "esc":
-		if m.filter[m.kind] != "" {
+		// One step back at a time: the selection, then the filter, then
+		// the pane.
+		switch {
+		case m.clearMarks(m.kind):
+			m.setStatus(toneDim, "Selection cleared.")
+		case m.filter[m.kind] != "":
 			m.filter[m.kind] = ""
 			m.invalidateRows(m.kind)
+		default:
+			m.focus = PaneKinds
 		}
 	case "enter":
 		m.openMenu()
@@ -188,9 +199,15 @@ func (m *Model) onListKey(key string) tea.Cmd {
 
 func (m *Model) openMenu() {
 	r, ok := m.currentRow()
+	set := m.markedRows(m.kind)
 	var items []action
 	for _, a := range kindActions[m.kind] {
-		if a.needsRow && !ok {
+		if len(set) > 0 {
+			// With a selection, offer what applies to it.
+			if !a.setCapable && !a.ignoresSet {
+				continue
+			}
+		} else if a.needsRow && !ok {
 			continue
 		}
 		items = append(items, a)
@@ -198,7 +215,7 @@ func (m *Model) openMenu() {
 	if len(items) == 0 {
 		return
 	}
-	m.dlg = &dialog{kind: dlgMenu, menu: items, menuRow: r, menuHasRow: ok, openedAt: time.Now()}
+	m.dlg = &dialog{kind: dlgMenu, menu: items, menuRow: r, menuHasRow: ok, menuSet: set, openedAt: time.Now()}
 }
 
 // onFilterKey edits the list filter. Rows are filtered as the text changes;
@@ -412,13 +429,13 @@ func (m *Model) onDialogKey(k tea.KeyMsg) tea.Cmd {
 		case "enter":
 			a, r, had := d.menu[d.menuSel], d.menuRow, d.menuHasRow
 			m.dlg = nil
-			return m.invokeOn(a, r, had)
+			return m.invokeOn(a, r, had, d.menuSet)
 		default:
 			for _, a := range d.menu {
 				if a.key == key {
 					r, had := d.menuRow, d.menuHasRow
 					m.dlg = nil
-					return m.invokeOn(a, r, had)
+					return m.invokeOn(a, r, had, d.menuSet)
 				}
 			}
 		}
@@ -535,8 +552,7 @@ func (m *Model) onPlanKey(k tea.KeyMsg) tea.Cmd {
 	case plan.TierTyped:
 		if key == "enter" {
 			if d.input.Value() == p.Word {
-				m.dlg = nil
-				m.runPlan(p)
+				m.confirmed(d)
 				return nil
 			}
 			d.mismatch = true
@@ -549,12 +565,22 @@ func (m *Model) onPlanKey(k tea.KeyMsg) tea.Cmd {
 	default:
 		switch key {
 		case "y":
-			m.dlg = nil
-			m.runPlan(p)
+			m.confirmed(d)
 		case "n", "q":
 			m.dlg = nil
 		}
 		// Enter, space and everything else do nothing: consent is `y`.
 		return nil
+	}
+}
+
+// confirmed closes a confirmation that received its consent and starts the
+// job. A selection that was confirmed is used up: it is cleared as the job
+// starts, so that the next action key means the highlighted row again.
+func (m *Model) confirmed(d *dialog) {
+	m.dlg = nil
+	m.runPlan(d.plan)
+	if d.fromSet {
+		m.clearMarks(d.setKind)
 	}
 }

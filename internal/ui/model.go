@@ -136,6 +136,10 @@ type Model struct {
 	filterPrev string
 	filterIn   textinput.Model
 	listHeight int // rows visible, for paging
+	// marks is each kind's selection: the objects an action applies to
+	// instead of the highlighted one. Keyed by row key (object identity),
+	// so a mark follows its object across refreshes and goes with it.
+	marks [kindCount]map[string]mark
 
 	// ---- details pane ----
 	tab          [kindCount]int
@@ -180,6 +184,14 @@ type selection struct {
 	key string
 	idx int
 	off int
+}
+
+// mark is one selected object: the row as last built (names and IDs are
+// refreshed with the list) and its position in the unfiltered list, which
+// orders the set.
+type mark struct {
+	r   row
+	pos int
 }
 
 type statusLine struct {

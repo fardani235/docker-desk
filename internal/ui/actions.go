@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -24,6 +25,13 @@ type action struct {
 	needsRow bool
 	mutating bool
 	run      func(m *Model, r row) tea.Cmd
+	// setOp is the operation applied to every selected object when the
+	// kind has a selection. Actions without one refuse while there is a
+	// selection — unless they ignore it (ignoresSet: pull and create act on
+	// nothing that exists).
+	setOp      plan.Op
+	setCapable bool
+	ignoresSet bool
 }
 
 func containerAction(op plan.Op) func(*Model, row) tea.Cmd {
@@ -33,20 +41,33 @@ func containerAction(op plan.Op) func(*Model, row) tea.Cmd {
 	}
 }
 
+// containerActions builds the lifecycle actions, all of which apply to a
+// selection as well as to one container.
+func containerActions(defs ...action) []action {
+	for i := range defs {
+		if defs[i].run == nil {
+			defs[i].run = containerAction(defs[i].setOp)
+			defs[i].setCapable = true
+		}
+	}
+	return defs
+}
+
 var kindActions = [kindCount][]action{
-	KindContainers: {
-		{key: "s", label: "start", desc: "start the container", needsRow: true, mutating: true, run: containerAction(plan.OpStart)},
-		{key: "t", label: "stop", desc: "stop it (signal, then kill after the grace period)", needsRow: true, mutating: true, run: containerAction(plan.OpStop)},
-		{key: "R", label: "restart", desc: "stop and start it again", needsRow: true, mutating: true, run: containerAction(plan.OpRestart)},
-		{key: "p", label: "pause", desc: "freeze its processes", needsRow: true, mutating: true, run: containerAction(plan.OpPause)},
-		{key: "u", label: "unpause", desc: "resume its processes", needsRow: true, mutating: true, run: containerAction(plan.OpUnpause)},
-		{key: "K", label: "kill", desc: "send SIGKILL now", needsRow: true, mutating: true, run: containerAction(plan.OpKill)},
-		{key: "d", label: "remove…", desc: "delete the container (never forced)", needsRow: true, mutating: true, run: containerAction(plan.OpRemoveContainer)},
-		{key: "e", label: "shell", desc: "open an interactive shell inside it", needsRow: true, mutating: true, run: (*Model).openShellForm},
-	},
+	KindContainers: containerActions(
+		action{key: "s", label: "start", desc: "start the container (or every selected one)", needsRow: true, mutating: true, setOp: plan.OpStart},
+		action{key: "t", label: "stop", desc: "stop it (signal, then kill after the grace period)", needsRow: true, mutating: true, setOp: plan.OpStop},
+		action{key: "R", label: "restart", desc: "stop and start it again", needsRow: true, mutating: true, setOp: plan.OpRestart},
+		action{key: "p", label: "pause", desc: "freeze its processes", needsRow: true, mutating: true, setOp: plan.OpPause},
+		action{key: "u", label: "unpause", desc: "resume its processes", needsRow: true, mutating: true, setOp: plan.OpUnpause},
+		action{key: "K", label: "kill", desc: "send SIGKILL now", needsRow: true, mutating: true, setOp: plan.OpKill},
+		action{key: "d", label: "remove…", desc: "delete the container (never forced)", needsRow: true, mutating: true, setOp: plan.OpRemoveContainer},
+		action{key: "e", label: "shell", desc: "open an interactive shell inside it (one container only)", needsRow: true, mutating: true, run: (*Model).openShellForm},
+	),
 	KindImages: {
-		{key: "P", label: "pull…", desc: "pull an image by name", mutating: true, run: func(m *Model, _ row) tea.Cmd { return m.openForm(formPull) }},
+		{key: "P", label: "pull…", desc: "pull an image by name", mutating: true, ignoresSet: true, run: func(m *Model, _ row) tea.Cmd { return m.openForm(formPull) }},
 		{key: "d", label: "remove…", desc: "remove this reference / image (never forced)", needsRow: true, mutating: true,
+			setOp: plan.OpRemoveImage, setCapable: true,
 			run: func(m *Model, r row) tea.Cmd {
 				id, ref := r.imageID, r.imageRef
 				return m.prepare(func(s plan.Snapshot) (plan.Plan, error) { return plan.ImageRemove(s, id, ref) }, planMsg{})
@@ -55,8 +76,9 @@ var kindActions = [kindCount][]action{
 			run: func(m *Model, _ row) tea.Cmd { return m.preparePrune(plan.ImagePrune, false) }},
 	},
 	KindVolumes: {
-		{key: "n", label: "new…", desc: "create a volume", mutating: true, run: func(m *Model, _ row) tea.Cmd { return m.openForm(formVolume) }},
+		{key: "n", label: "new…", desc: "create a volume", mutating: true, ignoresSet: true, run: func(m *Model, _ row) tea.Cmd { return m.openForm(formVolume) }},
 		{key: "d", label: "remove…", desc: "delete the volume and its data (never forced)", needsRow: true, mutating: true,
+			setOp: plan.OpRemoveVolume, setCapable: true,
 			run: func(m *Model, r row) tea.Cmd {
 				name := r.volume
 				return m.prepare(func(s plan.Snapshot) (plan.Plan, error) { return plan.VolumeRemove(s, name) }, planMsg{})
@@ -65,8 +87,9 @@ var kindActions = [kindCount][]action{
 			run: func(m *Model, _ row) tea.Cmd { return m.preparePrune(plan.VolumePrune, false) }},
 	},
 	KindNetworks: {
-		{key: "n", label: "new…", desc: "create a bridge network", mutating: true, run: func(m *Model, _ row) tea.Cmd { return m.openForm(formNetwork) }},
+		{key: "n", label: "new…", desc: "create a bridge network", mutating: true, ignoresSet: true, run: func(m *Model, _ row) tea.Cmd { return m.openForm(formNetwork) }},
 		{key: "d", label: "remove…", desc: "delete the network", needsRow: true, mutating: true,
+			setOp: plan.OpRemoveNetwork, setCapable: true,
 			run: func(m *Model, r row) tea.Cmd {
 				id := r.networkID
 				return m.prepare(func(s plan.Snapshot) (plan.Plan, error) { return plan.NetworkRemove(s, id) }, planMsg{})
@@ -75,9 +98,9 @@ var kindActions = [kindCount][]action{
 			run: func(m *Model, _ row) tea.Cmd {
 				return m.prepare(func(s plan.Snapshot) (plan.Plan, error) { return plan.NetworkPrune(s), nil }, planMsg{})
 			}},
-		{key: "c", label: "connect…", desc: "attach a container to this network", needsRow: true, mutating: true,
+		{key: "c", label: "connect…", desc: "attach a container to this network (one network only)", needsRow: true, mutating: true,
 			run: func(m *Model, r row) tea.Cmd { return m.preparePick(r, true) }},
-		{key: "D", label: "disconnect…", desc: "detach a container from this network", needsRow: true, mutating: true,
+		{key: "D", label: "disconnect…", desc: "detach a container from this network (one network only)", needsRow: true, mutating: true,
 			run: func(m *Model, r row) tea.Cmd { return m.preparePick(r, false) }},
 	},
 	KindCompose: {
@@ -103,18 +126,19 @@ func (m *Model) actionFor(key string) (action, bool) {
 	return action{}, false
 }
 
-// invoke is the entry point for an action key: the object acted on is the row
-// highlighted at this moment. It is captured here, by identity, and nothing
-// later re-reads the highlight.
+// invoke is the entry point for an action key: the objects acted on are the
+// kind's selection when it has one, and otherwise the row highlighted at this
+// moment. Either is captured here, by identity, and nothing later re-reads
+// the highlight or the selection.
 func (m *Model) invoke(a action) tea.Cmd {
 	r, ok := m.currentRow()
-	return m.invokeOn(a, r, ok)
+	return m.invokeOn(a, r, ok, m.markedRows(m.kind))
 }
 
-// invokeOn runs an action on a row captured earlier (the action menu names
-// an object in its title; choosing from it must act on that object, not on
-// whatever the highlight has moved to since).
-func (m *Model) invokeOn(a action, r row, ok bool) tea.Cmd {
+// invokeOn runs an action on a row, or a selection, captured earlier (the
+// action menu names its object in its title; choosing from it must act on
+// that object, not on whatever the highlight has moved to since).
+func (m *Model) invokeOn(a action, r row, ok bool, set []row) tea.Cmd {
 	if m.preparing {
 		return nil
 	}
@@ -122,11 +146,33 @@ func (m *Model) invokeOn(a action, r row, ok bool) tea.Cmd {
 		m.setStatus(toneWarn, fmt.Sprintf("Read-only mode: %q is disabled. Nothing was sent to the daemon.", a.label))
 		return nil
 	}
+	if len(set) > 0 && !a.ignoresSet {
+		label := strings.TrimSuffix(a.label, "…")
+		switch {
+		case a.setCapable:
+			return m.prepareSet(a.setOp, set)
+		case a.needsRow:
+			m.setStatus(toneWarn, fmt.Sprintf("%s works on one object at a time and %d are selected: Esc clears the selection. Nothing was sent.", label, len(set)))
+		default:
+			m.setStatus(toneWarn, fmt.Sprintf("%s chooses its own objects, not the %d selected: Esc clears the selection first. Nothing was sent.", label, len(set)))
+		}
+		return nil
+	}
 	if a.needsRow && !ok {
 		m.setStatus(toneWarn, "Nothing is highlighted.")
 		return nil
 	}
 	return a.run(m, r)
+}
+
+// prepareSet builds one plan for every object of a selection, from a fresh
+// snapshot, exactly as prepare does for one.
+func (m *Model) prepareSet(op plan.Op, set []row) tea.Cmd {
+	members := make([]plan.Member, len(set))
+	for i, r := range set {
+		members[i] = r.member()
+	}
+	return m.prepare(func(s plan.Snapshot) (plan.Plan, error) { return plan.Set(op, s, members) }, planMsg{fromSet: true, setKind: m.kind})
 }
 
 func (m *Model) preparePrune(build func(plan.Snapshot, bool) plan.Plan, all bool) tea.Cmd {
