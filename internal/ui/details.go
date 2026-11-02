@@ -27,7 +27,7 @@ const (
 
 var kindTabs = [kindCount][]string{
 	KindContainers: {tabInfo, tabLogs, tabStats, tabInspect},
-	KindImages:     {tabInfo, tabInspect},
+	KindImages:     {tabInfo, tabInspect, tabFindings},
 	KindVolumes:    {tabInfo, tabInspect},
 	KindNetworks:   {tabInfo, tabInspect},
 	KindCompose:    {tabInfo},
@@ -793,6 +793,8 @@ func (m *Model) renderDetails(w, h int) []string {
 		return []string{m.st.tone(toneDim, "Highlight an object in the list to see its details here.")}
 	}
 	switch m.tabName() {
+	case tabFindings:
+		return m.renderFindings(w, h)
 	case tabLogs:
 		return m.renderLogs(w, h)
 	case tabStats:

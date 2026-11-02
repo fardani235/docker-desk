@@ -15,6 +15,11 @@ records is still the reasoning the newer one had to answer.
 Entries marked **S** (selection) belong to the third change, `openspec/changes/multi-select/`,
 and are collected in [their own section](#round-three--acting-on-a-selection).
 
+Entries marked **F** (findings) belong to the fourth change, `openspec/changes/image-findings/`,
+and are collected in [their own section](#round-four--image-findings). The request asked for
+decisions to be made and recorded rather than asked about; every place it left a choice open
+has an entry.
+
 Where a decision costs something, the cost is stated. Nothing here is presented as free.
 
 ---
@@ -1322,12 +1327,236 @@ daemon (`makeslice: len out of range`): a ticker value earlier than the previous
 made the elapsed time negative. The generator now clamps it to zero. Test double only; no
 product code was involved.
 
+## Round four — image findings
+
+The request: a third tab on Images that reads the image's own archive — every layer, every
+file — and reports what is inside it, joined with what the daemon runs from it now. Fixed by
+the request: GET requests only, read-only mode unchanged, stream and never write to disk,
+bound every buffer, no severity score, never guess, no new dependency, and the existing
+safety, layout, remote and theme tests untouched. Where it left a choice open, the choice is
+recorded here.
+
+### F1 — The archive comes from the client library's `ImageSave`, which is `GET /images/get?names=…`
+
+**Decided:** `engine.SaveImage(ctx, id, platform)` calls the library's `ImageSave` with one
+image ID and `ImageSaveWithPlatforms`. On the wire that is `GET /images/get?names={id}&platform={json}`.
+
+**Alternative:** the request named `GET /images/{id}/get`, which the library has no method for;
+sending it would mean hand-rolling HTTP beside the library.
+
+**Why:** D3 — every request goes through Docker's client library, so the read-only request
+hook, API-version negotiation and error classification apply to this one too. The daemon
+serves both paths from the same handler (`getImagesGet`), with the same `platform` parameter.
+The library refuses to send `platform` to a daemon older than API 1.48, so the desk leaves it
+out there (such a daemon has one variant per image ID to give). The fake daemon serves both
+paths, so either would be tested.
+
+**Cost:** `github.com/opencontainers/image-spec` (for the platform type) moved from an
+indirect to a direct requirement in `go.mod`. It was already in the module graph and `go.sum`
+is unchanged: no new dependency.
+
+### F2 — `SaveImage` is a read method of `Engine`
+
+**Decided:** it is in the interface beside the inspect methods, passes through the read-only
+wrapper untouched, and is listed among the read methods of `TestReadOnlyCoversEveryMutation`
+(which still counts 18 mutating methods). `TestReadOnlyExportsAnImage` exports and analyses an
+image through a read-only engine and finds no mutating request at the fake daemon; the UI and
+end-to-end tests do the same with `--read-only`.
+
+**Why:** export reads the image store and writes nothing. It is the only way to see the bytes
+of a layer without running a container (which would be a mutation).
+
+### F3 — Layers are recognised by their bytes, because manifest.json may come last
+
+**Decided:** the outer tar is read once, front to back. Each entry is classified by its first
+bytes: gzip or zstd magic, or a tar header, is a layer and is walked as it streams past; JSON
+is kept whole if it is at most 4 MiB (16 MiB in all); anything else is skipped. Symlinked
+layer files (the classic layout stores an identical layer once) are resolved. Only after the
+stream ends are `manifest.json`, the config and `index.json` read and the layers put in order.
+
+**Alternative:** buffer or spool the archive until the manifest is known.
+
+**Why:** the daemon writes the blobs first and `manifest.json` near the end, and "never write
+to disk" rules out spooling. Classifying by content needs nothing but the bytes in hand. What
+each layer contributes is kept in a compact form (below) so that cross-layer rules can run at
+the end. The fixture tests feed both layouts, with the manifest first and last.
+
+**Cost:** a JSON document larger than the bound is not read (an SBOM can be): it is still
+known to be there, and its finding says so.
+
+### F4 — What is kept per layer, and the bounds
+
+**Decided:** for each layer: its digest and diff ID (hashed while streaming; the diff ID is
+checked against the config), stored size, content size, file and directory counts, whiteouts,
+opaque directories, an 8-byte fingerprint of every path it adds, its symlinks, and
+observations (secret matches, special modes, ELF facts, cache and junk aggregates). Bounds
+(`forensics.DefaultLimits`): 64 KiB of each file searched for secrets (files over 2 MiB only
+when their name suggests a secret), 1 MiB of an ELF file for its headers and 64 KiB after
+Go's build-info marker, two million path fingerprints, 50,000 symlinks, 300 observations of a
+kind per layer, 25 findings per rule and layer (the rest counted in one "N more" finding),
+3,000 findings, 512 bytes of a secret's value. Two buffers (64 KiB and 1 MiB) are reused for
+every file. A secret pattern's regular expression runs only where one of its literals occurs
+(`AKIA`, `ghp_`, `PRIVATE KEY`, `password`…), and the keyword patterns only on the lines
+holding one; all literals are found in a single pass over the block.
+
+**Why:** the archive can be gigabytes; what the rules need from it is small. Running every
+expression over every file was 93% of the analysis's time in the first profile; with the
+literal pass, `BenchmarkAnalyse` (2,000 plain-text files) reads about 125 MB/s on this 4-core
+machine under load, a third of it spent hashing for the diff-ID check. Every bound that
+cuts something off says so: in a note on the report ("layer 3 has more paths than the desk
+keeps…"), or by a rule declining to conclude. The command-exists check, for one, does not run
+unless every layer was read and fingerprinted whole.
+
+### F5 — manifest.json first, index.json for what it omits
+
+**Decided:** `manifest.json` gives the config and the ordered layers. When it lists several
+images, the entry whose config digest matches the image ID, or whose tags include the
+reference, is read; otherwise the first, with a note. `index.json` is walked only for
+attestation manifests and for platforms whose blobs are absent. A nested index that references
+blobs not in the archive is skipped, never fatal. If there is no `manifest.json` at all, the
+config and layers are found through `index.json` for the requested platform, with a note.
+
+**Why:** that is the request's rule. The last case is not in it: an OCI layout written by a
+tool other than the daemon may lack `manifest.json`, and "index.json for what manifest.json
+omits" covers "everything". `TestIndexOnlyArchive` proves the path.
+
+### F6 — A finding, and the three sources
+
+**Decided:** a finding carries a rule ID (`secret.deleted`), a group, a source, a certainty, a
+layer (0 for config, archive-wide and live findings), a path, masked evidence, a one-line
+reason, the build instruction when it maps, what the evidence cannot tell, and for Go programs
+the module list. Sources: **image** — the archive's bytes; **daemon** — the daemon's own
+answers (container flags, the reference a container was created from, repository digests);
+**desk** — a join of the two that neither says alone (a privileged container of an image with
+no USER; a tag that has moved). There is no severity score.
+
+Certainty: **certain** when the evidence is the fact — a mode bit, a config field, a byte
+structure in an exact format (a PEM private key header, an `AKIA…` key ID, a GitHub token);
+**likely** when it fits but has an innocent reading (`DB_PASSWORD=…` in a `.env`; a bare shell
+as the command; no stack-protector symbol); **hint** when circumstantial (a file named
+`id_rsa` with no key in it; no attestation in a classic archive).
+
+**Why:** the request. Certainty says how much the evidence supports the claim; the "unknown"
+line says what it does not support — "whether the value is a live credential", "whether the
+runtime's capability bounding set lets them through". Both are needed to act on a finding
+without trusting the desk's judgement.
+
+### F7 — Instructions map only by exact count
+
+**Decided:** history entries with `empty_layer` false are matched to the layers in order, and
+only if there are exactly as many as there are layers. Otherwise no finding carries an
+instruction, and a note says why. A build argument's value never appears in an instruction:
+`RUN |1 NPM_TOKEN=… /bin/sh -c …` is shown as `RUN … (build args: NPM_TOKEN)`, and any
+secret-shaped text left in it is masked.
+
+**Why:** the request's rule. A history rewritten by squashing, or images whose history was
+stripped, do not map, and an off-by-one would put the wrong instruction beside every finding.
+
+### F8 — What is reported for deleted and replaced files
+
+**Decided:** for every path, the desk decides from later layers' whiteouts, opaque markers and
+path fingerprints whether that version is still visible at the end, deleted (by which layer)
+or replaced (by which layer). Secrets are reported in every case — `secret.deleted` and
+`secret.overwritten` say the bytes are still in the earlier layer. Caches and build junk are
+reported in every case too, and say when they were cleaned one layer too late. Special modes
+(setuid, setgid, world-writable, capabilities) and binary hardening are reported only for
+what a container would see.
+
+**Why:** a deleted secret is the reason the tab exists — anyone who pulls the image has the
+layer. A deleted cache still costs its bytes. A setuid binary that a later layer removed
+cannot be executed in a container; reporting it would be noise.
+
+### F9 — Secrets never leave the screen
+
+**Decided:** a secret's value is held only in `forensics.Secret`, whose every formatting path —
+`String`, `GoString`, `Format` (all fmt verbs), `MarshalJSON`, `MarshalText` — yields
+`[masked]`. Only `Reveal` returns it, and only the Findings tab calls it, for the one finding
+under the cursor after `v`. The reveal ends when the cursor moves, the order changes, the pane
+loses focus, or `v` is pressed again. Evidence is always masked (`AKIA************ (20 chars)`).
+Analysis errors are the desk's own sentences (`analysisError`) and never quote the archive; a
+panic during analysis becomes a fixed message. The job logs counts and digests only. The
+opt-in real-daemon test logs rule counts, not evidence.
+
+**Alternative:** keep no value at all and show only the mask.
+
+**Why:** "is this the real key or the example one?" often decides what to do next, and the
+request asked for a reveal. A type that cannot print its value makes "never in a job record,
+an error, a file or a diagnostic" a property of the code, not of care at each call site.
+`TestSecretsNeverPrint`, `TestASecretNeverLeavesTheScreen` and `TestBrokenInputFailsInItsOwnWords`
+check it.
+
+**Cost:** a revealed value is on the screen, and so in the terminal's scrollback until the next
+frame replaces it. The screen captures in `docs/screens` are taken with nothing revealed.
+
+### F10 — One analysis at a time, cached by image ID and platform
+
+**Decided:** the analysis starts when the tab is open on an image whose inspect has arrived
+(the platform comes from it), once the highlight has settled. It runs as a job titled
+"analyse image" with progress in bytes read and layers found, and `c` (in the tab or in the
+Jobs pane) cancels it. Moving to another image with the tab open cancels the running analysis
+and starts the next: at most one archive streams at a time. Reports are kept for the eight
+most recently used image-and-platform keys; reopening one draws it in the same frame, with no
+request. A failed or cancelled analysis is not retried by itself; Enter retries.
+
+**Why:** browsing with the tab open must not open a stream per row. The image ID is a content
+address, so a report for an ID and platform never goes stale; only the live half changes, and
+it is recomputed whenever the pane is drawn.
+
+### F11 — A remote image above 500 MB waits for Enter
+
+**Decided:** when the daemon is remote (the same test as the header's `[REMOTE …]` tag, R12)
+and the image is larger than `Options.FindingsAskAbove` (500 MB by default), the tab says how
+large the image is and where the daemon is, and requests nothing until Enter.
+
+**Why:** the request asked for a size threshold; 500 MB is a few minutes on a slow link and a
+moment on a fast one, so it catches the transfers worth deciding about. The prompt is in the
+tab, not a dialog: dialogs are for mutations, and this is a read that costs only time.
+
+### F12 — The live join: what is inspected, and what is not claimed
+
+**Decided:** containers come from the list (state, ports, network mode — the list now carries
+`HostConfig.NetworkMode`). What only inspect tells — privileged, user, and the reference a
+container was created from — is fetched for at most 20 containers: those using the image, and
+those whose listed image is an ID (the list shows an ID once the tag has moved). It is
+refetched when the container list changes. Live findings: privileged (with root from the
+image, from the desk), host network, ports published on every interface, created from a tag
+rather than a digest, the tag moved since the container was created (either way), no registry
+digest, and secrets in the final filesystem of an image that has running containers.
+
+**Why:** these are what "joined with what the engine is running now" can say without
+guessing. Nothing is said about a container not yet inspected.
+
+### F13 — Rules that were left out, or softened, and why
+
+- **No vulnerability database.** Go module versions are listed; whether one is vulnerable is
+  the finding's "unknown". Consulting a database would need the network or a new dependency.
+- **zstd layers are not walked.** The standard library has no zstd decoder and the request
+  rules out new dependencies; such a layer is hashed and reported as unreadable, and every
+  cross-layer conclusion that depends on it says it is unknown.
+- **Stack canaries** are judged only for dynamically linked executables whose string table is
+  within the bytes read, and never for Go programs (which do not use them). Static binaries
+  are not judged.
+- **Generic `NAME=value` matches in files packages ship** (`/usr/…`, `/etc/ssl`, `/etc/pki`)
+  are hints: the first export of a real Alpine image found `secret = pass:…` in
+  `/etc/ssl/openssl.cnf`, OpenSSL's own example. Credential-shaped values (keys, tokens) keep
+  their certainty there.
+
+### F14 — Proof against a real daemon, read-only
+
+**Decided:** `make real-readonly-check` now also runs `TestRealDaemonExportReadOnly`: it
+exports the smallest image under 300 MB through a read-only engine and analyses the archive
+the real daemon wrote. It was run once during the build (Alpine, OCI layout, its layer hashed
+to the config's diff ID).
+
+**Why:** the fixtures are written from the specifications; one real archive checks the
+reading of them.
+
 ## Process
 
 ### B12 — No commits were made
 
 The work was done on the branch that was checked out, and nothing was committed: committing
-was not asked for. Everything is in the working tree for review.
+was not asked for. Everything is in the working tree for review. (Round four likewise.)
 
 ### B13 — The binary was not installed into `PATH`
 

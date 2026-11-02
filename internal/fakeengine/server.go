@@ -80,6 +80,8 @@ type Server struct {
 	PullStepDelay time.Duration
 	// Unpullable lists repository names the fake registry refuses.
 	Unpullable map[string]bool
+	// ExportChunkDelay is the pause after each 32 KiB of an image export.
+	ExportChunkDelay time.Duration
 
 	reqMu    sync.Mutex
 	requests []Request
@@ -408,6 +410,10 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 		s.handleImageList(w, r)
 	case path == "/images/create" && post:
 		s.handleImagePull(w, r)
+	case path == "/images/get" && get:
+		s.handleImageExport(w, r, r.URL.Query()["names"])
+	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "get" && get:
+		s.handleImageExport(w, r, []string{strings.Join(seg[1:len(seg)-1], "/")})
 	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "json" && get:
 		s.handleImageInspect(w, strings.Join(seg[1:len(seg)-1], "/"))
 	case len(seg) >= 2 && seg[0] == "images" && del:

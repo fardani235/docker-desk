@@ -15,7 +15,7 @@ var readMethods = map[string]bool{
 	"Ping": true, "Info": true, "Close": true,
 	"Containers": true, "Images": true, "Volumes": true, "Networks": true,
 	"InspectContainer": true, "InspectImage": true, "InspectVolume": true, "InspectNetwork": true,
-	"Events": true, "Logs": true, "Stats": true,
+	"SaveImage": true, "Events": true, "Logs": true, "Stats": true,
 	"ExecInspect": true,
 }
 
@@ -125,5 +125,16 @@ func TestReadOnlySendsNothing(t *testing.T) {
 	}
 	if st, _ := srv.ContainerState("shop-web-1"); st != "running" {
 		t.Fatalf("container state changed to %q", st)
+	}
+}
+
+func TestAPIOlder(t *testing.T) {
+	for _, tc := range []struct {
+		a, b string
+		want bool
+	}{{"1.47", "1.48", true}, {"1.48", "1.48", false}, {"1.56", "1.48", false}, {"0.9", "1.48", true}, {"", "1.48", false}} {
+		if got := apiOlder(tc.a, tc.b); got != tc.want {
+			t.Errorf("apiOlder(%q, %q) = %v", tc.a, tc.b, got)
+		}
 	}
 }

@@ -471,6 +471,48 @@ the review examined and could not break, and what it did not examine.
 
 The fixes themselves have not been reviewed by anyone but their author.
 
+## Round four: image findings
+
+The analyser is pure code over a byte stream, so most of it is proven without a daemon:
+`internal/forensics/fixture` writes archives in both layouts a daemon produces, from a short
+description, and the tests feed them to `forensics.Analyse`. The fixture's demo image is also
+what the fake daemon serves for `shop/api:dev`, so the UI and end-to-end tests see the same
+bytes.
+
+| Property | Test |
+| --- | --- |
+| A credential added in layer 2 and deleted in layer 3 is reported as still in the image bytes, with layer, instruction and masked evidence — in the classic and the OCI layout | `TestDeletedSecretIsStillInTheImageBytes` |
+| Both layouts, and manifest-first versus manifest-last order, give the same findings; every layer hashes to its diff ID | `TestBothLayoutsSayTheSame` |
+| A present SBOM is one line; a nested index that references absent manifests and attestation blobs is skipped, never fatal | `TestAttestationsAndAbsentBlobs` |
+| Without `manifest.json`, `index.json` leads to the config and the layers | `TestIndexOnlyArchive` |
+| When the history does not map onto the layers, no instruction is shown | `TestInstructionsAreOmittedWhenTheHistoryDoesNotMap` |
+| Config, filesystem, binary and layer rules, each on bytes built to trigger it (ELF headers, Go build info, capability xattrs, whiteouts) | `TestConfigRules`, `TestFilesystemAndBinaryRules`, `TestLayerRules`, `TestPackagedExamplesAreHints` |
+| A secret's value prints as `[masked]` in every fmt verb and in JSON; only `Reveal` returns it | `TestSecretsNeverPrint` |
+| Broken, truncated and empty input fails in the desk's own words, quoting nothing | `TestBrokenInputFailsInItsOwnWords` |
+| Cancellation stops the read; progress counts every byte; bounds are noted, and rules that need complete data decline | `TestCancellation`, `TestProgressAndBounds`, `TestPerRuleCap` |
+| The live join: privileged (as root, from the desk), host network, published ports, unpinned and moved tags (both directions), no digest | `TestLiveFindings` |
+| Exporting through a read-only engine sends no mutating request and carries the platform | `TestReadOnlyExportsAnImage` (engine) |
+| The tab renders and scrolls at 80×24, 120×30 and 120×40 with every frame exactly the terminal's size | `TestFindingsTabRendersAndScrollsAtBothLayouts`, and the existing `TestFrameGeometryAtEverySize`, which now opens the tab on every kind and size |
+| A second open is drawn from the cache in the same frame, with no request and no job | `TestSecondOpenIsInstant` |
+| One secret is revealed at a time and hides when the cursor moves, the order changes or the pane loses focus | `TestRevealIsOneAtATimeAndHidesWhenTheCursorMoves` |
+| No secret in the job's title, status, log or error, in the status line, or in the job output dialog | `TestASecretNeverLeavesTheScreen` |
+| Read-only mode completes the analysis and the live join with only GET requests | `TestFindingsInReadOnlyMode`; end to end, `TestImageFindings/25-image-findings-80x24` runs the binary with `--read-only` |
+| The live half follows the daemon without re-analysing | `TestLiveJoinFollowsTheDaemon` |
+| A remote image over the threshold waits for Enter; the analysis is a cancellable job; moving away cancels it | `TestRemoteLargeImageAsksFirst`, `TestAnalysisIsACancellableJob`, `TestMovingAwayCancelsTheRunningAnalysis` |
+
+**Speed.** `BenchmarkAnalyse` (not part of `make test`) reads an archive of 2,000 plain-text
+files: about 125 MB/s on this machine (4 cores, under load).
+
+**Against the real daemon**, `make real-readonly-check` now also exports and analyses the
+smallest image under 300 MB through a read-only engine (`TestRealDaemonExportReadOnly`). It
+logs rule counts only. Run once during the build: Alpine 3, OCI layout, one layer, verified
+against its diff ID — and it is how the `openssl.cnf` example password was found (DECISIONS
+F13).
+
+Screens: `docs/screens/24-image-findings.txt` (150×42) and
+`docs/screens/25-image-findings-80x24.txt` (80×24, `--read-only`), captured by `TestImageFindings`
+with nothing revealed.
+
 ## What is not proven
 
 Stated plainly, because a control plane deserves it:
@@ -523,6 +565,11 @@ Stated plainly, because a control plane deserves it:
   safe as it can be without the eye.
 - **Scale beyond the test sizes** (hundreds of containers, tens of thousands of images) was
   not measured. The statistics-stream cap was tested at 40 containers.
+- **Image findings were checked against one real archive** (Alpine, OCI layout), read-only.
+  The classic layout, gzip layers and attestations were proven on archives built from the
+  specifications; images with thousands of layers' worth of files, zstd layers (not walked),
+  and Windows images were not tried. The secret patterns are examples of well-known formats,
+  not a complete catalogue, and say nothing about whether a value is live.
 - **Event replay after a reconnect** was tested against the fake's event history; the real
   daemon keeps a similar bounded history, but its behaviour across a daemon *restart* (history
   lost) relies on the full refresh that follows every reconnect.

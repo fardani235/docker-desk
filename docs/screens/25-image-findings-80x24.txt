@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake3292723446/d.sock  ● connected  [READ-ONLY]
+┌─ 1 Kinds ──────┐┌─ 2 Images (1 of 14) ────────────────────── filter: shop/a ─┐
+│  Containers  12││  REPOSITORY        TAG        IMAGE ID          SIZE    AGE│
+│▸ Images      14││▸ shop/api          dev        073fe9aeb752    57.7MB    24h│
+│  Volumes      7││                                                            │
+│  Networks     7││                                                            │
+│  Compose      2│└────────────────────────────────────────────────────────────┘
+│                │┏━ ◆ 3 Details: shop/api:dev ━━━━━━ Info Inspect [Findings] ━┓
+│  ● 7 running   │┃26 findings · by layer · 4 layers · 79.0kB · oci · linux/am…┃
+│  ‖ 1 paused    │┃live: 2 container(s): ○ old-migration exited privileged · ●…┃
+│  ○ 4 stopped   │┃  L2  certain layer.cache          /var/lib/apt/lists  2 fi…┃
+│                │┃▸ L2  certain secret.deleted       /root/.aws/credentials  …┃
+│                │┃why      Added in layer 2 and deleted in layer 3, yet still ┃
+│                │┃         in the image bytes: anyone with the image can read ┃
+│                │┃         layer 2.                                           ┃
+└────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ────────────── 1 done ─┐
+│Waiting for engine events…                  ││▸ ✓ analyse image shop/api:… 6ms│
+│Everything the daemon does                  ││                                │
+│shows up here as it happens.                ││                                │
+│                                            ││                                │
+└────────────────────────────────────────────┘└────────────────────────────────┘
+ ✓ analyse image shop/api:dev
+ ↑↓ finding  o order  v reveal  [ ] tab  P pull  d re… Tab pane  ? keys  q quit

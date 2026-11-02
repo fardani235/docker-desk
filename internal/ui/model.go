@@ -97,6 +97,10 @@ type Options struct {
 	// been open before it accepts the input that proceeds (250 ms). Keys
 	// typed ahead of a dialog cannot consent to it. Negative disables.
 	ArmDelay time.Duration
+	// FindingsAskAbove is the image size above which the Findings tab asks
+	// before analysing an image on a remote daemon (500 MB). Negative
+	// never asks.
+	FindingsAskAbove int64
 }
 
 // Model is the whole desk.
@@ -152,6 +156,9 @@ type Model struct {
 	logEnd       uint64
 	logWrap      bool
 	detailHeight int
+
+	// ---- findings tab (Images) ----
+	fx findingsState
 
 	// ---- events pane ----
 	evFollow    bool
@@ -388,6 +395,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.onDetail(msg)
 		return m, nil
 
+	case factsMsg:
+		m.dirty = true
+		m.onFacts(msg)
+		return m, nil
+
 	case planMsg:
 		m.dirty = true
 		cmd := m.onPlan(msg)
@@ -443,6 +455,11 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 			}
 		}
 		m.syncStreams() // a no-op unless the wanted target changed
+		if cmd := m.syncFindings(); cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+	} else {
+		m.collectFindings()
 	}
 
 	// 3. Jobs that finished since the last frame.
@@ -567,6 +584,9 @@ func (m *Model) afterChange() {
 		}
 		m.info1.off, m.inspect.off = 0, 0
 		m.logFollow = true
+	}
+	if !m.findingsVisible() || m.focus != PaneDetails {
+		m.fx.revealed = "" // a revealed value is never left behind, off screen
 	}
 	m.syncStats()
 }

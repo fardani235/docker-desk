@@ -32,9 +32,9 @@ crosscheck: ## drive the fake daemon with the real docker CLI and assert on the 
 e2e: build ## scripted pseudo-terminal session against the fake daemon; screens go to docs/screens
 	go test ./internal/e2e/ -count=1 -update-screens
 
-real-readonly-check: ## read-only decode check against the REAL daemon (GET/HEAD only, enforced)
+real-readonly-check: ## read-only decode and export check against the REAL daemon (GET/HEAD only, enforced)
 	DOCKER_DESK_REAL_HOST=$${DOCKER_HOST:-unix:///var/run/docker.sock} \
-		go test ./internal/engine/ -run TestRealDaemonReadOnly -count=1 -v
+		go test ./internal/engine/ -run 'TestRealDaemonReadOnly|TestRealDaemonExportReadOnly' -count=1 -v
 
 sandbox: build ## start the fake daemon and open the desk on it — nothing real is touched
 	@$(BIN)/fake-dockerd -socket $(SANDBOX_SOCKET) >/dev/null & fake=$$!; \
