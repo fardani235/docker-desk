@@ -435,3 +435,67 @@ committed and nothing was installed outside the repository. The real daemon on t
 was not sent a single request by any of this work: every run of the binary named the fake with
 `--host` or `DOCKER_HOST`, and the `docker` CLI was only ever pointed at the fake, at a
 context store in a temporary directory, or at a closed port.
+
+# Round four: image findings
+
+The request was given in one pass — plan, build, verify, document — with decisions recorded
+instead of asked about. They are DECISIONS F1–F14; this is the order things happened in.
+
+## 20. Reading before writing
+
+The engine interface had no way to read an image's bytes. The client library's `ImageSave`
+sends `GET /images/get?names=…`, not the `/images/{id}/get` the request named; both reach the
+same handler in the daemon, and D3 keeps every request inside the library (F1). The container
+list carries the network mode but not the privileged flag, so the live join inspects (F12).
+And `TestFrameGeometryAtEverySize` cycles every tab of every kind: the fake daemon would have
+to serve a real archive for every image, not just the demo one. That decided where the
+fixture builder lives — in its own package, used by the fake daemon as well as the tests.
+
+## 21. The stream
+
+`docker save` writes blobs first and `manifest.json` at the end, so a layer cannot be known as
+a layer when it streams past. It is recognised by its first bytes instead, walked there and
+then, and reduced to what the cross-layer rules need: whiteouts, opaque markers and an 8-byte
+fingerprint per path (F3, F4). The order is applied at the end.
+
+Two details from the formats: Go's inline build information starts 32 bytes after its marker,
+not 16 (the fixture was wrong first, `debug/buildinfo` settled it); and RE2 caps a repetition
+at 1,000, so a PEM block is delimited in code.
+
+## 22. The tab
+
+The first screens showed two bugs that were test artefacts and one that was not: rows without
+a path were misaligned. The tests had assumed live findings sort last by layer — they have no
+layer and sort first, which is right — and had counted positions in a list that reorders as
+inspect results arrive; the test now moves the cursor by identity, the way the desk does.
+
+## 23. A real archive
+
+The opt-in read-only export against this machine's daemon analysed Alpine 3: OCI layout, one
+layer, verified against its diff ID, and two "likely" secrets in `/etc/ssl/openssl.cnf` —
+OpenSSL's example `secret = pass:…`. Generic `NAME=value` matches in files packages ship are
+now hints (F13). The check ran once, and a one-off probe (deleted afterwards) once more to see
+which files matched; each sent a ping, info, the image list, one inspect and one export — all
+GETs, through the read-only engine. Nothing else this round reached the real daemon.
+
+## 24. Fast enough to be used
+
+`make race` failed once, in `internal/live` — a throughput test, untouched, that timed out
+while the new package's tests took 47 seconds under the race detector beside it. It passed
+five times alone. The cause was worth fixing rather than retrying: a profile showed 93% of an
+analysis in the regular-expression engine, every pattern over 64 KiB of every text file.
+Patterns now run only where one of their literals occurs, found in one pass, and an
+uncompressed layer is hashed once rather than twice (its digest is its diff ID). The package's
+tests went from 47 s to under 3 s with `-race`; `BenchmarkAnalyse` from about 50 to about
+125 MB/s. While making that change, an edit cut the pattern table out of `secrets.go` (a new
+file, so git could not restore it); the tests failed to build, and it was put back from the
+version written earlier in the round, with the later edits re-applied.
+
+## 25. Final state
+
+`go vet`, `make test` (457 tests and subtests pass; the three skipped are the opt-in
+real-daemon ones) and `make race` are clean, and the end-to-end tests were re-run uncached
+with and without `-race`, since their cached result does not see the analyser's code. The
+`image-findings` OpenSpec change validates. Screens 24 and 25 are new; the others were left as
+they were. Decisions are in DECISIONS F1–F14, proof in TESTING ("Round four"). Nothing was
+committed and nothing was installed outside the repository.

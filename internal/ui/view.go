@@ -307,6 +307,11 @@ func (m *Model) renderHints() string {
 			}
 			add("/", "filter")
 			add("⏎", "actions")
+		} else if m.tabName() == tabFindings {
+			add("↑↓", "finding")
+			add("o", "order")
+			add("v", "reveal")
+			add("[ ]", "tab")
 		} else {
 			add("↑↓", "scroll")
 			add("[ ]", "tab")
@@ -380,6 +385,18 @@ func (m *Model) helpLines(w int) []string {
 	row("← →  or  h l", "switch tab")
 	row("f", "Logs: pause / resume following")
 	row("w", "toggle line wrapping")
+
+	sect("Images › Findings tab (Details pane focused)")
+	row("↑ ↓  PgUp PgDn", "move between findings")
+	row("o", "order by layer, then group, then certainty")
+	row("v", "reveal the highlighted secret; it hides when the cursor moves")
+	row("Enter", "analyse (when asked first, or after a failure)")
+	row("c", "cancel the analysis in progress")
+	out = append(out,
+		"  Opening the tab reads the image's own archive (GET /images/get) once and",
+		"  keeps the report for its ID and platform. Findings name a rule, a source",
+		"  (daemon, image, desk), a certainty, the layer and the build instruction.",
+	)
 
 	for k := Kind(0); k < kindCount; k++ {
 		sect(kindNames[k] + " (List or Details pane focused)")

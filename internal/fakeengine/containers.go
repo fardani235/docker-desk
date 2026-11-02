@@ -34,6 +34,9 @@ type Container struct {
 	Ports         []PortSpec
 	RestartPolicy string
 	Health        string
+	Privileged    bool
+	NetworkMode   string // "" means bridge
+	User          string
 
 	// LogRate is the number of log lines per second the container writes
 	// while running. Zero means it only has its seeded lines.
@@ -101,6 +104,11 @@ type ContainerSpec struct {
 	StopDelay time.Duration
 	NoShell   bool
 	Health    string
+	// Privileged, NetworkMode ("host", …) and User are the run-time flags
+	// inspect reports.
+	Privileged  bool
+	NetworkMode string
+	User        string
 	// Age is how long ago the container was created and started.
 	Age time.Duration
 }
@@ -136,6 +144,9 @@ func (s *Server) AddContainer(spec ContainerSpec) string {
 		Ports:         spec.Ports,
 		RestartPolicy: "no",
 		Health:        spec.Health,
+		Privileged:    spec.Privileged,
+		NetworkMode:   spec.NetworkMode,
+		User:          spec.User,
 		LogRate:       spec.LogRate,
 		LogLine:       spec.LogLine,
 		StopDelay:     spec.StopDelay,
@@ -398,7 +409,7 @@ func (c *Container) summary() container.Summary {
 		Mounts:          c.mountPoints(),
 		Ports:           []container.PortSummary{},
 	}
-	sum.HostConfig.NetworkMode = "bridge"
+	sum.HostConfig.NetworkMode = c.networkMode()
 	if c.Health != "" {
 		sum.Health = &container.HealthSummary{Status: container.HealthStatus(c.Health)}
 	}
@@ -526,10 +537,12 @@ func (s *Server) handleContainerInspect(w http.ResponseWriter, ref string) {
 			Cmd:      c.Cmd,
 			Labels:   c.Labels,
 			Tty:      c.Tty,
+			User:     c.User,
 			Env:      []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"},
 		},
 		HostConfig: &container.HostConfig{
-			NetworkMode:   "bridge",
+			NetworkMode:   container.NetworkMode(c.networkMode()),
+			Privileged:    c.Privileged,
 			RestartPolicy: container.RestartPolicy{Name: container.RestartPolicyMode(c.RestartPolicy)},
 		},
 		NetworkSettings: &container.NetworkSettings{
@@ -539,6 +552,13 @@ func (s *Server) handleContainerInspect(w http.ResponseWriter, ref string) {
 	}
 	s.mu.Unlock()
 	writeJSON(w, http.StatusOK, resp)
+}
+
+func (c *Container) networkMode() string {
+	if c.NetworkMode == "" {
+		return "bridge"
+	}
+	return c.NetworkMode
 }
 
 func rfc3339(t time.Time) string {

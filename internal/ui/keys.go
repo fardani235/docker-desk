@@ -241,6 +241,9 @@ func (m *Model) onFilterKey(k tea.KeyMsg) tea.Cmd {
 }
 
 func (m *Model) onDetailsKey(key string) tea.Cmd {
+	if m.tabName() == tabFindings && m.onFindingsKey(key) {
+		return nil
+	}
 	page := max(m.detailHeight-2, 1)
 	scroll := func(delta int) {
 		switch m.tabName() {

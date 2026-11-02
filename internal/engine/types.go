@@ -92,6 +92,9 @@ type Container struct {
 	Ports   []Port
 	Labels  map[string]string
 	Mounts  []Mount
+	// NetworkMode is the container's network mode as the list reports it:
+	// "bridge", "host", "none", "container:…" or a network name.
+	NetworkMode string
 	// Networks lists every network the container is attached to or, when it
 	// is stopped, configured to use.
 	Networks []Attachment
@@ -184,6 +187,7 @@ type ImageDetail struct {
 	Image
 	Architecture string
 	OS           string
+	Variant      string
 	Author       string
 	Entrypoint   []string
 	Cmd          []string
@@ -192,6 +196,28 @@ type ImageDetail struct {
 	ExposedPorts []string
 	Layers       int
 	Raw          []byte
+}
+
+// Platform names an image variant: operating system, architecture and,
+// where the architecture has them, a variant ("v8" for arm64).
+type Platform struct {
+	OS           string
+	Architecture string
+	Variant      string
+}
+
+// String is the usual os/arch[/variant] form.
+func (p Platform) String() string {
+	s := p.OS + "/" + p.Architecture
+	if p.Variant != "" {
+		s += "/" + p.Variant
+	}
+	return s
+}
+
+// Platform returns the platform the image was inspected as.
+func (d ImageDetail) Platform() Platform {
+	return Platform{OS: d.OS, Architecture: d.Architecture, Variant: d.Variant}
 }
 
 // ImageDelete is one line of the daemon's answer to an image removal.

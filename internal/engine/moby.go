@@ -25,6 +25,7 @@ import (
 	"github.com/moby/moby/api/pkg/stdcopy"
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // Options configures the connection to the daemon.
@@ -295,6 +296,8 @@ func (m *mobyEngine) Containers(ctx context.Context) ([]Container, error) {
 			Status:  s.Status,
 			Labels:  s.Labels,
 			Mounts:  convertMounts(s.Mounts),
+
+			NetworkMode: s.HostConfig.NetworkMode,
 		}
 		if len(s.Names) > 0 {
 			c.Name = strings.TrimPrefix(s.Names[0], "/")
@@ -524,6 +527,7 @@ func (m *mobyEngine) InspectImage(ctx context.Context, ref string) (ImageDetail,
 	d.Created = parseTime(res.Created)
 	d.Architecture = res.Architecture
 	d.OS = res.Os
+	d.Variant = res.Variant
 	d.Author = res.Author
 	d.Layers = len(res.RootFS.Layers)
 	if res.Config != nil {
@@ -538,6 +542,43 @@ func (m *mobyEngine) InspectImage(ctx context.Context, ref string) (ImageDetail,
 		sort.Strings(d.ExposedPorts)
 	}
 	return d, nil
+}
+
+// platformAPI is the first API version whose image export takes a platform.
+const platformAPI = "1.48"
+
+func (m *mobyEngine) SaveImage(ctx context.Context, id string, platform Platform) (io.ReadCloser, error) {
+	var opts []client.ImageSaveOption
+	// The platform selects one variant of a multi-platform image. A daemon
+	// older than the parameter has only one variant per image ID to give,
+	// and the library would refuse to send the request at all.
+	if platform.OS != "" && platform.Architecture != "" && !apiOlder(m.cli.ClientVersion(), platformAPI) {
+		opts = append(opts, client.ImageSaveWithPlatforms(ocispec.Platform{
+			OS: platform.OS, Architecture: platform.Architecture, Variant: platform.Variant,
+		}))
+	}
+	res, err := m.cli.ImageSave(ctx, []string{id}, opts...)
+	if err != nil {
+		return nil, m.wrap("export image", err)
+	}
+	return res, nil
+}
+
+// apiOlder reports whether API version a is older than b ("1.47" < "1.48").
+// An unparsable version is treated as current.
+func apiOlder(a, b string) bool {
+	pa, pb := strings.SplitN(a, ".", 2), strings.SplitN(b, ".", 2)
+	if len(pa) != 2 || len(pb) != 2 {
+		return false
+	}
+	ma, err1 := strconv.Atoi(pa[0])
+	na, err2 := strconv.Atoi(pa[1])
+	mb, err3 := strconv.Atoi(pb[0])
+	nb, err4 := strconv.Atoi(pb[1])
+	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
+		return false
+	}
+	return ma < mb || (ma == mb && na < nb)
 }
 
 func (m *mobyEngine) InspectVolume(ctx context.Context, name string) (VolumeDetail, error) {

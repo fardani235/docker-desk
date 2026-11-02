@@ -687,3 +687,53 @@ func lastBytes(s string, n int) string {
 	}
 	return s
 }
+
+// TestImageFindings opens Images › Findings on the demo's shop/api:dev, the
+// image with a credential deleted one layer after it was added, and walks to
+// that finding — at the wide layout, and at 80×24 in read-only mode.
+func TestImageFindings(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		rows, cols int
+		args       []string
+	}{
+		{"24-image-findings", 42, 150, nil},
+		{"25-image-findings-80x24", 24, 80, []string{"--read-only"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := startFake(t, func(s *fakeengine.Server) { s.SeedDemo() })
+			d := launch(t, srv, tc.rows, tc.cols, tc.args...)
+			d.see("2 Containers (12)")
+			d.keys("1", ptyscreen.Down, "2", "/", "s", "h", "o", "p", "/", "a", ptyscreen.Enter)
+			d.see("3 Details: shop/api:dev")
+			d.keys("3", "]", "]")
+			d.see("[Findings]", "findings · by layer", "live: 2 container(s)")
+			// Down to the deleted credential.
+			err := d.term.WaitUntil(wait, "the cursor on secret.deleted", func(screen string) bool {
+				if strings.Contains(screen, "▸ L2  certain secret.deleted") {
+					return true
+				}
+				_ = d.term.Send("j")
+				time.Sleep(30 * time.Millisecond)
+				return false
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			screen := d.shot(tc.name)
+			if !strings.Contains(screen, "in the image bytes") {
+				t.Errorf("the finding does not say the bytes remain:\n%s", screen)
+			}
+			if n := srv.CountRequests("GET", `/images(/.+)?/get$`); n != 1 {
+				t.Errorf("%d exports", n)
+			}
+			for _, r := range srv.Requests() {
+				if r.Mutating() {
+					t.Fatalf("analysing sent %s", r)
+				}
+			}
+			d.keys("q")
+			d.quit()
+		})
+	}
+}

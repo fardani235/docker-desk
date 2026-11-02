@@ -187,7 +187,7 @@ the desk keeps answering keys, and everything resumes by itself when the daemon 
 | --- | --- |
 | **1 Kinds** | Containers, Images, Volumes, Networks, Compose — with live counts. Moving the highlight is enough; the list follows. |
 | **2 List** | The objects of that kind. Containers show live CPU and memory. The highlight follows the *object* when the list changes underneath it. |
-| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON), and for containers **Logs** (live follow) and **Stats** (CPU, memory, network, disk — with history). |
+| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON), for containers **Logs** (live follow) and **Stats** (CPU, memory, network, disk — with history), and for images **Findings** (what the image's own bytes hold; see below). |
 | **4 Events** | The engine's event stream as it happens. It is the answer to everything you do — and to everything anyone else does to this daemon. |
 | **5 Jobs** | Every change you asked for, running in the background: progress while it runs, the daemon's answer when it ends. |
 
@@ -195,6 +195,52 @@ The focused pane has a heavy border and a `◆` in its title (it does not rely o
 `NO_COLOR` is respected, whatever the theme). Wide terminals (≥ 120 columns) get three columns; from 80×24 up you
 still get all five panes in a tighter arrangement. Smaller than that, the desk says so and
 accepts no key but `q` — nothing can be acted on that is not on screen.
+
+### Image findings
+
+Images › **Findings** reads the image's own archive — the stream `docker save` writes, asked
+for with a GET (`/images/get?names=…&platform=…`) — and reports what is inside it, joined with
+what the daemon runs from it now. Nothing is written to disk; every buffer is bounded.
+
+```
+ 26 findings · by layer · 4 layers · 79.0kB · oci · linux/amd64
+ live: 2 container(s): ○ old-migration exited privileged · ● shop-api-1 running 3000→3000/tcp
+   --  certain supply.sbom          SBOM present: SPDX-2.3, 12 packages
+   L2  certain layer.cache          /var/lib/apt/lists  2 files, 74.0kB
+ ▸ L2  certain secret.deleted       /root/.aws/credentials  AWS access key ID: AKIA****…
+ ───────────────────────────────────────────────────────────── 15 of 26 ─
+ why      Added in layer 2 and deleted in layer 3, yet still in the image bytes:
+          anyone with the image can read layer 2.
+ evidence AWS access key ID: AKIA************ (20 chars)   (v reveals)
+ source   image · certain · layer 2
+ by       COPY . /root
+ unknown  whether the value is a live credential, a test fixture or revoked
+```
+
+Every finding names its rule, its **source** (`image`: the archive's bytes; `daemon`: the
+daemon's answers; `desk`: a join of the two), a **certainty** (`certain`, `likely`, `hint`),
+the layer, the path, masked evidence, why it is reported, the build instruction that made the
+layer (only when the image's history maps onto its layers exactly), and what the evidence
+cannot tell. There is no severity score.
+
+| Group | Rules |
+| --- | --- |
+| config | runs as root · built for another platform · nothing to run, a bare shell, or a program not in the image · no (or disabled) health check |
+| layer | one layer holding most of the bytes · a layer adding very many files · build junk (`.git`, editor litter, files in `/tmp`, downloaded archives, Dockerfiles) · package caches left behind — or removed a layer too late |
+| filesystem | setuid · setgid · world-writable files and directories without a sticky bit · file capabilities |
+| secrets | in the final filesystem · deleted in a later layer (**still in the image bytes**) · replaced in a later layer · passed as a build argument · set by ENV |
+| binaries | not PIE · no or partial RELRO · no stack protector · UPX-packed · Go toolchain version and modules |
+| supply | SBOM present (one line) · provenance present · no attestations · created from a tag, not a digest · the tag moved since the container was created · no registry digest |
+| live | a privileged container · host network · ports published on every interface · secrets readable in a running container |
+
+The live half — which containers use the image, their state, ports, privileged flag and
+network mode — is recomputed whenever the pane is drawn. The analysis runs as a job ("analyse
+image", with bytes read and layers found); the report is kept by image ID and platform, so
+opening the tab again is instant. On a remote daemon an image over 500 MB waits for Enter.
+Read-only mode works unchanged: everything is a GET.
+
+Secrets are masked everywhere. `v` reveals the one under the cursor; it hides again when the
+cursor moves. A secret's value never goes into a job, an error, a log or a file.
 
 ### Themes
 
@@ -256,6 +302,9 @@ unaffected. The selection is cleared when the job starts, and kept if you declin
 still pages in the Details and Events panes.
 
 **Details**: `←` `→` switch tab · `f` pause/resume following (Logs) · `w` toggle wrapping.
+**Findings** (Images): `↑` `↓` move between findings · `o` order by layer / group / certainty ·
+`v` reveal the highlighted secret · `c` cancel the analysis · `Enter` analyse when asked first
+or after a failure.
 **Events**: scroll back with the movement keys — new events keep being recorded — `G` to
 follow again. **Jobs**: `Enter` read a job's full output · `c` cancel a running job · `x` clear
 finished ones.
@@ -366,6 +415,9 @@ Good to know:
 - At 80×24 a confirmation with much to say scrolls its middle — the effects, the warnings, the
   list — and keeps what it acts on, the daemon, the prompt and the input on screen.
 - TLS client keys protected by a passphrase are not supported (nor by the Docker CLI).
+- Findings do not consult a vulnerability database: Go module versions are listed, not judged.
+  zstd-compressed layers cannot be walked (the standard library has no decoder) and are
+  reported as unreadable. Stack canaries are judged only for dynamically linked executables.
 
 ## Trying it safely
 

@@ -29,6 +29,11 @@ type Engine interface {
 	InspectVolume(ctx context.Context, name string) (VolumeDetail, error)
 	InspectNetwork(ctx context.Context, id string) (NetworkDetail, error)
 
+	// SaveImage streams the image's archive, as `docker save` would write
+	// it, for one platform. It is a GET: the daemon reads the image store
+	// and changes nothing. The caller reads the stream and must close it.
+	SaveImage(ctx context.Context, id string, platform Platform) (io.ReadCloser, error)
+
 	// ---- mutations ------------------------------------------------------
 	StartContainer(ctx context.Context, id string) error
 	// StopContainer asks the container to stop with its configured signal and

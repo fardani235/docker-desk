@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/distribution/reference"
+	"github.com/fardani235/docker-desk/internal/forensics/fixture"
 	"github.com/moby/moby/api/types/image"
 	"github.com/moby/moby/api/types/jsonstream"
 )
@@ -20,6 +21,9 @@ type Image struct {
 	Size     int64
 	Created  time.Time
 	Labels   map[string]string
+	// archive is what GET /images/get sends; built on first request from
+	// a plain fixture unless SetImageArchive installed one.
+	archive []byte
 }
 
 // normalizeRef returns the familiar form of a reference with ":latest"
@@ -392,6 +396,79 @@ func (s *Server) handleImagePull(w http.ResponseWriter, r *http.Request) {
 
 	send(jsonstream.Message{Status: "Digest: sha256:" + id})
 	send(jsonstream.Message{Status: "Status: Downloaded newer image for " + ref})
+}
+
+// handleImageExport serves GET /images/get?names=… and GET /images/{name}/get:
+// the image's archive, as `docker save` would write it. The platform
+// parameter is accepted (and logged with the request) but the fake keeps one
+// variant per image.
+func (s *Server) handleImageExport(w http.ResponseWriter, r *http.Request, names []string) {
+	if len(names) != 1 {
+		httpError(w, http.StatusBadRequest, "fake engine: export exactly one image (got %d)", len(names))
+		return
+	}
+	s.mu.Lock()
+	img := s.findImageLocked(names[0])
+	if img == nil {
+		s.mu.Unlock()
+		httpError(w, http.StatusNotFound, "reference does not exist: %s", names[0])
+		return
+	}
+	if img.archive == nil {
+		ref := "scratch:latest"
+		if len(img.RepoTags) > 0 {
+			ref = img.RepoTags[0]
+		}
+		img.archive = fixture.Legacy(fixture.Plain(ref)).Archive
+	}
+	data, delay := img.archive, s.ExportChunkDelay
+	s.mu.Unlock()
+
+	w.Header().Set("Content-Type", "application/x-tar")
+	w.WriteHeader(http.StatusOK)
+	fl, _ := w.(http.Flusher)
+	const chunk = 32 << 10
+	for off := 0; off < len(data); off += chunk {
+		if _, err := w.Write(data[off:min(off+chunk, len(data))]); err != nil {
+			return
+		}
+		if fl != nil {
+			fl.Flush()
+		}
+		if delay > 0 {
+			select {
+			case <-r.Context().Done():
+				return
+			case <-s.closed:
+				return
+			case <-time.After(delay):
+			}
+		}
+	}
+}
+
+// SetImageArchive makes GET /images/get serve the given archive for the
+// image a reference or ID resolves to, and sets the image's size to match
+// what the daemon would report. It reports whether the image exists.
+func (s *Server) SetImageArchive(ref string, archive []byte) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	img := s.findImageLocked(ref)
+	if img == nil {
+		return false
+	}
+	img.archive = archive
+	return true
+}
+
+// SetImageSize changes an image's reported size (the threshold above which
+// the desk asks before analysing a remote image is tested with it).
+func (s *Server) SetImageSize(ref string, size int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if img := s.findImageLocked(ref); img != nil {
+		img.Size = size
+	}
 }
 
 // ---- test helpers ----------------------------------------------------------------

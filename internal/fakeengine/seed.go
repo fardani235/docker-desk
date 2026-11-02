@@ -1,6 +1,10 @@
 package fakeengine
 
-import "time"
+import (
+	"time"
+
+	"github.com/fardani235/docker-desk/internal/forensics/fixture"
+)
 
 func compose(project, service string) map[string]string {
 	return map[string]string{
@@ -82,6 +86,7 @@ func (s *Server) SeedDemo() {
 	})
 	s.AddContainer(ContainerSpec{
 		Name: "old-migration", Image: "shop/api:dev", State: "exited", Cmd: []string{"npm", "run", "migrate"},
+		Privileged:       true,
 		AnonymousVolumes: 1,
 		Logs:             []string{"running 12 migrations", "done"}, Age: 72 * time.Hour,
 	})
@@ -103,4 +108,10 @@ func (s *Server) SeedDemo() {
 	s.AddAnonymousVolume("leftover-1")
 	s.AddAnonymousVolume("leftover-2")
 	s.AddNetwork("orphan-net", nil)
+
+	// shop/api:dev is the image with something to find: a credential
+	// deleted one layer after it was added, a token in a build argument,
+	// package lists cleaned up too late, setuid and capability bits, and
+	// binaries with and without hardening (Images › Findings).
+	s.SetImageArchive("shop/api:dev", fixture.OCI(fixture.Demo()).Archive)
 }
