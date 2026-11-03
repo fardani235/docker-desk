@@ -29,6 +29,22 @@ type Limits struct {
 	Findings    int   // findings in a report
 	// SecretReveal bounds a secret's kept value.
 	SecretReveal int
+
+	// The package lists (packages.go). Declared bounds the packages kept
+	// from one SBOM, SBOMDocs the SBOM documents whose tables are kept.
+	Declared int
+	SBOMDocs int
+	// Installed bounds the packages kept from one copy of a database, and
+	// the final list; InstalledTotal the records kept across every copy
+	// of every layer, for the layer diff; DBCopies the database files kept
+	// per layer.
+	Installed      int
+	InstalledTotal int
+	DBCopies       int
+	// RPMDB and TextDB bound the bytes of one database file read: an
+	// rpmdb.sqlite, a dpkg or apk text database.
+	RPMDB  int64
+	TextDB int64
 }
 
 // DefaultLimits are the bounds the desk uses.
@@ -46,6 +62,14 @@ func DefaultLimits() Limits {
 		PerRule:      25,
 		Findings:     3000,
 		SecretReveal: 512,
+
+		Declared:       20_000,
+		SBOMDocs:       4,
+		Installed:      10_000,
+		InstalledTotal: 200_000,
+		DBCopies:       4096,
+		RPMDB:          64 << 20,
+		TextDB:         8 << 20,
 	}
 }
 
@@ -136,13 +160,17 @@ type analyser struct {
 
 	head []byte // reused: leading bytes of each file
 	elf  []byte // reused: leading bytes of an ELF file
+
+	sboms  map[string]sbomScan // what each JSON blob declares, by archive path
+	dbBuf  []byte              // reused: one package database file
+	dbUsed int                 // database records kept across all layers
 }
 
 func newAnalyser(ctx context.Context, opts Options, progress func(Progress)) *analyser {
 	return &analyser{
 		ctx: ctx, opts: opts, lim: opts.Limits, progress: progress,
 		meta: map[string][]byte{}, json: map[string][]byte{}, bigJSON: map[string]int64{},
-		aliases: map[string]string{}, scans: map[string]*layerScan{},
+		aliases: map[string]string{}, scans: map[string]*layerScan{}, sboms: map[string]sbomScan{},
 		head: make([]byte, opts.Limits.ScanBytes), elf: make([]byte, opts.Limits.ELFPrefix),
 	}
 }
@@ -267,6 +295,55 @@ func (a *analyser) readJSON(r io.Reader, size int64) ([]byte, error) {
 	return b, nil
 }
 
+// jsonBlob reads a JSON document: kept whole when it fits the bounds, and
+// in every case scanned as it streams for the packages an SBOM declares,
+// so a document too large to keep is still read for those.
+func (a *analyser) jsonBlob(name string, size int64, r io.Reader) error {
+	keep := size <= a.lim.JSONBlob && a.jsonUsed+size <= a.lim.JSONTotal
+	var whole *bytes.Buffer
+	src := r
+	if keep {
+		whole = bytes.NewBuffer(make([]byte, 0, size))
+		src = io.TeeReader(r, whole)
+	}
+	declared := a.lim.Declared
+	kept := 0
+	for _, sc := range a.sboms {
+		if sc.format != "" {
+			kept++
+		}
+	}
+	if kept >= a.lim.SBOMDocs {
+		declared = 0 // counted, not kept
+	}
+	sc := scanJSON(src, declared)
+	if _, err := io.Copy(io.Discard, src); err != nil {
+		if a.ctx.Err() != nil {
+			return a.ctx.Err()
+		}
+		return failf("the archive stream broke off inside a document")
+	}
+	if sc.format != "" || sc.err != "" {
+		if sc.err != "" && a.ctx.Err() != nil {
+			return a.ctx.Err()
+		}
+		if declared == 0 && sc.format != "" && sc.total > 0 {
+			sc.err = fmt.Sprintf("the archive holds more than %d SBOM documents; this one was counted, not kept", a.lim.SBOMDocs)
+		}
+		a.sboms[name] = sc
+	}
+	if !keep {
+		a.bigJSON[name] = size
+		return nil
+	}
+	if int64(whole.Len()) != size {
+		return failf("the archive stream broke off inside a document")
+	}
+	a.jsonUsed += size
+	a.json[name] = whole.Bytes()
+	return nil
+}
+
 // blob classifies an archive entry by its first bytes — the layout does not
 // say which blobs are layers until manifest.json, which may come last — and
 // reads it accordingly.
@@ -283,16 +360,7 @@ func (a *analyser) blob(name string, size int64, r io.Reader) error {
 	case len(peek) == 512 && bytes.Count(peek, []byte{0}) == 512:
 		return a.layer(name, size, br, "none") // an empty layer: two zero blocks
 	case firstNonSpace(peek) == '{' || firstNonSpace(peek) == '[':
-		b, err := a.readJSON(br, size)
-		if err != nil {
-			return err
-		}
-		if b == nil {
-			a.bigJSON[name] = size
-			return nil
-		}
-		a.json[name] = b
-		return nil
+		return a.jsonBlob(name, size, br)
 	}
 	_, err := io.Copy(io.Discard, br)
 	return err

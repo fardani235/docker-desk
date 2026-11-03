@@ -61,6 +61,8 @@ type layerScan struct {
 	aggs              map[string]*aggregate
 	dropped           map[string]int // observations beyond Limits.PerLayerObs
 	unreadable        string
+	dbs               []dbCopy // copies of package databases (pkgdb.go)
+	dbsDropped        bool     // more than Limits.DBCopies
 }
 
 func fingerprint(p string) uint64 {
@@ -191,6 +193,14 @@ func (a *analyser) walk(s *layerScan, r io.Reader) error {
 		} else {
 			s.pathsCapped = true
 		}
+		var body io.Reader = tr
+		if kind := classifyDB(p); kind != dbNone && h.Typeflag != tar.TypeDir {
+			r, err := a.dbCapture(s, p, kind, h, tr)
+			if err != nil {
+				return err
+			}
+			body = r
+		}
 		mode := h.Mode
 		switch h.Typeflag {
 		case tar.TypeDir:
@@ -227,7 +237,7 @@ func (a *analyser) walk(s *layerScan, r io.Reader) error {
 		}
 		a.classify(s, p, h.Size)
 		if h.Typeflag == tar.TypeReg && h.Size > 0 {
-			if err := a.content(s, p, h.Size, tr); err != nil {
+			if err := a.content(s, p, h.Size, body); err != nil {
 				return err
 			}
 		}

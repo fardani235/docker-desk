@@ -106,7 +106,10 @@ func (m *Model) render() []string {
 		body = append(joinH(kinds, center), joinH(events, jobsPane)...)
 	}
 
-	if m.sp.open {
+	switch {
+	case m.pk.open:
+		body = m.packagesBox(m.width, len(body))
+	case m.sp.open:
 		// Full screen, under the header that names the daemon; a dialog
 		// opened from it is drawn on top, as anywhere else.
 		body = m.spaceBox(m.width, len(body))
@@ -295,6 +298,8 @@ func (m *Model) renderHints() string {
 	var pairs []string
 	add := func(k, v string) { pairs = append(pairs, k, v) }
 	switch {
+	case m.pk.open:
+		pairs = m.packagesHints()
 	case m.sp.open:
 		pairs = m.spaceHints()
 	case m.filtering:
@@ -318,6 +323,7 @@ func (m *Model) renderHints() string {
 			add("↑↓", "finding")
 			add("o", "order")
 			add("v", "reveal")
+			add("i", "packages")
 			add("[ ]", "tab")
 		} else {
 			add("↑↓", "scroll")
@@ -345,7 +351,10 @@ func (m *Model) renderHints() string {
 	}
 	left := " " + m.hints(pairs...)
 	right := m.hints("Tab", "pane", "?", "keys", "q", "quit") + " "
-	if m.sp.open {
+	switch {
+	case m.pk.open:
+		right = m.hints("Esc", "close", "?", "keys") + " "
+	case m.sp.open:
 		right = m.hints("S", "close", "?", "keys") + " " // no pane takes keys behind the view
 	}
 	lw, rw := ansi.StringWidth(left), ansi.StringWidth(right)
@@ -416,12 +425,28 @@ func (m *Model) helpLines(w int) []string {
 	row("↑ ↓  PgUp PgDn", "move between findings")
 	row("o", "order by layer, then group, then certainty")
 	row("v", "reveal the highlighted secret; it hides when the cursor moves")
+	row("i", "the image's packages: what its SBOM declares against what is installed")
 	row("Enter", "analyse (when asked first, or after a failure)")
 	row("c", "cancel the analysis in progress")
 	out = append(out,
 		"  Opening the tab reads the image's own archive (GET /images/get) once and",
 		"  keeps the report for its ID and platform. Findings name a rule, a source",
 		"  (daemon, image, desk), a certainty, the layer and the build instruction.",
+	)
+
+	sect("Packages view (i, from Images › Findings)")
+	row("↑ ↓ PgUp PgDn", "move between packages; the cursor stays on its package")
+	row("/", "search name, version, licence and purl (Enter keeps, Esc undoes)")
+	row("o", "order by name, state, layer or licence")
+	row("s", "show all, the disagreements, undeclared, version differs, declared only,")
+	row("", "not checkable, both — in turn (S shows all again)")
+	row("Esc, i", "close: the desk is as it was (Esc clears a search first)")
+	out = append(out,
+		"  Both lists come from the analysis already made: the SBOM's packages, read",
+		"  as the archive streamed, and the image's own dpkg, apk or rpm database,",
+		"  read in the layers the final filesystem keeps. They are compared within one",
+		"  ecosystem: deb with dpkg, apk with apk, rpm with rpm. Anything else is not",
+		"  checkable, never undeclared. What cannot be known is said, with the reason.",
 	)
 
 	sect("Space view (S, from any pane)")

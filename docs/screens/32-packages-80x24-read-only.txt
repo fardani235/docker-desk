@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake1739210489/d.sock  ● connected  [READ-ONLY]
+┏━ ◆ Packages — declared against installed ━━━━━━━━━━━━━━━━━ python:3.12-slim ━┓
+┃ by name · showing all · 73 of 73 rows                                        ┃
+┃   SBOM       SPDX-2.3 · 70 packages · attestation ed4a7151c323               ┃
+┃   installed  dpkg · /var/lib/dpkg/status (layer 4) · 66 packages             ┃
+┃              no apk or rpm database in any layer                             ┃
+┃   rows       62 both · 1 version differs · 1 declared only · 3 undeclared    ┃
+┃              6 not checkable                                                 ┃
+┃                                                                              ┃
+┃   NAME              VERSION       LICENCE       TYPE    LAYER  STATE         ┃
+┃ ▸ adduser           3.134         GPL-2.0-only  deb     L1     both          ┃
+┃   apt               2.6.1         GPL-2.0-only  deb     L1     both          ┃
+┃   base-files        12.4+deb12u5  GPL-2.0-or-…  deb     L1     both          ┃
+┃   base-passwd       3.6.1         GPL-2.0-only  deb     L1     both          ┃
+┃ ────────────────────────────────────────────────────────────────── 1 of 73 ─ ┃
+┃ state      declared, and installed at that version                           ┃
+┃ declared   version 3.134 · licence GPL-2.0-only ·                            ┃
+┃            pkg:deb/debian/adduser@3.134?arch=all                             ┃
+┃ installed  version 3.134 · all · listed by /var/lib/dpkg/status              ┃
+┃ added by   layer 1 · ADD file:5d6b639e8b6bcc01 in /                          ┃
+┃                                                                              ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ analyse image python:3.12-slim
+ ↑↓ move  / search  o order  s state                          Esc close  ? keys

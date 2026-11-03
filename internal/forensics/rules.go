@@ -157,6 +157,7 @@ func (a *analyser) finish() (*Report, error) {
 	}
 
 	a.attestations(rep)
+	rep.Packages = &PackageSet{SBOM: a.declared(rep), DBs: a.installed(scans)}
 
 	b := &builder{lim: a.lim, count: map[string]int{}, overflow: map[string]*Finding{}}
 	fs := &finalFS{scans: scans}
@@ -169,6 +170,7 @@ func (a *analyser) finish() (*Report, error) {
 	a.binaryRules(b, scans, fs, instr)
 	a.layerRules(b, rep, scans, fs, instr)
 	a.supplyRules(b, rep)
+	a.packageRules(b, rep, instr)
 
 	rep.Findings, rep.Omitted = b.done()
 	Sort(rep.Findings, OrderLayer)
@@ -289,11 +291,11 @@ func (a *analyser) attestations(rep *Report) {
 		for _, l := range doc.Layers {
 			at := Attestation{PredicateType: sanitize(l.Annotations["in-toto.io/predicate-type"], 120), Digest: l.Digest, Packages: -1}
 			p := blobPath(l.Digest)
-			if raw, ok := a.json[p]; ok {
-				at.Present = true
-				at.Format, at.Packages = sbomSummary(raw)
-			} else if _, ok := a.bigJSON[p]; ok {
-				at.Present = true
+			_, small := a.json[p]
+			_, big := a.bigJSON[p]
+			at.Present = small || big
+			if sc, ok := a.sboms[p]; ok && sc.err == "" && sc.format != "" {
+				at.Format, at.Packages = sc.format, sc.total
 			}
 			if len(rep.Attestations) < 32 {
 				rep.Attestations = append(rep.Attestations, at)
@@ -303,30 +305,6 @@ func (a *analyser) attestations(rep *Report) {
 	if missing > 0 {
 		a.note("index.json lists %d other manifest(s) whose blobs are not in the archive (other platforms): skipped", missing)
 	}
-}
-
-// sbomSummary reads an in-toto statement's SBOM format and package count.
-func sbomSummary(raw []byte) (string, int) {
-	var st struct {
-		Predicate struct {
-			SPDXVersion string            `json:"spdxVersion"`
-			Packages    []json.RawMessage `json:"packages"`
-			BOMFormat   string            `json:"bomFormat"`
-			SpecVersion string            `json:"specVersion"`
-			Components  []json.RawMessage `json:"components"`
-		} `json:"predicate"`
-	}
-	if json.Unmarshal(raw, &st) != nil {
-		return "", -1
-	}
-	p := st.Predicate
-	switch {
-	case p.SPDXVersion != "":
-		return sanitize(p.SPDXVersion, 20), len(p.Packages)
-	case p.BOMFormat != "":
-		return sanitize(p.BOMFormat+" "+p.SpecVersion, 30), len(p.Components)
-	}
-	return "", -1
 }
 
 func shortDigest(d string) string {
@@ -413,6 +391,11 @@ func (fs *finalFS) fate(i int, p string) fate {
 		}
 		for anc := path.Dir(p); ; anc = path.Dir(anc) {
 			if s.whiteouts[anc] || s.opaques[anc] {
+				return fate{by: j + 1, how: "deleted"}
+			}
+			if _, ok := s.symlinks[anc]; ok {
+				// A directory replaced by a link: what was under it is
+				// gone from view (Fedora's /var/lib/rpm, for one).
 				return fate{by: j + 1, how: "deleted"}
 			}
 			if anc == "/" {
@@ -911,9 +894,13 @@ func (a *analyser) supplyRules(b *builder, rep *Report) {
 		if len(sbom) > 1 {
 			ev += fmt.Sprintf(" (+%d more)", len(sbom)-1)
 		}
+		unknown := "whether the SBOM is complete: it could not be checked against the image's package databases"
+		if checked := checkedAgainst(rep.Packages); checked != "" {
+			unknown = "whether it is complete for anything but " + checked + ": only those package databases are read (i opens the list)"
+		}
 		b.add(Finding{Rule: "supply.sbom", Group: GroupSupply, Source: SourceImage, Certainty: Certain, Evidence: ev,
 			Reason:  "A software bill of materials travels with the image.",
-			Unknown: "whether the SBOM is complete: it is not checked against the layers"})
+			Unknown: unknown})
 	}
 	if len(prov) > 0 {
 		ev := "provenance attestation: " + prov[0].PredicateType

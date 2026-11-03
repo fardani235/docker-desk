@@ -51,6 +51,10 @@ type Layer struct {
 	// Gzip compresses the layer blob (OCI layout only; the legacy layout
 	// always stores layers uncompressed, as the daemon does).
 	Gzip bool
+	// Zstd stores the layer as a blob that starts with zstd's magic number
+	// (OCI layout only). The rest is not real zstd: the analyser does not
+	// decode zstd, and the blob only has to be recognised as one.
+	Zstd bool
 	// CreatedBy is the history entry that produced the layer.
 	CreatedBy string
 }
@@ -84,6 +88,11 @@ type Image struct {
 	SBOM, Provenance bool
 	// SBOMPackages is the number of packages the SBOM lists.
 	SBOMPackages int
+	// SBOMDoc, when set, is the SBOM document itself (the in-toto
+	// statement's predicate), in place of the generated one;
+	// SBOMPredicate is its predicate type (SPDX's when empty).
+	SBOMDoc       []byte
+	SBOMPredicate string
 	// MissingAttestationBlobs leaves the attestation layers out of the
 	// archive while the attestation manifest still references them.
 	MissingAttestationBlobs bool
@@ -112,6 +121,7 @@ const (
 	mtOCIConfig   = "application/vnd.oci.image.config.v1+json"
 	mtLayerTar    = "application/vnd.oci.image.layer.v1.tar"
 	mtLayerGzip   = "application/vnd.oci.image.layer.v1.tar+gzip"
+	mtLayerZstd   = "application/vnd.oci.image.layer.v1.tar+zstd"
 	mtInToto      = "application/vnd.in-toto+json"
 )
 
@@ -374,8 +384,11 @@ func OCI(img Image) Built {
 		t := layerTar(l)
 		diffIDs = append(diffIDs, digest(t))
 		blob, mt := t, mtLayerTar
-		if l.Gzip {
+		switch {
+		case l.Gzip:
 			blob, mt = gz(t), mtLayerGzip
+		case l.Zstd:
+			blob, mt = append([]byte("\x28\xb5\x2f\xfd"), t...), mtLayerZstd
 		}
 		paths = append(paths, addBlob(blob))
 		layerDescs = append(layerDescs, desc(mt, blob))
@@ -422,7 +435,13 @@ func OCI(img Image) Built {
 		}
 		nested = append(nested, ad)
 	}
-	if img.SBOM {
+	if img.SBOM && img.SBOMDoc != nil {
+		pred := img.SBOMPredicate
+		if pred == "" {
+			pred = "https://spdx.dev/Document"
+		}
+		attest(pred, img.SBOMDoc)
+	} else if img.SBOM {
 		var pkgs []map[string]string
 		for i := 0; i < img.SBOMPackages; i++ {
 			pkgs = append(pkgs, map[string]string{"name": fmt.Sprintf("pkg-%d", i), "versionInfo": "1.0"})

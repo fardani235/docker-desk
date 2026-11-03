@@ -163,6 +163,9 @@ type Model struct {
 	// ---- findings tab (Images) ----
 	fx findingsState
 
+	// ---- packages view (Images › Findings, then i) ----
+	pk pkgView
+
 	// ---- space view ----
 	sp spaceState
 	// changedAt is when a refresh last found the engine different from what

@@ -1,0 +1,1001 @@
+gpg-pubkey	(none)	a15b79cc	63d04c2c	(none)	pubkey
+pkg-0001	(none)	6.0	21.fc40	i686	MIT
+pkg-0002	(none)	6.3	15.fc40	i686	GPL-2.0-or-later
+pkg-0004	(none)	4.27	4.fc40	i686	BSD-3-Clause
+pkg-0005	(none)	8.63	27.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0007	3	3.19	20.fc40	x86_64	MIT
+pkg-0008	(none)	7.66	1.fc40	i686	BSD-3-Clause
+pkg-0010	(none)	7.68	8.fc40	i686	BSD-3-Clause
+pkg-0011	(none)	6.81	2.fc40	x86_64	MIT
+pkg-0013	(none)	9.47	3.fc40	x86_64	MIT
+pkg-0014	2	5.39	21.fc40	noarch	GPL-2.0-or-later
+pkg-0016	(none)	6.11	23.fc40	i686	MIT
+pkg-0017	(none)	9.69	13.fc40	x86_64	BSD-3-Clause
+pkg-0019	(none)	3.38	22.fc40	i686	GPL-2.0-or-later
+pkg-0020	(none)	5.92	24.fc40	noarch	MIT
+pkg-0022	(none)	2.15	13.fc40	noarch	BSD-3-Clause
+pkg-0023	(none)	0.17	9.fc40	x86_64	MIT
+pkg-0025	(none)	1.57	13.fc40	noarch	GPL-2.0-or-later
+pkg-0026	(none)	6.8	22.fc40	x86_64	BSD-3-Clause
+pkg-0028	2	3.72	8.fc40	x86_64	MIT
+pkg-0029	(none)	5.2	7.fc40	x86_64	MIT
+pkg-0031	(none)	7.21	12.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0032	(none)	1.66	21.fc40	noarch	GPL-2.0-or-later
+pkg-0034	(none)	2.74	23.fc40	x86_64	MIT
+pkg-0035	2	0.19	24.fc40	x86_64	GPL-2.0-or-later
+pkg-0037	(none)	0.64	6.fc40	i686	MIT
+pkg-0038	(none)	5.73	9.fc40	noarch	MIT
+pkg-0040	(none)	5.50	25.fc40	x86_64	MIT
+pkg-0041	(none)	7.31	10.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0043	(none)	6.96	16.fc40	x86_64	BSD-3-Clause
+pkg-0044	(none)	3.0	30.fc40	i686	MIT
+pkg-0046	(none)	6.7	18.fc40	x86_64	MIT
+pkg-0047	(none)	4.81	24.fc40	i686	MIT
+pkg-0049	3	2.35	15.fc40	i686	GPL-2.0-or-later
+pkg-0050	(none)	3.28	23.fc40	x86_64	MIT
+pkg-0052	(none)	8.46	20.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0053	(none)	2.64	5.fc40	i686	GPL-2.0-or-later
+pkg-0055	(none)	0.77	13.fc40	x86_64	BSD-3-Clause
+pkg-0056	1	6.32	26.fc40	i686	BSD-3-Clause
+pkg-0058	(none)	0.8	5.fc40	noarch	MIT
+pkg-0059	(none)	1.99	28.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0061	(none)	3.95	24.fc40	noarch	BSD-3-Clause
+pkg-0062	(none)	9.47	19.fc40	x86_64	BSD-3-Clause
+pkg-0064	(none)	7.28	3.fc40	noarch	BSD-3-Clause
+pkg-0065	(none)	9.47	28.fc40	noarch	MIT
+pkg-0067	(none)	6.43	12.fc40	noarch	BSD-3-Clause
+pkg-0068	(none)	9.39	3.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0070	1	1.10	3.fc40	x86_64	BSD-3-Clause
+pkg-0071	(none)	0.40	16.fc40	x86_64	GPL-2.0-or-later
+pkg-0073	(none)	6.51	14.fc40	i686	GPL-2.0-or-later
+pkg-0074	(none)	3.80	19.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0076	(none)	4.90	21.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0077	2	6.12	18.fc40	i686	MIT
+pkg-0079	(none)	3.73	17.fc40	i686	MIT
+pkg-0080	(none)	8.0	7.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0082	(none)	6.98	9.fc40	x86_64	BSD-3-Clause
+pkg-0083	(none)	2.46	19.fc40	x86_64	MIT
+pkg-0085	(none)	4.7	29.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0086	(none)	0.89	1.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0088	(none)	1.56	6.fc40	x86_64	BSD-3-Clause
+pkg-0089	(none)	5.17	26.fc40	noarch	BSD-3-Clause
+pkg-0091	3	5.69	28.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0092	(none)	9.24	4.fc40	i686	MIT
+pkg-0094	(none)	9.25	7.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0095	(none)	6.64	7.fc40	i686	GPL-2.0-or-later
+pkg-0097	(none)	3.68	29.fc40	x86_64	MIT
+pkg-0098	2	0.63	28.fc40	x86_64	BSD-3-Clause
+pkg-0100	(none)	7.21	29.fc40	i686	GPL-2.0-or-later
+pkg-0101	(none)	3.59	21.fc40	x86_64	MIT
+pkg-0103	(none)	0.95	4.fc40	i686	MIT
+pkg-0104	(none)	4.98	25.fc40	x86_64	MIT
+pkg-0106	(none)	7.70	5.fc40	i686	GPL-2.0-or-later
+pkg-0107	(none)	0.68	10.fc40	noarch	MIT
+pkg-0109	(none)	5.45	29.fc40	x86_64	GPL-2.0-or-later
+pkg-0110	(none)	1.54	10.fc40	x86_64	BSD-3-Clause
+pkg-0112	1	6.53	12.fc40	x86_64	BSD-3-Clause
+pkg-0113	(none)	2.21	11.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0115	(none)	6.49	7.fc40	noarch	MIT
+pkg-0116	(none)	1.9	18.fc40	i686	BSD-3-Clause
+pkg-0118	(none)	9.92	17.fc40	noarch	BSD-3-Clause
+pkg-0119	1	2.83	23.fc40	x86_64	GPL-2.0-or-later
+pkg-0121	(none)	4.36	25.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0122	(none)	0.63	29.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0124	(none)	4.71	3.fc40	noarch	BSD-3-Clause
+pkg-0125	(none)	3.51	12.fc40	x86_64	GPL-2.0-or-later
+pkg-0127	(none)	7.63	29.fc40	i686	BSD-3-Clause
+pkg-0128	(none)	8.95	9.fc40	x86_64	MIT
+pkg-0130	(none)	9.10	16.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0131	(none)	2.67	2.fc40	i686	GPL-2.0-or-later
+pkg-0133	1	8.81	23.fc40	i686	MIT
+pkg-0134	(none)	8.18	24.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0136	(none)	7.78	7.fc40	noarch	GPL-2.0-or-later
+pkg-0137	(none)	9.38	8.fc40	noarch	BSD-3-Clause
+pkg-0139	(none)	7.25	21.fc40	noarch	BSD-3-Clause
+pkg-0140	2	3.20	7.fc40	i686	GPL-2.0-or-later
+pkg-0142	(none)	8.20	6.fc40	i686	GPL-2.0-or-later
+pkg-0143	(none)	3.39	1.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0145	(none)	8.89	9.fc40	x86_64	MIT
+pkg-0146	(none)	7.20	18.fc40	noarch	GPL-2.0-or-later
+pkg-0148	(none)	6.72	2.fc40	noarch	MIT
+pkg-0149	(none)	9.11	13.fc40	noarch	GPL-2.0-or-later
+pkg-0151	(none)	3.7	10.fc40	noarch	BSD-3-Clause
+pkg-0152	(none)	3.84	13.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0154	3	3.6	9.fc40	noarch	GPL-2.0-or-later
+pkg-0155	(none)	6.77	17.fc40	x86_64	GPL-2.0-or-later
+pkg-0157	(none)	4.62	20.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0158	(none)	1.64	20.fc40	noarch	MIT
+pkg-0160	(none)	6.20	11.fc40	noarch	MIT
+pkg-0161	2	0.60	8.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0163	(none)	5.53	12.fc40	i686	GPL-2.0-or-later
+pkg-0164	(none)	5.47	16.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0166	(none)	4.65	12.fc40	i686	MIT
+pkg-0167	(none)	9.71	21.fc40	x86_64	MIT
+pkg-0169	(none)	6.13	22.fc40	i686	GPL-2.0-or-later
+pkg-0170	(none)	9.7	2.fc40	noarch	BSD-3-Clause
+pkg-0172	(none)	4.50	14.fc40	noarch	GPL-2.0-or-later
+pkg-0173	(none)	9.46	6.fc40	i686	BSD-3-Clause
+pkg-0175	3	7.20	2.fc40	i686	GPL-2.0-or-later
+pkg-0176	(none)	1.29	21.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0178	(none)	6.70	26.fc40	i686	GPL-2.0-or-later
+pkg-0179	(none)	1.1	21.fc40	noarch	GPL-2.0-or-later
+pkg-0181	(none)	7.9	26.fc40	noarch	GPL-2.0-or-later
+pkg-0182	1	8.58	24.fc40	x86_64	MIT
+pkg-0184	(none)	1.83	19.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0185	(none)	0.38	10.fc40	i686	BSD-3-Clause
+pkg-0187	(none)	7.84	4.fc40	noarch	MIT
+pkg-0188	(none)	7.2	20.fc40	x86_64	MIT
+pkg-0190	(none)	1.54	7.fc40	i686	GPL-2.0-or-later
+pkg-0191	(none)	4.70	26.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0193	(none)	1.33	24.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0194	(none)	4.40	8.fc40	i686	BSD-3-Clause
+pkg-0196	1	8.64	6.fc40	noarch	MIT
+pkg-0197	(none)	8.49	10.fc40	x86_64	GPL-2.0-or-later
+pkg-0199	(none)	0.68	29.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0200	(none)	8.54	17.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0202	(none)	9.60	8.fc40	i686	BSD-3-Clause
+pkg-0203	2	5.94	11.fc40	x86_64	BSD-3-Clause
+pkg-0205	(none)	5.23	20.fc40	noarch	BSD-3-Clause
+pkg-0206	(none)	3.25	28.fc40	i686	GPL-2.0-or-later
+pkg-0208	(none)	7.35	8.fc40	x86_64	MIT
+pkg-0209	(none)	1.3	12.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0211	(none)	6.18	12.fc40	x86_64	GPL-2.0-or-later
+pkg-0212	(none)	0.30	10.fc40	noarch	GPL-2.0-or-later
+pkg-0214	(none)	9.85	9.fc40	x86_64	BSD-3-Clause
+pkg-0215	(none)	6.78	24.fc40	x86_64	BSD-3-Clause
+pkg-0217	3	9.85	19.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0218	(none)	0.37	24.fc40	noarch	GPL-2.0-or-later
+pkg-0220	(none)	4.37	2.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0221	(none)	6.20	8.fc40	noarch	GPL-2.0-or-later
+pkg-0223	(none)	9.5	15.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0224	3	0.97	18.fc40	i686	GPL-2.0-or-later
+pkg-0226	(none)	6.26	5.fc40	noarch	BSD-3-Clause
+pkg-0227	(none)	3.51	2.fc40	x86_64	MIT
+pkg-0229	(none)	4.17	27.fc40	i686	BSD-3-Clause
+pkg-0230	(none)	9.23	14.fc40	i686	BSD-3-Clause
+pkg-0232	(none)	2.53	17.fc40	x86_64	MIT
+pkg-0233	(none)	8.63	2.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0235	(none)	1.73	5.fc40	noarch	MIT
+pkg-0236	(none)	2.81	5.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0238	3	8.92	22.fc40	x86_64	BSD-3-Clause
+pkg-0239	(none)	6.86	17.fc40	i686	BSD-3-Clause
+pkg-0241	(none)	4.23	16.fc40	noarch	GPL-2.0-or-later
+pkg-0242	(none)	6.99	19.fc40	x86_64	BSD-3-Clause
+pkg-0244	(none)	6.53	12.fc40	noarch	GPL-2.0-or-later
+pkg-0245	2	9.28	21.fc40	i686	GPL-2.0-or-later
+pkg-0247	(none)	2.79	7.fc40	noarch	GPL-2.0-or-later
+pkg-0248	(none)	7.58	16.fc40	i686	GPL-2.0-or-later
+pkg-0250	(none)	0.73	7.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0251	(none)	1.96	13.fc40	noarch	GPL-2.0-or-later
+pkg-0253	(none)	8.0	25.fc40	noarch	BSD-3-Clause
+pkg-0254	(none)	0.52	1.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0256	(none)	9.49	6.fc40	x86_64	BSD-3-Clause
+pkg-0257	(none)	4.29	14.fc40	noarch	MIT
+pkg-0259	1	1.63	15.fc40	noarch	MIT
+pkg-0260	(none)	1.62	9.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0262	(none)	4.88	1.fc40	i686	BSD-3-Clause
+pkg-0263	(none)	9.63	20.fc40	noarch	GPL-2.0-or-later
+pkg-0265	(none)	3.19	9.fc40	x86_64	BSD-3-Clause
+pkg-0266	2	3.14	23.fc40	noarch	BSD-3-Clause
+pkg-0268	(none)	4.33	5.fc40	x86_64	GPL-2.0-or-later
+pkg-0269	(none)	2.62	10.fc40	noarch	BSD-3-Clause
+pkg-0271	(none)	2.8	29.fc40	noarch	GPL-2.0-or-later
+pkg-0272	(none)	9.46	22.fc40	x86_64	MIT
+pkg-0274	(none)	5.60	9.fc40	i686	BSD-3-Clause
+pkg-0275	(none)	2.52	4.fc40	x86_64	GPL-2.0-or-later
+pkg-0277	(none)	9.27	21.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0278	(none)	6.21	4.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0280	2	2.33	29.fc40	noarch	MIT
+pkg-0281	(none)	5.31	6.fc40	noarch	BSD-3-Clause
+pkg-0283	(none)	2.71	17.fc40	x86_64	GPL-2.0-or-later
+pkg-0284	(none)	8.47	10.fc40	i686	BSD-3-Clause
+pkg-0286	(none)	0.7	14.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0287	1	4.13	16.fc40	noarch	GPL-2.0-or-later
+pkg-0289	(none)	2.85	1.fc40	i686	BSD-3-Clause
+pkg-0290	(none)	3.61	3.fc40	noarch	BSD-3-Clause
+pkg-0292	(none)	1.0	22.fc40	noarch	BSD-3-Clause
+pkg-0293	(none)	0.71	30.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0295	(none)	1.12	26.fc40	i686	GPL-2.0-or-later
+pkg-0296	(none)	9.4	28.fc40	i686	MIT
+pkg-0298	(none)	4.34	11.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0299	(none)	8.59	26.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0301	2	4.44	6.fc40	i686	GPL-2.0-or-later
+pkg-0302	(none)	0.46	28.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0304	(none)	8.0	22.fc40	i686	GPL-2.0-or-later
+pkg-0305	(none)	3.49	21.fc40	noarch	GPL-2.0-or-later
+pkg-0307	(none)	0.39	11.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0308	2	9.62	7.fc40	x86_64	BSD-3-Clause
+pkg-0310	(none)	2.22	30.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0311	(none)	0.74	13.fc40	noarch	MIT
+pkg-0313	(none)	4.91	23.fc40	noarch	GPL-2.0-or-later
+pkg-0314	(none)	1.64	1.fc40	i686	MIT
+pkg-0316	(none)	2.38	10.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0317	(none)	3.45	28.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0319	(none)	3.65	4.fc40	x86_64	MIT
+pkg-0320	(none)	1.72	1.fc40	x86_64	BSD-3-Clause
+pkg-0322	1	0.22	12.fc40	i686	MIT
+pkg-0323	(none)	6.61	26.fc40	i686	BSD-3-Clause
+pkg-0325	(none)	6.88	26.fc40	noarch	GPL-2.0-or-later
+pkg-0326	(none)	2.96	2.fc40	x86_64	MIT
+pkg-0328	(none)	6.88	23.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0329	1	3.84	18.fc40	i686	GPL-2.0-or-later
+pkg-0331	(none)	9.94	28.fc40	noarch	GPL-2.0-or-later
+pkg-0332	(none)	6.0	14.fc40	i686	GPL-2.0-or-later
+pkg-0334	(none)	3.69	24.fc40	i686	BSD-3-Clause
+pkg-0335	(none)	5.18	15.fc40	x86_64	MIT
+pkg-0337	(none)	1.17	25.fc40	x86_64	GPL-2.0-or-later
+pkg-0338	(none)	5.91	4.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0340	(none)	1.1	9.fc40	x86_64	BSD-3-Clause
+pkg-0341	(none)	3.24	25.fc40	x86_64	MIT
+pkg-0343	1	1.88	27.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0344	(none)	3.86	28.fc40	i686	GPL-2.0-or-later
+pkg-0346	(none)	6.87	16.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0347	(none)	2.16	28.fc40	i686	MIT
+pkg-0349	(none)	6.32	24.fc40	i686	MIT
+pkg-0350	1	1.37	4.fc40	x86_64	GPL-2.0-or-later
+pkg-0352	(none)	6.63	24.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0353	(none)	2.74	16.fc40	noarch	GPL-2.0-or-later
+pkg-0355	(none)	4.69	9.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0356	(none)	8.49	14.fc40	i686	GPL-2.0-or-later
+pkg-0358	(none)	1.33	19.fc40	x86_64	MIT
+pkg-0359	(none)	3.86	1.fc40	x86_64	GPL-2.0-or-later
+pkg-0361	(none)	0.99	1.fc40	noarch	GPL-2.0-or-later
+pkg-0362	(none)	3.57	29.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0364	3	6.21	3.fc40	x86_64	MIT
+pkg-0365	(none)	7.2	3.fc40	x86_64	GPL-2.0-or-later
+pkg-0367	(none)	1.69	16.fc40	x86_64	BSD-3-Clause
+pkg-0368	(none)	2.23	24.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0370	(none)	4.5	28.fc40	noarch	MIT
+pkg-0371	1	0.12	18.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0373	(none)	9.57	21.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0374	(none)	8.21	20.fc40	i686	BSD-3-Clause
+pkg-0376	(none)	4.33	7.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0377	(none)	5.38	2.fc40	x86_64	BSD-3-Clause
+pkg-0379	(none)	5.67	12.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0380	(none)	6.10	27.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0382	(none)	6.98	7.fc40	x86_64	MIT
+pkg-0383	(none)	2.36	19.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0385	1	8.93	14.fc40	noarch	GPL-2.0-or-later
+pkg-0386	(none)	5.41	29.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0388	(none)	7.98	16.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0389	(none)	8.46	12.fc40	x86_64	MIT
+pkg-0391	(none)	3.53	21.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0392	2	5.56	26.fc40	x86_64	BSD-3-Clause
+pkg-0394	(none)	7.49	4.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0395	(none)	2.24	11.fc40	noarch	MIT
+pkg-0397	(none)	5.10	2.fc40	noarch	MIT
+pkg-0398	(none)	5.45	22.fc40	i686	MIT
+pkg-0400	(none)	5.97	1.fc40	noarch	MIT
+pkg-0401	(none)	7.92	15.fc40	i686	MIT
+pkg-0403	(none)	2.64	4.fc40	i686	GPL-2.0-or-later
+pkg-0404	(none)	0.68	15.fc40	x86_64	BSD-3-Clause
+pkg-0406	2	8.1	10.fc40	i686	MIT
+pkg-0407	(none)	3.4	28.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0409	(none)	1.77	5.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0410	(none)	6.99	12.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0412	(none)	6.23	4.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0413	1	1.84	21.fc40	x86_64	MIT
+pkg-0415	(none)	1.63	28.fc40	noarch	GPL-2.0-or-later
+pkg-0416	(none)	5.0	16.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0418	(none)	2.51	11.fc40	i686	MIT
+pkg-0419	(none)	2.2	30.fc40	i686	GPL-2.0-or-later
+pkg-0421	(none)	3.95	19.fc40	i686	GPL-2.0-or-later
+pkg-0422	(none)	1.92	4.fc40	i686	MIT
+pkg-0424	(none)	3.6	13.fc40	noarch	MIT
+pkg-0425	(none)	5.62	4.fc40	i686	BSD-3-Clause
+pkg-0427	1	0.68	3.fc40	i686	GPL-2.0-or-later
+pkg-0428	(none)	3.17	8.fc40	i686	GPL-2.0-or-later
+pkg-0430	(none)	7.41	19.fc40	noarch	BSD-3-Clause
+pkg-0431	(none)	2.3	8.fc40	noarch	GPL-2.0-or-later
+pkg-0433	(none)	1.20	19.fc40	i686	GPL-2.0-or-later
+pkg-0434	2	1.0	11.fc40	i686	MIT
+pkg-0436	(none)	9.75	17.fc40	x86_64	GPL-2.0-or-later
+pkg-0437	(none)	3.90	10.fc40	i686	MIT
+pkg-0439	(none)	2.93	9.fc40	x86_64	MIT
+pkg-0440	(none)	4.6	21.fc40	x86_64	MIT
+pkg-0442	(none)	1.37	17.fc40	i686	GPL-2.0-or-later
+pkg-0443	(none)	8.14	26.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0445	(none)	9.80	27.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0446	(none)	5.61	7.fc40	i686	GPL-2.0-or-later
+pkg-0448	2	3.1	1.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0449	(none)	1.96	11.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0451	(none)	9.86	7.fc40	x86_64	GPL-2.0-or-later
+pkg-0452	(none)	6.18	23.fc40	noarch	MIT
+pkg-0454	(none)	7.20	19.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0455	2	7.66	16.fc40	x86_64	GPL-2.0-or-later
+pkg-0457	(none)	5.49	18.fc40	noarch	MIT
+pkg-0458	(none)	4.14	11.fc40	i686	MIT
+pkg-0460	(none)	4.55	24.fc40	i686	GPL-2.0-or-later
+pkg-0461	(none)	5.43	23.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0463	(none)	0.42	10.fc40	noarch	MIT
+pkg-0464	(none)	6.82	10.fc40	i686	BSD-3-Clause
+pkg-0466	(none)	3.11	3.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0467	(none)	6.32	3.fc40	i686	BSD-3-Clause
+pkg-0469	1	0.99	2.fc40	x86_64	BSD-3-Clause
+pkg-0470	(none)	0.85	25.fc40	i686	BSD-3-Clause
+pkg-0472	(none)	6.13	24.fc40	i686	GPL-2.0-or-later
+pkg-0473	(none)	0.70	12.fc40	noarch	BSD-3-Clause
+pkg-0475	(none)	2.35	8.fc40	x86_64	BSD-3-Clause
+pkg-0476	3	4.94	8.fc40	x86_64	GPL-2.0-or-later
+pkg-0478	(none)	7.85	10.fc40	i686	MIT
+pkg-0479	(none)	1.23	28.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0481	(none)	4.34	12.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0482	(none)	5.6	29.fc40	x86_64	BSD-3-Clause
+pkg-0484	(none)	9.55	9.fc40	x86_64	BSD-3-Clause
+pkg-0485	(none)	3.86	4.fc40	x86_64	MIT
+pkg-0487	(none)	6.43	18.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0488	(none)	4.46	27.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0490	2	7.10	28.fc40	noarch	MIT
+pkg-0491	(none)	4.67	27.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0493	(none)	9.85	21.fc40	i686	MIT
+pkg-0494	(none)	7.41	4.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0496	(none)	0.90	29.fc40	i686	GPL-2.0-or-later
+pkg-0497	3	2.21	7.fc40	noarch	GPL-2.0-or-later
+pkg-0499	(none)	5.61	2.fc40	i686	MIT
+pkg-0500	(none)	9.7	5.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0502	(none)	3.75	24.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0503	(none)	1.60	18.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0505	(none)	2.98	13.fc40	noarch	GPL-2.0-or-later
+pkg-0506	(none)	0.54	21.fc40	noarch	GPL-2.0-or-later
+pkg-0508	(none)	4.7	22.fc40	i686	BSD-3-Clause
+pkg-0509	(none)	4.75	5.fc40	i686	BSD-3-Clause
+pkg-0511	3	2.42	1.fc40	noarch	MIT
+pkg-0512	(none)	5.71	10.fc40	noarch	MIT
+pkg-0514	(none)	8.4	25.fc40	x86_64	GPL-2.0-or-later
+pkg-0515	(none)	2.74	3.fc40	noarch	MIT
+pkg-0517	(none)	0.59	27.fc40	noarch	MIT
+pkg-0518	1	9.67	27.fc40	x86_64	MIT
+pkg-0520	(none)	5.40	24.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0521	(none)	6.75	3.fc40	noarch	BSD-3-Clause
+pkg-0523	(none)	7.47	7.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0524	(none)	2.70	3.fc40	x86_64	BSD-3-Clause
+pkg-0526	(none)	0.35	13.fc40	noarch	GPL-2.0-or-later
+pkg-0527	(none)	4.15	3.fc40	x86_64	BSD-3-Clause
+pkg-0529	(none)	4.78	15.fc40	i686	MIT
+pkg-0530	(none)	0.42	3.fc40	noarch	BSD-3-Clause
+pkg-0532	3	0.58	23.fc40	i686	GPL-2.0-or-later
+pkg-0533	(none)	8.1	3.fc40	x86_64	MIT
+pkg-0535	(none)	9.39	19.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0536	(none)	3.4	14.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0538	(none)	9.36	2.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0539	2	5.48	13.fc40	x86_64	BSD-3-Clause
+pkg-0541	(none)	6.66	10.fc40	noarch	MIT
+pkg-0542	(none)	3.64	22.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0544	(none)	1.73	4.fc40	noarch	MIT
+pkg-0545	(none)	0.43	27.fc40	x86_64	GPL-2.0-or-later
+pkg-0547	(none)	5.53	5.fc40	noarch	GPL-2.0-or-later
+pkg-0548	(none)	2.25	9.fc40	i686	BSD-3-Clause
+pkg-0550	(none)	6.18	5.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0551	(none)	6.7	6.fc40	noarch	MIT
+pkg-0553	3	8.58	4.fc40	i686	GPL-2.0-or-later
+pkg-0554	(none)	9.49	20.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0556	(none)	8.49	15.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0557	(none)	8.92	11.fc40	i686	GPL-2.0-or-later
+pkg-0559	(none)	5.57	3.fc40	i686	MIT
+pkg-0560	2	3.16	2.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0562	(none)	6.61	7.fc40	i686	GPL-2.0-or-later
+pkg-0563	(none)	0.45	5.fc40	noarch	GPL-2.0-or-later
+pkg-0565	(none)	2.44	28.fc40	i686	BSD-3-Clause
+pkg-0566	(none)	0.49	21.fc40	x86_64	MIT
+pkg-0568	(none)	5.26	6.fc40	x86_64	MIT
+pkg-0569	(none)	0.25	24.fc40	x86_64	BSD-3-Clause
+pkg-0571	(none)	9.27	4.fc40	noarch	BSD-3-Clause
+pkg-0572	(none)	5.91	24.fc40	i686	GPL-2.0-or-later
+pkg-0574	2	4.70	7.fc40	x86_64	MIT
+pkg-0575	(none)	2.82	24.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0577	(none)	9.14	15.fc40	i686	BSD-3-Clause
+pkg-0578	(none)	0.27	15.fc40	i686	GPL-2.0-or-later
+pkg-0580	(none)	7.34	11.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0581	2	3.88	30.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0583	(none)	8.87	10.fc40	i686	BSD-3-Clause
+pkg-0584	(none)	1.69	30.fc40	i686	GPL-2.0-or-later
+pkg-0586	(none)	4.13	24.fc40	i686	GPL-2.0-or-later
+pkg-0587	(none)	8.94	12.fc40	i686	MIT
+pkg-0589	(none)	1.63	10.fc40	noarch	BSD-3-Clause
+pkg-0590	(none)	5.78	26.fc40	noarch	GPL-2.0-or-later
+pkg-0592	(none)	1.98	29.fc40	i686	GPL-2.0-or-later
+pkg-0593	(none)	5.40	30.fc40	x86_64	MIT
+pkg-0595	2	1.45	14.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0596	(none)	7.66	20.fc40	i686	MIT
+pkg-0598	(none)	1.9	15.fc40	x86_64	MIT
+pkg-0599	(none)	4.13	27.fc40	x86_64	GPL-2.0-or-later
+pkg-0601	(none)	9.79	10.fc40	noarch	MIT
+pkg-0602	2	5.69	17.fc40	i686	BSD-3-Clause
+pkg-0604	(none)	7.14	12.fc40	noarch	MIT
+pkg-0605	(none)	0.91	21.fc40	i686	GPL-2.0-or-later
+pkg-0607	(none)	3.92	11.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0608	(none)	6.14	26.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0610	(none)	7.98	3.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0611	(none)	3.41	5.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0613	(none)	3.83	19.fc40	x86_64	BSD-3-Clause
+pkg-0614	(none)	4.10	20.fc40	x86_64	BSD-3-Clause
+pkg-0616	1	0.71	11.fc40	noarch	MIT
+pkg-0617	(none)	4.17	29.fc40	i686	GPL-2.0-or-later
+pkg-0619	(none)	3.28	16.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0620	(none)	9.10	26.fc40	x86_64	BSD-3-Clause
+pkg-0622	(none)	7.73	11.fc40	noarch	MIT
+pkg-0623	1	5.82	10.fc40	x86_64	MIT
+pkg-0625	(none)	9.94	16.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0626	(none)	0.54	11.fc40	i686	MIT
+pkg-0628	(none)	1.27	25.fc40	noarch	MIT
+pkg-0629	(none)	2.4	28.fc40	x86_64	MIT
+pkg-0631	(none)	6.1	12.fc40	i686	GPL-2.0-or-later
+pkg-0632	(none)	6.65	14.fc40	i686	GPL-2.0-or-later
+pkg-0634	(none)	8.81	8.fc40	i686	GPL-2.0-or-later
+pkg-0635	(none)	2.76	6.fc40	i686	GPL-2.0-or-later
+pkg-0637	2	4.59	30.fc40	noarch	MIT
+pkg-0638	(none)	5.20	26.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0640	(none)	1.91	30.fc40	i686	GPL-2.0-or-later
+pkg-0641	(none)	1.7	7.fc40	i686	GPL-2.0-or-later
+pkg-0643	(none)	8.77	16.fc40	i686	GPL-2.0-or-later
+pkg-0644	2	5.58	25.fc40	noarch	GPL-2.0-or-later
+pkg-0646	(none)	6.29	24.fc40	noarch	MIT
+pkg-0647	(none)	3.56	3.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0649	(none)	7.15	2.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0650	(none)	6.43	15.fc40	i686	GPL-2.0-or-later
+pkg-0652	(none)	3.41	11.fc40	x86_64	BSD-3-Clause
+pkg-0653	(none)	2.67	19.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0655	(none)	8.73	24.fc40	x86_64	MIT
+pkg-0656	(none)	2.50	21.fc40	noarch	BSD-3-Clause
+pkg-0658	2	0.59	2.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0659	(none)	6.40	30.fc40	i686	GPL-2.0-or-later
+pkg-0661	(none)	0.2	27.fc40	noarch	GPL-2.0-or-later
+pkg-0662	(none)	5.61	6.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0664	(none)	0.6	8.fc40	noarch	BSD-3-Clause
+pkg-0665	3	8.82	14.fc40	x86_64	MIT
+pkg-0667	(none)	4.99	21.fc40	x86_64	MIT
+pkg-0668	(none)	1.84	3.fc40	x86_64	GPL-2.0-or-later
+pkg-0670	(none)	4.84	23.fc40	x86_64	GPL-2.0-or-later
+pkg-0671	(none)	0.40	21.fc40	i686	BSD-3-Clause
+pkg-0673	(none)	5.73	13.fc40	noarch	GPL-2.0-or-later
+pkg-0674	(none)	9.42	1.fc40	i686	GPL-2.0-or-later
+pkg-0676	(none)	7.28	15.fc40	noarch	MIT
+pkg-0677	(none)	5.62	6.fc40	noarch	BSD-3-Clause
+pkg-0679	1	4.64	29.fc40	x86_64	GPL-2.0-or-later
+pkg-0680	(none)	0.24	23.fc40	noarch	MIT
+pkg-0682	(none)	2.73	17.fc40	i686	MIT
+pkg-0683	(none)	5.72	16.fc40	x86_64	MIT
+pkg-0685	(none)	1.13	4.fc40	x86_64	GPL-2.0-or-later
+pkg-0686	3	8.14	6.fc40	noarch	MIT
+pkg-0688	(none)	9.13	17.fc40	noarch	MIT
+pkg-0689	(none)	0.75	24.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0691	(none)	9.75	5.fc40	i686	MIT
+pkg-0692	(none)	3.61	9.fc40	i686	GPL-2.0-or-later
+pkg-0694	(none)	5.36	16.fc40	x86_64	GPL-2.0-or-later
+pkg-0695	(none)	8.2	25.fc40	noarch	GPL-2.0-or-later
+pkg-0697	(none)	5.74	13.fc40	x86_64	BSD-3-Clause
+pkg-0698	(none)	9.62	15.fc40	i686	BSD-3-Clause
+pkg-0700	2	0.7	2.fc40	noarch	GPL-2.0-or-later
+pkg-0701	(none)	9.84	7.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0703	(none)	7.48	13.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0704	(none)	2.96	2.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0706	(none)	8.87	7.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0707	1	0.41	13.fc40	i686	BSD-3-Clause
+pkg-0709	(none)	1.80	19.fc40	x86_64	MIT
+pkg-0710	(none)	5.15	12.fc40	x86_64	GPL-2.0-or-later
+pkg-0712	(none)	8.52	7.fc40	x86_64	GPL-2.0-or-later
+pkg-0713	(none)	1.4	12.fc40	x86_64	GPL-2.0-or-later
+pkg-0715	(none)	8.33	11.fc40	x86_64	MIT
+pkg-0716	(none)	0.71	16.fc40	i686	GPL-2.0-or-later
+pkg-0718	(none)	0.59	16.fc40	noarch	MIT
+pkg-0719	(none)	3.98	7.fc40	i686	GPL-2.0-or-later
+pkg-0721	3	1.59	19.fc40	noarch	MIT
+pkg-0722	(none)	5.28	19.fc40	noarch	MIT
+pkg-0724	(none)	1.27	8.fc40	i686	MIT
+pkg-0725	(none)	5.21	21.fc40	noarch	GPL-2.0-or-later
+pkg-0727	(none)	4.29	20.fc40	x86_64	MIT
+pkg-0728	1	7.82	4.fc40	x86_64	BSD-3-Clause
+pkg-0730	(none)	8.58	22.fc40	noarch	BSD-3-Clause
+pkg-0731	(none)	9.89	24.fc40	x86_64	BSD-3-Clause
+pkg-0733	(none)	8.30	16.fc40	i686	GPL-2.0-or-later
+pkg-0734	(none)	7.0	29.fc40	x86_64	GPL-2.0-or-later
+pkg-0736	(none)	8.5	7.fc40	x86_64	GPL-2.0-or-later
+pkg-0737	(none)	7.41	14.fc40	i686	GPL-2.0-or-later
+pkg-0739	(none)	1.64	27.fc40	noarch	GPL-2.0-or-later
+pkg-0740	(none)	4.39	3.fc40	x86_64	MIT
+pkg-0742	3	7.49	18.fc40	x86_64	BSD-3-Clause
+pkg-0743	(none)	0.80	21.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0745	(none)	9.23	30.fc40	x86_64	GPL-2.0-or-later
+pkg-0746	(none)	8.94	18.fc40	i686	BSD-3-Clause
+pkg-0748	(none)	5.76	22.fc40	noarch	MIT
+pkg-0749	1	1.18	12.fc40	noarch	MIT
+pkg-0751	(none)	0.54	1.fc40	i686	MIT
+pkg-0752	(none)	7.19	24.fc40	noarch	GPL-2.0-or-later
+pkg-0754	(none)	6.35	29.fc40	noarch	GPL-2.0-or-later
+pkg-0755	(none)	3.83	19.fc40	i686	GPL-2.0-or-later
+pkg-0757	(none)	9.51	19.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0758	(none)	9.3	15.fc40	x86_64	MIT
+pkg-0760	(none)	0.99	30.fc40	x86_64	GPL-2.0-or-later
+pkg-0761	(none)	7.11	10.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0763	2	7.14	5.fc40	x86_64	BSD-3-Clause
+pkg-0764	(none)	9.46	24.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0766	(none)	6.25	15.fc40	i686	GPL-2.0-or-later
+pkg-0767	(none)	8.38	29.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0769	(none)	9.48	29.fc40	noarch	BSD-3-Clause
+pkg-0770	1	9.20	22.fc40	x86_64	GPL-2.0-or-later
+pkg-0772	(none)	5.86	1.fc40	x86_64	BSD-3-Clause
+pkg-0773	(none)	0.1	25.fc40	i686	GPL-2.0-or-later
+pkg-0775	(none)	6.35	4.fc40	x86_64	BSD-3-Clause
+pkg-0776	(none)	5.80	16.fc40	i686	BSD-3-Clause
+pkg-0778	(none)	1.40	9.fc40	noarch	BSD-3-Clause
+pkg-0779	(none)	0.95	26.fc40	x86_64	BSD-3-Clause
+pkg-0781	(none)	8.33	13.fc40	i686	MIT
+pkg-0782	(none)	9.11	28.fc40	i686	MIT
+pkg-0784	1	9.45	10.fc40	i686	MIT
+pkg-0785	(none)	9.56	11.fc40	i686	BSD-3-Clause
+pkg-0787	(none)	3.17	16.fc40	noarch	MIT
+pkg-0788	(none)	7.79	18.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0790	(none)	4.91	28.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0791	3	9.32	8.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0793	(none)	7.61	19.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0794	(none)	1.38	30.fc40	noarch	GPL-2.0-or-later
+pkg-0796	(none)	5.68	30.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0797	(none)	6.81	25.fc40	noarch	MIT
+pkg-0799	(none)	4.49	21.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0800	(none)	9.90	22.fc40	noarch	GPL-2.0-or-later
+pkg-0802	(none)	6.94	15.fc40	x86_64	GPL-2.0-or-later
+pkg-0803	(none)	1.53	19.fc40	x86_64	BSD-3-Clause
+pkg-0805	3	3.41	4.fc40	i686	MIT
+pkg-0806	(none)	5.91	22.fc40	x86_64	GPL-2.0-or-later
+pkg-0808	(none)	0.71	5.fc40	x86_64	GPL-2.0-or-later
+pkg-0809	(none)	9.69	11.fc40	noarch	BSD-3-Clause
+pkg-0811	(none)	4.62	19.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0812	2	2.66	9.fc40	noarch	BSD-3-Clause
+pkg-0814	(none)	1.61	2.fc40	x86_64	MIT
+pkg-0815	(none)	5.62	11.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0817	(none)	3.74	17.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0818	(none)	2.88	14.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0820	(none)	1.64	22.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0821	(none)	8.92	27.fc40	i686	MIT
+pkg-0823	(none)	2.86	13.fc40	i686	GPL-2.0-or-later
+pkg-0824	(none)	3.1	16.fc40	x86_64	BSD-3-Clause
+pkg-0826	3	5.84	7.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0827	(none)	8.99	13.fc40	i686	GPL-2.0-or-later
+pkg-0829	(none)	8.56	30.fc40	x86_64	GPL-2.0-or-later
+pkg-0830	(none)	6.69	15.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0832	(none)	7.24	19.fc40	noarch	MIT
+pkg-0833	3	4.79	1.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0835	(none)	7.5	2.fc40	i686	GPL-2.0-or-later
+pkg-0836	(none)	3.31	5.fc40	x86_64	MIT
+pkg-0838	(none)	9.66	13.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0839	(none)	0.73	12.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0841	(none)	1.20	6.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0842	(none)	6.84	15.fc40	x86_64	GPL-2.0-or-later
+pkg-0844	(none)	9.51	1.fc40	x86_64	MIT
+pkg-0845	(none)	9.54	7.fc40	noarch	BSD-3-Clause
+pkg-0847	3	9.29	4.fc40	i686	MIT
+pkg-0848	(none)	3.33	8.fc40	x86_64	BSD-3-Clause
+pkg-0850	(none)	4.19	25.fc40	i686	MIT
+pkg-0851	(none)	3.10	4.fc40	x86_64	BSD-3-Clause
+pkg-0853	(none)	6.8	3.fc40	i686	GPL-2.0-or-later
+pkg-0854	1	7.61	6.fc40	i686	MIT
+pkg-0856	(none)	2.44	13.fc40	x86_64	MIT
+pkg-0857	(none)	3.60	4.fc40	i686	GPL-2.0-or-later
+pkg-0859	(none)	4.17	14.fc40	x86_64	MIT
+pkg-0860	(none)	7.32	26.fc40	noarch	GPL-2.0-or-later
+pkg-0862	(none)	5.98	3.fc40	noarch	MIT
+pkg-0863	(none)	7.37	22.fc40	i686	MIT
+pkg-0865	(none)	8.58	8.fc40	x86_64	MIT
+pkg-0866	(none)	7.21	29.fc40	i686	GPL-2.0-or-later
+pkg-0868	2	5.18	24.fc40	noarch	GPL-2.0-or-later
+pkg-0869	(none)	3.52	23.fc40	x86_64	BSD-3-Clause
+pkg-0871	(none)	1.3	13.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0872	(none)	3.43	23.fc40	i686	GPL-2.0-or-later
+pkg-0874	(none)	1.80	13.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0875	2	6.66	10.fc40	x86_64	MIT
+pkg-0877	(none)	8.49	17.fc40	x86_64	MIT
+pkg-0878	(none)	8.63	1.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0880	(none)	9.76	3.fc40	x86_64	GPL-2.0-or-later
+pkg-0881	(none)	3.70	10.fc40	noarch	GPL-2.0-or-later
+pkg-0883	(none)	8.2	22.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0884	(none)	4.13	1.fc40	i686	MIT
+pkg-0886	(none)	1.48	28.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0887	(none)	9.99	17.fc40	noarch	BSD-3-Clause
+pkg-0889	3	4.86	3.fc40	i686	MIT
+pkg-0890	(none)	6.38	25.fc40	i686	GPL-2.0-or-later
+pkg-0892	(none)	4.7	4.fc40	noarch	GPL-2.0-or-later
+pkg-0893	(none)	6.31	3.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0895	(none)	8.73	30.fc40	i686	MIT
+pkg-0896	3	3.4	26.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0898	(none)	0.94	21.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0899	(none)	8.31	10.fc40	x86_64	GPL-2.0-or-later
+pkg-0901	(none)	9.95	16.fc40	x86_64	BSD-3-Clause
+pkg-0902	(none)	7.50	12.fc40	noarch	BSD-3-Clause
+pkg-0904	(none)	6.42	5.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0905	(none)	1.47	28.fc40	x86_64	BSD-3-Clause
+pkg-0907	(none)	9.89	24.fc40	i686	MIT
+pkg-0908	(none)	0.91	28.fc40	i686	BSD-3-Clause
+pkg-0910	3	5.98	22.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0911	(none)	7.91	3.fc40	noarch	BSD-3-Clause
+pkg-0913	(none)	3.63	26.fc40	x86_64	GPL-2.0-or-later
+pkg-0914	(none)	4.11	5.fc40	i686	GPL-2.0-or-later
+pkg-0916	(none)	1.54	10.fc40	noarch	GPL-2.0-or-later
+pkg-0917	3	8.83	6.fc40	noarch	GPL-2.0-or-later
+pkg-0919	(none)	5.29	24.fc40	i686	MIT
+pkg-0920	(none)	1.89	6.fc40	noarch	GPL-2.0-or-later
+pkg-0922	(none)	5.94	17.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0923	(none)	6.27	24.fc40	x86_64	BSD-3-Clause
+pkg-0925	(none)	9.6	9.fc40	x86_64	MIT
+pkg-0926	(none)	3.18	20.fc40	i686	GPL-2.0-or-later
+pkg-0928	(none)	2.79	12.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-0929	(none)	2.6	13.fc40	x86_64	GPL-2.0-or-later
+pkg-0931	2	0.90	12.fc40	i686	MIT
+pkg-0932	(none)	4.10	2.fc40	noarch	GPL-2.0-or-later
+pkg-0934	(none)	5.10	5.fc40	x86_64	BSD-3-Clause
+pkg-0935	(none)	4.71	15.fc40	i686	MIT
+pkg-0937	(none)	5.38	30.fc40	noarch	MIT
+pkg-0938	1	1.24	6.fc40	noarch	BSD-3-Clause
+pkg-0940	(none)	3.50	14.fc40	x86_64	MIT
+pkg-0941	(none)	6.25	23.fc40	noarch	GPL-2.0-or-later
+pkg-0943	(none)	7.66	11.fc40	i686	BSD-3-Clause
+pkg-0944	(none)	7.85	1.fc40	i686	GPL-2.0-or-later
+pkg-0946	(none)	4.37	20.fc40	i686	MIT
+pkg-0947	(none)	8.88	22.fc40	noarch	BSD-3-Clause
+pkg-0949	(none)	3.20	12.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0950	(none)	1.11	17.fc40	x86_64	MIT
+pkg-0952	3	0.91	12.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0953	(none)	6.99	28.fc40	x86_64	MIT
+pkg-0955	(none)	9.97	13.fc40	i686	MIT
+pkg-0956	(none)	1.20	3.fc40	x86_64	MIT
+pkg-0958	(none)	4.0	4.fc40	x86_64	BSD-3-Clause
+pkg-0959	1	4.67	8.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0961	(none)	0.11	9.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0962	(none)	6.33	19.fc40	i686	GPL-2.0-or-later
+pkg-0964	(none)	2.48	4.fc40	noarch	BSD-3-Clause
+pkg-0965	(none)	2.73	3.fc40	noarch	MIT
+pkg-0967	(none)	2.24	21.fc40	i686	MIT
+pkg-0968	(none)	6.70	16.fc40	noarch	GPL-2.0-or-later
+pkg-0970	(none)	5.88	6.fc40	i686	GPL-2.0-or-later
+pkg-0971	(none)	8.41	23.fc40	noarch	GPL-2.0-or-later
+pkg-0973	2	6.63	16.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0974	(none)	1.50	20.fc40	x86_64	MIT
+pkg-0976	(none)	1.79	30.fc40	x86_64	GPL-2.0-or-later
+pkg-0977	(none)	7.1	19.fc40	noarch	GPL-2.0-or-later
+pkg-0979	(none)	1.43	22.fc40	noarch	MIT
+pkg-0980	2	5.41	5.fc40	i686	GPL-2.0-or-later
+pkg-0982	(none)	8.0	11.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0983	(none)	3.33	6.fc40	i686	GPL-2.0-or-later
+pkg-0985	(none)	7.98	23.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-0986	(none)	9.86	28.fc40	x86_64	BSD-3-Clause
+pkg-0988	(none)	2.10	29.fc40	x86_64	MIT
+pkg-0989	(none)	7.41	21.fc40	i686	BSD-3-Clause
+pkg-0991	(none)	0.11	22.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-0992	(none)	1.38	14.fc40	x86_64	BSD-3-Clause
+pkg-0994	3	6.96	24.fc40	noarch	MIT
+pkg-0995	(none)	4.10	12.fc40	noarch	BSD-3-Clause
+pkg-0997	(none)	6.71	19.fc40	x86_64	GPL-2.0-or-later
+pkg-0998	(none)	5.85	17.fc40	noarch	BSD-3-Clause
+pkg-1000	(none)	6.41	4.fc40	noarch	MIT
+pkg-1001	2	6.10	23.fc40	noarch	GPL-2.0-or-later
+pkg-1003	(none)	6.52	10.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1004	(none)	9.21	7.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1006	(none)	9.1	24.fc40	i686	GPL-2.0-or-later
+pkg-1007	(none)	3.69	19.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1009	(none)	8.81	6.fc40	x86_64	GPL-2.0-or-later
+pkg-1010	(none)	5.39	16.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1012	(none)	9.83	13.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1013	(none)	4.91	29.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1015	3	1.55	27.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1016	(none)	0.17	6.fc40	x86_64	MIT
+pkg-1018	(none)	0.21	17.fc40	x86_64	BSD-3-Clause
+pkg-1019	(none)	6.12	12.fc40	noarch	BSD-3-Clause
+pkg-1021	(none)	8.52	11.fc40	i686	GPL-2.0-or-later
+pkg-1022	1	9.66	16.fc40	i686	MIT
+pkg-1024	(none)	2.66	10.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1025	(none)	7.63	18.fc40	x86_64	BSD-3-Clause
+pkg-1027	(none)	9.84	29.fc40	x86_64	MIT
+pkg-1028	(none)	1.32	16.fc40	i686	BSD-3-Clause
+pkg-1030	(none)	9.68	19.fc40	x86_64	MIT
+pkg-1031	(none)	2.34	20.fc40	x86_64	GPL-2.0-or-later
+pkg-1033	(none)	9.71	21.fc40	noarch	BSD-3-Clause
+pkg-1034	(none)	8.74	26.fc40	noarch	GPL-2.0-or-later
+pkg-1036	2	5.52	14.fc40	i686	MIT
+pkg-1037	(none)	8.94	25.fc40	i686	MIT
+pkg-1039	(none)	7.62	27.fc40	noarch	BSD-3-Clause
+pkg-1040	(none)	3.26	15.fc40	i686	GPL-2.0-or-later
+pkg-1042	(none)	3.44	26.fc40	i686	BSD-3-Clause
+pkg-1043	1	3.74	13.fc40	x86_64	GPL-2.0-or-later
+pkg-1045	(none)	1.0	27.fc40	noarch	BSD-3-Clause
+pkg-1046	(none)	9.46	27.fc40	noarch	BSD-3-Clause
+pkg-1048	(none)	2.43	9.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1049	(none)	2.44	14.fc40	x86_64	MIT
+pkg-1051	(none)	2.18	4.fc40	i686	BSD-3-Clause
+pkg-1052	(none)	2.15	19.fc40	noarch	BSD-3-Clause
+pkg-1054	(none)	5.51	14.fc40	x86_64	BSD-3-Clause
+pkg-1055	(none)	4.79	17.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1057	3	8.7	2.fc40	i686	MIT
+pkg-1058	(none)	7.19	7.fc40	x86_64	BSD-3-Clause
+pkg-1060	(none)	6.19	25.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1061	(none)	3.62	14.fc40	noarch	MIT
+pkg-1063	(none)	2.0	25.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1064	2	9.52	15.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1066	(none)	7.85	11.fc40	i686	BSD-3-Clause
+pkg-1067	(none)	1.61	25.fc40	i686	MIT
+pkg-1069	(none)	7.17	23.fc40	x86_64	MIT
+pkg-1070	(none)	2.65	20.fc40	x86_64	MIT
+pkg-1072	(none)	0.38	24.fc40	i686	MIT
+pkg-1073	(none)	0.51	11.fc40	noarch	BSD-3-Clause
+pkg-1075	(none)	0.91	25.fc40	x86_64	GPL-2.0-or-later
+pkg-1076	(none)	2.29	30.fc40	noarch	GPL-2.0-or-later
+pkg-1078	1	7.38	18.fc40	noarch	GPL-2.0-or-later
+pkg-1079	(none)	0.76	15.fc40	x86_64	GPL-2.0-or-later
+pkg-1081	(none)	2.30	10.fc40	i686	GPL-2.0-or-later
+pkg-1082	(none)	0.60	30.fc40	x86_64	GPL-2.0-or-later
+pkg-1084	(none)	8.46	20.fc40	noarch	MIT
+pkg-1085	1	2.25	19.fc40	noarch	MIT
+pkg-1087	(none)	5.61	2.fc40	i686	GPL-2.0-or-later
+pkg-1088	(none)	9.56	29.fc40	x86_64	GPL-2.0-or-later
+pkg-1090	(none)	1.62	17.fc40	noarch	BSD-3-Clause
+pkg-1091	(none)	0.97	3.fc40	x86_64	MIT
+pkg-1093	(none)	7.38	17.fc40	i686	BSD-3-Clause
+pkg-1094	(none)	6.73	27.fc40	x86_64	BSD-3-Clause
+pkg-1096	(none)	1.32	13.fc40	x86_64	GPL-2.0-or-later
+pkg-1097	(none)	4.87	23.fc40	i686	MIT
+pkg-1099	3	5.72	30.fc40	noarch	MIT
+pkg-1100	(none)	4.98	7.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1102	(none)	2.51	1.fc40	i686	MIT
+pkg-1103	(none)	7.68	14.fc40	x86_64	MIT
+pkg-1105	(none)	0.22	6.fc40	i686	MIT
+pkg-1106	2	3.96	16.fc40	noarch	GPL-2.0-or-later
+pkg-1108	(none)	0.14	19.fc40	i686	BSD-3-Clause
+pkg-1109	(none)	7.87	23.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1111	(none)	2.19	27.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1112	(none)	8.60	23.fc40	noarch	GPL-2.0-or-later
+pkg-1114	(none)	3.69	6.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1115	(none)	2.18	3.fc40	i686	BSD-3-Clause
+pkg-1117	(none)	7.27	17.fc40	i686	MIT
+pkg-1118	(none)	9.11	30.fc40	i686	BSD-3-Clause
+pkg-1120	3	7.57	27.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1121	(none)	3.75	8.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1123	(none)	8.85	14.fc40	x86_64	MIT
+pkg-1124	(none)	7.23	26.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1126	(none)	7.95	9.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1127	2	6.5	9.fc40	x86_64	GPL-2.0-or-later
+pkg-1129	(none)	0.54	8.fc40	i686	GPL-2.0-or-later
+pkg-1130	(none)	2.55	6.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1132	(none)	9.23	26.fc40	noarch	GPL-2.0-or-later
+pkg-1133	(none)	5.85	1.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1135	(none)	7.36	9.fc40	x86_64	BSD-3-Clause
+pkg-1136	(none)	3.96	26.fc40	noarch	MIT
+pkg-1138	(none)	3.19	14.fc40	noarch	BSD-3-Clause
+pkg-1139	(none)	1.44	10.fc40	i686	GPL-2.0-or-later
+pkg-1141	3	8.28	6.fc40	i686	GPL-2.0-or-later
+pkg-1142	(none)	1.88	3.fc40	i686	MIT
+pkg-1144	(none)	9.18	5.fc40	noarch	GPL-2.0-or-later
+pkg-1145	(none)	8.85	12.fc40	i686	BSD-3-Clause
+pkg-1147	(none)	0.91	29.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1148	1	5.51	12.fc40	x86_64	MIT
+pkg-1150	(none)	9.47	14.fc40	noarch	GPL-2.0-or-later
+pkg-1151	(none)	9.33	28.fc40	x86_64	BSD-3-Clause
+pkg-1153	(none)	3.17	8.fc40	i686	GPL-2.0-or-later
+pkg-1154	(none)	6.28	10.fc40	i686	MIT
+pkg-1156	(none)	4.96	13.fc40	x86_64	MIT
+pkg-1157	(none)	7.77	15.fc40	i686	BSD-3-Clause
+pkg-1159	(none)	5.33	6.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1160	(none)	6.22	4.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1162	1	3.84	4.fc40	noarch	MIT
+pkg-1163	(none)	5.58	26.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1165	(none)	5.2	21.fc40	i686	MIT
+pkg-1166	(none)	5.30	15.fc40	noarch	BSD-3-Clause
+pkg-1168	(none)	0.91	23.fc40	x86_64	GPL-2.0-or-later
+pkg-1169	1	2.2	6.fc40	x86_64	GPL-2.0-or-later
+pkg-1171	(none)	0.89	27.fc40	i686	BSD-3-Clause
+pkg-1172	(none)	6.92	10.fc40	i686	BSD-3-Clause
+pkg-1174	(none)	4.33	10.fc40	x86_64	BSD-3-Clause
+pkg-1175	(none)	3.77	14.fc40	x86_64	BSD-3-Clause
+pkg-1177	(none)	6.21	14.fc40	x86_64	BSD-3-Clause
+pkg-1178	(none)	8.40	4.fc40	noarch	BSD-3-Clause
+pkg-1180	(none)	4.5	2.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1181	(none)	9.24	6.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1183	1	4.30	5.fc40	i686	BSD-3-Clause
+pkg-1184	(none)	6.37	6.fc40	i686	BSD-3-Clause
+pkg-1186	(none)	4.99	19.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1187	(none)	3.90	16.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1189	(none)	1.93	27.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1190	3	5.44	1.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1192	(none)	5.55	10.fc40	x86_64	MIT
+pkg-1193	(none)	2.26	12.fc40	i686	GPL-2.0-or-later
+pkg-1195	(none)	3.40	29.fc40	x86_64	GPL-2.0-or-later
+pkg-1196	(none)	2.67	26.fc40	i686	BSD-3-Clause
+pkg-1198	(none)	9.19	16.fc40	x86_64	MIT
+pkg-1199	(none)	5.68	7.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1201	(none)	7.24	27.fc40	i686	MIT
+pkg-1202	(none)	8.35	28.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1204	2	4.64	28.fc40	noarch	BSD-3-Clause
+pkg-1205	(none)	2.13	17.fc40	i686	GPL-2.0-or-later
+pkg-1207	(none)	8.25	25.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1208	(none)	6.89	18.fc40	i686	GPL-2.0-or-later
+pkg-1210	(none)	1.44	12.fc40	x86_64	MIT
+pkg-1211	1	6.45	12.fc40	x86_64	MIT
+pkg-1213	(none)	4.38	11.fc40	noarch	BSD-3-Clause
+pkg-1214	(none)	5.1	13.fc40	noarch	GPL-2.0-or-later
+pkg-1216	(none)	3.73	26.fc40	i686	BSD-3-Clause
+pkg-1217	(none)	6.55	23.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1219	(none)	9.44	22.fc40	x86_64	MIT
+pkg-1220	(none)	9.50	18.fc40	noarch	MIT
+pkg-1222	(none)	8.19	27.fc40	i686	BSD-3-Clause
+pkg-1223	(none)	0.46	23.fc40	x86_64	BSD-3-Clause
+pkg-1225	1	8.65	12.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1226	(none)	3.1	2.fc40	noarch	MIT
+pkg-1228	(none)	5.52	29.fc40	i686	GPL-2.0-or-later
+pkg-1229	(none)	7.22	19.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1231	(none)	4.9	3.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1232	2	7.98	24.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1234	(none)	6.76	7.fc40	noarch	GPL-2.0-or-later
+pkg-1235	(none)	9.94	13.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1237	(none)	1.12	14.fc40	x86_64	BSD-3-Clause
+pkg-1238	(none)	8.40	9.fc40	i686	BSD-3-Clause
+pkg-1240	(none)	6.23	2.fc40	i686	MIT
+pkg-1241	(none)	8.50	4.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1243	(none)	5.65	4.fc40	i686	GPL-2.0-or-later
+pkg-1244	(none)	2.29	4.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1246	2	6.51	17.fc40	i686	BSD-3-Clause
+pkg-1247	(none)	5.29	23.fc40	i686	BSD-3-Clause
+pkg-1249	(none)	6.74	6.fc40	i686	BSD-3-Clause
+pkg-1250	(none)	0.22	15.fc40	i686	MIT
+pkg-1252	(none)	1.44	19.fc40	x86_64	BSD-3-Clause
+pkg-1253	1	9.25	16.fc40	noarch	MIT
+pkg-1255	(none)	7.84	3.fc40	noarch	GPL-2.0-or-later
+pkg-1256	(none)	2.13	29.fc40	i686	MIT
+pkg-1258	(none)	8.56	17.fc40	noarch	GPL-2.0-or-later
+pkg-1259	(none)	5.60	15.fc40	x86_64	GPL-2.0-or-later
+pkg-1261	(none)	4.99	9.fc40	i686	GPL-2.0-or-later
+pkg-1262	(none)	6.62	5.fc40	i686	BSD-3-Clause
+pkg-1264	(none)	7.75	4.fc40	noarch	MIT
+pkg-1265	(none)	8.57	4.fc40	noarch	GPL-2.0-or-later
+pkg-1267	3	4.22	18.fc40	noarch	BSD-3-Clause
+pkg-1268	(none)	1.40	21.fc40	x86_64	GPL-2.0-or-later
+pkg-1270	(none)	8.42	13.fc40	x86_64	BSD-3-Clause
+pkg-1271	(none)	1.47	18.fc40	x86_64	MIT
+pkg-1273	(none)	1.74	21.fc40	x86_64	GPL-2.0-or-later
+pkg-1274	1	5.73	14.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1276	(none)	4.8	12.fc40	i686	MIT
+pkg-1277	(none)	2.80	20.fc40	noarch	MIT
+pkg-1279	(none)	5.15	23.fc40	i686	MIT
+pkg-1280	(none)	5.19	18.fc40	i686	BSD-3-Clause
+pkg-1282	(none)	3.58	27.fc40	i686	MIT
+pkg-1283	(none)	9.69	25.fc40	i686	GPL-2.0-or-later
+pkg-1285	(none)	7.56	28.fc40	x86_64	BSD-3-Clause
+pkg-1286	(none)	5.74	6.fc40	x86_64	MIT
+pkg-1288	3	4.2	27.fc40	x86_64	BSD-3-Clause
+pkg-1289	(none)	1.67	16.fc40	noarch	BSD-3-Clause
+pkg-1291	(none)	5.21	15.fc40	x86_64	MIT
+pkg-1292	(none)	9.36	29.fc40	noarch	BSD-3-Clause
+pkg-1294	(none)	5.22	2.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1295	2	0.81	11.fc40	x86_64	GPL-2.0-or-later
+pkg-1297	(none)	3.12	18.fc40	noarch	BSD-3-Clause
+pkg-1298	(none)	9.99	20.fc40	noarch	MIT
+pkg-1300	(none)	5.68	19.fc40	x86_64	BSD-3-Clause
+pkg-1301	(none)	9.7	15.fc40	noarch	GPL-2.0-or-later
+pkg-1303	(none)	7.8	4.fc40	i686	BSD-3-Clause
+pkg-1304	(none)	5.55	16.fc40	x86_64	GPL-2.0-or-later
+pkg-1306	(none)	4.92	29.fc40	x86_64	BSD-3-Clause
+pkg-1307	(none)	1.78	20.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1309	3	9.76	12.fc40	i686	GPL-2.0-or-later
+pkg-1310	(none)	9.90	27.fc40	i686	BSD-3-Clause
+pkg-1312	(none)	4.37	4.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1313	(none)	3.45	23.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1315	(none)	0.86	29.fc40	i686	BSD-3-Clause
+pkg-1316	1	7.69	4.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1318	(none)	8.1	13.fc40	x86_64	BSD-3-Clause
+pkg-1319	(none)	6.65	15.fc40	i686	MIT
+pkg-1321	(none)	8.63	29.fc40	x86_64	MIT
+pkg-1322	(none)	9.26	7.fc40	noarch	BSD-3-Clause
+pkg-1324	(none)	1.88	23.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1325	(none)	6.63	30.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1327	(none)	7.3	28.fc40	noarch	GPL-2.0-or-later
+pkg-1328	(none)	4.73	1.fc40	x86_64	BSD-3-Clause
+pkg-1330	2	7.79	13.fc40	x86_64	BSD-3-Clause
+pkg-1331	(none)	0.69	5.fc40	x86_64	BSD-3-Clause
+pkg-1333	(none)	7.45	11.fc40	noarch	GPL-2.0-or-later
+pkg-1334	(none)	5.98	6.fc40	i686	GPL-2.0-or-later
+pkg-1336	(none)	5.47	4.fc40	i686	MIT
+pkg-1337	2	8.71	19.fc40	x86_64	MIT
+pkg-1339	(none)	5.61	18.fc40	x86_64	GPL-2.0-or-later
+pkg-1340	(none)	2.90	18.fc40	noarch	BSD-3-Clause
+pkg-1342	(none)	6.78	9.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1343	(none)	0.14	19.fc40	noarch	GPL-2.0-or-later
+pkg-1345	(none)	0.56	1.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1346	(none)	6.81	5.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1348	(none)	4.8	1.fc40	noarch	MIT
+pkg-1349	(none)	5.17	13.fc40	i686	GPL-2.0-or-later
+pkg-1351	1	7.35	28.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1352	(none)	2.79	1.fc40	x86_64	GPL-2.0-or-later
+pkg-1354	(none)	8.41	10.fc40	i686	MIT
+pkg-1355	(none)	5.5	5.fc40	x86_64	BSD-3-Clause
+pkg-1357	(none)	4.39	17.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1358	2	0.86	7.fc40	i686	BSD-3-Clause
+pkg-1360	(none)	0.76	12.fc40	i686	GPL-2.0-or-later
+pkg-1361	(none)	5.55	28.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1363	(none)	8.77	20.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1364	(none)	6.29	28.fc40	noarch	GPL-2.0-or-later
+pkg-1366	(none)	1.33	7.fc40	x86_64	GPL-2.0-or-later
+pkg-1367	(none)	5.46	19.fc40	x86_64	BSD-3-Clause
+pkg-1369	(none)	5.95	1.fc40	noarch	GPL-2.0-or-later
+pkg-1370	(none)	6.77	12.fc40	noarch	MIT
+pkg-1372	3	9.34	22.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1373	(none)	5.26	7.fc40	noarch	MIT
+pkg-1375	(none)	3.75	25.fc40	noarch	MIT
+pkg-1376	(none)	0.39	29.fc40	noarch	BSD-3-Clause
+pkg-1378	(none)	6.50	19.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1379	2	0.31	17.fc40	x86_64	MIT
+pkg-1381	(none)	0.55	26.fc40	i686	MIT
+pkg-1382	(none)	8.18	26.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1384	(none)	6.74	30.fc40	noarch	BSD-3-Clause
+pkg-1385	(none)	0.91	21.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1387	(none)	8.35	15.fc40	i686	GPL-2.0-or-later
+pkg-1388	(none)	3.3	16.fc40	x86_64	BSD-3-Clause
+pkg-1390	(none)	1.69	27.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1391	(none)	3.49	11.fc40	noarch	GPL-2.0-or-later
+pkg-1393	1	0.20	11.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1394	(none)	7.36	2.fc40	x86_64	BSD-3-Clause
+pkg-1396	(none)	2.5	23.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1397	(none)	3.91	9.fc40	noarch	GPL-2.0-or-later
+pkg-1399	(none)	7.70	15.fc40	x86_64	GPL-2.0-or-later
+pkg-1400	2	7.89	15.fc40	noarch	MIT
+pkg-1402	(none)	3.17	9.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1403	(none)	9.17	24.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1405	(none)	5.0	23.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1406	(none)	3.91	7.fc40	noarch	MIT
+pkg-1408	(none)	0.21	6.fc40	noarch	MIT
+pkg-1409	(none)	2.24	8.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1411	(none)	7.88	11.fc40	noarch	BSD-3-Clause
+pkg-1412	(none)	6.17	29.fc40	noarch	MIT
+pkg-1414	2	9.30	27.fc40	x86_64	MIT
+pkg-1415	(none)	0.18	11.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1417	(none)	4.65	20.fc40	noarch	LGPL-2.1-or-later AND MIT
+pkg-1418	(none)	0.71	23.fc40	x86_64	BSD-3-Clause
+pkg-1420	(none)	7.92	11.fc40	i686	BSD-3-Clause
+pkg-1421	2	8.42	1.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1423	(none)	5.44	14.fc40	i686	GPL-2.0-or-later
+pkg-1424	(none)	5.89	16.fc40	i686	BSD-3-Clause
+pkg-1426	(none)	9.99	6.fc40	noarch	MIT
+pkg-1427	(none)	4.36	23.fc40	i686	MIT
+pkg-1429	(none)	5.65	15.fc40	noarch	MIT
+pkg-1430	(none)	5.48	1.fc40	x86_64	BSD-3-Clause
+pkg-1432	(none)	4.9	22.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1433	(none)	1.88	20.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1435	2	4.53	2.fc40	i686	GPL-2.0-or-later
+pkg-1436	(none)	9.46	8.fc40	x86_64	MIT
+pkg-1438	(none)	3.88	10.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1439	(none)	1.37	4.fc40	i686	MIT
+pkg-1441	(none)	8.5	6.fc40	i686	GPL-2.0-or-later
+pkg-1442	3	8.64	15.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1444	(none)	4.52	17.fc40	noarch	MIT
+pkg-1445	(none)	3.81	28.fc40	noarch	GPL-2.0-or-later
+pkg-1447	(none)	6.21	1.fc40	x86_64	GPL-2.0-or-later
+pkg-1448	(none)	6.45	16.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1450	(none)	6.45	6.fc40	noarch	MIT
+pkg-1451	(none)	9.70	13.fc40	x86_64	BSD-3-Clause
+pkg-1453	(none)	3.40	1.fc40	i686	GPL-2.0-or-later
+pkg-1454	(none)	1.58	12.fc40	noarch	BSD-3-Clause
+pkg-1456	1	8.0	26.fc40	i686	GPL-2.0-or-later
+pkg-1457	(none)	3.55	7.fc40	noarch	GPL-2.0-or-later
+pkg-1459	(none)	7.78	29.fc40	x86_64	MIT
+pkg-1460	(none)	9.3	15.fc40	i686	MIT
+pkg-1462	(none)	9.64	19.fc40	i686	MIT
+pkg-1463	1	6.8	3.fc40	noarch	BSD-3-Clause
+pkg-1465	(none)	0.27	3.fc40	i686	GPL-2.0-or-later
+pkg-1466	(none)	1.30	3.fc40	x86_64	GPL-2.0-or-later
+pkg-1468	(none)	8.43	17.fc40	noarch	MIT
+pkg-1469	(none)	7.81	8.fc40	noarch	GPL-2.0-or-later
+pkg-1471	(none)	2.6	25.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1472	(none)	7.74	22.fc40	x86_64	GPL-2.0-or-later
+pkg-1474	(none)	7.85	10.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1475	(none)	0.64	6.fc40	x86_64	BSD-3-Clause
+pkg-1477	2	9.15	27.fc40	noarch	BSD-3-Clause
+pkg-1478	(none)	3.49	21.fc40	x86_64	BSD-3-Clause
+pkg-1480	(none)	3.5	23.fc40	i686	GPL-2.0-or-later
+pkg-1481	(none)	2.44	13.fc40	i686	MIT
+pkg-1483	(none)	9.4	17.fc40	x86_64	BSD-3-Clause
+pkg-1484	1	4.78	27.fc40	i686	LGPL-2.1-or-later AND MIT
+pkg-1486	(none)	1.41	16.fc40	noarch	MIT
+pkg-1487	(none)	6.73	21.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1489	(none)	8.28	30.fc40	x86_64	MIT
+pkg-1490	(none)	2.63	1.fc40	noarch	BSD-3-Clause
+pkg-1492	(none)	1.60	16.fc40	x86_64	LGPL-2.1-or-later AND MIT
+pkg-1493	(none)	8.29	6.fc40	i686	GPL-2.0-or-later
+pkg-1495	(none)	4.26	24.fc40	x86_64	MIT
+pkg-1496	(none)	3.96	23.fc40	i686	MIT
+pkg-1498	1	7.20	3.fc40	i686	GPL-2.0-or-later
+pkg-1499	(none)	7.89	4.fc40	noarch	LGPL-2.1-or-later AND MIT
