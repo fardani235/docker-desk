@@ -26,7 +26,7 @@ const (
 )
 
 var kindTabs = [kindCount][]string{
-	KindContainers: {tabInfo, tabLogs, tabStats, tabInspect},
+	KindContainers: {tabInfo, tabLogs, tabStats, tabProcesses, tabInspect},
 	KindImages:     {tabInfo, tabInspect, tabFindings},
 	KindVolumes:    {tabInfo, tabInspect},
 	KindNetworks:   {tabInfo, tabInspect},
@@ -770,11 +770,15 @@ func (m *Model) renderStats(w, h int) []string {
 
 // ---- Details pane ----------------------------------------------------------------------
 
-func (m *Model) detailsTitle() (title, right string) {
+// detailsTitle is the Details pane's title and tab strip for a pane w cells
+// wide. When the whole strip does not fit beside the title, only the active
+// tab and its position are shown, so the tab is never lost from view.
+func (m *Model) detailsTitle(w int) (title, right string) {
 	tabs := kindTabs[m.kind]
+	cur := clamp(m.tab[m.kind], 0, len(tabs)-1)
 	var parts []string
 	for i, t := range tabs {
-		if i == clamp(m.tab[m.kind], 0, len(tabs)-1) {
+		if i == cur {
 			parts = append(parts, "["+t+"]")
 		} else {
 			parts = append(parts, t)
@@ -784,7 +788,17 @@ func (m *Model) detailsTitle() (title, right string) {
 	if r, ok := m.currentRow(); ok {
 		title += ": " + r.name
 	}
-	return title, strings.Join(parts, " ")
+	right = strings.Join(parts, " ")
+	tw := ansi.StringWidth(title)
+	if m.focus == PaneDetails {
+		tw += 2 // the focus marker box adds
+	}
+	// What box leaves for right: inner width, less the title and the
+	// border cells around both.
+	if room := w - 2 - 1 - (tw + 2) - 4; ansi.StringWidth(right) > room && len(tabs) > 1 {
+		right = fmt.Sprintf("[%s] %d/%d", tabs[cur], cur+1, len(tabs))
+	}
+	return title, right
 }
 
 func (m *Model) renderDetails(w, h int) []string {
@@ -799,6 +813,8 @@ func (m *Model) renderDetails(w, h int) []string {
 		return m.renderLogs(w, h)
 	case tabStats:
 		return m.renderStats(w, h)
+	case tabProcesses:
+		return m.renderProcesses(w, h)
 	case tabInspect:
 		if len(m.inspect.lines) == 0 {
 			if m.detail.err != "" {

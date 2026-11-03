@@ -1758,6 +1758,52 @@ has three now.
 reclaimable figure on the screen to match; `TestSpaceTotalsAreTheDaemons` also proves that
 the unique sizes and the shared groups add up to the daemon's image total — each byte once.
 
+## Round six — container processes
+
+The `container-process-view` change: a read-only Processes tab for containers. Where the
+change left a choice open, it was decided here without stopping to ask.
+
+### P1 — Tab position: after Stats, before Inspect
+
+**Decided:** `Info Logs Stats Processes Inspect`. Processes is a running-container view like
+Logs and Stats, and Inspect stays the last, everything-else tab. **Cost:** Inspect is one `]`
+further; `TestDetails` and the e2e tab walks were updated for that.
+
+### P2 — Every entry to the tab takes a fresh snapshot
+
+**Decided:** entering Processes (from another tab or kind) invalidates the snapshot, as does
+`r` anywhere; the snapshot shown is fetched again only when invalid, for a new container, or
+after a reconnect. The design lists "the tab is newly entered" as a trigger, and a snapshot
+kept across an absence of unknown length would read as current. Rows of the same container
+stay on screen while the new one loads ("refreshing…"); rows of another container never do.
+**Alternative:** cache across visits until `r` — fewer requests, older data presented as if
+fresh.
+
+### P3 — Not running means `State == running`
+
+**Decided:** only a running container is asked; paused, restarting, created and exited ones
+show the "available only for running containers" message without a request (the spec names
+paused). A 409 answered by the daemon is shown as "no longer running". When the list later
+says the container stopped, rows are dropped. A different error replaces rows with the
+daemon's message in the pane; an unreachable daemon keeps rows already shown and marks them
+stale, and they are taken again after reconnection.
+
+### P4 — Table layout
+
+**Decided:** columns are the daemon's titles; every column but the last is as wide as its
+widest value, capped at 24 cells; the last (the command, for `ps`) takes what is left; the
+whole row is then cut to the pane. Missing cells are empty; extra cells are joined into the
+last column with spaces so nothing is silently dropped. Escape sequences are stripped and
+control characters become spaces so no value can move the cursor or break a row. The header
+stays on top; rows scroll with the existing Details keys; `w` does nothing on this tab.
+
+### P5 — Fake daemon listing
+
+**Decided:** the fake answers `/containers/{id}/top` like dockerd on Linux: `ps -ef` columns,
+the container command as the first process and a shell child unless `NoShell`, PIDs derived
+from the creation time (deterministic); 404 for unknown and 409 for non-running containers;
+`SetProcesses` fixes any table, including empty and ragged ones, for tests.
+
 ## Process
 
 ### B12 — No commits were made

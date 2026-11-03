@@ -152,8 +152,9 @@ type Model struct {
 	detail       detailState
 	wantDetail   string
 	selChangedAt time.Time
-	info1        textView // Info tab
-	inspect      textView // Inspect tab
+	info1        textView  // Info tab
+	inspect      textView  // Inspect tab
+	proc         procState // Processes tab
 	logFollow    bool
 	logEnd       uint64
 	logWrap      bool
@@ -405,6 +406,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.onDetail(msg)
 		return m, nil
 
+	case procMsg:
+		m.dirty = true
+		m.onProcesses(msg)
+		return m, nil
+
 	case factsMsg:
 		m.dirty = true
 		m.onFacts(msg)
@@ -465,6 +471,9 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 			}
 		}
 		m.syncStreams() // a no-op unless the wanted target changed
+		if cmd := m.syncProcesses(); cmd != nil {
+			cmds = append(cmds, cmd)
+		}
 		if cmd := m.syncFindings(); cmd != nil {
 			cmds = append(cmds, cmd)
 		}
@@ -491,6 +500,7 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 	connected := m.hub.Connected()
 	if connected && !m.wasConnected {
 		m.setStatus(toneGood, "Reconnected to the Docker daemon.")
+		m.invalidateProcesses() // a stale snapshot is taken again if shown
 		cmds = append(cmds, m.infoCmd())
 	} else if !connected && m.wasConnected {
 		m.setStatus(toneBad, "Lost the connection to the Docker daemon at "+m.endpoint.Host+" — retrying. Data on screen may be stale.")
@@ -606,6 +616,9 @@ func (m *Model) afterChange() {
 			m.selChangedAt = time.Time{} // first load: no need to wait
 		}
 		m.info1.off, m.inspect.off = 0, 0
+		if m.proc.target != m.currentContainerID() {
+			m.clearProcesses("") // never leave one container's rows under another
+		}
 		m.logFollow = true
 	}
 	if !m.findingsVisible() || m.focus != PaneDetails {

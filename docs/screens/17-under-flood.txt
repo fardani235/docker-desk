@@ -1,13 +1,13 @@
- Docker Desk  unix:///tmp/ddfake2731242512/d.sock  ctx default  Engine 29.0.0-fake  on fake-dockerd  ● connected
+ Docker Desk  unix:///tmp/ddfake2682285016/d.sock  ctx default  Engine 29.0.0-fake  on fake-dockerd  ● connected
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (7) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ───────────────────────────── ● live ─┐
 │▸ Containers     7│┃  NAME           IMAGE        STATE          CPU       MEM  STATUS         PORTS       ┃│Waiting for engine events…                       │
-│  Images         1│┃▸ aa-flood       app:1        ● running   125.3%    664MiB  Up 10 minutes              ┃│Everything the daemon does                       │
-│  Volumes        0│┃  svc-0          app:1        ● running    48.0%    103MiB  Up 10 minutes              ┃│shows up here as it happens.                     │
-│  Networks       3│┃  svc-1          app:1        ● running     0.9%   77.7MiB  Up 10 minutes              ┃│                                                 │
-│  Compose        0│┃  svc-2          app:1        ● running    17.3%   65.7MiB  Up 10 minutes              ┃│                                                 │
-│                  │┃  svc-3          app:1        ● running    58.1%   59.6MiB  Up 10 minutes              ┃│                                                 │
-│  ● 7 running     │┃  svc-4          app:1        ● running    17.0%   78.9MiB  Up 10 minutes              ┃│                                                 │
-│  ○ 0 stopped     │┃  svc-5          app:1        ● running    56.7%   91.9MiB  Up 10 minutes              ┃│                                                 │
+│  Images         1│┃▸ aa-flood       app:1        ● running   123.8%    665MiB  Up 10 minutes              ┃│Everything the daemon does                       │
+│  Volumes        0│┃  svc-0          app:1        ● running    47.5%    103MiB  Up 10 minutes              ┃│shows up here as it happens.                     │
+│  Networks       3│┃  svc-1          app:1        ● running     0.9%   77.2MiB  Up 10 minutes              ┃│                                                 │
+│  Compose        0│┃  svc-2          app:1        ● running    18.0%   65.4MiB  Up 10 minutes              ┃│                                                 │
+│                  │┃  svc-3          app:1        ● running    58.8%   59.8MiB  Up 10 minutes              ┃│                                                 │
+│  ● 7 running     │┃  svc-4          app:1        ● running    16.8%   79.4MiB  Up 10 minutes              ┃│                                                 │
+│  ○ 0 stopped     │┃  svc-5          app:1        ● running    54.8%   92.4MiB  Up 10 minutes              ┃│                                                 │
 │                  │┃                                                                                       ┃│                                                 │
 │                  │┃                                                                                       ┃│                                                 │
 │                  │┃                                                                                       ┃│                                                 │
@@ -15,31 +15,31 @@
 │                  │┃                                                                                       ┃│                                                 │
 │                  │┃                                                                                       ┃│                                                 │
 │                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                                 │
-│                  │┌─ 3 Details: aa-flood ───────────────────────────────────── Info [Logs] Stats Inspect ─┐│                                                 │
-│                  ││line 504816 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504817 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504818 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504819 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504820 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504821 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504822 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504823 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504824 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504825 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504826 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504827 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504828 level=info msg="request handled" path=/api/items status=200                │└─────────────────────────────────────────────────┘
-│                  ││line 504829 level=info msg="request handled" path=/api/items status=200                │┌─ 5 Jobs ────────────────────────────────────────┐
-│                  ││line 504830 level=info msg="request handled" path=/api/items status=200                ││No jobs yet.                                     │
-│                  ││line 504831 level=info msg="request handled" path=/api/items status=200                ││Everything that changes the daemon               │
-│                  ││line 504832 level=info msg="request handled" path=/api/items status=200                ││runs here, in the background.                    │
-│                  ││line 504833 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504834 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504835 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504836 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504837 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││line 504838 level=info msg="request handled" path=/api/items status=200                ││                                                 │
-│                  ││● following · 5000 lines · 484838 older lines scrolled out                             ││                                                 │
+│                  │┌─ 3 Details: aa-flood ─────────────────────────── Info [Logs] Stats Processes Inspect ─┐│                                                 │
+│                  ││line 491978 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491979 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491980 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491981 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491982 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491983 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491984 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491985 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491986 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491987 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491988 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491989 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491990 level=info msg="request handled" path=/api/items status=200                │└─────────────────────────────────────────────────┘
+│                  ││line 491991 level=info msg="request handled" path=/api/items status=200                │┌─ 5 Jobs ────────────────────────────────────────┐
+│                  ││line 491992 level=info msg="request handled" path=/api/items status=200                ││No jobs yet.                                     │
+│                  ││line 491993 level=info msg="request handled" path=/api/items status=200                ││Everything that changes the daemon               │
+│                  ││line 491994 level=info msg="request handled" path=/api/items status=200                ││runs here, in the background.                    │
+│                  ││line 491995 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491996 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491997 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491998 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 491999 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││line 492000 level=info msg="request handled" path=/api/items status=200                ││                                                 │
+│                  ││● following · 5000 lines · 475998 older lines scrolled out                             ││                                                 │
 └──────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└─────────────────────────────────────────────────┘
 
  ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell                 Tab pane  ? keys  q quit

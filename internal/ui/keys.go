@@ -78,6 +78,9 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 		for i := range m.lastStart {
 			m.lastStart[i] = time.Time{}
 		}
+		// The process snapshot is taken again now if it is shown, or on the
+		// next visit to its tab — never in the background.
+		m.invalidateProcesses()
 		m.setStatus(toneDim, "Refreshing every list…")
 		return nil
 	case "T":
@@ -257,6 +260,8 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 			m.scrollLogs(delta)
 		case tabInspect:
 			m.inspect.scroll(delta)
+		case tabProcesses:
+			m.proc.view.scroll(delta)
 		case tabInfo:
 			m.info1.scroll(delta)
 		}

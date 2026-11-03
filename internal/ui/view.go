@@ -90,7 +90,7 @@ func (m *Model) render() []string {
 	kinds := pane(PaneKinds, l.kinds, "1 Kinds", "", func(w, h int) []string { return m.renderKinds(w, h, m.focus == PaneKinds) })
 	lt, lr := m.listTitle()
 	list := pane(PaneList, l.list, lt, lr, func(w, h int) []string { return m.renderList(w, h, m.focus == PaneList) })
-	dt, dr := m.detailsTitle()
+	dt, dr := m.detailsTitle(l.details.w)
 	details := pane(PaneDetails, l.details, dt, dr, m.renderDetails)
 	et, er := m.eventsTitle()
 	events := pane(PaneEvents, l.events, et, er, m.renderEvents)
@@ -325,7 +325,11 @@ func (m *Model) renderHints() string {
 			if m.tabName() == tabLogs {
 				add("f", "follow")
 			}
-			add("w", "wrap")
+			if m.tabName() == tabProcesses {
+				add("r", "new snapshot")
+			} else {
+				add("w", "wrap")
+			}
 		}
 		for _, a := range kindActions[m.kind] {
 			add(a.key, strings.TrimSuffix(a.label, "…"))
@@ -395,7 +399,18 @@ func (m *Model) helpLines(w int) []string {
 	sect("Details pane")
 	row("← →  or  h l", "switch tab")
 	row("f", "Logs: pause / resume following")
-	row("w", "toggle line wrapping")
+	row("w", "toggle line wrapping (not Processes: one row per process)")
+
+	sect("Containers › Processes tab")
+	row("r", "take a new snapshot (GET /containers/{id}/top, the daemon's default ps)")
+	out = append(out,
+		"  A snapshot, not a live view: taken when the tab is opened, when the",
+		"  highlight moves to another container, and on r — never on a timer.",
+		"  Its time is shown; it is marked stale while the daemon is unreachable.",
+		"  Only running containers have processes; a stopped one says so.",
+		"  Command lines are shown exactly as the daemon reports them, arguments",
+		"  included — nothing is masked, and nothing is written to jobs, logs or files.",
+	)
 
 	sect("Images › Findings tab (Details pane focused)")
 	row("↑ ↓  PgUp PgDn", "move between findings")

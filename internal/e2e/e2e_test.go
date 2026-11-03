@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/fakeengine"
@@ -224,6 +225,8 @@ func TestSession(t *testing.T) {
 	d.keys("]")
 	d.see("[Stats]", "CPU", "MEM", "NET", "DISK", "PIDS", "samples")
 	d.shot("07-stats")
+	d.keys("]")
+	d.see("[Processes]", "CMD", "snapshot at")
 	d.keys("]")
 	d.see("[Inspect]", "\"Id\":")
 	d.keys("]")
@@ -584,7 +587,7 @@ func TestRealDaemonReadOnlyTour(t *testing.T) {
 	d.see("Docker Desk", host, "[READ-ONLY]", "● connected", "1 Kinds", "2 Containers", "3 Details", "4 Events", "5 Jobs")
 	time.Sleep(1500 * time.Millisecond) // let statistics arrive
 	d.shot("real-containers")
-	for _, tab := range []string{"[Logs]", "[Stats]", "[Inspect]", "[Info]"} {
+	for _, tab := range []string{"[Logs]", "[Stats]", "[Processes]", "[Inspect]", "[Info]"} {
 		d.keys("]")
 		d.see(tab)
 		time.Sleep(700 * time.Millisecond)
@@ -735,5 +738,73 @@ func TestImageFindings(t *testing.T) {
 			d.keys("q")
 			d.quit()
 		})
+	}
+}
+
+// TestProcessesView opens Containers › Processes on a running container,
+// refreshes the snapshot, moves to another container and to a stopped one,
+// at the wide layout and at 80×24, without tearing the frame.
+func TestProcessesView(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		rows, cols int
+	}{
+		{"29-processes", 40, 140},
+		{"30-processes-80x24", 24, 80},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := startFake(t, func(s *fakeengine.Server) { s.SeedDemo() })
+			d := launch(t, srv, tc.rows, tc.cols)
+			d.see("2 Containers (12)")
+			d.keys("/", "s", "h", "o", "p", "-", "w", "e", "b", ptyscreen.Enter)
+			d.see("3 Details: shop-web-1")
+			d.keys("3", "]", "]", "]")
+			d.see("UID", "PID", "CMD", "snapshot at")
+			checkFrame(t, d.shot(tc.name), tc.rows, tc.cols)
+			tops := func() int { return srv.CountRequests("GET", `^/containers/[^/]+/top$`) }
+			if n := tops(); n != 1 {
+				t.Fatalf("%d process requests on entry", n)
+			}
+
+			d.keys("r")
+			if err := d.term.WaitUntil(wait, "a second snapshot", func(string) bool { return tops() == 2 }); err != nil {
+				t.Fatal(err)
+			}
+
+			// Another running container, then a stopped one.
+			d.keys("2", ptyscreen.Esc, "/", "r", "e", "d", "i", "s", ptyscreen.Enter)
+			d.see("3 Details: redis-cache", "redis-server")
+			d.gone("nginx")
+			if err := d.term.WaitUntil(wait, "a snapshot for redis", func(string) bool { return tops() == 3 }); err != nil {
+				t.Fatal(err)
+			}
+			d.keys(ptyscreen.Esc, "/", "w", "o", "r", "k", "e", "r", ptyscreen.Enter)
+			d.see("3 Details: shop-worker-1", "is not running", "available only for running containers")
+			checkFrame(t, d.term.Screen(), tc.rows, tc.cols)
+			if n := tops(); n != 3 {
+				t.Fatalf("a stopped container was asked for processes: %d requests", n)
+			}
+			if muts := srv.Mutations(); len(muts) != 0 {
+				t.Fatalf("the Processes view sent %v", muts)
+			}
+			d.keys("q")
+			d.quit()
+		})
+	}
+}
+
+func checkFrame(t *testing.T, screen string, rows, cols int) {
+	t.Helper()
+	lines := strings.Split(screen, "\n")
+	if len(lines) < rows-1 {
+		t.Fatalf("screen has %d lines, terminal has %d", len(lines), rows)
+	}
+	for i, l := range lines {
+		if n := utf8.RuneCountInString(l); n > cols {
+			t.Fatalf("line %d is %d cells, terminal is %d:\n%s", i, n, cols, screen)
+		}
+	}
+	if !strings.Contains(screen, "5 Jobs") || !strings.Contains(screen, "4 Events") {
+		t.Fatalf("a pane went missing:\n%s", screen)
 	}
 }

@@ -187,7 +187,7 @@ the desk keeps answering keys, and everything resumes by itself when the daemon 
 | --- | --- |
 | **1 Kinds** | Containers, Images, Volumes, Networks, Compose — with live counts. Moving the highlight is enough; the list follows. |
 | **2 List** | The objects of that kind. Containers show live CPU and memory. The highlight follows the *object* when the list changes underneath it. |
-| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON), for containers **Logs** (live follow) and **Stats** (CPU, memory, network, disk — with history), and for images **Findings** (what the image's own bytes hold; see below). |
+| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON), for containers **Logs** (live follow), **Stats** (CPU, memory, network, disk — with history) and **Processes** (a snapshot of `docker top`; see below), and for images **Findings** (what the image's own bytes hold; see below). |
 | **4 Events** | The engine's event stream as it happens. It is the answer to everything you do — and to everything anyone else does to this daemon. |
 | **5 Jobs** | Every change you asked for, running in the background: progress while it runs, the daemon's answer when it ends. |
 | **Space** (`S`) | Not a pane: a full-screen account of the disk — the daemon's totals, unique and shared bytes per image, what a removal frees. See [Space](#space--where-the-bytes-went-and-what-removing-something-frees). |
@@ -335,7 +335,7 @@ Press `?` inside the desk for the same list.
 | `a` | in the List: select every row the filter shows |
 | `Esc` | in the List: clear the selection; again, clear the filter; again, back to Kinds |
 | `Enter` | in the List: a menu of what you can do to the highlighted object, or to the selection |
-| `r` | refresh every list now |
+| `r` | refresh every list now; also takes a new Processes snapshot (now if the tab is shown, else on the next visit) |
 | `S` | Space: where the bytes went, and what removing something frees (see above) |
 | `T` | next colour theme |
 | `?` | help |
@@ -361,7 +361,16 @@ highlighted one. `e` shell, `c` connect and `D` disconnect work on one object on
 unaffected. The selection is cleared when the job starts, and kept if you decline. `Space`
 still pages in the Details and Events panes.
 
-**Details**: `←` `→` switch tab · `f` pause/resume following (Logs) · `w` toggle wrapping.
+**Details**: `←` `→` switch tab · `f` pause/resume following (Logs) · `w` toggle wrapping (not Processes).
+**Processes** (Containers): the daemon's default process listing (`GET /containers/{id}/top`,
+no `ps` arguments), one row per process, columns exactly as the daemon names them. It is a
+snapshot, not a live view: taken when the tab is opened, when the highlight moves to another
+container, and on `r` — never on a timer; its capture time is in the status row, which says
+*stale* while the daemon cannot be reached. A stopped, paused or exited container says that
+processes are available only for running containers. Long values are cut to the pane width;
+the movement keys scroll the rows. Command lines are shown as the daemon reports them,
+arguments included — nothing is masked, so a secret passed on a command line is visible here,
+as it is to `docker top`; process rows are never written to jobs, the status line or files.
 **Findings** (Images): `↑` `↓` move between findings · `o` order by layer / group / certainty ·
 `v` reveal the highlighted secret · `c` cancel the analysis · `Enter` analyse when asked first
 or after a failure.

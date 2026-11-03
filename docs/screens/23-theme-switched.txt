@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake129003485/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake3286342763/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ────────────────────── ● live ─┐
 │▸ Containers    12│┃  NAME           IMAGE        STATE          CPU       MEM  STATUS        ┃│Waiting for engine events…                │
 │  Images        14│┃▸ distroless-s…  gcr.io/dis…  ● running        …         …  Up 5 hours    ┃│Everything the daemon does                │
@@ -13,16 +13,16 @@
 │                  │┃  blog-db-1      mysql:8      ○ exited                      Exited (0) 1… ┃│                                          │
 │                  │┃  old-migration  shop/api:d…  ○ exited                      Exited (0) 3… ┃│                                          │
 │                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                          │
-│                  │┌─ 3 Details: distroless-svc ────────────────── [Info] Logs Stats Inspect ─┐│                                          │
+│                  │┌─ 3 Details: distroless-svc ──────── [Info] Logs Stats Processes Inspect ─┐│                                          │
 │                  ││Name     distroless-svc                                                   ││                                          │
 │                  ││ID       86f975de6cbb                                                     ││                                          │
 │                  ││Image    gcr.io/distroless/static:nonroot                                 ││                                          │
 │                  ││State    ● running   Up 5 hours                                           ││                                          │
-│                  ││Started  2026-11-03 03:12:47                                              ││                                          │
+│                  ││Started  2026-11-03 09:47:16                                              ││                                          │
 │                  ││Command  /svc                                                             ││                                          │
 │                  ││Restart  no (restarted 0×)                                                ││                                          │
 │                  ││Runtime  tty=false  privileged=false  env vars=1                          ││                                          │
-│                  ││Created  2026-11-03 03:12:47                                              ││                                          │
+│                  ││Created  2026-11-03 09:47:16                                              ││                                          │
 │                  ││                                                                          ││                                          │
 │                  ││Ports                                                                     │└──────────────────────────────────────────┘
 │                  ││  none                                                                    │┌─ 5 Jobs ─────────────────────────────────┐

@@ -972,6 +972,14 @@ func (m *mobyEngine) Stats(ctx context.Context, id string, fn func(RawStats)) er
 	}
 }
 
+func (m *mobyEngine) Processes(ctx context.Context, id string) (ProcessList, error) {
+	res, err := m.cli.ContainerTop(ctx, id, client.ContainerTopOptions{})
+	if err != nil {
+		return ProcessList{}, m.wrap("list processes", err)
+	}
+	return ProcessList{Titles: res.Titles, Rows: res.Processes}, nil
+}
+
 func rawStats(s container.StatsResponse) RawStats {
 	r := RawStats{
 		Read:       s.Read,
