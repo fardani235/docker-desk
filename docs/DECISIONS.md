@@ -20,6 +20,9 @@ and are collected in [their own section](#round-four--image-findings). The reque
 decisions to be made and recorded rather than asked about; every place it left a choice open
 has an entry.
 
+Entries marked **U** (usage) belong to the fifth change, `openspec/changes/disk-space/`, and
+are collected in [their own section](#round-five--space), made and recorded the same way.
+
 Where a decision costs something, the cost is stated. Nothing here is presented as free.
 
 ---
@@ -1551,12 +1554,216 @@ to the config's diff ID).
 **Why:** the fixtures are written from the specifications; one real archive checks the
 reading of them.
 
+## Round five — Space
+
+The request: a view that accounts for what this engine holds on disk, separates shared from
+unique bytes, and says what removing one object frees. Fixed by the request: GET requests
+only, apart from what already existed; read-only mode stays correct; never present an
+estimate as a measurement and say which numbers are the daemon's; do not recompute what the
+daemon reports; no Docker prune endpoint, no force, no new delete path; no new dependency;
+the existing safety, layout, remote and theme tests untouched. Where it left a choice open,
+the choice is recorded here.
+
+### U1 — Totals: one `GET /system/df`, as a job, shown as the daemon states them
+
+**Decided:** `engine.DiskUsage` calls the client library's `DiskUsage` with all four types
+and `verbose=1`. The view runs it as the job "measure disk usage" when it opens without a
+current account, and again on `r`; `c` cancels it. The four totals — count, active count,
+size, reclaimable — are printed with the docker CLI's own size format (go-units `HumanSize`:
+four significant digits, powers of 1000) and its reclaimable column (a percentage, except
+for build cache), reimplemented in eight lines (`cliSize`), so that they read character for
+character like `docker system df`.
+
+**Alternatives:** the desk's own `humanBytes` (one decimal) — the figures would be the same
+bytes and look different from the CLI's, which is a comparison the operator will make;
+importing go-units — already in the module graph, but as an indirect requirement, and the
+request rules out new dependencies; non-verbose df plus the image list with `shared-size` —
+two requests at two moments for one account.
+
+**Why:** the daemon has done the adding up; the view's job is to show it. Below API 1.52 the
+daemon states no totals and returns lists only; the client library then sums them, exactly
+as the CLI does. The engine marks such an account `Derived`, and the view says "summed by the
+client library from the daemon's lists (API < 1.52 states no totals)" in place of "daemon".
+
+**Cost:** the daemon answers df by walking every container's writable layer and every local
+volume. That is why it is a job, why nothing but the view (and its `r`) asks for it, and why
+it can be cancelled.
+
+### U2 — Unique is the daemon's size less its shared size; nothing total is called freeable
+
+**Decided:** per image, the daemon's `Size` and `SharedSize` from the account; unique is the
+difference, which is the CLI's UNIQUE SIZE column. "Alone" for the highlighted image is that
+figure. Reclaimable is introduced as "the daemon's estimate", with the note that nothing is
+freed until something is removed and that, with the containerd image store, the bytes go
+when its garbage collector runs. No line anywhere says that an image's size is what removing
+it frees. The prune preview's old headline — "Exactly these 2 will be deleted (about …)", the
+sum of the listed images' sizes — lost its sum: images share layers, and the sum counted
+those bytes once per image.
+
+### U3 — Sharing is by chain ID; layer sizes come from the history, mapped by exact count
+
+**Decided:** `internal/space` (pure code). An image's layers are its diff IDs from inspect;
+their chain IDs are computed as the OCI specification defines them. The daemon stores a layer
+under its chain ID, so two images hold the same bytes exactly where their chain IDs are
+equal — the same layer on a different base is a different chain. Each layer's size is the
+daemon's own figure from the image's history (`GET /images/{id}/history`), mapped onto the
+layers only when that cannot be wrong: as many sized entries as layers, or every entry a
+layer (as F7 does with instructions). An image's layers are read once per image ID and kept —
+the ID is a content address — and dropped when the image goes. Then each image's layer sizes
+are checked against the daemon: they must add up to its `Size`, and the shared ones to its
+`SharedSize`. An image whose layers do not add up (the containerd store counts content the
+history does not) has its layers left unattributed, says so, and keeps the daemon's figures.
+
+**Alternatives:** solving for the shared sets from the daemon's per-image `Size` and
+`SharedSize` alone — two equations per image, underdetermined as soon as images branch at a
+point no image sits on; the Findings archive — file content, not on-disk size, and only for
+analysed images (it is used, but for attribution, U6).
+
+**Why:** "shared bytes listed once, against the set of images that hold them" needs to know
+which bytes, and both halves of that are the daemon's own statements. The check is what
+makes the sum safe to show.
+
+**Found during the build:** against this machine's Docker 29 (read-only,
+`TestRealDaemonDiskUsageReadOnly`), the history mapped for all 18 images and added up for
+none. With the containerd image store the daemon's `Size` and `SharedSize` count each
+layer's compressed content as well as its unpacked snapshot; the history gives the snapshot
+alone, rounded to 4 KiB blocks (a one-layer image: shared 12,938,037 B, snapshot
+9,084,928 B). No per-layer content size is available without reading manifests, so there the
+check refuses, as it should: the view names which images share layers, shows `?` for how
+much, keeps every daemon figure, and gives "together" as a floor. On the classic store
+(overlay2) the history's sizes are the layer store's own and add up.
+
+### U4 — What a set frees, and when that is not known
+
+**Decided:** removing a set of images frees the bytes of every layer all of whose holders
+are in the set. It is exact when every such layer's size is confirmed (U3) and every image the
+account lists has its layers read. Otherwise the figure is "at least" the sum of the members'
+unique sizes (the daemon's), with the reason; and if not even that is known, it says so.
+"Together" for the highlighted image is the image and every image holding one of its layers.
+
+**Why:** a lower bound from the daemon's own figures is a measurement; a guess at the rest is
+not. In the demo, the debian base links eight images, so "together" for any of them is the
+whole cluster — which is what the definition says, and the names are listed.
+
+### U5 — Writable layers come only from `size=1`, only when asked
+
+**Decided:** `engine.ContainerSizes` lists containers with `all=1&size=1` (optionally only some
+IDs). The view calls it only from `m`, as the job "measure writable layers"; `c` cancels it.
+No list refresh, no confirmation, nothing automatic asks for it. The df answer also carries
+per-container items; they are not shown.
+
+**Why:** one source per figure, as the request names it: a container's writable layer read
+in two places at two moments would show two ages for one number.
+
+### U6 — Archive attribution is read from the Findings cache, never from an archive
+
+**Decided:** for an image with a cached Findings report (the cache is looked at, never filled,
+and no analysis is started), the detail line gives the report's size by layer and the largest
+layer with its instruction — or says that the history does not map, so no instruction is
+named. It is labelled "of file content" and "archive": it is the bytes of the files in each
+layer tar, a different measure from the daemon's on-disk size. The report's time is recorded
+when it is cached (`findingsState.storedAt`).
+
+### U7 — Every figure has a source and an age; stale means "the engine changed since"
+
+**Decided:** sources are `daemon` (or the client library's sums, U1), `computed writable
+layer`, `computed from layer sizes`, and `archive`; each section and detail line names its
+source and age, and the box title the account's clock time. The desk records when a refresh
+last found the engine different from what it knew — a list whose objects (and, for
+containers, states) differ, or a new account whose totals differ from the last — and any
+figure taken before that moment is labelled STALE.
+
+**Alternative:** stale when older than the last refresh of any kind. The lists refresh every
+five seconds and on every engine event, so every figure would be stale almost at once and the
+word would mean nothing.
+
+**Why:** a refresh that finds nothing changed is evidence that the figure still holds. One
+that finds anything changed is not proof that it does not, which is exactly what "stale"
+says. `r` in the view re-reads the account and the lists together; the writable layers,
+measured before a change, stay stale until measured again.
+
+### U8 — The view is a layer between the desk and its dialogs
+
+**Decided:** the view is not a dialog. It is drawn over the body, under the header (the daemon
+stays named); a dialog opened from it is drawn over it. Keys go to an open dialog first, then
+to the view; nothing reaches the panes behind it. `S` opens it from any pane — except while a
+filter is being typed, where S is a letter — and `S` or Esc closes it. The desk underneath is
+not touched while it is open, and focus, kind and highlight are also saved and put back.
+
+**Why:** "in the style of the help screen" (a box with a scroll position and its keys below),
+but able to open the desk's own confirmations without closing, which a dialog could not:
+only one dialog is open at a time.
+
+### U9 — Enter goes to the object
+
+**Decided:** on an image, container or volume row Enter closes the view and highlights the
+object in its own kind, the List focused. A filter that would hide it is cleared and the
+status line says so. Build-cache records and shared-layer lines are not rows: the desk has no
+kind for the first, and the second is a set, not an object.
+
+### U10 — Reclaim only through the existing confirmations, which now say what they free
+
+**Decided:** `d` in the view invokes the kind's own remove action on the highlighted object,
+`X` the kind's own prune (images, volumes); both go through `invokeOn`, so the selection
+rules, the read-only refusal and the arming delay are the same code. A selection made in the
+List is not used from here: in the view, `d` means the object it highlights. For an image with
+several references, `d` opens the untag of the first, which says it frees nothing. Every
+remove and prune confirmation, wherever it is opened from, gains a "frees" line, computed
+from the view's last account — no request is sent for it — with its source and age:
+
+| Plan | frees |
+| --- | --- |
+| remove an image | its unique size |
+| untag | nothing — the image stays under its other references |
+| several images (prune, selection) | the set's figure, U4 |
+| remove containers | their measured writable layers, or "not measured — m measures" |
+| remove volumes | their sizes from the account |
+| no account yet | "not measured — S opens Space" |
+
+**Alternative, tried and dropped during the build:** measuring at the moment of the
+confirmation (`GET /images/json?shared-size=1`; `size=1` for the one container). The second
+would put a filesystem walk outside the job U5 confines it to, and with the containerd store
+the first walks snapshots too. A figure from the account, labelled with its age and STALE when
+the engine has changed since, is honest and costs nothing.
+
+### U11 — Read-only mode: every figure, no reclaim
+
+**Decided:** in read-only mode the view and both measurements work (they are GETs), and `d`,
+`X`, their hints and their help lines are absent; the keys do nothing.
+
+### U12 — The fake daemon learns layers
+
+**Decided:** fake images carry layers (bottom first) whose identity is a name; equal names on
+equal bases are equal chain IDs, and `SharedSize` is computed from them. An image seeded with
+a size alone keeps two layers of its own that add up to it. The fake serves image history
+(with an empty-layer `CMD` entry on top, to exercise the mapping), `shared-size=1` (and `-1`
+without it, as the daemon), `size=1` on the container list, and `/system/df` in both shapes —
+totals and items from API 1.52, the legacy lists below it, chosen by the version in the path.
+Volumes have sizes, there are build-cache records (reported only; the fake has no builder),
+and `DiskUsageDelay`, `SizeDelay` and `AdvertiseAPI` make the slow paths and old daemons
+testable. The demo's images now share what real ones do: a debian base under nginx, postgres,
+redis, python and ghost; alpine under node; python under the worker, node under the API, and
+the two dangling images are earlier builds of the worker and the blog. Sizes seeded before
+are kept, so the Images list shows the same figures for those.
+
+**Cost:** the demo's images other than those have new sizes, so every captured screen was
+regenerated; and `TestInspect` expected nginx to have the old fake's fixed two layers — it
+has three now.
+
+### U13 — Proof that the totals are the daemon's
+
+**Decided:** `scripts/cli-crosscheck.sh` checks the real `docker system df`, `system df -v`,
+`ps -s` and `history` against the fake. `TestSpace` (end to end) runs the real
+`docker system df` against the same fake as the real binary and requires every size and
+reclaimable figure on the screen to match; `TestSpaceTotalsAreTheDaemons` also proves that
+the unique sizes and the shared groups add up to the daemon's image total — each byte once.
+
 ## Process
 
 ### B12 — No commits were made
 
 The work was done on the branch that was checked out, and nothing was committed: committing
-was not asked for. Everything is in the working tree for review. (Round four likewise.)
+was not asked for. Everything is in the working tree for review. (Rounds four and five likewise.)
 
 ### B13 — The binary was not installed into `PATH`
 
@@ -1567,4 +1774,5 @@ the machine. (`go install` into a scratch directory was verified to work.)
 ### B24 — The OpenSpec change is complete but not archived
 
 All tasks are done and the change validates. Archiving — which folds the capability specs into
-`openspec/specs/` — is an acceptance step and was left for after review (`/opsx:archive`).
+`openspec/specs/` — is an acceptance step and was left for after review (`/opsx:archive`). The same holds for
+round five's `disk-space` change.

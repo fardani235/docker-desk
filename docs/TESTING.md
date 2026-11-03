@@ -10,7 +10,7 @@ was done, what was measured, how to repeat it, and — just as important — wha
 | --- | --- | --- |
 | Every rule about what may be changed, and how | pure planner tests | no |
 | Every request the desk can send | Docker's own client library against a fake daemon | no |
-| The fake daemon itself | the real `docker` CLI driving it, 61 assertions | no |
+| The fake daemon itself | the real `docker` CLI driving it, 70 assertions | no |
 | Every key, pane and dialog | the UI model driven key by key; the fake's request log is the witness | no |
 | Responsiveness under a log flood | model-level and real-binary measurements | no |
 | The real program, end to end, including the shell hand-off | the binary on a pseudo-terminal with a terminal emulator | no |
@@ -20,6 +20,7 @@ was done, what was measured, how to repeat it, and — just as important — wha
 | Remote daemons over SSH (round two) | the real `ssh` client through a real `sshd` on a loopback port to the fake daemon's socket | no |
 | The Docker context store and TLS rules (round two) | a context written and used by the real `docker` CLI, then read by the desk | no |
 | Themes (round two) | every frame compared across themes; contrast computed; the real binary's colour output | no |
+| Disk accounting (round five) | pure accounting tests; the real binary's totals against the real `docker system df` on the fake | opt-in, read-only: once |
 
 `go test ./...` runs 399 tests and subtests — 198 tests, the rest their sub-cases. (Round one
 ended at 194 in all.) Two are opt-in and skipped by default. Twelve tests need a real `sshd`
@@ -29,7 +30,9 @@ stopped working cannot hide behind a green run. Everything passes with and witho
 detector.
 
 The remote transports and the themes have [their own section](#round-two-remote-daemons-and-themes)
-below.
+below; so do [image findings](#round-four-image-findings) and [Space](#round-five-space). At
+the end of round five, `go test ./...` passes 486 tests and subtests, with four opt-in
+real-daemon tests skipped.
 
 ## Why a fake daemon, and why it can be trusted
 
@@ -513,7 +516,54 @@ Screens: `docs/screens/24-image-findings.txt` (150×42) and
 `docs/screens/25-image-findings-80x24.txt` (80×24, `--read-only`), captured by `TestImageFindings`
 with nothing revealed.
 
-## What is not proven
+## Round five: Space
+
+The accounting is pure code (`internal/space`) over figures the daemon states, so most of it
+is proven on small worlds built by hand; the fake daemon now models layers by chain ID, and
+the real docker CLI was used to check that it reports them as Docker does.
+
+| Property | Test |
+| --- | --- |
+| Chain IDs follow the OCI rule; the same layer on another base is another chain | `TestChainIDs` |
+| History maps onto layers only by exact count (empty-layer entries skipped; a zero-sized layer that cannot be placed means no mapping) | `TestHistoryMapsOnlyByExactCount` |
+| Shared bytes are grouped by the exact set of holders, each byte once | `TestSharedBytesAreListedOnce` |
+| What a set frees: own layers, layers only the set holds, never a layer an outsider holds | `TestWhatASetFrees` |
+| Layer sizes that do not add up to the daemon's are not used; the set figure becomes a floor from the daemon's unique sizes; an unread image makes every set a floor | `TestAnIndexThatDisagreesWithTheDaemonIsNotUsed`, `TestAnUnreadImageMakesSetFiguresAFloor` |
+| `DiskUsage` decodes the account (all GETs, verbose); below API 1.52 it is marked derived and sums to the same totals | `TestDiskUsageAsTheDaemonStatesIt`, `TestLegacyDiskUsageIsMarkedDerived` |
+| An ordinary container list never asks for sizes; `ContainerSizes` does, for all or for given IDs | `TestSizesAreOnlyMeasuredWhenAsked` |
+| `ImageSizes` and `ImageLayers` (inspect and history, oldest first) | `TestImageLayersAndSharedSizes` |
+| The four new methods are read methods; the wrapper still overrides all 18 mutations | `TestReadOnlyCoversEveryMutation` |
+| The size format is go-units' `HumanSize`, the reclaimable column the CLI's | `TestCLISize` |
+| `S` opens from every pane, keys never reach the panes behind, `S`/Esc restore focus, kind and highlight; S typed into a filter is a letter | `TestSpaceOpensAndClosesWhereItWas` |
+| The view fits and scrolls at 80×24, 120×30, 120×40 and 200×50, every frame exactly the terminal's size, with a dialog over it too | `TestSpaceFitsAndScrolls` |
+| The totals on screen are the daemon's, from one df request, with no writable-layer walk and no mutation; unique sizes plus the shared groups equal the daemon's image total | `TestSpaceTotalsAreTheDaemons` |
+| An image whose layers are shared frees less alone than its size; "together" is exact and larger | `TestSharedImageFreesLessAloneThanItsSize` |
+| Writable layers only after `m` — not on opening, not on `r`, not on the periodic refresh — as a job; both measurements cancel | `TestWritableLayersOnlyWhenAsked`, `TestSpaceMeasurementsAreCancellable` |
+| Archive attribution from the cached report, no second export, no analysis started for this view | `TestArchiveAttributionReadsNoArchive` |
+| A refresh that finds nothing changed ages nothing; a change makes everything older STALE; `r` makes the account current and leaves the old measurement stale | `TestFiguresTurnStaleAfterAChange` |
+| Enter goes to an image, a container, a volume; a filter that hid it is cleared | `TestEnterGoesToTheObject` |
+| `d` and `X` open the desk's own dialogs, which state what they free (unique size; nothing for an untag; the set; the measured writable layer; the volume's size); the confirmed request is the only mutation and is not forced; no prune endpoint | `TestSpaceReclaimUsesTheExistingDialogs`, `TestRemovalConfirmationStatesWhatItFrees`, `TestRemovalConfirmationWithoutAnAccountSaysSo` |
+| Read-only: every figure and both measurements, no `d`/`X` in hints or help, the keys open nothing, only GET/HEAD | `TestSpaceInReadOnlyMode` |
+| An older daemon's totals are labelled as the client library's sums | `TestSpaceOnAnOlderDaemon` |
+| The containerd case — no layer sizes add up — is said, not guessed: `?` for group sizes, floors for sets | `TestSpaceWhenLayerSizesDoNotAddUp` |
+
+**End to end**, `TestSpace` runs the binary at 120×40 and at 80×24 with `--read-only`, and
+runs the real `docker system df` against the same fake: every size and reclaimable figure the
+CLI prints is on the screen, character for character. It also opens a removal from the view
+and checks the confirmation frees the unique size. Screens: `docs/screens/26-space.txt`,
+`27-space-remove-frees.txt` and `28-space-80x24-read-only.txt`. Every other screen was
+regenerated too, because the demo's images now have layers and new sizes.
+
+**The CLI against the fake**, `make crosscheck`: `system df` (all four lines), `system df -v`
+(shared and unique per image), `ps -s` (writable layer and virtual size) and `history` (an
+empty-layer entry, and layer sizes). 70 checks pass.
+
+**Against the real daemon**, `make real-readonly-check` now also runs
+`TestRealDaemonDiskUsageReadOnly`: the account and every image's inspect and history, through
+a read-only engine. Run once during the build, against Docker 29.9.2: df answered in under a
+second; 18 images, the history mapped for all of them and their layer sizes added up to the
+daemon's for none — the containerd image store (DECISIONS U3). It logs counts and sizes only.
+
 
 Stated plainly, because a control plane deserves it:
 
@@ -570,6 +620,14 @@ Stated plainly, because a control plane deserves it:
   specifications; images with thousands of layers' worth of files, zstd layers (not walked),
   and Windows images were not tried. The secret patterns are examples of well-known formats,
   not a complete catalogue, and say nothing about whether a value is live.
+- **Space's shared-byte attribution has been seen to work only on the fake.** On the one
+  real daemon it met (containerd image store) it correctly declined for every image; a real
+  classic-store (overlay2) daemon, where the history's sizes should add up, was not available.
+  Multi-platform images, whose `Size` in the containerd store spans the platforms present,
+  were not examined, nor were volumes on non-local drivers (reported as not measured).
+- **How slow `/system/df` is on a busy engine** was not measured beyond the one real daemon
+  (under a second, four containers). The delay was simulated in the fake to prove the
+  cancellation, not its timing.
 - **Event replay after a reconnect** was tested against the fake's event history; the real
   daemon keeps a similar bounded history, but its behaviour across a daemon *restart* (history
   lost) relies on the full refresh that follows every reconnect.

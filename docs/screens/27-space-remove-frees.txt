@@ -1,0 +1,40 @@
+ Docker Desk  unix:///tmp/ddfake2941309968/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┏━ ◆ Space — where the bytes went, and what removing something frees ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 08:12:48 ━┓
+┃   TYPE            TOTAL  ACTIVE      SIZE  RECLAIMABLE                                                               ┃
+┃   Images             14      10   3.276GB  1.326GB (40%)                                                             ┃
+┃   Containers         12       8   107.1MB  24.11MB (22%)                                                             ┃
+┃   Local Volumes       7       4   2.443GB  1.872GB (76%)                                                             ┃
+┃   Build Cache         4       0   511.7MB  511.7MB                                                                   ┃
+┃   daemon (GET /system/df) · 08:12:48, 0s ago                                                                         ┃
+┃   Reclaimable is the daemon's estimate. Nothing is freed until something is removed; with the containerd image       ┃
+┃   store, the bytes go when its garbage collector runs.                                                               ┃
+┃                                                                                                                      ┃
+┃   IMAGES  size, unique and shared as the daemon reports them · 0s ago                                                ┃
+┃                ┏━ ◆ Remove image ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓SED  A          ┃
+┃   <none> 240796┃                                                                                    ┃  -             ┃
+┃   mysql:8      ┃ image      <untagged> 8bae7d2a8907  (8bae7d2a8907)                                 ┃ctr             ┃
+┃   postgres:16  ┃ daemon     unix:///tmp/ddfake2941309968/d.sock  (context default)                  ┃ctr             ┃
+┃   ghost:5      ┃                                                                                    ┃ctr             ┃
+┃ ▸ <none> 8bae7d┃ • The image is deleted.                                                            ┃  -             ┃
+┃   nginx:1.27   ┃ • Layers it does not share with other images are freed; untagged parent layers     ┃ctr             ┃
+┃   shop/worker:d┃   nothing else uses go with it.                                                    ┃ctr             ┃
+┃   shop/api:dev ┃ frees      279MB — its unique size; the 131MB it shares with other images stays ·  ┃ctr             ┃
+┃   redis:7      ┃            daemon, 0s ago                                                          ┃ctr             ┃
+┃   busybox:1.36 ┃                                                                                    ┃ctr             ┃
+┃   gcr.io/distro┃ Type remove and press Enter to proceed:                                            ┃ctr             ┃
+┃   node:22-alpin┃ >                                                                                  ┃  -             ┃
+┃   python:3.12-s┃                                                                                    ┃  -             ┃
+┃   alpine:3.20  ┃ Enter proceed  Esc cancel                                                          ┃ctr             ┃
+┃   A: analysed i┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                ┃
+┃                                                                                                                      ┃
+┃   SHARED LAYERS  each byte once, against the images that hold it · computed from the daemon's layer sizes            ┃
+┃    146.2MB  2 layer(s)  node:22-alpine · shop/api:dev                                                                ┃
+┃    128.4MB  1 layer(s)  <none> 2407967658b3 · ghost:5                                                                ┃
+┃     74.8MB  1 layer(s)  <none> 2407967658b3 · <none> 8bae7d2a8907 · ghost:5 · nginx:1.27 · postgres:16 ·             ┃
+┃ ───────────────────────────────────────────────────────────────────────────────────────────────── lines 1–31 of 66 ─ ┃
+┃ alone      frees 279MB — unique; 131MB shared stay · daemon, 0s ago                                                  ┃
+┃ together   with the 7 image(s) sharing its layers: frees 2.468GB · computed from layer sizes, 0s ago                 ┃
+┃            <none> 2407967658b3 · ghost:5 · nginx:1.27 · postgres:16 · python:3.12-slim · redis:7 · shop/worker:dev   ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ measure disk usage GET /system/df
+ ↑↓ move  ⏎ go to  r re-read  m writable  d remove…  X prune…                                           S close  ? keys

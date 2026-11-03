@@ -186,7 +186,7 @@ func TestInspect(t *testing.T) {
 	}
 
 	im, err := eng.InspectImage(ctx, "nginx:1.27")
-	if err != nil || im.OS != "linux" || im.Layers != 2 || len(im.Raw) == 0 {
+	if err != nil || im.OS != "linux" || im.Layers != 3 || len(im.Raw) == 0 {
 		t.Fatalf("image detail: %+v %v", im, err)
 	}
 	v, err := eng.InspectVolume(ctx, "shop_pgdata")

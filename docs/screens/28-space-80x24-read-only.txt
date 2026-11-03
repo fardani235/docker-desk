@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake1191169799/d.sock  ● connected  [READ-ONLY]
+┏━ ◆ Space — where the bytes went ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 08:12:48 ━┓
+┃   removed; with the containerd image store, the bytes go when its garbage    ┃
+┃   collector runs.                                                            ┃
+┃                                                                              ┃
+┃   IMAGES  size, unique and shared as the daemon reports them · 0s ago        ┃
+┃                                   SIZE   UNIQUE   SHARED    USED  A          ┃
+┃   <none> 2407967658b3           1.25GB  1.047GB  203.2MB       -             ┃
+┃   mysql:8                        584MB    584MB       0B   1 ctr             ┃
+┃   postgres:16                  423.9MB  349.1MB   74.8MB   1 ctr             ┃
+┃   ghost:5                      494.2MB    291MB  203.2MB   1 ctr             ┃
+┃   <none> 8bae7d2a8907            410MB    279MB    131MB       -             ┃
+┃   nginx:1.27                   187.7MB  112.9MB   74.8MB   1 ctr             ┃
+┃ ▸ shop/worker:dev              219.7MB   88.7MB    131MB   1 ctr             ┃
+┃ ───────────────────────────────────────────────────────── lines 8–19 of 71 ─ ┃
+┃ alone      frees 88.7MB — unique; 131MB shared stay · daemon, 0s ago         ┃
+┃ together   with the 7 image(s) sharing its layers: frees 2.468GB · computed  ┃
+┃            from layer sizes, 0s ago                                          ┃
+┃            <none> 2407967658b3 · <none> 8bae7d2a8907 · ghost:5 · nginx:1.27… ┃
+┃ removal    used by 1 container(s): refused until they are removed — the      ┃
+┃            alone figure is what it frees then                                ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ measure disk usage GET /system/df
+ ↑↓ move  ⏎ go to  r re-read  m writable                        S close  ? keys

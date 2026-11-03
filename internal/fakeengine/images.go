@@ -24,6 +24,9 @@ type Image struct {
 	// archive is what GET /images/get sends; built on first request from
 	// a plain fixture unless SetImageArchive installed one.
 	archive []byte
+	// layers, bottom first; nil means two layers of its own (see
+	// layersLocked).
+	layers []Layer
 }
 
 // normalizeRef returns the familiar form of a reference with ":latest"
@@ -157,7 +160,10 @@ func (i *Image) digests() []string {
 
 func (s *Server) handleImageList(w http.ResponseWriter, r *http.Request) {
 	filters := parseFilters(r)
+	// The shared size is computed only when asked for, as by the daemon.
+	withShared := boolParam(r, "shared-size")
 	s.mu.Lock()
+	_, holders := s.chainUseLocked()
 	out := []image.Summary{}
 	for _, img := range s.sortedImagesLocked() {
 		if vs, ok := filters["dangling"]; ok && len(vs) > 0 {
@@ -167,13 +173,17 @@ func (s *Server) handleImageList(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		tags := append([]string{}, img.RepoTags...)
+		shared := int64(-1)
+		if withShared {
+			shared = s.sharedSizeLocked(img, holders)
+		}
 		out = append(out, image.Summary{
 			ID:          "sha256:" + img.ID,
 			RepoTags:    tags,
 			RepoDigests: img.digests(),
 			Created:     img.Created.Unix(),
 			Size:        img.Size,
-			SharedSize:  -1,
+			SharedSize:  shared,
 			Containers:  int64(len(s.imageUsersLocked(img.ID))),
 			Labels:      img.Labels,
 		})
@@ -189,6 +199,10 @@ func (s *Server) handleImageInspect(w http.ResponseWriter, ref string) {
 		s.mu.Unlock()
 		httpError(w, http.StatusNotFound, "No such image: %s", ref)
 		return
+	}
+	var diffIDs []string
+	for _, l := range img.layersLocked() {
+		diffIDs = append(diffIDs, l.diffID())
 	}
 	resp := map[string]any{
 		"Id":           "sha256:" + img.ID,
@@ -206,7 +220,7 @@ func (s *Server) handleImageInspect(w http.ResponseWriter, ref string) {
 		},
 		"RootFS": map[string]any{
 			"Type":   "layers",
-			"Layers": []string{"sha256:" + stableID("layer", img.ID+"0"), "sha256:" + stableID("layer", img.ID+"1")},
+			"Layers": diffIDs,
 		},
 		"Metadata": map[string]any{"LastTagTime": "0001-01-01T00:00:00Z"},
 	}
@@ -533,4 +547,14 @@ func (s *Server) RecreateVolume(name string) {
 		created = old.Created.Add(time.Hour)
 	}
 	s.volumes[name] = &Volume{Name: name, Created: created, Labels: map[string]string{}}
+}
+
+// ImageSize returns the size the fake reports for an image, or -1.
+func (s *Server) ImageSize(ref string) int64 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if img := s.findImageLocked(ref); img != nil {
+		return img.Size
+	}
+	return -1
 }

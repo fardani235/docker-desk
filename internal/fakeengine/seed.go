@@ -109,9 +109,105 @@ func (s *Server) SeedDemo() {
 	s.AddAnonymousVolume("leftover-2")
 	s.AddNetwork("orphan-net", nil)
 
+	s.seedDisk()
+
 	// shop/api:dev is the image with something to find: a credential
 	// deleted one layer after it was added, a token in a build argument,
 	// package lists cleaned up too late, setuid and capability bits, and
 	// binaries with and without hardening (Images › Findings).
 	s.SetImageArchive("shop/api:dev", fixture.OCI(fixture.Demo()).Archive)
+}
+
+// seedDisk gives the demo's images the layers real ones have — most of them
+// are built on one of two bases, and the application images on the language
+// images — and its volumes, containers and build cache the sizes the Space
+// view accounts for. Images seeded above with a size keep it.
+func (s *Server) seedDisk() {
+	L := func(name string, size int64, by string) Layer { return Layer{Name: name, Size: size, CreatedBy: by} }
+	debian := L("debian:bookworm-slim", 74_800_000, "/bin/sh -c #(nop) ADD file:6e5c1b0e31a7 in / ")
+	alpine := L("alpine:3.20", 7_800_000, "/bin/sh -c #(nop) ADD file:a71f6a2cd5d0 in / ")
+	python := []Layer{debian,
+		L("python/deps", 9_300_000, "RUN apt-get update && apt-get install -y ca-certificates netbase tzdata # buildkit"),
+		L("python/3.12", 41_700_000, "RUN set -eux; ./configure --enable-optimizations; make install # buildkit"),
+		L("python/pip", 5_200_000, "RUN pip install --upgrade pip setuptools wheel # buildkit"),
+	}
+	node := []Layer{alpine,
+		L("node/22", 140_900_000, "RUN addgroup -g 1000 node && install node v22.11.0 # buildkit"),
+		L("node/yarn", 5_300_000, "RUN apk add --no-cache yarn # buildkit"),
+	}
+	nodeDebian := []Layer{debian, L("node/20-bookworm", 128_400_000, "RUN install node v20.18.0 # buildkit")}
+	with := func(base []Layer, more ...Layer) []Layer { return append(append([]Layer{}, base...), more...) }
+
+	s.SetImageLayers("python:3.12-slim", python...)
+	s.SetImageLayers("shop/worker:dev", with(python,
+		L("worker/req", 1_200, "COPY requirements.txt . # buildkit"),
+		L("worker/pip", 86_400_000, "RUN pip install -r requirements.txt # buildkit"),
+		L("worker/app", 2_300_000, "COPY . /app # buildkit"))...)
+	s.SetImageLayers("node:22-alpine", node...)
+	s.SetImageLayers("shop/api:dev", with(node,
+		L("api/pkg", 410_000, "COPY package*.json ./ # buildkit"),
+		L("api/npm", 61_300_000, "RUN npm ci --omit=dev # buildkit"),
+		L("api/app", 1_750_000, "COPY . . # buildkit"))...)
+	s.SetImageLayers("alpine:3.20", alpine)
+	s.SetImageLayers("nginx:1.27", debian,
+		L("nginx/pkg", 112_900_000, "RUN apt-get install -y nginx=1.27.2 # buildkit"),
+		L("nginx/entry", 4_620, "COPY docker-entrypoint.sh / # buildkit"))
+	s.SetImageLayers("postgres:16", debian,
+		L("postgres/pkg", 349_100_000, "RUN apt-get install -y postgresql-16 # buildkit"),
+		L("postgres/entry", 12_300, "COPY docker-entrypoint.sh /usr/local/bin/ # buildkit"))
+	s.SetImageLayers("redis:7", debian,
+		L("redis/pkg", 41_200_000, "RUN apt-get install -y redis-server # buildkit"),
+		L("redis/entry", 3_900, "COPY docker-entrypoint.sh /usr/local/bin/ # buildkit"))
+	s.SetImageLayers("ghost:5", with(nodeDebian, L("ghost/5.101", 291_000_000, "RUN npm install -g ghost-cli && ghost install 5.101.3 # buildkit"))...)
+	s.SetImageLayers("mysql:8",
+		L("oraclelinux:9-slim", 118_000_000, "/bin/sh -c #(nop) ADD file:0f3a9e in / "),
+		L("mysql/pkg", 466_000_000, "RUN microdnf install -y mysql-community-server-8.4.3 # buildkit"),
+		L("mysql/entry", 7_900, "COPY docker-entrypoint.sh /usr/local/bin/ # buildkit"))
+	s.SetImageLayers("busybox:1.36", L("busybox:1.36", 4_260_000, "/bin/sh -c #(nop) ADD file:b4c1 in / "))
+	s.SetImageLayers("gcr.io/distroless/static:nonroot",
+		L("distroless/static", 1_990_000, "bazel build //base:static"),
+		L("distroless/nonroot", 1_200, "bazel build //base:nonroot"))
+
+	// The two dangling images are earlier builds: of the worker, on the
+	// same Python, and of the blog, on the same Node.
+	s.mu.Lock()
+	var dangling []*Image
+	for _, img := range s.sortedImagesLocked() {
+		if len(img.RepoTags) == 0 {
+			dangling = append(dangling, img)
+		}
+	}
+	s.mu.Unlock()
+	for _, img := range dangling {
+		switch img.Size {
+		case 410_000_000:
+			s.SetImageLayers(img.ID, with(python,
+				L("worker/req@old", 1_100, "COPY requirements.txt . # buildkit"),
+				L("worker/pip@old", 276_800_000, "RUN pip install -r requirements.txt # buildkit"),
+				L("worker/app@old", 2_198_900, "COPY . /app # buildkit"))...)
+		case 1_250_000_000:
+			s.SetImageLayers(img.ID, with(nodeDebian,
+				L("ghost/5.87", 1_046_800_000, "RUN npm install -g ghost-cli && ghost install 5.87.0 # buildkit"))...)
+		}
+	}
+
+	for name, size := range map[string]int64{
+		"shop_pgdata": 48_200_000, "shop_uploads": 312_000_000, "blog_db": 211_000_000,
+		"old-backups": 1_820_000_000, stableID("anonvol", "leftover-1"): 52_000_000,
+	} {
+		s.SetVolumeSize(name, size)
+	}
+	for name, size := range map[string]int64{
+		"shop-api-1": 18_400_000, "shop-db-1": 63_000, "shop-worker-1": 6_900_000,
+		"old-migration": 2_100_000, "blog-db-1": 4_700_000,
+	} {
+		s.SetWritableSize(name, size)
+	}
+	day := 24 * time.Hour
+	s.AddBuildCache(
+		BuildRecord{ID: "kq3x9w2m7v4n8p1r5t6y0z2a", Type: "exec.cachemount", Description: "mount / from exec /bin/sh -c npm ci --omit=dev", Size: 233_000_000, LastUsed: time.Now().Add(-2 * day)},
+		BuildRecord{ID: "u8c2d7e1f5g9h3j6k0l4m8n2", Type: "regular", Description: "[api 4/5] RUN npm ci --omit=dev", Size: 61_300_000, Shared: true, LastUsed: time.Now().Add(-2 * day)},
+		BuildRecord{ID: "p0q4r8s2t6u0v4w8x2y6z0a4", Type: "source.local", Description: "local source for context", Size: 1_900_000, LastUsed: time.Now().Add(-2 * day)},
+		BuildRecord{ID: "b5c9d3e7f1g5h9j3k7l1m5n9", Type: "regular", Description: "[worker 3/4] RUN pip install -r requirements.txt", Size: 276_800_000, LastUsed: time.Now().Add(-9 * day)},
+	)
 }

@@ -82,6 +82,17 @@ type Server struct {
 	Unpullable map[string]bool
 	// ExportChunkDelay is the pause after each 32 KiB of an image export.
 	ExportChunkDelay time.Duration
+	// DiskUsageDelay and SizeDelay stand in for the time a daemon spends
+	// walking filesystems to answer GET /system/df and a container list
+	// with size=1.
+	DiskUsageDelay time.Duration
+	SizeDelay      time.Duration
+	// AdvertiseAPI, when set, is the API version the fake claims instead of
+	// APIVersion: a client then negotiates down to it, as with an older
+	// daemon.
+	AdvertiseAPI string
+
+	buildCache []BuildRecord
 
 	reqMu    sync.Mutex
 	requests []Request
@@ -326,7 +337,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.requests = append(s.requests, Request{Method: r.Method, Path: path, Query: r.URL.RawQuery, Time: time.Now()})
 	s.reqMu.Unlock()
 
-	w.Header().Set("Api-Version", APIVersion)
+	w.Header().Set("Api-Version", s.api())
 	w.Header().Set("Ostype", "linux")
 	w.Header().Set("Server", "Docker/"+EngineVersion+" (linux)")
 	w.Header().Set("Docker-Experimental", "false")
@@ -383,6 +394,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 		s.handleInfo(w)
 	case path == "/events" && get:
 		s.handleEvents(w, r)
+	case path == "/system/df" && get:
+		s.handleDiskUsage(w, r)
 
 	case path == "/containers/json" && get:
 		s.handleContainerList(w, r)
@@ -414,6 +427,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 		s.handleImageExport(w, r, r.URL.Query()["names"])
 	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "get" && get:
 		s.handleImageExport(w, r, []string{strings.Join(seg[1:len(seg)-1], "/")})
+	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "history" && get:
+		s.handleImageHistory(w, strings.Join(seg[1:len(seg)-1], "/"))
 	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "json" && get:
 		s.handleImageInspect(w, strings.Join(seg[1:len(seg)-1], "/"))
 	case len(seg) >= 2 && seg[0] == "images" && del:
@@ -446,11 +461,18 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 	}
 }
 
+func (s *Server) api() string {
+	if s.AdvertiseAPI != "" {
+		return s.AdvertiseAPI
+	}
+	return APIVersion
+}
+
 func (s *Server) handleVersion(w http.ResponseWriter) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"Platform":      map[string]string{"Name": "Docker Desk fake engine"},
 		"Version":       EngineVersion,
-		"ApiVersion":    APIVersion,
+		"ApiVersion":    s.api(),
 		"MinAPIVersion": MinAPIVersion,
 		"Os":            "linux",
 		"Arch":          "amd64",
@@ -459,7 +481,7 @@ func (s *Server) handleVersion(w http.ResponseWriter) {
 		"GitCommit":     "fake",
 		"Components": []map[string]any{{
 			"Name": "Engine", "Version": EngineVersion,
-			"Details": map[string]string{"ApiVersion": APIVersion, "MinAPIVersion": MinAPIVersion, "Os": "linux", "Arch": "amd64"},
+			"Details": map[string]string{"ApiVersion": s.api(), "MinAPIVersion": MinAPIVersion, "Os": "linux", "Arch": "amd64"},
 		}},
 	})
 }

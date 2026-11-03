@@ -34,6 +34,20 @@ type Engine interface {
 	// and changes nothing. The caller reads the stream and must close it.
 	SaveImage(ctx context.Context, id string, platform Platform) (io.ReadCloser, error)
 
+	// DiskUsage is the daemon's own disk account (GET /system/df), with
+	// per-image, per-volume and build-cache items. The daemon walks
+	// container and volume filesystems to answer: callers run it as a job.
+	DiskUsage(ctx context.Context) (DiskUsage, error)
+	// ImageSizes lists every image with its shared size computed
+	// (GET /images/json?shared-size=1).
+	ImageSizes(ctx context.Context) ([]ImageUsage, error)
+	// ImageLayers returns an image's diff IDs (inspect) and history.
+	ImageLayers(ctx context.Context, id string) (ImageLayers, error)
+	// ContainerSizes lists containers with their writable layers measured
+	// (GET /containers/json?all=1&size=1) — all of them, or only ids. The
+	// daemon walks each filesystem to answer; never part of a list refresh.
+	ContainerSizes(ctx context.Context, ids []string) ([]ContainerSize, error)
+
 	// ---- mutations ------------------------------------------------------
 	StartContainer(ctx context.Context, id string) error
 	// StopContainer asks the container to stop with its configured signal and
