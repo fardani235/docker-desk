@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# daemon-connection Specification
+
+## Purpose
+Defines which single Docker daemon the desk talks to, how the operator is kept aware of it, and
+how the desk behaves when that daemon is unreachable, remote, or returns errors.
+
+## Requirements
 
 ### Requirement: Single daemon from the current Docker context
 The program SHALL talk to exactly one daemon for its whole lifetime, chosen with the same
@@ -144,6 +150,18 @@ by an internal address used to reach it.
 - **WHEN** a request fails on an `ssh://` endpoint
 - **THEN** the message names the `ssh://` endpoint and not the local end of the tunnel
 
+### Requirement: Daemon errors never end the session
+When the daemon rejects or fails a request, the program SHALL show the daemon's error message
+and remain fully usable.
+
+#### Scenario: A listing fails
+- **WHEN** a list or inspect request returns an error
+- **THEN** the affected pane shows the error text, the other panes keep working, and the request is retried on the next refresh
+
+#### Scenario: A mutation fails
+- **WHEN** a mutating request returns an error
+- **THEN** the error message from the daemon is shown to the operator and kept with the job that issued it, and the workspace continues to accept input
+
 ### Requirement: Connection loss is visible and recoverable
 If the connection to the daemon is lost while the workspace is open, the program SHALL show a
 disconnected state next to the endpoint, keep the last known data on screen marked as stale,
@@ -171,32 +189,24 @@ say so and why, and SHALL re-establish the connection without asking anything on
 - **WHEN** logging in again would require a passphrase, a password or a host-key confirmation
 - **THEN** nothing is asked on the terminal; the desk stays disconnected, says why, and remains usable for looking at the last known data and for quitting
 
-## REMOVED Requirements
+### Requirement: Read-only mode
+When started in read-only mode the program SHALL refuse every mutating action before any
+request for it is sent to the daemon, and SHALL show that it is in read-only mode at all times.
 
-### Requirement: Local daemons only
-**Reason**: The owner asked for the desk to reach remote daemons over SSH and other protocols.
-The requirement existed to keep a context left pointing at a remote host from causing changes
-on the wrong machine; that risk is now addressed by announcing a remote daemon as remote
-wherever the daemon is named (see "A remote daemon is announced as remote").
-**Migration**: A context or `DOCKER_HOST` that points at `ssh://` or `tcp://` no longer stops
-the program — it connects. To keep working on the local daemon, select it explicitly
-(`docker context use default`, `--context default`, or unset `DOCKER_HOST`). `--read-only`
-remains the way to look at any daemon with a guarantee that nothing is changed.
+#### Scenario: Mutation attempted in read-only mode
+- **WHEN** the operator triggers any action that would change or delete something, or open a shell
+- **THEN** the program states that the desk is read-only and sends nothing to the daemon
 
-## ADDED Requirements
+#### Scenario: Observation in read-only mode
+- **WHEN** the operator browses lists, details, logs, stats and events
+- **THEN** they behave exactly as in normal mode
 
 ### Requirement: Supported endpoint transports
-The program SHALL accept endpoints of the forms `unix://PATH`,
-`ssh://[USER@]HOST[:PORT][/PATH]` and `tcp://HOST[:PORT]`, and SHALL refuse any other form at
-launch with a message naming the endpoint and the supported forms. An `ssh://` endpoint without
-a path SHALL mean the socket `/var/run/docker.sock` on the remote machine. A `tcp://` endpoint
-without a port SHALL mean port 2375, with or without TLS, as it does to the Docker CLI, and the
-port in use SHALL be shown by `--check` and in the help. An endpoint SHALL be refused when it
-contains a password or control characters. The user, host, port and socket path of an `ssh://`
-endpoint SHALL be refused unless they consist of characters that mean nothing to the ssh
-client, to a shell or to a terminal: in particular a host or user that could be read as an
-option, and a socket path containing `$`, `%`, `:`, `\` or whitespace, which the ssh client
-would expand or split.
+The program SHALL accept `unix://PATH`, `ssh://[USER@]HOST[:PORT][/PATH]` and
+`tcp://HOST[:PORT]`, and SHALL refuse any other form at launch, naming the endpoint and
+the supported forms. Omitted parts SHALL take the Docker CLI's meaning. An endpoint
+carrying a password or control characters, or an `ssh://` part holding a character the
+ssh client, a shell or a terminal would interpret, SHALL be refused before connecting.
 
 #### Scenario: Unsupported scheme
 - **WHEN** the resolved endpoint uses `npipe://`, `fd://`, `http://`, `https://` or any other scheme
@@ -222,19 +232,29 @@ would expand or split.
 - **WHEN** the endpoint is `tcp://host` and TLS is configured
 - **THEN** the program dials port 2375, where the Docker CLI dials, and shows that port
 
+#### Scenario: SSH endpoint without a path
+- **WHEN** the endpoint is `ssh://ops@prod-1` with no path
+- **THEN** the program reaches `/var/run/docker.sock` on that host
+
+#### Scenario: Control characters in the endpoint
+- **WHEN** any part of the endpoint holds a control character
+- **THEN** the program refuses it at launch and writes none of those characters to the terminal
+
 ### Requirement: SSH endpoints go through the operator's ssh client
-For an `ssh://` endpoint the program SHALL use the ssh client program installed on the
-operator's machine, so that the operator's SSH configuration, keys, agent and known hosts apply.
-It SHALL carry every connection to the daemon over a single SSH connection. Anything ssh needs
-to ask the operator SHALL be asked before the workspace takes over the terminal and never
-after — neither by the ssh process the program starts nor by any process that one starts, such
-as the connection to a jump host. The local end of the connection SHALL be usable only by the
-operator, and SHALL be removed, and the ssh process ended, when the program exits, including
-when its terminal is closed.
+For an `ssh://` endpoint the program SHALL use the ssh program installed on the
+operator's machine, so that their configuration, keys, agent and known hosts apply, and
+SHALL carry every connection to the daemon over a single SSH connection. Anything ssh
+must ask SHALL be asked before the workspace takes over the terminal and never after.
+The local end SHALL be usable only by the operator, and SHALL be removed, with the ssh
+process ended, when the program exits.
 
 #### Scenario: Key with a passphrase
 - **WHEN** the endpoint is `ssh://` and logging in requires a passphrase, with the program started from a terminal
 - **THEN** ssh asks for it on the ordinary screen, and the workspace opens only after it has been answered
+
+#### Scenario: A jump host that asks during start-up
+- **WHEN** the connection goes through a jump host whose login needs a typed answer, with the program started from a terminal
+- **THEN** the answer is asked on the ordinary screen before the workspace opens
 
 #### Scenario: Not started from a terminal
 - **WHEN** the endpoint is `ssh://` and the program is not attached to a terminal (for example `--check` in a script)
@@ -265,16 +285,12 @@ when its terminal is closed.
 - **THEN** that program is run with those arguments in place of `ssh`
 
 ### Requirement: TCP endpoints use TLS as the Docker CLI does
-For a `tcp://` endpoint named directly (by `--host` or `DOCKER_HOST`), the program SHALL use
-TLS when `DOCKER_TLS_VERIFY` or `DOCKER_TLS` is set to a non-empty value: with the server's
-certificate verified against `ca.pem` when `DOCKER_TLS_VERIFY` is set, and unverified when only
-`DOCKER_TLS` is; certificates SHALL be looked for in `DOCKER_CERT_PATH`, or the Docker
-configuration directory when it is unset, and `cert.pem` with `key.pem` SHALL be presented as
-the client certificate when both exist. For a `tcp://` endpoint of a named context, the program
-SHALL use TLS when the context stores any TLS material or sets `SkipTLSVerify`, using that
-material and that setting, and SHALL ignore the TLS environment variables. Otherwise the
-connection SHALL be plain TCP. The program SHALL never connect with weaker verification than
-these rules give, and SHALL never connect without TLS where they give TLS.
+For a `tcp://` endpoint the program SHALL use TLS as the Docker CLI does: from the
+environment when the endpoint is named by `--host` or `DOCKER_HOST`, and from the
+context when it comes from a context. `DOCKER_TLS_VERIFY` SHALL verify the daemon
+against `ca.pem`, and `DOCKER_TLS` alone SHALL not. Certificate files SHALL be looked
+for in `DOCKER_CERT_PATH`, otherwise in the Docker configuration directory. It SHALL
+never connect with weaker verification, or without TLS, than these rules give.
 
 #### Scenario: Verified TLS from the environment
 - **WHEN** `DOCKER_HOST` is `tcp://…`, `DOCKER_TLS_VERIFY` is set and `DOCKER_CERT_PATH` holds `ca.pem`, `cert.pem` and `key.pem`
@@ -300,17 +316,21 @@ these rules give, and SHALL never connect without TLS where they give TLS.
 - **WHEN** a context stores a client certificate without its key, and nothing else
 - **THEN** the program uses TLS without a client certificate, as the Docker CLI does, and does not fall back to plain TCP
 
+#### Scenario: A context that skips verification
+- **WHEN** the selected context sets `SkipTLSVerify` for its `tcp://` endpoint
+- **THEN** the program connects with TLS without verifying the daemon's certificate
+
 #### Scenario: A stalled TLS peer
 - **WHEN** a TLS endpoint accepts a connection and then sends nothing, while a shell is being opened
 - **THEN** the attempt is given up within the time allowed for starting a shell and the workspace returns with a message
 
 ### Requirement: A remote daemon is announced as remote
-When the endpoint is not a local unix socket, the program SHALL show, in the header, in every
-confirmation, form and picker, in the help and in the output of `--check`, how the daemon is
-reached: over ssh, over TLS, over TLS without verifying the daemon, or over TCP without TLS. It
-SHALL call the daemon remote unless the endpoint's address is this machine's loopback address.
-A connection that is not encrypted or not verified SHALL be shown in the colour and wording
-used for danger. A daemon reached through a local unix socket SHALL carry no such indication.
+When the endpoint is not a local unix socket, the program SHALL show how the daemon is
+reached — over ssh, over TLS, over TLS without verifying the daemon, or over TCP
+without TLS — in the header, in every confirmation, form and picker, in the help and in
+`--check`. It SHALL call the daemon remote unless the address is this machine's
+loopback address, and SHALL show an unencrypted or unverified connection in the danger
+colour and wording. A local unix socket SHALL carry no such indication.
 
 #### Scenario: Confirmation on a remote daemon
 - **WHEN** a confirmation opens while the endpoint is `ssh://ops@prod-1`
