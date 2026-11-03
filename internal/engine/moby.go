@@ -564,6 +564,105 @@ func (m *mobyEngine) SaveImage(ctx context.Context, id string, platform Platform
 	return res, nil
 }
 
+// totalsAPI is the first API version whose /system/df states totals.
+const totalsAPI = "1.52"
+
+func (m *mobyEngine) DiskUsage(ctx context.Context) (DiskUsage, error) {
+	res, err := m.cli.DiskUsage(ctx, client.DiskUsageOptions{
+		Images: true, Containers: true, Volumes: true, BuildCache: true, Verbose: true,
+	})
+	if err != nil {
+		return DiskUsage{}, m.wrap("disk usage", err)
+	}
+	usage := func(active, total, size, reclaimable int64) Usage {
+		return Usage{TotalCount: total, ActiveCount: active, TotalSize: size, Reclaimable: reclaimable}
+	}
+	du := DiskUsage{
+		Images:     usage(res.Images.ActiveCount, res.Images.TotalCount, res.Images.TotalSize, res.Images.Reclaimable),
+		Containers: usage(res.Containers.ActiveCount, res.Containers.TotalCount, res.Containers.TotalSize, res.Containers.Reclaimable),
+		Volumes:    usage(res.Volumes.ActiveCount, res.Volumes.TotalCount, res.Volumes.TotalSize, res.Volumes.Reclaimable),
+		BuildCache: usage(res.BuildCache.ActiveCount, res.BuildCache.TotalCount, res.BuildCache.TotalSize, res.BuildCache.Reclaimable),
+		// The version is known once the request has been negotiated.
+		Derived: apiOlder(m.cli.ClientVersion(), totalsAPI),
+	}
+	for _, s := range res.Images.Items {
+		du.ImageItems = append(du.ImageItems, ImageUsage{
+			ID: s.ID, RepoTags: s.RepoTags, Created: time.Unix(s.Created, 0),
+			Size: s.Size, SharedSize: s.SharedSize, Containers: s.Containers,
+		})
+	}
+	for _, v := range res.Volumes.Items {
+		vu := VolumeUsage{Name: v.Name, Driver: v.Driver, Size: -1, RefCount: -1}
+		if v.UsageData != nil {
+			vu.Size, vu.RefCount = v.UsageData.Size, v.UsageData.RefCount
+		}
+		du.VolumeItems = append(du.VolumeItems, vu)
+	}
+	for _, b := range res.BuildCache.Items {
+		bu := BuildCacheUsage{ID: b.ID, Type: b.Type, Description: b.Description, Size: b.Size, InUse: b.InUse, Shared: b.Shared}
+		if b.LastUsedAt != nil {
+			bu.LastUsed = *b.LastUsedAt
+		}
+		du.BuildItems = append(du.BuildItems, bu)
+	}
+	return du, nil
+}
+
+func (m *mobyEngine) ImageSizes(ctx context.Context) ([]ImageUsage, error) {
+	res, err := m.cli.ImageList(ctx, client.ImageListOptions{SharedSize: true})
+	if err != nil {
+		return nil, m.wrap("list images", err)
+	}
+	out := make([]ImageUsage, 0, len(res.Items))
+	for _, s := range res.Items {
+		out = append(out, ImageUsage{
+			ID: s.ID, RepoTags: s.RepoTags, Created: time.Unix(s.Created, 0),
+			Size: s.Size, SharedSize: s.SharedSize, Containers: s.Containers,
+		})
+	}
+	return out, nil
+}
+
+func (m *mobyEngine) ImageLayers(ctx context.Context, id string) (ImageLayers, error) {
+	insp, err := m.cli.ImageInspect(ctx, id)
+	if err != nil {
+		return ImageLayers{}, m.wrap("inspect image", err)
+	}
+	hist, err := m.cli.ImageHistory(ctx, id)
+	if err != nil {
+		return ImageLayers{}, m.wrap("image history", err)
+	}
+	out := ImageLayers{ID: insp.ID, DiffIDs: append([]string(nil), insp.RootFS.Layers...)}
+	// The daemon lists history newest first.
+	for i := len(hist.Items) - 1; i >= 0; i-- {
+		h := hist.Items[i]
+		out.History = append(out.History, HistoryEntry{CreatedBy: h.CreatedBy, Size: h.Size})
+	}
+	return out, nil
+}
+
+func (m *mobyEngine) ContainerSizes(ctx context.Context, ids []string) ([]ContainerSize, error) {
+	opts := client.ContainerListOptions{All: true, Size: true}
+	if len(ids) > 0 {
+		opts.Filters = client.Filters{}.Add("id", ids...)
+	}
+	res, err := m.cli.ContainerList(ctx, opts)
+	if err != nil {
+		return nil, m.wrap("measure writable layers", err)
+	}
+	out := make([]ContainerSize, 0, len(res.Items))
+	for _, s := range res.Items {
+		cs := ContainerSize{ID: s.ID, State: string(s.State), SizeRw: s.SizeRw, SizeRootFs: s.SizeRootFs}
+		if len(s.Names) > 0 {
+			cs.Name = strings.TrimPrefix(s.Names[0], "/")
+		} else {
+			cs.Name = ShortID(s.ID)
+		}
+		out = append(out, cs)
+	}
+	return out, nil
+}
+
 // apiOlder reports whether API version a is older than b ("1.47" < "1.48").
 // An unparsable version is treated as current.
 func apiOlder(a, b string) bool {

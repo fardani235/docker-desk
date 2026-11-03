@@ -38,6 +38,9 @@ const factsCap = 20
 type findingsState struct {
 	cache map[string]*forensics.Report
 	lru   []string // keys, least recently used first
+	// storedAt is when each cached report was made (the Space view gives
+	// its figures their age).
+	storedAt map[string]time.Time
 
 	order     forensics.Order
 	shownKey  string // the report the cursor below belongs to
@@ -156,7 +159,12 @@ func (m *Model) store(key string, rep *forensics.Report) {
 		m.fx.lru = append(m.fx.lru, key)
 	}
 	m.fx.cache[key] = rep
+	if m.fx.storedAt == nil {
+		m.fx.storedAt = map[string]time.Time{}
+	}
+	m.fx.storedAt[key] = time.Now()
 	for len(m.fx.lru) > findingsCacheSize {
+		delete(m.fx.storedAt, m.fx.lru[0])
 		delete(m.fx.cache, m.fx.lru[0])
 		m.fx.lru = m.fx.lru[1:]
 	}

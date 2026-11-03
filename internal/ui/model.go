@@ -15,6 +15,8 @@ package ui
 
 import (
 	"context"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -159,6 +161,14 @@ type Model struct {
 
 	// ---- findings tab (Images) ----
 	fx findingsState
+
+	// ---- space view ----
+	sp spaceState
+	// changedAt is when a refresh last found the engine different from what
+	// the desk knew: a list, or the disk account. A figure taken before it
+	// is stale. listPrint is what each list said, for comparison.
+	changedAt time.Time
+	listPrint [listCount]string
 
 	// ---- events pane ----
 	evFollow    bool
@@ -462,6 +472,15 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		m.collectFindings()
 	}
 
+	// The Space view's measurements, and its ages, which move each second.
+	m.collectSpace()
+	if m.sp.open {
+		if sec := now.Unix(); sec != m.sp.drawnSec {
+			m.sp.drawnSec = sec
+			m.dirty = true
+		}
+	}
+
 	// 3. Jobs that finished since the last frame.
 	if fin := m.jobs.TakeFinished(); len(fin) > 0 {
 		m.announce(fin)
@@ -552,6 +571,10 @@ func (m *Model) onList(msg listMsg) tea.Cmd {
 	}
 	m.listErr[li] = ""
 	m.loaded[li] = true
+	if p := listFingerprint(msg); p != m.listPrint[li] {
+		m.listPrint[li] = p
+		m.changedAt = time.Now()
+	}
 	switch li {
 	case listContainers:
 		m.snap.Containers = msg.containers
@@ -635,6 +658,31 @@ func errText(err error) string {
 		return ""
 	}
 	return plainError(err)
+}
+
+// listFingerprint is what a list says that the disk account depends on:
+// which objects exist and, for containers, their state. A refresh that finds
+// the same fingerprint has changed nothing that a figure could be stale for.
+func listFingerprint(msg listMsg) string {
+	var parts []string
+	switch msg.list {
+	case listContainers:
+		for _, c := range msg.containers {
+			parts = append(parts, c.ID+"="+c.State)
+		}
+	case listImages:
+		for _, i := range msg.images {
+			parts = append(parts, i.ID+"="+strings.Join(i.RepoTags, ","))
+		}
+	case listVolumes:
+		for _, v := range msg.volumes {
+			parts = append(parts, v.Name)
+		}
+	case listNetworks:
+		return "" // networks hold no bytes
+	}
+	sort.Strings(parts)
+	return strings.Join(parts, "\n")
 }
 
 var spinnerFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}

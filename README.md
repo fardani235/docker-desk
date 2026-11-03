@@ -190,6 +190,7 @@ the desk keeps answering keys, and everything resumes by itself when the daemon 
 | **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON), for containers **Logs** (live follow) and **Stats** (CPU, memory, network, disk — with history), and for images **Findings** (what the image's own bytes hold; see below). |
 | **4 Events** | The engine's event stream as it happens. It is the answer to everything you do — and to everything anyone else does to this daemon. |
 | **5 Jobs** | Every change you asked for, running in the background: progress while it runs, the daemon's answer when it ends. |
+| **Space** (`S`) | Not a pane: a full-screen account of the disk — the daemon's totals, unique and shared bytes per image, what a removal frees. See [Space](#space--where-the-bytes-went-and-what-removing-something-frees). |
 
 The focused pane has a heavy border and a `◆` in its title (it does not rely on colour;
 `NO_COLOR` is respected, whatever the theme). Wide terminals (≥ 120 columns) get three columns; from 80×24 up you
@@ -242,6 +243,64 @@ Read-only mode works unchanged: everything is a GET.
 Secrets are masked everywhere. `v` reveals the one under the cursor; it hides again when the
 cursor moves. A secret's value never goes into a job, an error, a log or a file.
 
+### Space — where the bytes went, and what removing something frees
+
+`S`, from any pane, covers the desk with an account of what this engine holds on disk; `S`
+or Esc puts the desk back exactly as it was. The totals are the daemon's own
+(`GET /system/df`), printed the way `docker system df` prints them, so they read the same:
+
+```
+ TYPE            TOTAL  ACTIVE      SIZE  RECLAIMABLE
+ Images             14      10   3.276GB  1.326GB (40%)
+ Containers         12       8   107.1MB  24.11MB (22%)
+ Local Volumes       7       4   2.443GB  1.872GB (76%)
+ Build Cache         4       0   511.7MB  511.7MB
+ daemon (GET /system/df) · 08:12:48, 0s ago
+```
+
+Below them, every image with its size, its **unique** size (what only it holds) and its
+**shared** size, as the daemon reports them; then the shared bytes, **each listed once**,
+against the exact set of images that hold them; the containers; the local volumes; and the
+build cache. For the highlighted image, two numbers:
+
+```
+ ▸ shop/worker:dev              219.7MB   88.7MB    131MB   1 ctr
+ ───────────────────────────────────────────────────────── lines 8–19 of 71 ─
+ alone      frees 88.7MB — unique; 131MB shared stay · daemon, 0s ago
+ together   with the 7 image(s) sharing its layers: frees 2.468GB · computed
+            from layer sizes, 0s ago
+ removal    used by 1 container(s): refused until they are removed — the
+            alone figure is what it frees then
+```
+
+- **Which numbers are whose.** Every figure says where it came from and how old it is:
+  `daemon` (the account), `computed from layer sizes` (the daemon's per-layer sizes from each
+  image's history, matched to its layers' chain IDs and checked against the daemon's own
+  totals for it), `computed writable layer`, or `archive`. A figure taken before a refresh
+  that found the engine changed is marked **STALE**; `r` reads the account again. Nothing is
+  estimated: where a figure cannot be known exactly it says "at least" or "not known", and
+  why. On a daemon older than API 1.52, which states no totals, the view says the totals were
+  summed by the client library.
+- **Nothing total is called freeable.** Removing an image frees its unique bytes; the layers
+  it shares stay for the images that share them. "Together" is the image and every image
+  holding one of its layers. Reclaimable is the daemon's estimate; with the containerd image
+  store the bytes go when its garbage collector runs.
+- **Writable layers are measured only when you ask** — `m`, as a cancellable job
+  (`GET /containers/json?size=1`): the daemon walks every container's filesystem for it,
+  which is slow on a busy engine and costly over a remote link. No list refresh asks.
+- **Analysed images** (Images › Findings) get their archive's size by layer and the largest
+  build instruction, from the report already kept. No archive is read again.
+- **Enter** goes to the highlighted image, container or volume in its own kind.
+- **Reclaim is the desk's own dialogs, nothing else:** `d` opens the usual removal
+  confirmation for the highlighted object, `X` the usual prune preview. Every removal and
+  prune confirmation — from here or from the list — now has a **frees** line with the bytes
+  it would free, its source and its age ("not measured" before the first account). There is
+  no new way to delete anything, Docker's prune endpoints are not called, nothing is forced.
+  In read-only mode every figure is there and `d`, `X` are not.
+
+The opening account is itself a job ("measure disk usage"), cancellable with `c`: the daemon
+walks container and volume filesystems to answer it too.
+
 ### Themes
 
 | Theme | |
@@ -277,6 +336,7 @@ Press `?` inside the desk for the same list.
 | `Esc` | in the List: clear the selection; again, clear the filter; again, back to Kinds |
 | `Enter` | in the List: a menu of what you can do to the highlighted object, or to the selection |
 | `r` | refresh every list now |
+| `S` | Space: where the bytes went, and what removing something frees (see above) |
 | `T` | next colour theme |
 | `?` | help |
 | `q`, `Ctrl+C` | quit (asks first if jobs are running) |
@@ -305,6 +365,9 @@ still pages in the Details and Events panes.
 **Findings** (Images): `↑` `↓` move between findings · `o` order by layer / group / certainty ·
 `v` reveal the highlighted secret · `c` cancel the analysis · `Enter` analyse when asked first
 or after a failure.
+**Space** (`S`): `↑` `↓` move between images, containers and volumes · `Enter` go to the
+highlighted one · `r` read the account again · `m` measure writable layers · `c` cancel a
+measurement · `d` remove… · `X` prune… · `S` or `Esc` close.
 **Events**: scroll back with the movement keys — new events keep being recorded — `G` to
 follow again. **Jobs**: `Enter` read a job's full output · `c` cancel a running job · `x` clear
 finished ones.
@@ -388,7 +451,8 @@ scaling.
 
 One daemon per session; no switching from inside. No Windows named pipes. No Swarm, no compose
 files, no image builds or pushes, no Kubernetes. It does not create or reconfigure containers,
-copy files in or out, or show disk-usage accounting (`docker system df`).
+or copy files in or out. The build cache is accounted for in Space but never removed: the desk
+has no builder, and calls no prune endpoint.
 
 Good to know:
 
@@ -415,6 +479,15 @@ Good to know:
 - At 80×24 a confirmation with much to say scrolls its middle — the effects, the warnings, the
   list — and keeps what it acts on, the daemon, the prompt and the input on screen.
 - TLS client keys protected by a passphrase are not supported (nor by the Docker CLI).
+- Space attributes shared bytes only where an image's history maps onto its layers and its
+  layer sizes add up to the daemon's size for it. With the containerd image store (Docker
+  29's default) they do not: the daemon counts each layer's compressed content as well as its
+  unpacked files, and the history gives only the second. Checked read-only against this
+  machine's Docker 29: the history mapped for all 18 images and added up for none. There the
+  view still shows every daemon figure, which images share layers, and each image's "alone";
+  "together" and a prune's "frees" are then "at least" the members' unique sizes, and say
+  why. In the classic store, removing an image can also delete untagged parent images; their
+  layers are part of its shared size and are not claimed as freed.
 - Findings do not consult a vulnerability database: Go module versions are listed, not judged.
   zstd-compressed layers cannot be walked (the standard library has no decoder) and are
   reported as unreadable. Stack canaries are judged only for dynamically linked executables.
@@ -449,6 +522,7 @@ make build
 | [`docs/TESTING.md`](docs/TESTING.md) | how it is proven without touching real containers, the measurements, and what is *not* proven |
 | [`openspec/changes/docker-desk-workspace/`](openspec/changes/docker-desk-workspace/) | the spec it was built to: proposal, eleven capability specs, design, tasks |
 | [`openspec/changes/remote-daemons-and-themes/`](openspec/changes/remote-daemons-and-themes/) | the second change — remote daemons and themes: proposal, spec deltas, design, tasks |
+| [`openspec/changes/disk-space/`](openspec/changes/disk-space/) | the fifth change — the Space view: proposal, spec, design, tasks |
 
 One thing from TESTING.md belongs here too: by design, **no mutating request from this program
 had ever been sent to a real Docker daemon when it was handed over** — the build was required
@@ -473,6 +547,7 @@ internal/dockerctx     which daemon is meant, how it is reached (socket, SSH, TC
 internal/sshtunnel     the one supervised ssh process that carries an ssh:// daemon's connections
 internal/engine        the only door to the daemon (Docker's client library behind a narrow interface)
 internal/plan          what a mutation will do, decided by pure code before anything is sent
+internal/space         which bytes images share, and what removing a set of them frees (pure)
 internal/jobs          background jobs and their ledger
 internal/live          bounded buffers and stream supervision for logs, stats and events
 internal/shell         the interactive exec session and the terminal hand-off

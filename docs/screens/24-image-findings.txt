@@ -1,7 +1,7 @@
- Docker Desk  unix:///tmp/ddfake1909568872/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake1627788807/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┌─ 2 Images (1 of 14) ────────────────────────────────────────── filter: shop/a ─┐┌─ 4 Events ────────────────────────── ● live ─┐
 │  Containers    12││  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ││Waiting for engine events…                    │
-│▸ Images        14││▸ shop/api                dev           073fe9aeb752    57.7MB    24h     2 ctr ││Everything the daemon does                    │
+│▸ Images        14││▸ shop/api                dev           073fe9aeb752     217MB    24h     2 ctr ││Everything the daemon does                    │
 │  Volumes        7││                                                                                ││shows up here as it happens.                  │
 │  Networks       7││                                                                                ││                                              │
 │  Compose        2││                                                                                ││                                              │
@@ -28,7 +28,7 @@
 │                  │┃  L1  certain bin.pie              /bin/sh  ELF type EXEC: a fixed load address ┃│                                              │
 │                  │┃  L2  certain layer.cache          /var/lib/apt/lists  2 files, 74.0kB          ┃└──────────────────────────────────────────────┘
 │                  │┃▸ L2  certain secret.deleted       /root/.aws/credentials  AWS access key ID: A…┃┌─ 5 Jobs ──────────────────────────── 1 done ─┐
-│                  │┃───────────────────────────────────────────────────────────────────── 15 of 26 ─┃│▸ ✓ analyse image shop/api:dev             6ms│
+│                  │┃───────────────────────────────────────────────────────────────────── 15 of 26 ─┃│▸ ✓ analyse image shop/api:dev             5ms│
 │                  │┃why      Added in layer 2 and deleted in layer 3, yet still in the image bytes: ┃│                                              │
 │                  │┃         anyone with the image can read layer 2.                                ┃│                                              │
 │                  │┃evidence AWS access key ID: AKIA************ (20 chars)   (v reveals)           ┃│                                              │

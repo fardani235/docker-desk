@@ -343,3 +343,96 @@ func ShortID(id string) string {
 	}
 	return id
 }
+
+// ---- disk usage -----------------------------------------------------------
+
+// Usage is one line of the daemon's own disk account (`docker system df`):
+// how many objects of a type, how many are in use, the bytes they hold and
+// the part the daemon considers reclaimable.
+type Usage struct {
+	TotalCount  int64
+	ActiveCount int64
+	TotalSize   int64
+	Reclaimable int64
+}
+
+// DiskUsage is the daemon's answer to GET /system/df.
+type DiskUsage struct {
+	Images, Containers, Volumes, BuildCache Usage
+	// Derived is set when the daemon is older than API 1.52. Such a daemon
+	// states no totals, only per-object lists; the client library sums them
+	// exactly as the docker CLI does, and the desk says so.
+	Derived bool
+
+	ImageItems  []ImageUsage
+	VolumeItems []VolumeUsage
+	BuildItems  []BuildCacheUsage
+}
+
+// ImageUsage is the daemon's size account of one image.
+type ImageUsage struct {
+	ID       string
+	RepoTags []string
+	Created  time.Time
+	// Size counts every layer of the image. SharedSize counts the layers
+	// it shares with at least one other image; -1 when not computed.
+	Size       int64
+	SharedSize int64
+	// Containers is the daemon's count of containers using the image, or -1.
+	Containers int64
+}
+
+// Unique is what the image holds that no other image holds — the CLI's
+// UNIQUE SIZE — or -1 when the daemon did not compute the shared size.
+func (u ImageUsage) Unique() int64 {
+	if u.SharedSize < 0 || u.Size < 0 {
+		return -1
+	}
+	return u.Size - u.SharedSize
+}
+
+// VolumeUsage is the daemon's size account of one volume.
+type VolumeUsage struct {
+	Name   string
+	Driver string
+	// Size is -1 when the daemon could not measure it (non-local driver).
+	Size     int64
+	RefCount int64
+}
+
+// BuildCacheUsage is one build-cache record.
+type BuildCacheUsage struct {
+	ID          string
+	Type        string
+	Description string
+	Size        int64
+	InUse       bool
+	Shared      bool
+	LastUsed    time.Time
+}
+
+// ContainerSize is a container's writable layer as the daemon measured it
+// by walking its filesystem.
+type ContainerSize struct {
+	ID    string
+	Name  string
+	State string
+	// SizeRw is the writable layer; SizeRootFs adds the image's layers.
+	SizeRw     int64
+	SizeRootFs int64
+}
+
+// ImageLayers is what the daemon says about an image's layers: their diff
+// IDs, in order (inspect), and its build history, oldest entry first.
+type ImageLayers struct {
+	ID      string
+	DiffIDs []string
+	History []HistoryEntry
+}
+
+// HistoryEntry is one entry of an image's history. The daemon reports the
+// size of the layer the entry made, and 0 for an entry that made none.
+type HistoryEntry struct {
+	CreatedBy string
+	Size      int64
+}

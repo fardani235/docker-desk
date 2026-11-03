@@ -18,6 +18,8 @@ type Volume struct {
 	Name    string
 	Created time.Time
 	Labels  map[string]string
+	// Size is what GET /system/df reports the volume holds.
+	Size int64
 }
 
 func (v *Volume) anonymous() bool {

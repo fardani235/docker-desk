@@ -72,6 +72,18 @@ expect_eq "volume inspect" "$(d volume inspect --format '{{.Driver}}' shop_pgdat
 expect_contains "image inspect" "$(d image inspect --format '{{.Os}}/{{.Architecture}}' nginx:1.27)" "linux/amd64"
 expect_fails "inspect missing" "no such object" d inspect definitely-not-here
 
+echo "== disk usage (the Space view's sources)"
+df_out="$(d system df --format '{{.Type}} {{.TotalCount}} {{.Active}} {{.Size}} {{.Reclaimable}}')"
+expect_contains "system df images" "$df_out" "Images 14 10 3.276GB 1.326GB (40%)"
+expect_contains "system df containers" "$df_out" "Containers 12 8 107.1MB 24.11MB (22%)"
+expect_contains "system df volumes" "$df_out" "Local Volumes 7 4 2.443GB 1.872GB (76%)"
+expect_contains "system df build cache" "$df_out" "Build Cache 4 0 511.7MB 511.7MB"
+expect_contains "system df -v shared/unique" "$(d system df -v | grep 'shop/worker' | tr -s ' ')" "220MB 131MB 88.7MB 1"
+expect_contains "system df -v no unique" "$(d system df -v | grep '^python' | tr -s ' ')" "131MB 131MB 0B 0"
+expect_contains "ps -s writable layer" "$(d ps -a -s --format '{{.Names}} {{.Size}}')" "shop-api-1 18.4MB (virtual 236MB)"
+expect_eq "history: CMD made no layer" "$(d history --format '{{.Size}}' shop/worker:dev | head -1)" "0B"
+expect_eq "history: layer sizes" "$(d history --format '{{.Size}}' shop/worker:dev | tail -1)" "74.8MB"
+
 echo "== lifecycle"
 d stop redis-cache >/dev/null
 expect_eq "stop -> exited" "$(d inspect --format '{{.State.Status}}' redis-cache)" "exited"

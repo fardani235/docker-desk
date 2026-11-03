@@ -44,6 +44,10 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 	if m.filtering {
 		return m.onFilterKey(k)
 	}
+	// The Space view covers the panes: no key reaches them behind it.
+	if m.sp.open {
+		return m.onSpaceKey(k)
+	}
 
 	switch key {
 	case "q":
@@ -52,6 +56,8 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 		m.dlg = &dialog{kind: dlgHelp}
 		m.dlg.text.wrap = true
 		return nil
+	case "S":
+		return m.openSpace()
 	case "tab":
 		m.focus = (m.focus + 1) % paneCount
 		return nil

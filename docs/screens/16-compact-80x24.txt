@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake2625096051/d.sock  ctx default  ● connected
+ Docker Desk  unix:///tmp/ddfake2875585102/d.sock  ctx default  ● connected
 ┌─ 1 Kinds ──────┐┏━ ◆ 2 Containers (12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 │▸ Containers  12│┃  NAME            IMAGE         STATE          CPU       MEM┃
 │  Images      14│┃▸ distroless-svc  gcr.io/dist…  ● running        …         …┃
@@ -10,9 +10,9 @@
 │  ‖ 1 paused    ││ID       86f975de6cbb                                       │
 │  ○ 4 stopped   ││Image    gcr.io/distroless/static:nonroot                   │
 │                ││State    ● running   Up 5 hours                             │
+│                ││Started  2026-11-03 03:12:21                                │
 │                ││Command  /svc                                               │
-│                ││Created  2026-10-10 02:46:35                                │
-│                ││                                                            │
+│                ││Restart  no (restarted 0×)                                  │
 └────────────────┘└────────────────────────────────────────────────────────────┘
 ┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ───────────────────────┐
 │Waiting for engine events…                  ││No jobs yet.                    │
@@ -21,4 +21,4 @@
 │                                            ││                                │
 └────────────────────────────────────────────┘└────────────────────────────────┘
 
- ↑↓ move  / filter  ⏎ actions  s start  t stop  R res… Tab pane  ? keys  q quit
+ ↑↓ move  Space select  / filter  ⏎ actions  s start … Tab pane  ? keys  q quit

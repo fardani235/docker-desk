@@ -48,6 +48,9 @@ type Container struct {
 	StopDelay time.Duration
 	// NoShell makes every exec of a shell fail, like a distroless image.
 	NoShell bool
+	// SizeRw is the writable layer reported with size=1 (0: derived from
+	// the name).
+	SizeRw int64
 
 	logs         *logBuffer
 	runDone      chan struct{} // closed when the current run ends
@@ -111,6 +114,9 @@ type ContainerSpec struct {
 	User        string
 	// Age is how long ago the container was created and started.
 	Age time.Duration
+	// WritableSize is the writable layer size=1 reports (0: derived from
+	// the name).
+	WritableSize int64
 }
 
 // AddContainer seeds a container and returns its ID. It emits no events:
@@ -151,6 +157,7 @@ func (s *Server) AddContainer(spec ContainerSpec) string {
 		LogLine:       spec.LogLine,
 		StopDelay:     spec.StopDelay,
 		NoShell:       spec.NoShell,
+		SizeRw:        spec.WritableSize,
 		logs:          newLogBuffer(),
 	}
 	if len(c.Cmd) == 0 {
@@ -428,6 +435,15 @@ func (c *Container) summary() container.Summary {
 func (s *Server) handleContainerList(w http.ResponseWriter, r *http.Request) {
 	all := boolParam(r, "all")
 	filters := parseFilters(r)
+	size := boolParam(r, "size")
+	if size {
+		s.mu.Lock()
+		delay := s.SizeDelay
+		s.mu.Unlock()
+		if !s.wait(r, delay) {
+			return
+		}
+	}
 	s.mu.Lock()
 	out := []container.Summary{}
 	for _, c := range s.sortedContainersLocked() {
@@ -437,7 +453,15 @@ func (s *Server) handleContainerList(w http.ResponseWriter, r *http.Request) {
 		if !matchContainerFilters(c, filters) {
 			continue
 		}
-		out = append(out, c.summary())
+		sum := c.summary()
+		if size {
+			// Only when asked: the daemon walks the filesystem for it.
+			sum.SizeRw = c.writableSize()
+			if img := s.images[c.ImageID]; img != nil {
+				sum.SizeRootFs = sum.SizeRw + img.Size
+			}
+		}
+		out = append(out, sum)
 	}
 	s.mu.Unlock()
 	writeJSON(w, http.StatusOK, out)

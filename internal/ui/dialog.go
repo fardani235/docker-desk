@@ -438,6 +438,16 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 		info = append(info, p.Nothing)
 	}
 	info = append(info, bullets(st, "•", toneNormal, p.Effects, w)...)
+	// What it frees, from the Space account, with that figure's age.
+	for _, f := range m.freesLines(p) {
+		for i, part := range wrapWords(f.text, w-11) {
+			label := strings.Repeat(" ", 11)
+			if i == 0 {
+				label = st.dialogTitle.Render(fit("frees", 10)) + " "
+			}
+			info = append(info, label+st.tone(f.tone, part))
+		}
+	}
 	if len(p.Warnings) > 0 {
 		info = append(info, "")
 		info = append(info, bullets(st, "▲", toneWarn, p.Warnings, w)...)
@@ -511,10 +521,10 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 		case plan.OpKill:
 			outcome = "killed"
 		}
+		// No sum of sizes here: images share layers, and a sum would
+		// count shared bytes once per image. What is freed is on the
+		// "frees" line, from the Space account.
 		headline = fmt.Sprintf("Exactly these %d will be %s:", steps, outcome)
-		if p.TotalSize > 0 {
-			headline = fmt.Sprintf("Exactly these %d will be %s (about %s):", steps, outcome, humanBytes(p.TotalSize))
-		}
 		headline = st.dialogTitle.Render(headline)
 	}
 	row := func(i int) string {

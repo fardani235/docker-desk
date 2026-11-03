@@ -499,3 +499,74 @@ with and without `-race`, since their cached result does not see the analyser's 
 `image-findings` OpenSpec change validates. Screens 24 and 25 are new; the others were left as
 they were. Decisions are in DECISIONS F1–F14, proof in TESTING ("Round four"). Nothing was
 committed and nothing was installed outside the repository.
+
+---
+
+# Round five: Space
+
+The request was again given in one pass — plan, build, verify, document — with decisions
+recorded instead of asked about. They are DECISIONS U1–U13; this is the order things
+happened in.
+
+## 26. Reading before writing
+
+The client library's `DiskUsage` already speaks both shapes of `/system/df`: from API 1.52
+the daemon states totals, below it only lists, which the library sums as the CLI does — so
+"never recompute a total the daemon reports" became "say whose sum it is" (U1). The daemon
+reports each image's shared size but not with whom; the layers' chain IDs (inspect) and the
+per-layer sizes in the history supply that, and the daemon's own totals can check the result
+(U3). The fake daemon gave every image two layers of its own and no df at all, so it had to
+learn layers before anything else could be tested; the real `docker` CLI read its `system df`,
+`system df -v` and `history` correctly the first time they were tried (U12).
+
+## 27. The view
+
+A layer between the desk and its dialogs, not a dialog, so that `d` and `X` can open the
+desk's own confirmations over it (U8). The first frames at 80×24 showed the highlighted
+image scrolled out of sight under the totals, detail lines that wrapped their provenance
+into the list's room, and a hint line that cut off the one key that closes the view; all
+three were fixed before any assertion was written. The pseudo-terminal then found what the
+model tests had not: the binary draws a frame before the account arrives, when the only rows
+are containers, and the cursor stayed on the first of them. There are now no object rows
+until the account is in.
+
+## 28. What a confirmation frees
+
+The plan was to measure at the moment of each confirmation — a fresh `shared-size` list for
+an image, `size=1` for one container. It was built and dropped: the second puts a filesystem
+walk outside the one job the request allows it in, and with the containerd store the first
+walks snapshots too. The "frees" line is now computed from the view's last account, with its
+age, and says "not measured" before there is one (U10). The prune preview's "(about …)" sum
+of image sizes went with it.
+
+## 29. A real daemon
+
+The opt-in read-only check (`TestRealDaemonDiskUsageReadOnly`) ran once against this
+machine's Docker 29.9.2: df, then inspect and history for each of 18 images, all GETs through
+the read-only engine. The history mapped for every image and added up for none. A second run,
+logging sizes only, showed why: the containerd store counts each layer's compressed content
+in `Size` and `SharedSize`, the history only the unpacked snapshot. The check was doing its
+job; what changed is how the view says it — one sentence instead of eighteen names, and `?`
+instead of "≥0B" for a group whose size cannot be confirmed (U3) — and a UI test for that case.
+Those two runs are the only requests this round sent to the real daemon.
+
+## 30. Flakes, named
+
+One `make e2e` failed once early on with no test name in the tail of its output; four runs
+after it, `make e2e` included, passed, and the failure could not be reproduced or attributed.
+One `make race` failed in `internal/live` — `TestHubLogBufferIsBounded`, a throughput test
+(15,000 log lines inside a five-second window), untouched this round, while the larger UI
+suite ran beside it under the race detector. It passed five times alone and the whole suite
+passed uncached under `-race` afterwards. It is the same kind of timeout round four recorded
+(section 24); this time no cause in the new code was found to fix, and it was not retried
+until green and called fixed.
+
+## 31. Final state
+
+`go vet` and gofmt are clean; `make test` passes (486 tests and subtests; the four skipped
+are the opt-in real-daemon ones, one of them new), uncached, and so does `go test -race
+-count=1 ./...`; `make crosscheck` passes 70 checks; `make e2e` passes and rewrote
+`docs/screens/` — 26, 27 and 28 are new, the rest changed because the demo's images now have
+layers. The `disk-space` OpenSpec change validates. `go.mod` is unchanged. Decisions are in
+DECISIONS U1–U13, proof in TESTING ("Round five"). Nothing was committed, and nothing was
+installed outside the repository.

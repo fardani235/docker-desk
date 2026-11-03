@@ -106,6 +106,11 @@ func (m *Model) render() []string {
 		body = append(joinH(kinds, center), joinH(events, jobsPane)...)
 	}
 
+	if m.sp.open {
+		// Full screen, under the header that names the daemon; a dialog
+		// opened from it is drawn on top, as anywhere else.
+		body = m.spaceBox(m.width, len(body))
+	}
 	out := make([]string, 0, m.height)
 	out = append(out, m.renderHeader())
 	out = append(out, body...)
@@ -290,6 +295,8 @@ func (m *Model) renderHints() string {
 	var pairs []string
 	add := func(k, v string) { pairs = append(pairs, k, v) }
 	switch {
+	case m.sp.open:
+		pairs = m.spaceHints()
 	case m.filtering:
 		add("type", "to filter")
 		add("Enter", "keep")
@@ -334,6 +341,9 @@ func (m *Model) renderHints() string {
 	}
 	left := " " + m.hints(pairs...)
 	right := m.hints("Tab", "pane", "?", "keys", "q", "quit") + " "
+	if m.sp.open {
+		right = m.hints("S", "close", "?", "keys") + " " // no pane takes keys behind the view
+	}
 	lw, rw := ansi.StringWidth(left), ansi.StringWidth(right)
 	if lw+rw+1 > m.width {
 		return fit(left, m.width-rw-1) + " " + right
@@ -360,6 +370,7 @@ func (m *Model) helpLines(w int) []string {
 	row("1 2 3 4 5", "focus Kinds / List / Details / Events / Jobs")
 	row("[  ]", "previous / next Details tab")
 	row("r", "refresh every list now")
+	row("S", "Space: where the bytes went, and what removing something frees")
 	row("T", "next colour theme ("+m.st.theme+" now)")
 	row("?", "this help")
 	row("q, Ctrl+C", "quit (asks first if jobs are running)")
@@ -396,6 +407,24 @@ func (m *Model) helpLines(w int) []string {
 		"  Opening the tab reads the image's own archive (GET /images/get) once and",
 		"  keeps the report for its ID and platform. Findings name a rule, a source",
 		"  (daemon, image, desk), a certainty, the layer and the build instruction.",
+	)
+
+	sect("Space view (S, from any pane)")
+	row("↑ ↓ PgUp PgDn", "move between images, containers and volumes")
+	row("Enter", "close the view and go to the highlighted object in its own kind")
+	row("r", "read the daemon's account again (GET /system/df) and refresh the lists")
+	row("m", "measure every container's writable layer (GET /containers/json?size=1)")
+	row("c", "cancel a measurement in progress")
+	if !m.readOnly {
+		row("d", "the desk's own removal confirmation for the highlighted object")
+		row("X", "the desk's own prune preview for its kind (images, volumes)")
+	}
+	row("S, Esc", "close: the desk is as it was")
+	out = append(out,
+		"  Totals are the daemon's, as `docker system df` prints them. Unique is what",
+		"  only that image holds; shared bytes are listed once, against the images that",
+		"  hold them, from the daemon's own per-layer sizes. Every figure names its",
+		"  source and age; one taken before a refresh that changed something is STALE.",
 	)
 
 	for k := Kind(0); k < kindCount; k++ {
