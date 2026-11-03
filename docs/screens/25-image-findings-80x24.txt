@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake1487112659/d.sock  ● connected  [READ-ONLY]
+ Docker Desk  unix:///tmp/ddfake3528665837/d.sock  ● connected  [READ-ONLY]
 ┌─ 1 Kinds ──────┐┌─ 2 Images (1 of 14) ────────────────────── filter: shop/a ─┐
 │  Containers  12││  REPOSITORY        TAG        IMAGE ID          SIZE    AGE│
 │▸ Images      14││▸ shop/api          dev        073fe9aeb752     217MB    24h│
@@ -15,7 +15,7 @@
 │                │┃         layer 2.                                           ┃
 └────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ────────────── 1 done ─┐
-│Waiting for engine events…                  ││▸ ✓ analyse image shop/api:… 9ms│
+│Waiting for engine events…                  ││▸ ✓ analyse image shop/api… 30ms│
 │Everything the daemon does                  ││                                │
 │shows up here as it happens.                ││                                │
 │                                            ││                                │

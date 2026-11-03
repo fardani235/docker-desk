@@ -283,7 +283,7 @@ func TestDetails(t *testing.T) {
 	// Raw inspect: the daemon's whole document, scrollable.
 	b.selectRow("shop-web-1")
 	b.see("0.0.0.0:8080 → 80/tcp")
-	b.keys("]", "]", "]")
+	b.keys("]", "]", "]", "]") // Info Logs Stats Processes Inspect
 	b.see("[Inspect]", `"Id": "`+b.srv.ContainerID("shop-web-1")+`"`, `"State": {`)
 	top := b.screen()
 	b.keys("3", "pgdown")

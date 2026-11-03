@@ -52,6 +52,10 @@ type Container struct {
 	// the name).
 	SizeRw int64
 
+	// Processes, when set, replaces the derived top listing (see
+	// SetProcesses).
+	Processes *ProcessTable
+
 	logs         *logBuffer
 	runDone      chan struct{} // closed when the current run ends
 	statsStalled bool

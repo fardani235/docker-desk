@@ -86,6 +86,10 @@ type Engine interface {
 	Logs(ctx context.Context, id string, tail int, follow bool, w io.Writer) error
 	// Stats delivers roughly one raw sample per second.
 	Stats(ctx context.Context, id string, fn func(RawStats)) error
+	// Processes is one snapshot of the daemon's default process listing for
+	// a running container (GET /containers/{id}/top, no ps arguments). A
+	// container that is not running is refused with a KindConflict error.
+	Processes(ctx context.Context, id string) (ProcessList, error)
 
 	// ---- exec ------------------------------------------------------------
 	// ExecCreate prepares an interactive TTY process in a running container.

@@ -738,3 +738,52 @@ func waitFor(t *testing.T, what string, cond func() bool) {
 	}
 	t.Fatalf("timed out waiting for %s", what)
 }
+
+func TestProcesses(t *testing.T) {
+	srv, eng := startFake(t, func(s *fakeengine.Server) {
+		s.AddContainer(fakeengine.ContainerSpec{Name: "app", Image: "app:1", Cmd: []string{"app", "--token=s3cret"}})
+		s.AddContainer(fakeengine.ContainerSpec{Name: "empty", Image: "app:1"})
+		s.AddContainer(fakeengine.ContainerSpec{Name: "odd", Image: "app:1"})
+		s.AddContainer(fakeengine.ContainerSpec{Name: "off", Image: "app:1", State: "exited"})
+		s.SetProcesses("empty", &fakeengine.ProcessTable{Titles: []string{"PID", "CMD"}, Rows: [][]string{}})
+		s.SetProcesses("odd", &fakeengine.ProcessTable{Titles: []string{"PID", "ARGS"}, Rows: [][]string{{"1"}, {"2", "a", "b"}}})
+	})
+	ctx := ctxT(t)
+
+	p, err := eng.Processes(ctx, srv.ContainerID("app"))
+	if err != nil || len(p.Titles) != 8 || p.Titles[1] != "PID" || len(p.Rows) != 2 || p.Rows[0][7] != "app --token=s3cret" {
+		t.Fatalf("running: %+v %v", p, err)
+	}
+	if p, err := eng.Processes(ctx, srv.ContainerID("empty")); err != nil || len(p.Titles) != 2 || len(p.Rows) != 0 {
+		t.Fatalf("empty: %+v %v", p, err)
+	}
+	if p, err := eng.Processes(ctx, srv.ContainerID("odd")); err != nil || p.Titles[1] != "ARGS" || len(p.Rows[0]) != 1 || len(p.Rows[1]) != 3 {
+		t.Fatalf("variable columns: %+v %v", p, err)
+	}
+	if _, err := eng.Processes(ctx, srv.ContainerID("off")); !IsConflict(err) || !strings.Contains(err.Error(), "is not running") {
+		t.Fatalf("stopped: %v", err)
+	}
+	if _, err := eng.Processes(ctx, "ghost"); !IsNotFound(err) {
+		t.Fatalf("missing: %v", err)
+	}
+	srv.FailNext("GET", `/top$`, 500, "ps: exec failed", 1)
+	if _, err := eng.Processes(ctx, srv.ContainerID("app")); err == nil || !strings.Contains(err.Error(), "ps: exec failed") {
+		t.Fatalf("daemon error not preserved: %v", err)
+	}
+	for _, r := range srv.Requests() {
+		if strings.HasSuffix(r.Path, "/top") && r.Query != "" {
+			t.Fatalf("custom ps arguments sent: %q", r.Query)
+		}
+	}
+
+	// Read-only mode lets the listing through.
+	ro := ReadOnly(eng)
+	if _, err := ro.Processes(ctx, srv.ContainerID("app")); err != nil {
+		t.Fatalf("read-only: %v", err)
+	}
+
+	srv.Stop()
+	if _, err := eng.Processes(ctx, srv.ContainerID("app")); !IsUnavailable(err) {
+		t.Fatalf("unavailable daemon: %v", err)
+	}
+}

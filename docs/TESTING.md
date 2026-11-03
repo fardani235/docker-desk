@@ -20,6 +20,7 @@ was done, what was measured, how to repeat it, and — just as important — wha
 | Remote daemons over SSH (round two) | the real `ssh` client through a real `sshd` on a loopback port to the fake daemon's socket | no |
 | The Docker context store and TLS rules (round two) | a context written and used by the real `docker` CLI, then read by the desk | no |
 | Themes (round two) | every frame compared across themes; contrast computed; the real binary's colour output | no |
+| Container processes (round six) | engine and fake-daemon tests of `/top`; UI lifecycle tests counting `/top` requests; the real binary on a pseudo-terminal | no |
 | Disk accounting (round five) | pure accounting tests; the real binary's totals against the real `docker system df` on the fake | opt-in, read-only: once |
 
 `go test ./...` runs 399 tests and subtests — 198 tests, the rest their sub-cases. (Round one
@@ -631,6 +632,33 @@ Stated plainly, because a control plane deserves it:
 - **Event replay after a reconnect** was tested against the fake's event history; the real
   daemon keeps a similar bounded history, but its behaviour across a daemon *restart* (history
   lost) relies on the full refresh that follows every reconnect.
+
+## Round six: container processes
+
+- `fakeengine.TestTopHTTP` — the fake's `/containers/{id}/top` over raw HTTP: default `ps -ef`
+  listing (deterministic), empty, ragged columns, 409 stopped, 404 missing, injected 500, and
+  the request log.
+- `engine.TestProcesses` — the Moby adapter: mapping, empty rows, variable columns,
+  `IsConflict` for a stopped container, `IsNotFound`, the daemon's message preserved, no
+  `ps_args` ever sent, pass-through in read-only mode, `IsUnavailable` with the daemon down.
+  `readMethods` lists `Processes`, so `TestReadOnlyCoversEveryMutation` still counts 18
+  mutations.
+- `ui.TestProcessesLifecycle` — the witness is the fake's count of `/top` requests: none
+  before the tab opens, one on entry, none while it sits visible across list refreshes, one
+  on `r`, one per highlight change (old rows gone first), none on `r` with another tab
+  shown and one on the next visit; nothing reaches jobs or the status line; no mutation.
+- `ui.TestProcessesStates` — stopped (no request, no dialog), empty, the 409 race, a general
+  error replaced by a later `r`, and a crash after a snapshot hiding the rows.
+- `ui.TestProcessesStaleOnDisconnect` — rows kept and marked stale with the daemon down,
+  taken again after it returns.
+- `ui.TestProcessesRejectsLateAnswers` — an answer for the previous container, or an
+  overtaken one for the current, is never drawn.
+- `ui.TestProcessesTableAndScrolling`, `ui.TestProcessTableCells` — custom titles, a
+  300-character command, extra and missing cells, escape and control characters, frame
+  geometry at four sizes, and line/page/top/bottom scrolling.
+- `TestFrameGeometryAtEverySize` walks the new tab for every kind at all nine sizes.
+- `e2e.TestProcessesView` — the real binary at 140×40 and 80×24: open, refresh, another
+  container, a stopped one; screens 29 and 30.
 
 ## Running everything
 

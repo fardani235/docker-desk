@@ -1,6 +1,6 @@
- Docker Desk  unix:///tmp/ddfake3072301324/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ✗ DISCONNECTED — retrying
+ Docker Desk  unix:///tmp/ddfake3075919687/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ✗ DISCONNECTED — retrying
 ┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Images (14, 15 refs) ─────────────────────────────────────────────────┐┌─ 4 Events ────────────── ✗ disconnected ─┐
-┃  Containers    12┃│  REPOSITORY          TAG         IMAGE ID          SIZE    AGE   USED BY ││08:12:23 ── event stream interrupted: eve…│
+┃  Containers    12┃│  REPOSITORY          TAG         IMAGE ID          SIZE    AGE   USED BY ││14:46:49 ── event stream interrupted: eve…│
 ┃▸ Images        14┃│▸ alpine              3.20        bbfb6bb5502a     7.8MB    24h     2 ctr ││                                          │
 ┃  Volumes        7┃│  busybox             1.36        b227a1c6d0d2     4.3MB    24h     1 ctr ││                                          │
 ┃  Networks       7┃│  gcr.io/distroless…  nonroot     37588eec338e     2.0MB    24h     1 ctr ││                                          │
@@ -17,7 +17,7 @@
 ┃                  ┃│Reference  alpine:3.20                                                    ││                                          │
 ┃                  ┃│ID         bbfb6bb5502a                                                   ││                                          │
 ┃                  ┃│Size       7.8MB                                                          ││                                          │
-┃                  ┃│Created    2026-11-02 08:12:23  (24h ago)                                 ││                                          │
+┃                  ┃│Created    2026-11-02 14:46:49  (24h ago)                                 ││                                          │
 ┃                  ┃│                                                                          ││                                          │
 ┃                  ┃│References                                                                ││                                          │
 ┃                  ┃│  alpine:3.20                                                             ││                                          │
@@ -36,5 +36,5 @@
 ┃                  ┃│                                                                          ││                                          │
 ┃                  ┃│                                                                          ││                                          │
 ┗━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────┘
- Lost the connection to the Docker daemon at unix:///tmp/ddfake3072301324/d.sock — retrying. Data on screen may be stale.
+ Lost the connection to the Docker daemon at unix:///tmp/ddfake3075919687/d.sock — retrying. Data on screen may be stale.
  ↑↓ pick a kind  Enter go to list                                                                                  Tab pane  ? keys  q quit

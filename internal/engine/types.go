@@ -436,3 +436,11 @@ type HistoryEntry struct {
 	CreatedBy string
 	Size      int64
 }
+
+// ProcessList is one process snapshot of a container as the daemon reported
+// it. Titles and rows are kept verbatim: their number and meaning depend on
+// the daemon's platform, and a row may have more or fewer cells than Titles.
+type ProcessList struct {
+	Titles []string
+	Rows   [][]string
+}
