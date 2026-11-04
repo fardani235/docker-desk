@@ -231,7 +231,7 @@ cannot tell. There is no severity score.
 | filesystem | setuid · setgid · world-writable files and directories without a sticky bit · file capabilities |
 | secrets | in the final filesystem · deleted in a later layer (**still in the image bytes**) · replaced in a later layer · passed as a build argument · set by ENV |
 | binaries | not PIE · no or partial RELRO · no stack protector · UPX-packed · Go toolchain version and modules |
-| supply | SBOM present (one line) · provenance present · no attestations · created from a tag, not a digest · the tag moved since the container was created · no registry digest |
+| supply | SBOM present · installed OS packages the SBOM does not declare · declared OS packages not installed, or at another version (hint) · provenance present · no attestations · created from a tag, not a digest · the tag moved since the container was created · no registry digest |
 | live | a privileged container · host network · ports published on every interface · secrets readable in a running container |
 
 The live half — which containers use the image, their state, ports, privileged flag and
@@ -242,6 +242,57 @@ Read-only mode works unchanged: everything is a GET.
 
 Secrets are masked everywhere. `v` reveals the one under the cursor; it hides again when the
 cursor moves. A secret's value never goes into a job, an error, a log or a file.
+
+### Image packages — the declared list against the installed one
+
+`i` on the Findings tab opens the image's ingredient list, full screen: what its SBOM declares,
+against what its own package databases say is installed. Both come from the analysis already
+made — nothing is requested, and the archive is not read again.
+
+```
+┏━ ◆ Packages — what the SBOM declares, against what the image's databases say is installed ━━━━━━━━ python:3.12-slim ━┓
+┃ by name · showing disagreements · 5 of 73 rows                                                                       ┃
+┃   SBOM       SPDX-2.3 · 70 packages · attestation ed4a7151c323                                                       ┃
+┃   installed  dpkg · /var/lib/dpkg/status (layer 4) · 66 packages                                                     ┃
+┃              no apk or rpm database in any layer                                                                     ┃
+┃   rows       62 both · 1 version differs · 1 declared only · 3 undeclared · 6 not checkable                          ┃
+┃                                                                                                                      ┃
+┃   NAME                              VERSION                   LICENCE                   TYPE    LAYER  STATE         ┃
+┃   curl                              7.88.1-10+deb12u8         —                         deb     L4     undeclared    ┃
+┃ ▸ libcurl4                          7.88.1-10+deb12u8         —                         deb     L4     undeclared    ┃
+┃   libgnutls30                       3.7.9-2+deb12u3           LGPL-2.1-or-later         deb     --     declared only ┃
+┃   libssl3                           3.0.15-1~deb12u1          Apache-2.0                deb     L2     differs       ┃
+┃   netcat-openbsd                    1.219-1                   —                         deb     L4     undeclared    ┃
+┃                                                                                                                      ┃
+┃ ─────────────────────────────────────────────────────────────────────────────────────────────────────────── 2 of 5 ─ ┃
+┃ state      installed, and the SBOM does not list it                                                                  ┃
+┃ installed  version 7.88.1-10+deb12u8 · amd64 · listed by /var/lib/dpkg/status                                        ┃
+┃ added by   layer 4 · RUN apt-get update && apt-get install -y curl netcat-openbsd && rm -rf /var/lib/apt/lists/*     ┃
+```
+
+- **Declared**: the SBOM's packages — name, version, licence, purl — from SPDX `packages[]` or
+  CycloneDX `components[]`, read as the archive streams, so an SBOM far above the 4 MiB bound for
+  JSON documents is still listed. At most 20,000 are kept; the true total is always shown.
+- **Installed**: the image's own databases, read in the layer walk and dropped once parsed —
+  dpkg's `/var/lib/dpkg/status` and `status.d/*`, apk's `/lib/apk/db/installed`, rpm's
+  `rpmdb.sqlite` (in `/var/lib/rpm` or `/usr/lib/sysimage/rpm`), which the desk reads with its
+  own read-only SQLite reader. Which copy counts is decided by the final filesystem — whiteouts,
+  opaque directories, a directory replaced by a link, layers that cannot be read. Each package is
+  attributed to the layer that introduced it, by diffing the database across layers, with the
+  build instruction where the history maps.
+- **The join** is within one ecosystem: `pkg:deb` against dpkg, `pkg:apk` against apk, `pkg:rpm`
+  against rpm. A row is **both**, **differs** (version), **declared only**, **undeclared**, or
+  **not checkable** — every other ecosystem, a package without a purl, and anything whose other
+  side cannot be read, with the reason on the row. Nothing is called undeclared on the strength
+  of a list that was cut short.
+- **Unknowns are said.** A zstd layer, a deleted database, a damaged or Berkeley DB rpm database,
+  a non-empty write-ahead log: what is installed is *unknown*, with the reason, in the header —
+  never an empty list. Bounds: 20,000 declared, 10,000 installed, 64 MiB for an rpm database,
+  8 MiB for a text database; when one is hit, the header says so.
+
+Installed OS packages the SBOM does not list become one `supply.undeclared` finding, naming them;
+declared OS packages that are not installed, or are at another version, become one
+`supply.sbom-drift` hint. In the sandbox, `python:3.12-slim` has every kind of disagreement.
 
 ### Space — where the bytes went, and what removing something frees
 
@@ -372,8 +423,11 @@ the movement keys scroll the rows. Command lines are shown as the daemon reports
 arguments included — nothing is masked, so a secret passed on a command line is visible here,
 as it is to `docker top`; process rows are never written to jobs, the status line or files.
 **Findings** (Images): `↑` `↓` move between findings · `o` order by layer / group / certainty ·
-`v` reveal the highlighted secret · `c` cancel the analysis · `Enter` analyse when asked first
-or after a failure.
+`v` reveal the highlighted secret · `i` the image's packages · `c` cancel the analysis ·
+`Enter` analyse when asked first or after a failure.
+**Packages** (`i` on Findings): `↑` `↓` move · `/` search name, version, licence and purl ·
+`o` order by name / state / layer / licence · `s` show all, the disagreements, or one state ·
+`S` show all · `Esc` clear the search, then close.
 **Space** (`S`): `↑` `↓` move between images, containers and volumes · `Enter` go to the
 highlighted one · `r` read the account again · `m` measure writable layers · `c` cancel a
 measurement · `d` remove… · `X` prune… · `S` or `Esc` close.
@@ -500,6 +554,11 @@ Good to know:
 - Findings do not consult a vulnerability database: Go module versions are listed, not judged.
   zstd-compressed layers cannot be walked (the standard library has no decoder) and are
   reported as unreadable. Stack canaries are judged only for dynamically linked executables.
+- Packages: only dpkg, apk and rpm databases are read as the installed side — not npm, pip or
+  Go modules, whose SBOM entries are "not checkable". rpm is read from `rpmdb.sqlite` only (rpm
+  4.16 and later); an older Berkeley DB or SUSE's NDB database is reported as unknown, as is one
+  with a non-empty write-ahead log. With zstd layers, the installed side is unknown and the SBOM
+  is still listed. Only the first SBOM attestation of an image is compared.
 
 ## Trying it safely
 
@@ -557,6 +616,8 @@ internal/sshtunnel     the one supervised ssh process that carries an ssh:// dae
 internal/engine        the only door to the daemon (Docker's client library behind a narrow interface)
 internal/plan          what a mutation will do, decided by pure code before anything is sent
 internal/space         which bytes images share, and what removing a set of them frees (pure)
+internal/forensics     what an image's own archive holds, read as one stream: findings, the SBOM's
+                       packages, the installed dpkg/apk/rpm databases (with its own SQLite reader)
 internal/jobs          background jobs and their ledger
 internal/live          bounded buffers and stream supervision for logs, stats and events
 internal/shell         the interactive exec session and the terminal hand-off

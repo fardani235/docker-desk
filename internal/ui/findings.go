@@ -342,6 +342,9 @@ func (m *Model) onFindingsKey(key string) bool {
 			m.setStatus(toneWarn, "Cancelling: analyse image "+run.ref)
 		}
 		return true
+	case "i":
+		m.openPackages()
+		return true
 	case "o":
 		m.fx.order = m.fx.order.Next()
 		m.fx.revealed = ""

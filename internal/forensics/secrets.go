@@ -359,6 +359,12 @@ func maskText(s string) string {
 // sanitize makes text from the image safe to draw: control characters —
 // an escape sequence in a file name would otherwise reach the terminal —
 // become '?', invalid UTF-8 is replaced, and the length is bounded.
+// bidiControl reports the characters that reorder the text around them
+// (Trojan Source): a name holding one could display as another.
+func bidiControl(r rune) bool {
+	return (r >= '\u202a' && r <= '\u202e') || (r >= '\u2066' && r <= '\u2069') || r == '\u200e' || r == '\u200f' || r == '\u061c'
+}
+
 func sanitize(s string, max int) string {
 	if !utf8.ValidString(s) {
 		s = strings.ToValidUTF8(s, "?")
@@ -370,7 +376,7 @@ func sanitize(s string, max int) string {
 			b.WriteString("…")
 			break
 		}
-		if r < 0x20 || r == 0x7f || (r >= 0x80 && r < 0xa0) || r == '\u2028' || r == '\u2029' || r == '\ufeff' {
+		if r < 0x20 || r == 0x7f || (r >= 0x80 && r < 0xa0) || r == '\u2028' || r == '\u2029' || r == '\ufeff' || bidiControl(r) {
 			r = '?'
 		}
 		b.WriteRune(r)

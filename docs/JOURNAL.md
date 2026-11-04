@@ -570,3 +570,100 @@ are the opt-in real-daemon ones, one of them new), uncached, and so does `go tes
 layers. The `disk-space` OpenSpec change validates. `go.mod` is unchanged. Decisions are in
 DECISIONS U1–U13, proof in TESTING ("Round five"). Nothing was committed, and nothing was
 installed outside the repository.
+
+# Round seven: image packages
+
+The request came in one pass again — plan, build, verify, document — with decisions recorded
+instead of asked about (DECISIONS K1–K14). It asked for rpm first, as the riskiest part; that is
+the order things were done in.
+
+## 32. rpm, before anything else
+
+Docker on this machine pulled `ubi9/ubi-micro` and `ubi9/ubi-minimal`; both keep
+`/var/lib/rpm/rpmdb.sqlite` beside an empty `-wal`. ubi-micro's database is 7.4 MB and gzips to
+865 kB, small enough to commit; it has no `rpm`, so ubi-minimal's rpm 4.16.1.3 listed a copy of
+it, with the network off. Before writing the reader, Python's sqlite3 module (opened
+read-only, immutable) showed what it had to handle: 50 schema entries, so `sqlite_master` is an
+interior page on page 1, not a leaf; headers up to 5 MB, so long overflow chains; delete
+journal mode. The reader and the header parser read the real database as exactly what rpm
+reports — 20 packages and two `gpg-pubkey` keys, glibc's 730-character licence included — on
+the first run. A second database, written by SQLite itself with 512-byte pages, 1,500 rows of
+which a third were deleted, and 40 kB headers, read correctly too.
+
+The first fuzz run looked clean and proved little. The reader's `recover` hid any panic from
+the fuzzer, and both seeds were truncated files that the header's own page count rejects at
+once. The reader now has a variant without the net, and a 3.5 kB seed that is a whole database.
+The fuzzer's rate on this machine stayed low, about a thousand runs a second, so a test was
+added that does it by hand: 20,000 mutations through the unprotected reader, no panic, 10 ms
+the worst case.
+
+## 33. The stream
+
+Two parts of the archive needed to say more than before. JSON blobs are now scanned as they
+stream, for every blob, because which one is the SBOM is known only from `index.json`; the
+lexer is the desk's own so that a long string cannot defeat the bound (K1). The layer walk
+captures every copy of a package database as a record set and drops the bytes; which copy
+counts is answered by `finalFS` once the manifest has been read (K4).
+
+The first image-level tests found three faults. A purl's name had replaced the SBOM's name for
+every ecosystem, so `golang.org/x/sys` was listed as `sys`; only OS packages use the purl's
+name now. A directory replaced by a symbolic link in a later layer — Fedora's `/var/lib/rpm` —
+made rpm's list unknown, because `finalFS` had no notion of it; it does now, and calls it
+deleted. And `sanitize` let bidirectional overrides through; it replaces them now, everywhere it
+is used.
+
+## 34. The view
+
+The first frames at 80×24 showed the zstd image's header — three managers unknown for the same
+reason, three lines each — taller than the list, with its first lines out of reach, and a
+counts line cut off at the right. The reasons are now said once per reason, the counts wrap,
+and the view opens on its header, which `k` and `g` return to (K10). Cycling the state filter
+lost the package under the cursor when a state hid it, because the position's row replaced it;
+the cursor keeps its package now until the operator moves (K11). The view's `o` and `s` wrote
+to the status line, which made the desk differ after Esc; they no longer do (K9). In the
+pseudo-terminal test, eighty `j`s sent without a pause reached the desk as one key, `jjj…`, and
+did nothing; the test paces them, as the existing ones do.
+
+## 35. A real daemon
+
+`TestRealDaemonPackagesReadOnly` analysed ubi-micro from this machine's Docker 29.9.2 through
+the read-only engine: one `GET /images/get`, the archive streamed, `rpmdb.sqlite` found in layer
+1 and its 22 entries equal to rpm's list. ubi-micro carries no SBOM, so every row is not
+checkable — which is the answer.
+
+Taking the fixture (section 32) was not read-only, and was done with the docker CLI, not the
+desk: two `docker pull`s (ubi9/ubi-micro, ubi9/ubi-minimal); `docker create`, `docker cp` and
+`docker rm` once per image to copy each database out; three `docker run --rm` (two to list the
+rpm directories, one, with `--network none` and the copy mounted read-only, for rpm's own
+list). The two images are still on this machine. Nothing else touched the real daemon; the desk
+itself sent it only the GETs above.
+
+## 36. A suite made to fail by tests that passed
+
+`make test` and `make race` passed once each. Uncached repeats did not: four of five full runs
+failed — `TestSession`, `TestSpace`, `TestProcessesView`, and two Space UI tests, a different
+one each time, none of them touching the new code, all of them on a clock (keys paced at 15 to
+30 ms, an 8 s wait, a background job expected to have ended). Each passed alone. That looked
+like the flakes of sections 24 and 30, and the same answer — "pre-existing" — was ready to
+hand; it was not given, because the baseline, checked out in a separate worktree and run the
+same way, passed every time (three full runs, 17 runs of the two e2e tests). Running pairs of
+packages found it: `ui` with `e2e` never failed; `forensics` with `e2e` did. The new forensics
+tests copied and re-read the 7.4 MB real database eighty times — some 600 MB of garbage in
+under a second — while the pseudo-terminal tests ran beside them. The damage test now reuses one
+buffer and gives the real database ten mutations (the 1.5 MB synthetic one keeps eighty), and the
+fixtures are decompressed once per test binary; the test went from 0.76 s to 0.22 s. Three
+uncached full runs then passed, 547 tests each. (While looking, the view was found to draw every
+row on every frame and to rebuild each row's identity to find the cursor; it now draws only the
+rows in view and keeps the identities with the filter.)
+
+## 37. Final state
+
+`go vet` and gofmt are clean. `make test` passes, and three further uncached full runs passed
+547 tests each; the five skipped are the opt-in real-daemon checks, one of them new. `make race`
+passes, with `internal/e2e` also run uncached under `-race`. The real rpm fixture yields what
+rpm reports (section 32), and so does the real daemon's archive of the same image (section 35).
+`TestPackagesView` wrote `docs/screens/31-packages-disagreements.txt` and
+`32-packages-80x24-read-only.txt`; no other screen changed. The `image-packages` OpenSpec change
+validates in strict mode. `go.mod` is unchanged. Decisions are in DECISIONS K1–K15, proof in
+TESTING ("Round seven"). Nothing was committed, and nothing was installed outside the
+repository.

@@ -1,0 +1,40 @@
+ Docker Desk  unix:///tmp/ddfake2102052278/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┏━ ◆ Packages — what the SBOM declares, against what the image's databases say is installed ━━━━━━━━ python:3.12-slim ━┓
+┃ by name · showing disagreements · 5 of 73 rows                                                                       ┃
+┃   SBOM       SPDX-2.3 · 70 packages · attestation ed4a7151c323                                                       ┃
+┃   installed  dpkg · /var/lib/dpkg/status (layer 4) · 66 packages                                                     ┃
+┃              no apk or rpm database in any layer                                                                     ┃
+┃   rows       62 both · 1 version differs · 1 declared only · 3 undeclared · 6 not checkable                          ┃
+┃                                                                                                                      ┃
+┃   NAME                              VERSION                   LICENCE                   TYPE    LAYER  STATE         ┃
+┃   curl                              7.88.1-10+deb12u8         —                         deb     L4     undeclared    ┃
+┃ ▸ libcurl4                          7.88.1-10+deb12u8         —                         deb     L4     undeclared    ┃
+┃   libgnutls30                       3.7.9-2+deb12u3           LGPL-2.1-or-later         deb     --     declared only ┃
+┃   libssl3                           3.0.15-1~deb12u1          Apache-2.0                deb     L2     differs       ┃
+┃   netcat-openbsd                    1.219-1                   —                         deb     L4     undeclared    ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃ ─────────────────────────────────────────────────────────────────────────────────────────────────────────── 2 of 5 ─ ┃
+┃ state      installed, and the SBOM does not list it                                                                  ┃
+┃ installed  version 7.88.1-10+deb12u8 · amd64 · listed by /var/lib/dpkg/status                                        ┃
+┃ added by   layer 4 · RUN apt-get update && apt-get install -y curl netcat-openbsd && rm -rf /var/lib/apt/lists/*     ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ analyse image python:3.12-slim
+ ↑↓ move  / search  o order  s state                                                                  Esc close  ? keys

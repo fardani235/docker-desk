@@ -1,0 +1,22 @@
+basesystem	(none)	11	13.el9	noarch	Public Domain
+bash	(none)	5.1.8	9.el9	x86_64	GPLv3+
+coreutils-single	(none)	8.32	41.el9_8.1	x86_64	GPLv3+
+filesystem	(none)	3.16	5.el9	x86_64	Public Domain
+glibc	(none)	2.34	283.el9_8	x86_64	LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception
+glibc-common	(none)	2.34	283.el9_8	x86_64	LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception
+glibc-minimal-langpack	(none)	2.34	283.el9_8	x86_64	LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception
+gpg-pubkey	(none)	5a6340b3	6229229e	(none)	pubkey
+gpg-pubkey	(none)	fd431d51	4ae0493b	(none)	pubkey
+libacl	(none)	2.4.0	1.el9_8	x86_64	LGPLv2+
+libattr	(none)	2.6.0	1.el9_8	x86_64	LGPLv2+
+libcap	(none)	2.48	10.el9_8.1	x86_64	BSD or GPLv2
+libgcc	(none)	11.5.0	14.el9	x86_64	GPLv3+ and GPLv3+ with exceptions and GPLv2+ with exceptions and LGPLv2+ and BSD
+libselinux	(none)	3.6	3.el9	x86_64	Public Domain
+libsepol	(none)	3.6	3.el9	x86_64	LGPLv2+
+ncurses-base	(none)	6.2	12.20210508.el9	noarch	MIT
+ncurses-libs	(none)	6.2	12.20210508.el9	x86_64	MIT
+pcre2	(none)	10.40	7.el9_8	x86_64	BSD
+pcre2-syntax	(none)	10.40	7.el9_8	noarch	BSD
+redhat-release	(none)	9.8	1.0.el9	x86_64	GPLv2
+setup	(none)	2.13.7	10.el9	noarch	Public Domain
+tzdata	(none)	2026e	1.el9_8	noarch	Public Domain

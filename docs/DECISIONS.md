@@ -1804,6 +1804,161 @@ the container command as the first process and a shell child unless `NoShell`, P
 from the creation time (deterministic); 404 for unknown and 409 for non-running containers;
 `SetProcesses` fixes any table, including empty and ragged ones, for tests.
 
+## Round seven — image packages
+
+The `image-packages` change: what an image's SBOM declares, against what its own package
+databases say is installed, browsable in a full-screen view opened with `i` from Images ›
+Findings. Where the request left a choice open, it was decided here without stopping to ask.
+
+### K1 — Every JSON blob is scanned as it streams, by the desk's own lexer
+
+**Decided:** which blob is the SBOM is known only from `index.json`, which may come last, so
+every JSON blob passes through a scanner while it streams (and is still kept whole when it fits
+the old 4 MiB bound). The scanner is a small JSON lexer of the desk's own: a string keeps at most
+2 KiB and the rest is read and dropped; nesting stops at 64; a literal at 512 bytes. It reads
+SPDX `packages[]` (name, versionInfo, licenseDeclared then licenseConcluded, the purl among
+externalRefs) and CycloneDX `components[]` with nested components (name, version, purl,
+licenses), at the top level or under `predicate`. **Alternative:** `encoding/json`'s `Decoder`
+with `Token()` — it buffers each token whole, so one 100 MB string in an SBOM would be held in
+memory; the bound would be a hope. **Cost:** a second JSON parser in the code base; it is tested
+against escapes, surrogate pairs, cut-off and malformed documents, and depth.
+
+### K2 — rpm's database: a read-only SQLite reader that walks table b-trees and nothing else
+
+**Decided:** the reader takes the file whole from memory (bounded at 64 MiB), checks the header
+(page size, reserved bytes, payload fractions, UTF-8, the page count where the header keeps one),
+finds `Packages` in `sqlite_master` (page 1, itself a b-tree), and walks interior and leaf table
+pages, assembling payloads through overflow chains and decoding records. Each page may be visited
+once per walk; any page number, offset or length outside the file, an index page in a table
+tree, an overflow chain that ends early or runs on, a malformed varint or record — fails the
+whole read. A `recover` is a net under that, and the fuzz and mutation tests call the reader
+without it, so a fault its checks miss is found rather than caught. **Alternative:**
+`modernc.org/sqlite` — a large dependency the request rules out.
+
+### K3 — rpm headers: tags 1000–1003, 1014, 1022; the first entry of a tag counts
+
+**Decided:** a blob is `il`, `dl`, `il` index entries, the store, with rpm's own bounds (at most
+65,535 entries, 256 MiB of data). STRING, I18NSTRING (the first string) and STRING_ARRAY (the
+first) are read for strings; EPOCH must be INT32. The version shown is rpm's
+`[epoch:]version-release`. `gpg-pubkey` entries are listed, because rpm lists them, and marked
+as not packages: they are never undeclared (K7).
+
+### K4 — Which copy counts: `finalFS`, asked per layer
+
+**Decided:** every copy of every database path is captured as its layer streams — with symbolic
+links, hard links and other non-files captured as unreadable copies, so that a link over a
+database can never leave an older copy looking current. The state "as of layer j" takes, for each
+path, the topmost copy at or below j and asks `finalFS` restricted to layers ≤ j whether it is
+still visible. Consequences, each tested:
+
+- deleted in a later layer → **unknown** ("the packages it listed may still be on disk"), never
+  an empty list;
+- a later layer that cannot be read (zstd, a broken tar, a layer missing from the archive) →
+  unknown; for dpkg, a layer that cannot be read anywhere makes it unknown, because `status.d`
+  files add up across layers; for apk and rpm only a layer above the copy does;
+- no copy in any layer and every layer read → **absent**: a declared `pkg:deb` package is then
+  declared only, and the header says there is no dpkg database;
+- rpm: a non-empty `rpmdb.sqlite-wal` or `-journal` beside the database read → unknown;
+  `Packages` or `Packages.db` (Berkeley DB, NDB) → unknown with that reason; two databases
+  visible → the one in the higher layer is read and the other named in a note.
+
+`finalFS.fate` learned one thing for this: an ancestor directory replaced by a symbolic link in a
+later layer hides what was under it (Fedora's `/var/lib/rpm → ../../usr/lib/sysimage/rpm`). It is
+reported as deleted, which is what a container sees; no existing test changed.
+
+### K5 — Layer attribution: the unbroken run of states that list the package
+
+**Decided:** a package's layer is the first layer of the run of states, ending at the last
+layer, whose database lists its name, version and architecture. A package removed and installed
+again is attributed to the reinstall. A state that cannot be known (a copy that does not parse, a
+copy holding more than was kept) breaks the run, and the attribution is marked unsure with the
+reason; the view shows `L3?`. The instruction shown is the layer's, where the history maps (F7).
+
+### K6 — The join: by name within an ecosystem, the same version first
+
+**Decided:** `pkg:deb` against dpkg, `pkg:apk` against apk, `pkg:rpm` against rpm, by the purl's
+name. Pairs at the same version (and architecture, where both state it) are matched first, then
+the same name at another version (version differs). An SBOM that lists one package twice
+declares it once. An epoch only one side states, or an epoch of 0, does not make versions
+differ: SBOM tools disagree on whether to write it, and a mismatch on that alone would be noise.
+rpm's purl `epoch=` qualifier is folded into the declared version.
+
+### K7 — Not checkable, with a reason, whenever either side cannot say
+
+**Decided:** a row is not checkable when its ecosystem is not deb, apk or rpm; when the SBOM
+gives no purl; when the installed side is unknown; when the image carries no SBOM, or its SBOM
+cannot be read; for `gpg-pubkey`; and — the bounds — an installed package when the SBOM table is
+capped, a declared package not found when the installed list is capped. The reason is on the row.
+Nothing is called undeclared or declared only on the strength of a capped list.
+
+### K8 — Two findings, from the same join the view draws
+
+**Decided:** `supply.undeclared` (certain, source image) names up to six packages in its
+evidence and up to 200 in its detail, gives the database file as its path, and gives the layer
+and instruction when all came from one layer. Its unknown says what cannot be known about why.
+`supply.sbom-drift` (hint) counts declared OS packages not installed and installed at another
+version. `supply.sbom`'s unknown now says which databases the SBOM was checked against, and its
+count is read for documents above the JSON bound too.
+
+### K9 — The view is a layer like Space, opened only on a finished report
+
+**Decided:** `i` on the Findings tab opens it once the report exists (before that, the status
+line says so). It holds a pointer to the report, so evicting the report from the cache cannot
+change it. It changes nothing under it — not the kind, focus, tab, findings cursor, or the status
+line (its `o` and `s` say what they did on the view's own line instead) — so `Esc` puts back the
+desk exactly; a test compares the screens. With a search active, `Esc` clears it first, as the
+list's filter does. `i` closes it too.
+
+### K10 — Header lines scroll, the "showing" line does not
+
+**Decided:** as in Space, the header — the SBOM line, a line per database read, one line per
+distinct reason a database is unknown (three managers unknown for one zstd layer is one line),
+the bounds hit, the notes, and the counts by state — is the top of the scrolling list. A fixed
+line above it says the order, the state shown, the search and how many rows are shown. The view
+opens at the top, and `k` or `g` on the first row return there, so a header taller than the list
+at 80×24 can always be read. The counts wrap; none is ever cut off.
+
+### K11 — The cursor keeps its package while a filter hides it
+
+**Decided:** the cursor is the package's identity (ecosystem, name, both versions, architecture,
+purl). When the state filter or search hides it, the row at the same position is highlighted, but
+the package chosen is kept, so it is highlighted again when it is shown again; only moving
+chooses another package.
+
+### K12 — The order of `s`: the disagreements first
+
+**Decided:** all → disagreements (undeclared, version differs, declared only) → undeclared →
+version differs → declared only → not checkable → both → all; `S` shows all again. Ordering by
+state puts undeclared first and both last. Ordering by layer puts rows with no known layer last.
+
+### K13 — The fake daemon's `python:3.12-slim` carries the demo
+
+**Decided:** `shop/api:dev` stays as it was — several tests assert its size and findings. The
+fake now serves `python:3.12-slim` from `fixture.DemoPackages`: a Debian base, an apt layer, a
+pip layer and a later apt layer the SBOM was made without, so that every state appears. Its
+listed size is unchanged.
+
+### K14 — The rpm fixtures, and the real daemon
+
+**Decided:** `testdata/rpm/ubi9-micro.rpmdb.sqlite.gz` is the unmodified database from
+`registry.access.redhat.com/ubi9/ubi-micro` (image `sha256:5be877a2…5e6`), gzipped to 865 kB.
+ubi-micro has no `rpm`, so what rpm reports for it was taken with ubi-minimal's rpm 4.16.1.3 on a
+copy (`--dbpath`), with no network. A second database, written by SQLite itself from
+`make_synthetic.py`, has 512-byte pages, deep trees, 40 kB headers, freed pages and epochs; a
+tiny one seeds the fuzz test. `TestRealDaemonPackagesReadOnly` (in `make real-readonly-check`)
+analysed ubi-micro from this machine's Docker 29.9.2 through the read-only engine and found its 22
+entries exactly as rpm reported them.
+
+### K15 — Tests on a clock share the machine: the new tests stay light
+
+**Decided:** `go test ./...` runs packages side by side, and the pseudo-terminal tests pace keys
+at 15–30 ms. The new forensics tests first made those fail in most uncached full runs, by
+re-reading the 7 MB real database eighty times (JOURNAL §36). The damage test now gives the real
+database ten mutations and the small synthetic one eighty, in one reused buffer; fixtures are
+decompressed once. **Alternative:** lengthen the e2e waits, or mark the heavy test `-short`-only —
+both would have hidden the cost instead of removing it, and the first changes tests this round
+had no reason to touch.
+
 ## Process
 
 ### B12 — No commits were made
@@ -1821,4 +1976,4 @@ the machine. (`go install` into a scratch directory was verified to work.)
 
 All tasks are done and the change validates. Archiving — which folds the capability specs into
 `openspec/specs/` — is an acceptance step and was left for after review (`/opsx:archive`). The same holds for
-round five's `disk-space` change.
+round five's `disk-space` change, and round seven's `image-packages` change.

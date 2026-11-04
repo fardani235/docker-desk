@@ -44,6 +44,10 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 	if m.filtering {
 		return m.onFilterKey(k)
 	}
+	// The Packages view covers the panes too.
+	if m.pk.open {
+		return m.onPackagesKey(k)
+	}
 	// The Space view covers the panes: no key reaches them behind it.
 	if m.sp.open {
 		return m.onSpaceKey(k)

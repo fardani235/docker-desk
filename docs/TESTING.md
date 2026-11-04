@@ -566,6 +566,48 @@ second; 18 images, the history mapped for all of them and their layer sizes adde
 daemon's for none — the containerd image store (DECISIONS U3). It logs counts and sizes only.
 
 
+## Round seven: image packages
+
+The riskiest part — rpm's database, read by the desk's own SQLite reader — was built and proven
+first, against a database taken from a real image and checked against rpm itself.
+
+| Property | Test |
+| --- | --- |
+| A real `rpmdb.sqlite` (ubi9-micro, committed) yields exactly the 22 entries rpm 4.16.1.3 reports for it: name, epoch, version, release, arch, licence | `TestRealRPMDBYieldsWhatRPMReports` |
+| A database SQLite itself wrote with 512-byte pages — multi-level table and schema b-trees, 40 kB headers through overflow chains, freed pages, epochs — reads as its 1,001 rows; the bound keeps 10 and counts 1,001 | `TestSyntheticRPMDB` |
+| Cut short, bytes changed at random, a cycle in the b-tree, UTF-16, a bad header: the read fails whole or reads whole, never part, never a panic | `TestDamagedRPMDBFailsWhole`, `TestSQLiteRefusesWhatItDoesNotRead`, `TestRPMHeaderBounds` |
+| 20,000 mutations of a small database through the reader *without* its recover: no panic | `TestMutatedRPMDBNeverPanics`, and `FuzzReadRPMDB` (run for minutes during the build) |
+| The demo image: every state, layers 1, 2 and 4 attributed by the database's diff, epochs that one side omits, one undeclared finding naming three packages with layer 4's instruction, one drift hint | `TestDemoPackages` |
+| An SBOM above the 4 MiB JSON bound (a 3 MiB string and 20,000 file entries before its packages) is read as it streams and joined | `TestSBOMAboveTheJSONBoundIsStillBrowsable` |
+| Capped tables keep their true total, and nothing the cap hides is called undeclared or declared only; a text database above its bound is unknown, with the bound | `TestBoundsAreSaid` |
+| zstd layers: installed unknown for all three managers, the SBOM's rows listed as not checkable, no package findings | `TestZstdImage` |
+| A deleted database is unknown, not empty | `TestDeletedDatabaseIsUnknownNotEmpty` |
+| distroless `status.d`: files add up across layers, whiteouts remove one, `.md5sums` ignored | `TestDistrolessStatusD` |
+| apk and CycloneDX (nested component, licence ids), and an npm package that is not checkable | `TestAPKAndCycloneDX` |
+| The real database inside an image, streamed: 19 both, `tzdata` undeclared, a declared-only package, `gpg-pubkey` not checkable | `TestRealRPMDBInAnImage` |
+| A non-empty `rpmdb.sqlite-wal` makes rpm unknown; Fedora's `/var/lib/rpm` link hides the old copy, with or without a whiteout | `TestRPMWriteAheadLogMakesItUnknown`, `TestFedoraLayoutFollowsTheFinalFilesystem` |
+| An unreadable copy between two layers makes the attribution unsure, and says why | `TestAttributionAcrossAnUnreadableCopy` |
+| Control characters and bidirectional overrides from a database or an SBOM reach no string | `TestStringsFromTheImageAreSanitised` |
+| The JSON scanner: escapes, surrogate pairs, cut-off and broken documents (no partial list), nesting, strings longer than its bound | `TestJSONScanner` |
+| purl parsing and version comparison with epochs | `TestPURLAndVersions` |
+| The view renders and scrolls at 80×24, 120×30 and 120×40, every frame exactly the terminal's size | `TestPackagesViewRendersAndScrollsAtBothLayouts` |
+| Esc closes onto the desk exactly as it was — the screen compared line for line | `TestPackagesViewClosesOntoTheDeskAsItWas` |
+| `/` by name, version, licence and purl; Esc while typing undoes; `s` through every state with the right counts; `o` through every order; the cursor stays on its package through all of them, and through a filter that hid it | `TestPackagesSearchOrderAndStateFilter` |
+| Undeclared packages are a finding on the Findings tab | `TestUndeclaredIsAFinding` |
+| Read-only: only GET/HEAD, no second export | `TestPackagesViewInReadOnlyMode` |
+| zstd and a large SBOM, through the fake daemon into the view | `TestZstdImageBrowsesItsSBOM`, `TestLargeSBOMBrowsesInTheView` |
+
+**End to end**, `TestPackagesView` runs the binary at 120×40 and at 80×24 with `--read-only`:
+it opens the view from Findings, cycles the state filter, searches, scrolls to the last row and
+closes onto the Findings tab, with one export and no mutating request. Screens:
+`docs/screens/31-packages-disagreements.txt` and `32-packages-80x24-read-only.txt`.
+
+**Against the real daemon**, `make real-readonly-check` now also runs
+`TestRealDaemonPackagesReadOnly`. Run once, against Docker 29.9.2: ubi9-micro's archive,
+streamed through the read-only engine, yields `/var/lib/rpm/rpmdb.sqlite` in layer 1 with the 22
+entries rpm reported for it; the image carries no SBOM, so every row is not checkable.
+
+
 Stated plainly, because a control plane deserves it:
 
 - **No mutating request from the desk has ever been sent to a real Docker daemon.** That is a

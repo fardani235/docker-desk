@@ -282,6 +282,8 @@ type Report struct {
 	RootUser bool
 	// FinalSecrets counts secrets still in the final filesystem.
 	FinalSecrets int
+	// Packages is what the SBOM declares and the package databases list.
+	Packages *PackageSet
 }
 
 // TotalSize is the sum of the layers' content.

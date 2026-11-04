@@ -808,3 +808,78 @@ func checkFrame(t *testing.T, screen string, rows, cols int) {
 		t.Fatalf("a pane went missing:\n%s", screen)
 	}
 }
+
+// TestPackagesView opens Images › Findings › Packages on the image whose
+// SBOM disagrees with its package database, cycles the state shown,
+// searches, scrolls, and closes back onto the Findings tab — wide, and at
+// 80×24 read-only — sending nothing but the one archive read.
+func TestPackagesView(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		rows, cols int
+		args       []string
+	}{
+		{"31-packages-disagreements", 40, 120, nil},
+		{"32-packages-80x24-read-only", 24, 80, []string{"--read-only"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := startFake(t, func(s *fakeengine.Server) { s.SeedDemo() })
+			d := launch(t, srv, tc.rows, tc.cols, tc.args...)
+			d.see("2 Containers (12)")
+			d.keys("1", ptyscreen.Down, "2", "/", "p", "y", "t", "h", "o", "n", ptyscreen.Enter)
+			d.see("3 Details: python:3.12-slim")
+			d.keys("3", "]", "]")
+			d.see("[Findings]", "findings · by layer")
+			d.keys("i")
+			d.see("Packages — ", "SPDX-2.3 · 70 packages", "dpkg · /var/lib/dpkg/status (layer 4) · 66 packages")
+			if tc.cols < 100 {
+				d.see("3 undeclared", "6 not checkable")
+				packagesFrame(t, d.shot(tc.name), tc.cols)
+			} else {
+				d.keys("s")
+				d.see("showing disagreements", "5 of 73 rows", "libgnutls30", "netcat-openbsd")
+				d.keys("j")
+				d.see("▸ libcurl4", "added by", "layer 4 · RUN apt-get update && apt-get install -y curl netcat-openbsd")
+				packagesFrame(t, d.shot(tc.name), tc.cols)
+				d.keys("s", "s", "s", "s", "s", "s") // back to all
+				d.see("showing all")
+			}
+			// Search, then scroll the whole list.
+			d.keys("/", "s", "s", "l", ptyscreen.Enter)
+			d.see("search: ssl", "libssl3", "openssl")
+			d.keys(ptyscreen.Esc)
+			for i := 0; i < 80; i++ {
+				d.keys("j") // paced: keys sent together arrive as one "jjj…"
+			}
+			d.see(" 73 of 73 ", "zlib1g")
+			packagesFrame(t, d.term.Screen(), tc.cols)
+			d.keys(ptyscreen.Esc)
+			d.see("[Findings]", "findings · by layer")
+			d.gone("Packages — ")
+			if n := srv.CountRequests("GET", `/images(/.+)?/get$`); n != 1 {
+				t.Errorf("%d exports", n)
+			}
+			for _, r := range srv.Requests() {
+				if r.Mutating() {
+					t.Fatalf("the Packages view sent %s", r)
+				}
+			}
+			d.keys("q")
+			d.quit()
+		})
+	}
+}
+
+// packagesFrame checks a full-screen view's frame: no line wider than the
+// terminal, and the box closed at the bottom.
+func packagesFrame(t *testing.T, screen string, cols int) {
+	t.Helper()
+	for i, l := range strings.Split(screen, "\n") {
+		if n := utf8.RuneCountInString(l); n > cols {
+			t.Fatalf("line %d is %d cells, terminal is %d:\n%s", i, n, cols, screen)
+		}
+	}
+	if !strings.Contains(screen, "┗━") || !strings.Contains(screen, "Esc close") {
+		t.Fatalf("the view's frame is not whole:\n%s", screen)
+	}
+}

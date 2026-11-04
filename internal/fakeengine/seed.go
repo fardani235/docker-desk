@@ -116,6 +116,9 @@ func (s *Server) SeedDemo() {
 	// package lists cleaned up too late, setuid and capability bits, and
 	// binaries with and without hardening (Images › Findings).
 	s.SetImageArchive("shop/api:dev", fixture.OCI(fixture.Demo()).Archive)
+	// python:3.12-slim carries an SBOM made from another build: its
+	// package view (Findings, then i) has every kind of disagreement.
+	s.SetImageArchive("python:3.12-slim", fixture.OCI(fixture.DemoPackages("python:3.12-slim")).Archive)
 }
 
 // seedDisk gives the demo's images the layers real ones have — most of them
