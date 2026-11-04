@@ -2061,6 +2061,59 @@ the tab walks (`]` presses) and every screen capture were updated — nothing el
 **Decided:** `Info Changes Logs Stats Processes Inspect`, as the brief asks. **Cost:** Logs is
 one `]` further, so tests that walked to it by count press it twice.
 
+## Round nine — event navigation and the held view
+
+The Events pane gains a hold and a cursor, and `Enter` on a held event goes to its object. Where
+the brief left a choice open, it was decided here without stopping to ask. No OpenSpec change
+was opened: the brief asked for the capability specs themselves to be edited
+(`engine-events`, `object-selection`).
+
+### E1 — The hold is a copy, not a position in the ring
+
+**Decided:** holding copies all of `Events` (at most 1000 entries) into the model and draws
+only that copy; `‖ held +N` counts the ring's appends since (its end minus the end at the copy,
+so evicted entries count). The old position-based scroll-back (`evFollow`/`evEnd`) is gone: an
+absolute index cannot keep rows still once the ring turns over. **Cost:** up to one extra
+history's worth of memory while held. Nothing in `internal/live` changed; the hub does not know
+the view is held.
+
+### E2 — Keys at the edges
+
+**Decided:** `PgDn`/`Ctrl+F` stop at the newest held entry and do not resume (only `↓` past it,
+`G`, `End`, `Space`, `f` do), so paging down cannot drop a hold by accident. `↓`, `PgDn`, `G`
+while live do nothing. `Space` on an empty history holds nothing and says "No events to hold
+yet." `Esc` leaves the pane and keeps the hold; so does a jump, so `4` returns to the same row.
+`Ctrl+B` counts as a read-back key with `PgUp`.
+
+### E3 — Every row has the gutter, live or held
+
+**Decided:** the two-cell gutter is drawn while following too, so columns do not shift when the
+view is held. Events are therefore two cells narrower than before.
+
+### E4 — Which row an event means
+
+**Decided:** images try, in order, the reference in `name`, the actor ID as a reference (a pull's
+actor is the reference it pulled; the fake and the daemon put only the repository in `name`),
+then the image ID's first row (list order). References are compared exactly, unnormalised.
+An event type outside container/image/volume/network, or with no actor ID, has no object.
+
+### E5 — Absent rows always wait; who cancels the wait
+
+**Decided:** a row not found always waits (`Options.JumpWait`, 2 s; tests use 300 ms), even for
+a `destroy`: deciding "gone" from the action would be wrong for an ID reused by a re-create of a
+volume or network name. The wait marks the list dirty and clears its debounce, so the next
+frame asks. It is retried after every update (`afterChange`), expired on the frame tick, and
+cancelled by leaving the kind — and, beyond the brief, by any key in the List pane, so a late
+row never moves a highlight the operator has already moved. On success the status says
+"Found …" unless a filter was cleared (that notice wins). As in the Space view, a filter is
+cleared even when the row then turns out to be absent.
+
+### E6 — Space in the Details pane only
+
+**Decided:** `Space` no longer pages in Events; `object-selection` now says Details only and
+points to `engine-events` for the Events pane. `TestEventsPane` expects `‖ held +0` where it
+expected `‖ +`.
+
 ## Process
 
 ### B12 — No commits were made

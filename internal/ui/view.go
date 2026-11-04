@@ -93,7 +93,7 @@ func (m *Model) render() []string {
 	dt, dr := m.detailsTitle(l.details.w)
 	details := pane(PaneDetails, l.details, dt, dr, m.renderDetails)
 	et, er := m.eventsTitle()
-	events := pane(PaneEvents, l.events, et, er, m.renderEvents)
+	events := pane(PaneEvents, l.events, et, er, func(w, h int) []string { return m.renderEvents(w, h, m.focus == PaneEvents) })
 	jt, jr := m.jobsTitle()
 	jobsPane := pane(PaneJobs, l.jobs, jt, jr, func(w, h int) []string { return m.renderJobs(w, h, m.focus == PaneJobs) })
 
@@ -349,9 +349,13 @@ func (m *Model) renderHints() string {
 		for _, a := range kindActions[m.kind] {
 			add(a.key, strings.TrimSuffix(a.label, "…"))
 		}
+	case m.focus == PaneEvents && m.evHeld:
+		add("↑↓", "move")
+		add("⏎", "go to object")
+		add("Space", "resume")
 	case m.focus == PaneEvents:
-		add("↑↓", "scroll back")
-		add("G", "follow")
+		add("Space", "hold")
+		add("↑", "read back")
 	case m.focus == PaneJobs:
 		add("↑↓", "move")
 		add("Enter", "output")
@@ -496,8 +500,17 @@ func (m *Model) helpLines(w int) []string {
 	}
 
 	sect("Events pane")
-	row("↑ ↓ PgUp PgDn", "scroll back (new events keep being recorded)")
-	row("G or f", "return to the newest event and follow")
+	row("Space or f", "hold the view: a still copy of the history, with a cursor")
+	row("↑ ↓ PgUp PgDn", "move the cursor; ↑ PgUp g also hold a live view")
+	row("Enter", "held: go to the event's object in its own list")
+	row("↓ past the end, G", "resume following (Space and f too)")
+	out = append(out,
+		"  While held, new events keep being recorded and lists keep refreshing; the",
+		"  title counts them (held +N). Enter selects the container, image, volume or",
+		"  network the event is about, clearing a filter that hides it. An object not",
+		"  listed yet is waited for two seconds. Daemon, plugin and swarm events, and",
+		"  the stream's own markers, name no object. Going to one changes nothing.",
+	)
 
 	sect("Jobs pane")
 	row("Enter", "read the job's full output")

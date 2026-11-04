@@ -161,6 +161,9 @@ func (m *Model) onKindsKey(key string) tea.Cmd {
 
 func (m *Model) onListKey(key string) tea.Cmd {
 	page := max(m.listHeight-1, 1)
+	// A key here means the operator has taken over: a jump from the Events
+	// pane still waiting for its row must not move the highlight later.
+	m.evJump = nil
 	switch key {
 	case "down", "j":
 		m.moveSelection(1)
@@ -324,27 +327,40 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 	return nil
 }
 
+// onEventsKey: live, the pane follows; any key that reads back holds it
+// first. Held, the movement keys move a cursor over the snapshot, and going
+// past its newest entry resumes.
 func (m *Model) onEventsKey(key string) tea.Cmd {
 	page := max(m.eventHeight-1, 1)
 	switch key {
-	case "down", "j":
-		m.scrollEvents(1)
 	case "up", "k":
-		m.scrollEvents(-1)
-	case "pgdown", "ctrl+f", " ":
-		m.scrollEvents(page)
+		m.readBack(-1)
 	case "pgup", "ctrl+b":
-		m.scrollEvents(-page)
+		m.readBack(-page)
 	case "g", "home":
-		m.scrollEvents(-1 << 30)
-	case "G", "end":
-		m.evFollow = true
-	case "f":
-		if m.evFollow {
-			m.scrollEvents(-1)
-		} else {
-			m.evFollow = true
+		m.readBack(-1 << 30)
+	case "down", "j":
+		if m.evHeld {
+			if m.evCur >= len(m.evSnap)-1 {
+				m.resumeEvents()
+			} else {
+				m.moveEventCursor(1)
+			}
 		}
+	case "pgdown", "ctrl+f":
+		if m.evHeld {
+			m.moveEventCursor(page)
+		}
+	case "G", "end":
+		m.resumeEvents()
+	case " ", "f":
+		if m.evHeld {
+			m.resumeEvents()
+		} else {
+			m.holdEvents()
+		}
+	case "enter":
+		m.jumpToEvent()
 	case "esc":
 		m.focus = PaneList
 	}
