@@ -12,7 +12,8 @@ In the List pane, `Space` SHALL toggle the highlighted row in or out of the curr
 selection without moving the highlight, and `a` SHALL add every row the current filter shows.
 Containers, images, volumes and networks SHALL be selectable; compose projects SHALL NOT, and
 `Space` or `a` on them SHALL say so. Each kind SHALL have its own selection. `Space` SHALL keep
-paging in the Details and Events panes. Selecting SHALL send nothing to the daemon and SHALL be
+paging in the Details pane; in the Events pane it holds and resumes the view (see
+engine-events). Selecting SHALL send nothing to the daemon and SHALL be
 allowed in read-only mode.
 
 #### Scenario: Marking
@@ -28,8 +29,12 @@ allowed in read-only mode.
 - **THEN** exactly the rows matching the filter are selected
 
 #### Scenario: Space elsewhere
-- **WHEN** the Details or Events pane is focused and the operator presses `Space`
+- **WHEN** the Details pane is focused and the operator presses `Space`
 - **THEN** that pane pages down and the selection is unchanged
+
+#### Scenario: Space in the Events pane
+- **WHEN** the Events pane is focused and the operator presses `Space`
+- **THEN** the Events view is held (or resumed) and the selection is unchanged
 
 ### Requirement: Selection follows object identity
 A selection SHALL be keyed by object identity (container ID, image ID and reference, volume

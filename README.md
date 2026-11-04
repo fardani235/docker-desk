@@ -446,7 +446,7 @@ and `d` on Images, Volumes and Networks apply to every selected object instead o
 highlighted one. `e` shell, `c` connect and `D` disconnect work on one object only and refuse
 (nothing is sent); `X` prune chooses its own objects and refuses too; `P` pull and `n` new are
 unaffected. The selection is cleared when the job starts, and kept if you decline. `Space`
-still pages in the Details and Events panes.
+still pages in the Details pane; in the Events pane it holds the view.
 
 **Details**: `←` `→` switch tab · `f` pause/resume following (Logs) · `w` toggle wrapping (not Processes).
 **Processes** (Containers): the daemon's default process listing (`GET /containers/{id}/top`,
@@ -469,8 +469,15 @@ job; nothing is read before it) · `c` cancel the comparison.
 **Space** (`S`): `↑` `↓` move between images, containers and volumes · `Enter` go to the
 highlighted one · `r` read the account again · `m` measure writable layers · `c` cancel a
 measurement · `d` remove… · `X` prune… · `S` or `Esc` close.
-**Events**: scroll back with the movement keys — new events keep being recorded — `G` to
-follow again. **Jobs**: `Enter` read a job's full output · `c` cancel a running job · `x` clear
+**Events**: `Space` (or `f`) holds the view: the pane shows a still copy of the history
+(1000 events) with a cursor on the newest, and its title reads `‖ held +N` as new events keep
+being recorded and lists keep refreshing underneath. `↑` `PgUp` `g` hold a live view too. The
+movement keys move the cursor; `↓` past the newest, `G`, `End` or `Space` follow again. `Enter`
+on a held event goes to its object — the container (exec events too), the image reference it
+names, the volume, the network (connect and disconnect too) — in its own list, clearing a filter
+that hides it; an object not listed yet is waited for two seconds, and a marker or a daemon,
+plugin or swarm event says there is nothing to go to. Going there changes nothing and works
+read-only. **Jobs**: `Enter` read a job's full output · `c` cancel a running job · `x` clear
 finished ones.
 
 ### The shell

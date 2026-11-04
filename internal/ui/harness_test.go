@@ -111,6 +111,7 @@ func newBench(t testing.TB, o benchOpts) *bench {
 		PollInterval:  time.Hour, // tests refresh through events, or ask
 		SelectDelay:   10 * time.Millisecond,
 		ArmDelay:      o.arm,
+		JumpWait:      300 * time.Millisecond,
 	})
 	m.hub.MinBackoff, m.hub.MaxBackoff = 10*time.Millisecond, 40*time.Millisecond
 	b := &bench{t: t, srv: srv, eng: eng, m: m, msgs: make(chan tea.Msg, 4096)}

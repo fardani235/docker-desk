@@ -710,3 +710,15 @@ round at the end of the list. `TestChangesView` wrote screens 33 and 34; every o
 changed only by the demo's extra container and images. The `image-changes` OpenSpec change
 validates in strict mode. `go.mod` is unchanged. Decisions are in DECISIONS C1–C12, proof in
 TESTING ("Round eight"). Nothing was committed.
+
+## 43. Round nine — event navigation
+
+The brief: hold the Events pane, put a cursor on it, and let `Enter` go to an event's object.
+The hold is a copy of the ring (DECISIONS E1), because an absolute index cannot keep rows still
+once a burst turns the ring over; the test for that emits 1200 events into a held view and
+compares the drawn rows before and after. Landing reuses the Space view's code, split into
+`landOn` and `selectMatch` with matchers in priority order (an image tries its reference first).
+A row not listed yet is waited for (E5); the test removes a row from the desk's copy of the
+list, so the refresh that finds it is the one the jump asked for. `TestEventsPane` now expects
+`‖ held +0`. `go vet`, gofmt, `go test ./...` and the e2e suite pass; `make build` leaves
+`bin/docker-desk`. Nothing was committed.

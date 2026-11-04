@@ -464,33 +464,56 @@ func (m *Model) deskRowFor(r spRow) row {
 // the List focused.
 func (m *Model) spaceJump(r spRow) {
 	m.sp.open = false
-	m.focus = PaneList
-	m.setKind(r.kind)
-	find := func() int {
-		for i, x := range m.rows[r.kind] {
-			switch {
-			case r.imageID != "" && x.imageID == r.imageID,
-				r.containerID != "" && x.containerID == r.containerID,
-				r.volume != "" && x.volume == r.volume:
-				return i
-			}
-		}
-		return -1
+	found := m.landOn(r.kind, r.name, func(x row) bool {
+		return r.imageID != "" && x.imageID == r.imageID ||
+			r.containerID != "" && x.containerID == r.containerID ||
+			r.volume != "" && x.volume == r.volume
+	})
+	if !found {
+		m.setStatus(toneWarn, r.name+" is no longer in the "+kindNames[r.kind]+" list.")
 	}
-	i := find()
-	if i < 0 && m.filter[r.kind] != "" {
-		m.filter[r.kind] = ""
-		m.invalidateRows(r.kind)
-		m.ensureRows(r.kind)
-		if i = find(); i >= 0 {
-			m.setStatus(toneDim, "Cleared the "+kindNames[r.kind]+" filter: it hid "+r.name+".")
+}
+
+// landOn focuses the List on kind k and highlights the first row match
+// accepts. A filter that hides the row is cleared, and the status line says
+// so. Several matchers are tried in order: the first that accepts any row
+// decides. It reports whether a row was found; when none was, the List is
+// still focused on k and the highlight is unchanged.
+func (m *Model) landOn(k Kind, name string, match ...func(row) bool) bool {
+	m.focus = PaneList
+	m.setKind(k)
+	return m.selectMatch(k, name, match...)
+}
+
+// selectMatch is landOn without moving the focus or the kind.
+func (m *Model) selectMatch(k Kind, name string, match ...func(row) bool) bool {
+	m.ensureRows(k)
+	i := m.findRow(k, match...)
+	if i < 0 && m.filter[k] != "" {
+		m.filter[k] = ""
+		m.invalidateRows(k)
+		m.ensureRows(k)
+		if i = m.findRow(k, match...); i >= 0 {
+			m.setStatus(toneDim, "Cleared the "+kindNames[k]+" filter: it hid "+name+".")
 		}
 	}
 	if i < 0 {
-		m.setStatus(toneWarn, r.name+" is no longer in the "+kindNames[r.kind]+" list.")
-		return
+		return false
 	}
-	m.selectIndex(i)
+	s := &m.sel[k]
+	s.idx, s.key = i, m.rows[k][i].key
+	return true
+}
+
+func (m *Model) findRow(k Kind, match ...func(row) bool) int {
+	for _, ok := range match {
+		for i, x := range m.rows[k] {
+			if ok(x) {
+				return i
+			}
+		}
+	}
+	return -1
 }
 
 // ---- rows -------------------------------------------------------------------------

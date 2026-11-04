@@ -99,6 +99,9 @@ type Options struct {
 	// been open before it accepts the input that proceeds (250 ms). Keys
 	// typed ahead of a dialog cannot consent to it. Negative disables.
 	ArmDelay time.Duration
+	// JumpWait is how long a jump from the Events pane waits for its
+	// object to appear in a list that has not been refreshed yet (2 s).
+	JumpWait time.Duration
 	// FindingsAskAbove is the image size above which the Findings tab asks
 	// before analysing an image on a remote daemon (500 MB). Negative
 	// never asks.
@@ -176,8 +179,14 @@ type Model struct {
 	listPrint [listCount]string
 
 	// ---- events pane ----
-	evFollow    bool
-	evEnd       uint64
+	// While held, the pane shows evSnap — a copy of the ring taken when the
+	// hold began — and a cursor on it; the ring keeps filling underneath.
+	evHeld      bool
+	evSnap      []live.EventEntry
+	evSnapEnd   uint64 // the ring's end when the snapshot was taken
+	evCur       int    // cursor, an index into evSnap
+	evOff       int    // first snapshot row drawn
+	evJump      *eventJump
 	eventHeight int
 
 	// ---- jobs pane ----
@@ -241,6 +250,9 @@ func New(opts Options) *Model {
 	if opts.SelectDelay <= 0 {
 		opts.SelectDelay = 100 * time.Millisecond
 	}
+	if opts.JumpWait <= 0 {
+		opts.JumpWait = 2 * time.Second
+	}
 	if opts.ArmDelay == 0 {
 		opts.ArmDelay = 250 * time.Millisecond
 	}
@@ -266,7 +278,6 @@ func New(opts Options) *Model {
 		filterIn:     in,
 		logFollow:    true,
 		logWrap:      true,
-		evFollow:     true,
 		dirty:        true,
 		wasConnected: true,
 	}
@@ -493,6 +504,9 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		m.collectFindings()
 	}
 
+	// A jump from the Events pane still waiting for its row.
+	m.expireEventJump(now)
+
 	// The Space view's measurements, and its ages, which move each second.
 	m.collectSpace()
 	if m.sp.open {
@@ -620,6 +634,7 @@ func (m *Model) onList(msg listMsg) tea.Cmd {
 // the data, the kind, the highlight or the tab.
 func (m *Model) afterChange() {
 	m.ensureRows(m.kind)
+	m.retryEventJump()
 	key := m.currentDetailKey()
 	if key != m.wantDetail {
 		m.wantDetail = key

@@ -44,9 +44,15 @@ var eventKinds = map[string]string{"container": "ctr", "image": "img", "volume":
 // that it is never the part cut off by a narrow pane. nameOf resolves a
 // container ID to its name when the desk knows it.
 func formatEvent(e live.EventEntry, st styles, w int, nameOf func(id string) string) string {
+	line, t := eventText(e, w, nameOf)
+	return st.tone(t, line)
+}
+
+// eventText is formatEvent's text, fitted to w, and its tone.
+func eventText(e live.EventEntry, w int, nameOf func(id string) string) (string, tone) {
 	ts := e.Time.Local().Format("15:04:05")
 	if e.Marker != "" {
-		return st.tone(toneWarn, fit(ts+" ── "+e.Marker+" ──", w))
+		return fit(ts+" ── "+e.Marker+" ──", w), toneWarn
 	}
 	ev := e.Event
 	name := ev.Name()
@@ -90,28 +96,30 @@ func formatEvent(e live.EventEntry, st styles, w int, nameOf func(id string) str
 	if extra != "" {
 		line += "  " + extra
 	}
-	return st.tone(eventTone(ev), fit(line, w))
+	return fit(line, w), eventTone(ev)
 }
 
-func (m *Model) renderEvents(w, h int) []string {
+// renderEvents draws the tail of the ring, or the held snapshot with its
+// cursor. Every row has a two-cell gutter, so the columns do not move when
+// the view is held.
+func (m *Model) renderEvents(w, h int, focused bool) []string {
 	m.eventHeight = h
-	first, end := m.hub.Events.Bounds()
-	viewEnd := end
-	if !m.evFollow {
-		viewEnd = m.evEnd
-		if viewEnd > end {
-			viewEnd = end
+	var entries []live.EventEntry
+	cur := -1
+	if m.evHeld {
+		m.evCur = clamp(m.evCur, 0, len(m.evSnap)-1)
+		if m.evCur < m.evOff {
+			m.evOff = m.evCur
 		}
-		if viewEnd < first+1 && end > first {
-			viewEnd = first + 1
+		if m.evCur >= m.evOff+h {
+			m.evOff = m.evCur - h + 1
 		}
-		m.evEnd = viewEnd
+		m.evOff = clamp(m.evOff, 0, max(len(m.evSnap)-h, 0))
+		entries = m.evSnap[m.evOff:min(m.evOff+h, len(m.evSnap))]
+		cur = m.evCur - m.evOff
+	} else {
+		entries = m.hub.Events.Tail(h)
 	}
-	from := first
-	if viewEnd > uint64(h) && viewEnd-uint64(h) > first {
-		from = viewEnd - uint64(h)
-	}
-	entries, _ := m.hub.Events.Read(from, viewEnd)
 	if len(entries) == 0 {
 		return []string{
 			m.st.tone(toneDim, "Waiting for engine events…"),
@@ -130,42 +138,31 @@ func (m *Model) renderEvents(w, h int) []string {
 		return engine.ShortID(id)
 	}
 	out := make([]string, 0, h)
-	for _, e := range entries {
-		out = append(out, formatEvent(e, m.st, w, nameOf))
+	for i, e := range entries {
+		line, t := eventText(e, w-2, nameOf)
+		switch {
+		case i == cur && focused:
+			out = append(out, m.st.selected.Render("▸ "+line))
+		case i == cur:
+			out = append(out, "▸ "+m.st.tone(t, line))
+		default:
+			out = append(out, "  "+m.st.tone(t, line))
+		}
 	}
 	return out
 }
 
 func (m *Model) eventsTitle() (title, right string) {
 	title = "4 Events"
-	_, end := m.hub.Events.Bounds()
 	switch {
 	case !m.hub.Connected():
 		right = "✗ disconnected"
-	case !m.evFollow:
-		right = fmt.Sprintf("‖ +%d newer", end-m.evEnd)
+	case m.evHeld:
+		right = fmt.Sprintf("‖ held +%d", m.eventsNewer())
 	default:
 		right = "● live"
 	}
 	return title, right
-}
-
-func (m *Model) scrollEvents(delta int) {
-	first, end := m.hub.Events.Bounds()
-	cur := end
-	if !m.evFollow {
-		cur = m.evEnd
-	}
-	next := int64(cur) + int64(delta)
-	if next < int64(first)+1 {
-		next = int64(first) + 1
-	}
-	if next >= int64(end) {
-		m.evFollow = true
-		return
-	}
-	m.evFollow = false
-	m.evEnd = uint64(next)
 }
 
 // ---- Jobs pane -------------------------------------------------------------------------

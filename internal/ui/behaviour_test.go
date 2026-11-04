@@ -497,7 +497,7 @@ func TestEventsPane(t *testing.T) {
 	}
 	b.see("probe-59")
 	b.keys("4", "pgup")
-	b.see("‖ +")
+	b.see("‖ held +0")
 	b.srv.Emit("container", "oom", b.srv.ContainerID("shop-web-1"), map[string]string{"name": "late-oom"})
 	b.until("event recorded", func() bool { last, _ := b.m.hub.Events.Last(); return last.Event.Action == "oom" })
 	b.settle()
