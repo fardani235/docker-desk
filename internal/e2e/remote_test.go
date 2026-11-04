@@ -58,7 +58,7 @@ func launchEnv(t *testing.T, srv *fakeengine.Server, rows, cols int, env []strin
 func (d *desk) stopAndWatch(shot string, daemon ...string) {
 	d.t.Helper()
 	d.keys("2", "/", "s", "h", "o", "p", "-", "w", "e", "b", ptyscreen.Enter)
-	d.see("2 Containers (1 of 12)")
+	d.see("2 Containers (1 of 13)")
 	d.srv.ResetRequests()
 	d.keys("t")
 	d.see(append([]string{"Stop container", "shop-web-1"}, daemon...)...)
@@ -91,7 +91,7 @@ func (d *desk) shellRoundTrip() {
 	d.keys("e", "x", "i", "t", P)
 	d.see("Back from the shell in shop-api-1", "4 Events")
 	d.keys(ptyscreen.Esc)
-	d.see("2 Containers (12)")
+	d.see("2 Containers (13)")
 }
 
 func TestRemoteOverTCP(t *testing.T) {
@@ -104,7 +104,7 @@ func TestRemoteOverTCP(t *testing.T) {
 	d := launchEnv(t, srv, 40, 150, nil, "--host", srv.Host())
 	// A loopback address is not called remote; that it is not encrypted is
 	// said all the same.
-	d.see("Docker Desk", srv.Host(), "[tcp, NO TLS]", "on far-away", "● connected", "2 Containers (12)", "shop-web-1")
+	d.see("Docker Desk", srv.Host(), "[tcp, NO TLS]", "on far-away", "● connected", "2 Containers (13)", "shop-web-1")
 	d.see("%") // statistics streams are running over TCP
 	d.stopAndWatch("19-remote-tcp-confirm", srv.Host()+"  (context default)  [tcp, NO TLS]")
 	d.shellRoundTrip()
@@ -132,7 +132,7 @@ func TestRemoteOverTLS(t *testing.T) {
 
 	env := []string{"DOCKER_HOST=" + srv.Host(), "DOCKER_TLS_VERIFY=1", "DOCKER_CERT_PATH=" + certs}
 	d := launchEnv(t, srv, 40, 150, env)
-	d.see("Docker Desk", srv.Host(), "[tls]", "on far-away", "● connected", "2 Containers (12)")
+	d.see("Docker Desk", srv.Host(), "[tls]", "on far-away", "● connected", "2 Containers (13)")
 	d.see("%")
 	d.stopAndWatch("", srv.Host()+"  (context default)  [tls]")
 	d.shellRoundTrip()
@@ -191,7 +191,7 @@ func TestRemoteOverSSH(t *testing.T) {
 
 	env := []string{"DOCKER_HOST=" + url, "DOCKER_DESK_SSH=" + sshd.CommandString(), "TMPDIR=" + tmp}
 	d := launchEnv(t, srv, 42, 170, env)
-	d.see("Docker Desk", url, "[ssh]", "on far-away", "● connected", "2 Containers (12)", "shop-web-1")
+	d.see("Docker Desk", url, "[ssh]", "on far-away", "● connected", "2 Containers (13)", "shop-web-1")
 	// Said on the ordinary screen, before the desk took the terminal.
 	if raw := d.term.Raw(); !strings.Contains(raw[:strings.Index(raw, "\x1b[?1049h")], "opening an SSH tunnel to "+srv.Socket()) {
 		t.Errorf("the launch should say that it is opening a tunnel:\n%q", lastBytes(raw, 300))
@@ -203,7 +203,7 @@ func TestRemoteOverSSH(t *testing.T) {
 	d.shot("20-remote-ssh")
 
 	// Logs follow, a mutation and its events, and the shell — through ssh.
-	d.keys("]")
+	d.keys("]", "]")
 	d.see("[Logs]", "● following")
 	d.keys("[")
 	// The endpoint names the socket and is long: the context and the tag
@@ -227,7 +227,7 @@ func TestRemoteOverSSH(t *testing.T) {
 		t.Fatal(err)
 	}
 	d.keys(ptyscreen.Up, "2")
-	d.see("2 Containers (12)")
+	d.see("2 Containers (13)")
 
 	d.keys("q")
 	if code := d.quit(); code != 0 {
@@ -273,7 +273,7 @@ func TestSSHAsksOnTheTerminalBeforeTheDesk(t *testing.T) {
 	if err := d.term.Send("correct horse\r"); err != nil {
 		t.Fatal(err)
 	}
-	d.see("Docker Desk", url, "[ssh]", "● connected", "2 Containers (12)")
+	d.see("Docker Desk", url, "[ssh]", "● connected", "2 Containers (13)")
 	if !d.term.AltScreen() {
 		t.Fatal("the desk did not open after the passphrase was given")
 	}
@@ -332,7 +332,7 @@ func TestKilledDeskTakesItsSSHAlong(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(term.Close)
-	if err := term.WaitFor(wait, "● connected", "2 Containers (12)"); err != nil {
+	if err := term.WaitFor(wait, "● connected", "2 Containers (13)"); err != nil {
 		t.Fatal(err)
 	}
 	ssh := sshProcesses(sshd)
@@ -393,7 +393,7 @@ func TestJumpHostNeverAsksUnderTheDesk(t *testing.T) {
 	}
 	answer(1) // the jump host
 	answer(2) // the target, through it
-	d.see("Docker Desk", url, "[REMOTE ssh]", "● connected", "2 Containers (12)")
+	d.see("Docker Desk", url, "[REMOTE ssh]", "● connected", "2 Containers (13)")
 
 	sshd.Stop()
 	d.see("DISCONNECTED")
@@ -439,7 +439,7 @@ func TestHangUpCleansUp(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(term.Close)
-	if err := term.WaitFor(wait, "● connected", "2 Containers (12)"); err != nil {
+	if err := term.WaitFor(wait, "● connected", "2 Containers (13)"); err != nil {
 		t.Fatal(err)
 	}
 	out, err := exec.Command("ps", "-o", "ppid=", "-p", sshProcesses(sshd)).Output()
@@ -582,7 +582,7 @@ func TestThemes(t *testing.T) {
 		draculaAccent = "38;2;189;147;249" // #bd93f9
 		draculaSelect = ";48;2;68;71;"     // #44475a behind the highlighted row (the last digit is rounded)
 		nordAccent    = "38;2;136;192;208" // #88c0d0
-		firstPane     = "┏━ ◆ 2 Containers (12)"
+		firstPane     = "┏━ ◆ 2 Containers (13)"
 	)
 	host := "DOCKER_HOST=" + srv.Host()
 

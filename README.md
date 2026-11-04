@@ -187,7 +187,7 @@ the desk keeps answering keys, and everything resumes by itself when the daemon 
 | --- | --- |
 | **1 Kinds** | Containers, Images, Volumes, Networks, Compose — with live counts. Moving the highlight is enough; the list follows. |
 | **2 List** | The objects of that kind. Containers show live CPU and memory. The highlight follows the *object* when the list changes underneath it. |
-| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON), for containers **Logs** (live follow), **Stats** (CPU, memory, network, disk — with history) and **Processes** (a snapshot of `docker top`; see below), and for images **Findings** (what the image's own bytes hold; see below). |
+| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON), for containers **Changes** (what the image its tag names now would bring; see below), **Logs** (live follow), **Stats** (CPU, memory, network, disk — with history) and **Processes** (a snapshot of `docker top`; see below), and for images **Findings** (what the image's own bytes hold; see below). |
 | **4 Events** | The engine's event stream as it happens. It is the answer to everything you do — and to everything anyone else does to this daemon. |
 | **5 Jobs** | Every change you asked for, running in the background: progress while it runs, the daemon's answer when it ends. |
 | **Space** (`S`) | Not a pane: a full-screen account of the disk — the daemon's totals, unique and shared bytes per image, what a removal frees. See [Space](#space--where-the-bytes-went-and-what-removing-something-frees). |
@@ -242,6 +242,42 @@ Read-only mode works unchanged: everything is a GET.
 
 Secrets are masked everywhere. `v` reveals the one under the cursor; it hides again when the
 cursor moves. A secret's value never goes into a job, an error, a log or a file.
+
+### Changes — what re-creating a container would bring
+
+The desk already says when a tag has moved: an image finding (`supply.tag-moved`) notes that a
+container runs bytes its tag no longer names. Containers › **Changes**, the tab after Info,
+says what the difference *is*, so that you know what a re-deploy brings before you do it.
+
+The pair needs no history: a container keeps its image alive, so the image it runs is still
+here (untagged if need be), and the image the tag names now is whichever local image carries
+that tag. Drawn at once, from four requests at most — an inspect and a history of each image;
+the reference the container was created from comes from the inspect the Details pane already
+made:
+
+- **identities**: both IDs, ages and sizes, and the size difference;
+- **layers**, from both images' ordered diff IDs: *base intact: all N layers shared, M added*,
+  or where the two stacks part — each layer outside the shared part with its size and the
+  build instruction that made it (build-argument values left out, as in Findings). When the
+  history does not map onto the layers, the instruction is *unknown*, with the reason;
+- **config**: command, entrypoint, user, working directory, exposed ports, health check,
+  labels, and environment variable **names** — added or removed. Values are dropped where the
+  daemon's answer is decoded; they are never read, so a variable whose value changed under the
+  same name cannot be seen, and the tab says so.
+
+`Enter` then compares the contents, as a job (*compare images*) that reads both archives the
+way Findings does — streamed from `GET /images/get`, read once, nothing written to disk — and
+lists packages added, removed and at another version (dpkg, apk, rpm) and archive findings
+that appeared or disappeared. A report Findings already made is used, not read again, and
+the reports the job makes are Findings' too, so a second open is instant. `c` cancels.
+Nothing is read before `Enter`.
+
+When there is nothing to compare, the tab says why: the container was created from a digest
+or an image ID (nothing can move); its tag no longer resolves here (the desk does not pull to
+find out); the tag still names the image it runs; the two images are for different platforms;
+or — once the archives are read — a layer of either could not be read. It also says, always:
+**restarting a container keeps the image it runs; only re-creating it takes the new one —
+which this desk does not do.** There is no update button, and no score.
 
 ### Image packages — the declared list against the installed one
 
@@ -422,6 +458,8 @@ processes are available only for running containers. Long values are cut to the 
 the movement keys scroll the rows. Command lines are shown as the daemon reports them,
 arguments included — nothing is masked, so a secret passed on a command line is visible here,
 as it is to `docker top`; process rows are never written to jobs, the status line or files.
+**Changes** (Containers): `↑` `↓` scroll · `Enter` compare the contents of both images (a
+job; nothing is read before it) · `c` cancel the comparison.
 **Findings** (Images): `↑` `↓` move between findings · `o` order by layer / group / certainty ·
 `v` reveal the highlighted secret · `i` the image's packages · `c` cancel the analysis ·
 `Enter` analyse when asked first or after a failure.
@@ -551,6 +589,9 @@ Good to know:
   "together" and a prune's "frees" are then "at least" the members' unique sizes, and say
   why. In the classic store, removing an image can also delete untagged parent images; their
   layers are part of its shared size and are not claimed as freed.
+- Changes compares the image a container runs with the image its reference names *here*: it
+  never asks a registry. No file-level difference is made — a layer's build instruction says
+  what it changed. Environment variables are compared by name only.
 - Findings do not consult a vulnerability database: Go module versions are listed, not judged.
   zstd-compressed layers cannot be walked (the standard library has no decoder) and are
   reported as unreadable. Stack canaries are judged only for dynamically linked executables.
@@ -568,10 +609,15 @@ make sandbox
 
 starts `fake-dockerd` — an in-memory engine that speaks the real Docker API, seeded with two
 compose projects, containers in every state, a container that logs 20,000 lines a second, one
-without a shell, one that takes four seconds to stop, dangling images, unused volumes and an
-orphan network — and opens the desk on it. The header shows the sandbox socket. Nothing there
+without a shell, one that takes four seconds to stop, dangling images, unused volumes, an
+orphan network, and `report-job`, whose tag `acme/report:1.4` has since moved to a newer build
+(Containers › Changes) — and opens the desk on it. The header shows the sandbox socket. Nothing there
 is real; break whatever you like. (The real `docker` CLI works against it too:
 `DOCKER_HOST=unix:///tmp/docker-desk-sandbox.sock docker ps`.)
+
+`./bin/fake-dockerd -changes` adds a container for every case Changes has nothing to compare
+(pinned to a digest, created from an ID, a tag that no longer resolves, another platform, an
+unreadable layer) and one rebuilt on another base.
 
 To see how a daemon that is not a local socket is presented, without having one:
 
@@ -616,6 +662,7 @@ internal/sshtunnel     the one supervised ssh process that carries an ssh:// dae
 internal/engine        the only door to the daemon (Docker's client library behind a narrow interface)
 internal/plan          what a mutation will do, decided by pure code before anything is sent
 internal/space         which bytes images share, and what removing a set of them frees (pure)
+internal/changes       what differs between the image a container runs and the one its tag names (pure)
 internal/forensics     what an image's own archive holds, read as one stream: findings, the SBOM's
                        packages, the installed dpkg/apk/rpm databases (with its own SQLite reader)
 internal/jobs          background jobs and their ledger

@@ -159,7 +159,7 @@ func TestSpaceFitsAndScrolls(t *testing.T) {
 		b := newBench(t, benchOpts{width: sz[0], height: sz[1]})
 		b.openSpace()
 		b.assertFrameGeometry()
-		b.see("Images", "1.326GB (40%)")
+		b.see("Images", "1.333GB (39%)")
 		rows := b.m.spaceObjectRows()
 		for i := 0; i < len(rows)+2; i++ {
 			b.keys("j")
@@ -514,7 +514,7 @@ func TestSpaceInReadOnlyMode(t *testing.T) {
 	b := newBench(t, benchOpts{readOnly: true, width: 80, height: 24})
 	b.srv.ResetRequests()
 	b.openSpace()
-	b.see("[READ-ONLY]", "1.326GB (40%)", "alone      frees")
+	b.see("[READ-ONLY]", "1.333GB (39%)", "alone      frees")
 	hints := strings.Split(b.screen(), "\n")
 	last := hints[len(hints)-1]
 	if strings.Contains(last, "remove") || strings.Contains(last, "prune") {

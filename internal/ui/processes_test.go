@@ -235,12 +235,12 @@ func TestProcessTableCells(t *testing.T) {
 	}
 }
 
-// TestDetailsTabStripFitsNarrowPanes: with five container tabs the strip no
+// TestDetailsTabStripFitsNarrowPanes: with six container tabs the strip no
 // longer fits at 80 columns; the active tab is still named.
 func TestDetailsTabStripFitsNarrowPanes(t *testing.T) {
 	b := newBench(t, benchOpts{width: 80, height: 24})
 	openProcesses(b, "shop-web-1")
-	b.see("[Processes] 4/5")
+	b.see("[Processes] 5/6")
 	b.step(tea.WindowSizeMsg{Width: 140, Height: 40})
-	b.see("Info Logs Stats [Processes] Inspect")
+	b.see("Info Changes Logs Stats [Processes] Inspect")
 }

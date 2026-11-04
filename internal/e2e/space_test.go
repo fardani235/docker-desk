@@ -53,9 +53,9 @@ func TestSpace(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			srv := startFake(t, func(s *fakeengine.Server) { s.SeedDemo() })
 			d := launch(t, srv, tc.rows, tc.cols, tc.args...)
-			d.see("2 Containers (12)")
+			d.see("2 Containers (13)")
 			d.keys("1", ptyscreen.Down, "2") // the Images list
-			d.see("2 Images (14")
+			d.see("2 Images (16")
 			d.keys("S")
 			d.see("Space — where the bytes went", "RECLAIMABLE", "alone")
 
@@ -90,12 +90,24 @@ func TestSpace(t *testing.T) {
 				// The removal the view leads to: the desk's own dialog,
 				// with what it frees — unique bytes, not the size.
 				// Up to <none> 8bae7d2a8907, the earlier build of the worker.
+				// Under load the screen can lag the keys and the cursor pass
+				// the row: at the end of the list, turn round.
+				dir, last, still := "k", "", 0
 				err := d.term.WaitUntil(wait, "the cursor on the earlier build", func(s string) bool {
 					if strings.Contains(s, "▸ <none> 8bae7d2a8907") {
 						return true
 					}
-					_ = d.term.Send("k")
-					time.Sleep(30 * time.Millisecond)
+					if s == last {
+						still++
+					} else {
+						still = 0
+					}
+					if still == 5 {
+						dir, still = map[string]string{"k": "j", "j": "k"}[dir], 0
+					}
+					last = s
+					_ = d.term.Send(dir)
+					time.Sleep(60 * time.Millisecond)
 					return false
 				})
 				if err != nil {
@@ -120,7 +132,7 @@ func TestSpace(t *testing.T) {
 			}
 			d.keys(ptyscreen.Esc)
 			d.gone("Space — where the bytes went")
-			d.see("◆ 2 Images (14") // back where it was
+			d.see("◆ 2 Images (16") // back where it was
 			for _, r := range srv.Requests() {
 				if r.Mutating() || strings.Contains(r.Query, "size=1") || strings.Contains(r.Path, "prune") {
 					t.Fatalf("the Space view sent %s", r)

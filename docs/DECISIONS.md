@@ -1959,6 +1959,108 @@ decompressed once. **Alternative:** lengthen the e2e waits, or mark the heavy te
 both would have hidden the cost instead of removing it, and the first changes tests this round
 had no reason to touch.
 
+## Round eight — image changes
+
+The `image-changes` change: a Changes tab on Containers that says what differs between the
+image a container runs and the image its reference names now. Where the brief left a choice
+open, it was decided here without stopping to ask.
+
+### C1 — The pair: the container's own reference, resolved among local images
+
+**Decided:** the running image is the container's `ImageID`; the reference is `Config.Image`
+from the container inspect the Details pane already makes (the list shows an ID instead once
+the tag has moved, so the list cannot be used); the new image is the local image carrying that
+reference now, resolved by the same normalisation `supply.tag-moved` uses (exported as
+`forensics.ResolveRef`, the rule itself untouched). No registry is asked. **Alternative:**
+resolve against a registry — a network call, credentials, and a second meaning of "now".
+
+### C2 — Four requests: one new engine read, `ImageFacts`
+
+**Decided:** opening the tab costs an inspect and a history per image (`ImageFacts`, two GETs),
+so four at most; the facts are kept by image ID (sixteen), which never changes meaning, so a
+second visit costs nothing. A refusal known from the list alone (pinned, created from an ID,
+unresolved, the same image) costs two. `ImageFacts` has no `Raw` document and decodes
+environment variables to their names (`engine.EnvNames`): values never leave the engine
+package, so no view, job, error or log can show one. **Alternative:** reuse `InspectImage` —
+its `Raw` carries every value.
+
+### C3 — Lineage from diff IDs; instructions only where history maps
+
+**Decided:** the shared part is the longest common prefix of the ordered diff IDs. Either the
+base is intact (every running layer starts the new stack) and *N added*, or the stacks diverge
+after layer k (k may be 0). Instructions and sizes are attributed by Space's rule (U-round):
+only when exactly as many history entries made a layer as there are layers, or when every
+entry did; otherwise *unknown*, with the counts. Instructions go through the findings'
+`cleanInstruction` (exported as `forensics.Instruction`): build-argument values are left out
+and secret-shaped text masked.
+
+### C4 — The config difference, and what it cannot see
+
+**Decided:** entrypoint, command, user, working directory and health check as single values
+(added, removed, changed); exposed ports and environment names as sets; labels by key, with
+values (labels are not secrets in Docker's model, and the brief limits the no-values rule to
+the environment). A variable whose value changed under the same name cannot be seen — the tab
+says so on every draw rather than hint at it.
+
+### C5 — Content comparison: the Findings analysis, twice, as one job
+
+**Decided:** `Enter` starts *compare images*, which streams the archive of each image that
+Findings has not already analysed for that platform, through the same `forensics.Analyse`
+with the same limits, one after the other. The reports go into Findings' cache, so either
+tab then opens instantly. Only counts, short IDs and the desk's own words are logged.
+**Alternative:** a separate cache — two copies of the same report.
+
+### C6 — Packages by ecosystem, name and architecture
+
+**Decided:** for each of dpkg, apk and rpm present on either side: added, removed, and
+version changed (same name and architecture). A database unknown on either side, or bounded
+below its total, is not compared and says why; rpm's `gpg-pubkey` pseudo-entries are skipped.
+Added packages carry the layer that introduced them.
+
+### C7 — Findings match by rule, path and evidence; layer findings by instruction
+
+**Decided:** a finding's identity across two images leaves the layer number out (a rebuilt
+layer moves), and a layer-group finding is matched by its instruction because its evidence is
+a share of the whole image's size, which any added layer changes. Live findings are not
+compared: they describe this daemon, not either image. Masked evidence stays masked.
+
+### C8 — Every refusal, with its reason
+
+**Decided:** in order: created from an image ID; pinned to a digest; the tag no longer
+resolves here; the same image on both sides — all from the list; then different platforms
+(from the facts); then an unreadable or missing layer in either archive (from the reports),
+which refuses the whole content comparison, because anything seen on one side only could be
+in it. Each is one sentence on the tab, and none offers an action.
+
+### C9 — Restart is not re-create, said every time
+
+**Decided:** every state of the tab ends with the same line: restarting keeps the image a
+container runs, only re-creating takes the new one, which this desk does not do. No button,
+no key, no score.
+
+### C10 — Keys: the existing ones
+
+**Decided:** `Enter` compares (it already means "read the expensive thing" on Findings), `c`
+cancels (as on Findings; the Jobs pane's `c` works too), the movement keys scroll. Moving to
+another container while the tab is shown cancels a comparison in flight, as Findings does.
+Text wraps at spaces only, so instructions and argument lists keep their hyphens.
+
+### C11 — The fake daemon: one moved tag in the demo, every refusal behind `-changes`
+
+**Decided:** `SeedDemo` gains `acme/report:1.4` in two builds and `report-job` (exited) on the
+older: the base kept, two layers added (curl and fonts, a purge, an upgrade; a token-bearing
+config file), user, command, port, health check, labels and variable names changed.
+`SeedChanges` (and `fake-dockerd -changes`) adds a container for every refusal and one rebuilt
+on another base; it is not in the demo so its lists stay readable. `SetImageFixture` makes
+inspect, history and the archive agree, with diff IDs from the fixture's real layer tars.
+**Cost:** the demo has one container and two images more: counts in engine, UI and e2e tests,
+the tab walks (`]` presses) and every screen capture were updated — nothing else in them.
+
+### C12 — Where the tab sits
+
+**Decided:** `Info Changes Logs Stats Processes Inspect`, as the brief asks. **Cost:** Logs is
+one `]` further, so tests that walked to it by count press it twice.
+
 ## Process
 
 ### B12 — No commits were made
@@ -1976,4 +2078,5 @@ the machine. (`go install` into a scratch directory was verified to work.)
 
 All tasks are done and the change validates. Archiving — which folds the capability specs into
 `openspec/specs/` — is an acceptance step and was left for after review (`/opsx:archive`). The same holds for
-round five's `disk-space` change, and round seven's `image-packages` change.
+round five's `disk-space` change, round seven's `image-packages` change, and round eight's
+`image-changes` change.

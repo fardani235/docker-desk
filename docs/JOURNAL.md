@@ -667,3 +667,46 @@ rpm reports (section 32), and so does the real daemon's archive of the same imag
 validates in strict mode. `go.mod` is unchanged. Decisions are in DECISIONS K1–K15, proof in
 TESTING ("Round seven"). Nothing was committed, and nothing was installed outside the
 repository.
+
+## 38. Image changes: the pair first
+
+Round eight's brief: a Changes tab on Containers explaining what a moved tag would bring. The
+first question was what to compare. The container list shows an image ID once the tag has
+moved, so the reference comes from the container inspect the Details pane already makes;
+the new image is the local image carrying that reference, by the rule `supply.tag-moved`
+already uses (exported, not changed). The pair and every refusal that needs only the list
+went into a pure package, `internal/changes`, and were tested before any UI existed.
+
+## 39. Four requests, and no value
+
+`InspectImage` keeps the whole inspect document, environment values included, for the
+Inspect tab. Rather than filter it later, a new read, `ImageFacts`, decodes inspect and history
+into a struct with no raw document and environment *names* only, so a value cannot reach the
+tab, a job or a log by mistake; a test prints the struct every way and looks for the values.
+Two of these are the tab's four requests.
+
+## 40. The fake learns configs
+
+The fake's inspect answered every image with the same config. It now keeps one per image, and
+`SetImageFixture` sets the archive, the config, the labels and the layers' diff IDs from one
+fixture, taken from the real layer tars, so that inspect, history and `GET /images/get` agree.
+The demo gained `report-job` on the older of two `acme/report:1.4` builds. That moved counts in
+engine, plan, UI and e2e tests and every screen; those numbers, and the `]` presses that walk to
+Logs past the new tab, are the only edits to existing tests.
+
+## 41. Two things found by looking at the screen
+
+The first draw split words mid-way (`cur`/`l`) and `ansi.Wrap` then split at hyphens
+(`--` / `no-install-recommends`), which garbles instructions; the tab wraps at spaces only. The
+first UI test waited on a cache that is filled only when the tab is drawn; it waits on the drawn
+text instead.
+
+## 42. Final state
+
+`go vet` and gofmt are clean. `make test` and `make race` pass. The first `make race` failed once
+in `e2e.TestSpace`: its walk up the Images list, two rows longer now, overshot the row under
+load and could never come back; it passes alone three times in a row, and the walk now turns
+round at the end of the list. `TestChangesView` wrote screens 33 and 34; every other screen
+changed only by the demo's extra container and images. The `image-changes` OpenSpec change
+validates in strict mode. `go.mod` is unchanged. Decisions are in DECISIONS C1–C12, proof in
+TESTING ("Round eight"). Nothing was committed.

@@ -43,7 +43,7 @@ func TestFloodDoesNotStarveTheDesk(t *testing.T) {
 	b := newBench(t, benchOpts{seed: floodSeed(rate), frame: frame, stats: 100 * time.Millisecond})
 	b.m.focus = PaneList
 	b.selectRow("aa-flood")
-	b.keys("]")
+	b.keys("]", "]") // Info Changes Logs
 	b.see("[Logs]", "● following")
 	b.until("statistics for every running container", func() bool { return b.m.hub.StatsStreams() == 9 })
 
@@ -144,7 +144,7 @@ func TestLongLinesAreBounded(t *testing.T) {
 		s.AddContainer(fakeengine.ContainerSpec{Name: "blob", Image: "app:1"})
 	}})
 	b.m.focus = PaneList
-	b.keys("]")
+	b.keys("]", "]") // Info Changes Logs
 	b.see("● following")
 	huge := make([]byte, 3<<20)
 	for i := range huge {
@@ -205,7 +205,7 @@ func BenchmarkFrame(b *testing.B) {
 	bn := newBench(b, benchOpts{seed: floodSeed(200_000), frame: 50 * time.Millisecond, width: 180, height: 50})
 	bn.m.focus = PaneList
 	bn.selectRow("aa-flood")
-	bn.keys("]")
+	bn.keys("]", "]") // Info Changes Logs
 	bn.see("● following")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

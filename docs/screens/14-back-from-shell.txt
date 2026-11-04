@@ -1,42 +1,42 @@
- Docker Desk  unix:///tmp/ddfake2330034966/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
-┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-api ━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│▸ Containers    12│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│14:46:41 ctr kill sig 15 shop-web-1           │
-│  Images        15│┃▸ shop-api-1       shop/api:dev   ● running   146.8%    449MiB  Up 3 hours      ┃│14:46:41 ctr die exit 0 shop-web-1            │
-│  Volumes        5│┃                                                                                ┃│14:46:41 net disconnect shop_default  ← shop-…│
-│  Networks       7│┃                                                                                ┃│14:46:41 ctr stop       shop-web-1            │
-│  Compose        2│┃                                                                                ┃│14:46:42 net connect    shop_default  ← shop-…│
-│                  │┃                                                                                ┃│14:46:42 ctr start      shop-web-1            │
-│  ● 7 running     │┃                                                                                ┃│14:46:43 img pull       hello-world           │
-│  ‖ 1 paused      │┃                                                                                ┃│14:46:44 vol destroy    337d154abf4b…         │
-│  ○ 4 stopped     │┃                                                                                ┃│14:46:44 vol destroy    43ee5206a7f7…         │
-│                  │┃                                                                                ┃│14:46:45 ctr exec_create shop-api-1  sh -c co…│
-│                  │┃                                                                                ┃│14:46:45 ctr exec_start shop-api-1  sh -c com…│
-│                  │┃                                                                                ┃│14:46:45 ctr exec_die exit 0 shop-api-1       │
+ Docker Desk  unix:///tmp/ddfake4060377278/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-api ━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│10:48:37 ctr kill sig 15 shop-web-1           │
+│  Images        17│┃▸ shop-api-1       shop/api:dev   ● running   150.1%    451MiB  Up 3 hours      ┃│10:48:37 ctr die exit 0 shop-web-1            │
+│  Volumes        5│┃                                                                                ┃│10:48:37 net disconnect shop_default  ← shop-…│
+│  Networks       7│┃                                                                                ┃│10:48:37 ctr stop       shop-web-1            │
+│  Compose        2│┃                                                                                ┃│10:48:38 net connect    shop_default  ← shop-…│
+│                  │┃                                                                                ┃│10:48:38 ctr start      shop-web-1            │
+│  ● 7 running     │┃                                                                                ┃│10:48:39 img pull       hello-world           │
+│  ‖ 1 paused      │┃                                                                                ┃│10:48:39 vol destroy    337d154abf4b…         │
+│  ○ 5 stopped     │┃                                                                                ┃│10:48:39 vol destroy    43ee5206a7f7…         │
+│                  │┃                                                                                ┃│10:48:40 ctr exec_create shop-api-1  sh -c co…│
+│                  │┃                                                                                ┃│10:48:40 ctr exec_start shop-api-1  sh -c com…│
+│                  │┃                                                                                ┃│10:48:41 ctr exec_die exit 0 shop-api-1       │
 │                  │┃                                                                                ┃│                                              │
 │                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                              │
-│                  │┌─ 3 Details: shop-api-1 ────────────────── [Info] Logs Stats Processes Inspect ─┐│                                              │
+│                  │┌─ 3 Details: shop-api-1 ────────── [Info] Changes Logs Stats Processes Inspect ─┐│                                              │
 │                  ││Name     shop-api-1                                                             ││                                              │
 │                  ││ID       e9b5282f33bd                                                           ││                                              │
 │                  ││Image    shop/api:dev                                                           ││                                              │
 │                  ││State    ● running   Up 3 hours                                                 ││                                              │
 │                  ││Compose  shop / api                                                             ││                                              │
-│                  ││Started  2026-11-03 11:46:40                                                    ││                                              │
+│                  ││Started  2026-11-04 07:48:36                                                    ││                                              │
 │                  ││Command  node server.js                                                         ││                                              │
 │                  ││Restart  no (restarted 0×)                                                      ││                                              │
 │                  ││Runtime  tty=false  privileged=false  env vars=1                                ││                                              │
-│                  ││Created  2026-11-03 11:46:40                                                    ││                                              │
+│                  ││Created  2026-11-04 07:48:36                                                    ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││Ports                                                                           │└──────────────────────────────────────────────┘
 │                  ││  0.0.0.0:3000 → 3000/tcp                                                       │┌─ 5 Jobs ──────────────────────────── 4 done ─┐
-│                  ││                                                                                ││▸ ✓ prune volumes 2 volumes                2ms│
-│                  ││Networks                                                                        ││  ✓ pull image hello-world:latest        431ms│
-│                  ││  shop_default  172.18.0.3  gw 172.18.0.1                                       ││  ✓ start container shop-web-1             1ms│
-│                  ││                                                                                ││  ✓ stop container shop-web-1              0ms│
+│                  ││                                                                                ││▸ ✓ prune volumes 2 volumes                1ms│
+│                  ││Networks                                                                        ││  ✓ pull image hello-world:latest        434ms│
+│                  ││  shop_default  172.18.0.3  gw 172.18.0.1                                       ││  ✓ start container shop-web-1             0ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              1ms│
 │                  ││Mounts                                                                          ││                                              │
 │                  ││  volume shop_uploads → /data/shop_uploads (rw)                                 ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
 └──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
- Back from the shell in shop-api-1 (519ms).
+ Back from the shell in shop-api-1 (510ms).
  ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell       Tab pane  ? keys  q quit

@@ -43,6 +43,11 @@ type Engine interface {
 	ImageSizes(ctx context.Context) ([]ImageUsage, error)
 	// ImageLayers returns an image's diff IDs (inspect) and history.
 	ImageLayers(ctx context.Context, id string) (ImageLayers, error)
+	// ImageFacts is what the Changes tab compares of one image: its
+	// identity, config and layers (inspect, then history: two GETs).
+	// Environment variables come back as names only; their values never
+	// leave this method.
+	ImageFacts(ctx context.Context, id string) (ImageFacts, error)
 	// ContainerSizes lists containers with their writable layers measured
 	// (GET /containers/json?all=1&size=1) — all of them, or only ids. The
 	// daemon walks each filesystem to answer; never part of a list refresh.

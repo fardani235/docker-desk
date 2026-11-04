@@ -169,3 +169,19 @@ func LiveFindings(r *Report, in LiveInput) []Finding {
 	}
 	return out
 }
+
+// ResolveRef returns the image a reference names now among images, with the
+// same normalisation the supply.tag-moved finding uses.
+func ResolveRef(images []engine.Image, ref string) (engine.Image, bool) {
+	return resolveRef(images, ref)
+}
+
+// Pinned reports whether a reference names a digest.
+func Pinned(ref string) bool { return pinned(ref) }
+
+// Instruction is a history entry as the findings show it: one line, build
+// argument values left out, secret-shaped text masked.
+func Instruction(createdBy string) string {
+	s, _ := cleanInstruction(createdBy)
+	return s
+}

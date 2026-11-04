@@ -1,17 +1,17 @@
- Docker Desk  unix:///tmp/ddfake2330034966/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake4060377278/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Volumes (7) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│  Containers    12│┃  NAME                                   DRIVER   IN USE                CREATED ┃│14:46:41 ctr kill sig 15 shop-web-1           │
-│  Images        15│┃▸ blog_db                                local    blog-db-1                  1h ┃│14:46:41 ctr die exit 0 shop-web-1            │
-│▸ Volumes        7│┃  old-backups                            local    unused                     1h ┃│14:46:41 net disconnect shop_default  ← shop-…│
-│  Networks       7│┃  shop_pgdata                            local    shop-db-1                  1h ┃│14:46:41 ctr stop       shop-web-1            │
-│  Compose        2│┃  shop_uploads                           local    shop-api-1                 1h ┃│14:46:42 net connect    shop_default  ← shop-…│
-│                  │┃  337d154abf4b… (anonymous)              local    unused                     1h ┃│14:46:42 ctr start      shop-web-1            │
-│  ● 7 running     │┃  43ee5206a7f7… (anonymous)              local    unused                     1h ┃│14:46:43 img pull       hello-world           │
+│  Containers    13│┃  NAME                                   DRIVER   IN USE                CREATED ┃│10:48:37 ctr kill sig 15 shop-web-1           │
+│  Images        17│┃▸ blog_db                                local    blog-db-1                  1h ┃│10:48:37 ctr die exit 0 shop-web-1            │
+│▸ Volumes        7│┃  old-backups                            local    unused                     1h ┃│10:48:37 net disconnect shop_default  ← shop-…│
+│  Networks       7│┃  shop_pgdata                            local    shop-db-1                  1h ┃│10:48:37 ctr stop       shop-web-1            │
+│  Compose        2│┃  shop_uploads                           local    shop-api-1                 1h ┃│10:48:38 net connect    shop_default  ← shop-…│
+│                  │┃  337d154abf4b… (anonymous)              local    unused                     1h ┃│10:48:38 ctr start      shop-web-1            │
+│  ● 7 running     │┃  43ee5206a7f7… (anonymous)              local    unused                     1h ┃│10:48:39 img pull       hello-world           │
 │  ‖ 1 paused      │┃  b88cb99671f3… (anonymous)              local    old-migration              1h ┃│                                              │
-│  ○ 4 stopped     │┃           ┏━ ◆ Prune volumes ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
+│  ○ 5 stopped     │┃           ┏━ ◆ Prune volumes ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
 │                  │┃           ┃                                                                                    ┃                               │
 │                  │┃           ┃ volumes    2 volumes                                                               ┃                               │
-│                  │┃           ┃ daemon     unix:///tmp/ddfake2330034966/d.sock  (context default)                  ┃                               │
+│                  │┃           ┃ daemon     unix:///tmp/ddfake4060377278/d.sock  (context default)                  ┃                               │
 │                  │┃           ┃ scope      anonymous volumes no container references                               ┃                               │
 │                  │┗━━━━━━━━━━━┃            Tab switch to all unused                                                ┃                               │
 │                  │┌─ 3 Details┃                                                                                    ┃                               │
@@ -28,9 +28,9 @@
 │                  ││Labels     ┃ Type prune and press Enter to proceed:                                             ┃                               │
 │                  ││  com.docke┃ >                                                                                  ┃───────────────────────────────┘
 │                  ││  com.docke┃                                                                                    ┃────────────────────── 3 done ─┐
-│                  ││           ┃ Enter proceed  Esc cancel                                                          ┃hello-world:latest        431ms│
-│                  ││           ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛iner shop-web-1             1ms│
-│                  ││                                                                                ││  ✓ stop container shop-web-1              0ms│
+│                  ││           ┃ Enter proceed  Esc cancel                                                          ┃hello-world:latest        434ms│
+│                  ││           ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛iner shop-web-1             0ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              1ms│
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │

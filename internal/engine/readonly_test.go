@@ -15,7 +15,7 @@ var readMethods = map[string]bool{
 	"Ping": true, "Info": true, "Close": true,
 	"Containers": true, "Images": true, "Volumes": true, "Networks": true,
 	"InspectContainer": true, "InspectImage": true, "InspectVolume": true, "InspectNetwork": true,
-	"SaveImage": true, "DiskUsage": true, "ImageSizes": true, "ImageLayers": true, "ContainerSizes": true,
+	"SaveImage": true, "DiskUsage": true, "ImageSizes": true, "ImageLayers": true, "ImageFacts": true, "ContainerSizes": true,
 	"Events": true, "Logs": true, "Stats": true, "Processes": true,
 	"ExecInspect": true,
 }
@@ -79,7 +79,7 @@ func TestReadOnlySendsNothing(t *testing.T) {
 	net := srv.NetworkID("orphan-net")
 
 	// Reads work.
-	if cs, err := eng.Containers(ctx); err != nil || len(cs) != 12 {
+	if cs, err := eng.Containers(ctx); err != nil || len(cs) != 13 {
 		t.Fatalf("read in read-only mode: %d %v", len(cs), err)
 	}
 

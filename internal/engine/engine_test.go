@@ -85,8 +85,8 @@ func TestIdentityAndLists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cs) != 12 {
-		t.Fatalf("want 12 containers (stopped ones included), got %d", len(cs))
+	if len(cs) != 13 {
+		t.Fatalf("want 13 containers (stopped ones included), got %d", len(cs))
 	}
 	web := byName(cs, "shop-web-1")
 	if web.State != StateRunning || web.Project() != "shop" || web.Service() != "web" || !web.IsActive() {
@@ -128,8 +128,8 @@ func TestIdentityAndLists(t *testing.T) {
 			inUse++
 		}
 	}
-	if dangling != 2 || inUse == 0 {
-		t.Fatalf("want 2 dangling and some in-use images, got %d dangling, %d in use of %d", dangling, inUse, len(imgs))
+	if dangling != 3 || inUse == 0 { // the two old builds, and the one report-job runs
+		t.Fatalf("want 3 dangling and some in-use images, got %d dangling, %d in use of %d", dangling, inUse, len(imgs))
 	}
 
 	vols, err := eng.Volumes(ctx)
@@ -709,7 +709,7 @@ func TestUnavailable(t *testing.T) {
 	if err := srv.Restart(); err != nil {
 		t.Fatal(err)
 	}
-	if cs, err := eng.Containers(ctx); err != nil || len(cs) != 12 {
+	if cs, err := eng.Containers(ctx); err != nil || len(cs) != 13 {
 		t.Fatalf("after restart: %d containers, %v", len(cs), err)
 	}
 }

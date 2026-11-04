@@ -430,6 +430,37 @@ type ImageLayers struct {
 	History []HistoryEntry
 }
 
+// ImageFacts is one image as the Changes tab compares it. It deliberately
+// has no Raw document and no environment values: only their names.
+type ImageFacts struct {
+	ID           string
+	RepoTags     []string
+	RepoDigests  []string
+	Size         int64
+	Created      time.Time
+	OS           string
+	Architecture string
+	Variant      string
+
+	Cmd, Entrypoint  []string
+	User, WorkingDir string
+	ExposedPorts     []string // sorted, "80/tcp"
+	// Healthcheck is the test command; nil when the image sets none.
+	Healthcheck []string
+	Labels      map[string]string
+	// EnvNames are the names of the environment variables the image sets,
+	// sorted; the values are dropped where the inspect answer is decoded.
+	EnvNames []string
+
+	DiffIDs []string
+	History []HistoryEntry // oldest first
+}
+
+// Platform is the platform the image was inspected as.
+func (f ImageFacts) Platform() Platform {
+	return Platform{OS: f.OS, Architecture: f.Architecture, Variant: f.Variant}
+}
+
 // HistoryEntry is one entry of an image's history. The daemon reports the
 // size of the layer the entry made, and 0 for an entry that made none.
 type HistoryEntry struct {

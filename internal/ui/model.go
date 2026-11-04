@@ -152,9 +152,10 @@ type Model struct {
 	detail       detailState
 	wantDetail   string
 	selChangedAt time.Time
-	info1        textView  // Info tab
-	inspect      textView  // Inspect tab
-	proc         procState // Processes tab
+	info1        textView     // Info tab
+	inspect      textView     // Inspect tab
+	proc         procState    // Processes tab
+	chg          changesState // Changes tab
 	logFollow    bool
 	logEnd       uint64
 	logWrap      bool
@@ -414,6 +415,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.onProcesses(msg)
 		return m, nil
 
+	case changesFactsMsg:
+		m.dirty = true
+		m.onChangesFacts(msg)
+		return m, nil
+
 	case factsMsg:
 		m.dirty = true
 		m.onFacts(msg)
@@ -475,6 +481,9 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		}
 		m.syncStreams() // a no-op unless the wanted target changed
 		if cmd := m.syncProcesses(); cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+		if cmd := m.syncChanges(); cmd != nil {
 			cmds = append(cmds, cmd)
 		}
 		if cmd := m.syncFindings(); cmd != nil {

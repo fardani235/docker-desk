@@ -317,7 +317,7 @@ func TestConfirmationIsBoundToTheObjectItShowed(t *testing.T) {
 	b.srv.AddContainer(fakeengine.ContainerSpec{Name: "aaa-newcomer", Image: "alpine:3.20"})
 	b.srv.AddContainer(fakeengine.ContainerSpec{Name: "aab-newcomer", Image: "alpine:3.20"})
 	b.srv.Emit("container", "create", "x", map[string]string{"name": "aaa-newcomer"})
-	b.until("list to pick up the newcomers", func() bool { return len(b.m.snap.Containers) == 14 })
+	b.until("list to pick up the newcomers", func() bool { return len(b.m.snap.Containers) == 15 })
 	b.settle()
 	if got := b.m.rows[KindContainers][idxBefore].name; got == "redis-cache" {
 		t.Fatalf("test setup: the row at the old position is still redis-cache")
@@ -447,7 +447,7 @@ func TestReadOnlyDisablesEveryAction(t *testing.T) {
 	// Observation is untouched.
 	b.kind(KindContainers)
 	b.selectRow("shop-web-1")
-	b.keys("]")
+	b.keys("]", "]") // Info Changes Logs
 	b.see("[Logs]", "nginx/1.27.0 started", "● following")
 }
 
@@ -772,7 +772,7 @@ func TestActionMenuActsOnTheObjectItNames(t *testing.T) {
 	if err := b.eng.RemoveContainer(context.Background(), b.srv.ContainerID("old-migration")); err != nil {
 		t.Fatal(err)
 	}
-	b.until("list refresh", func() bool { return len(b.m.snap.Containers) == 11 })
+	b.until("list refresh", func() bool { return len(b.m.snap.Containers) == 12 })
 	b.srv.ResetRequests()
 	b.keys("d")
 	b.see("that container no longer exists")

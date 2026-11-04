@@ -111,6 +111,15 @@ func (s *Server) SeedDemo() {
 
 	s.seedDisk()
 
+	// acme/report:1.4 has two builds: report-job was created on the first,
+	// and the tag has since moved to the second, which keeps the base,
+	// adds two layers and changes the config (Containers › Changes).
+	s.SeedMovedTag(ContainerSpec{
+		Name: "report-job", Image: "acme/report:1.4", State: "exited", Cmd: []string{"python3", "-m", "report"},
+		Logs: []string{"report for 2026-11-03 written"}, Age: 20 * time.Hour,
+	}, fixture.ChangesReport("acme/report:1.4", false), fixture.ChangesReport("acme/report:1.4", true),
+		[]int64{74_800_000, 31_400_000, 1_250_000}, []int64{74_800_000, 31_400_000, 1_250_000, 6_900_000, 2_100}, 12*24*time.Hour)
+
 	// shop/api:dev is the image with something to find: a credential
 	// deleted one layer after it was added, a token in a build argument,
 	// package lists cleaned up too late, setuid and capability bits, and
