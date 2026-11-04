@@ -27,6 +27,8 @@ type Image struct {
 	// layers, bottom first; nil means two layers of its own (see
 	// layersLocked).
 	layers []Layer
+	// config is what inspect reports; nil means the fake's default.
+	config *ImageConfig
 }
 
 // normalizeRef returns the familiar form of a reference with ":latest"
@@ -204,25 +206,46 @@ func (s *Server) handleImageInspect(w http.ResponseWriter, ref string) {
 	for _, l := range img.layersLocked() {
 		diffIDs = append(diffIDs, l.diffID())
 	}
+	cfg := img.configLocked()
+	config := map[string]any{
+		"Cmd":        cfg.Cmd,
+		"Env":        cfg.Env,
+		"WorkingDir": cfg.WorkingDir,
+		"Labels":     img.Labels,
+	}
+	if cfg.Entrypoint != nil {
+		config["Entrypoint"] = cfg.Entrypoint
+	}
+	if cfg.User != "" {
+		config["User"] = cfg.User
+	}
+	if len(cfg.ExposedPorts) > 0 {
+		ports := map[string]any{}
+		for _, p := range cfg.ExposedPorts {
+			ports[p] = map[string]any{}
+		}
+		config["ExposedPorts"] = ports
+	}
+	if cfg.Healthcheck != nil {
+		config["Healthcheck"] = map[string]any{"Test": cfg.Healthcheck}
+	}
 	resp := map[string]any{
 		"Id":           "sha256:" + img.ID,
 		"RepoTags":     append([]string{}, img.RepoTags...),
 		"RepoDigests":  img.digests(),
 		"Created":      img.Created.UTC().Format(time.RFC3339Nano),
-		"Architecture": "amd64",
+		"Architecture": cfg.Architecture,
 		"Os":           "linux",
 		"Size":         img.Size,
-		"Config": map[string]any{
-			"Cmd":        []string{"/bin/app"},
-			"Env":        []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"},
-			"WorkingDir": "/",
-			"Labels":     img.Labels,
-		},
+		"Config":       config,
 		"RootFS": map[string]any{
 			"Type":   "layers",
 			"Layers": diffIDs,
 		},
 		"Metadata": map[string]any{"LastTagTime": "0001-01-01T00:00:00Z"},
+	}
+	if cfg.Variant != "" {
+		resp["Variant"] = cfg.Variant
 	}
 	s.mu.Unlock()
 	writeJSON(w, http.StatusOK, resp)

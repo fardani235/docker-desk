@@ -3,6 +3,7 @@ package fakeengine
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"hash/fnv"
 	"net/http"
 	"sort"
@@ -25,9 +26,17 @@ type Layer struct {
 	Name      string
 	Size      int64
 	CreatedBy string
+	// DiffID, when set, is the layer's diff ID (from a fixture's real
+	// tar); otherwise one is derived from Name.
+	DiffID string
 }
 
-func (l Layer) diffID() string { return "sha256:" + stableID("layer", l.Name) }
+func (l Layer) diffID() string {
+	if l.DiffID != "" {
+		return l.DiffID
+	}
+	return "sha256:" + stableID("layer", l.Name)
+}
 
 // chainIDs returns the chain ID of every layer: the first layer's diff ID,
 // then sha256 of the previous chain ID, a space and the next diff ID — the
@@ -113,12 +122,13 @@ func (s *Server) handleImageHistory(w http.ResponseWriter, ref string) {
 	layers := img.layersLocked()
 	created := img.Created
 	id := img.ID
+	cmd, _ := json.Marshal(img.configLocked().Cmd)
 	s.mu.Unlock()
 
 	// Newest first, as the daemon lists it, with the entry for CMD on top:
 	// it made no layer, and its size is 0.
 	out := []image.HistoryResponseItem{{
-		ID: "sha256:" + id, Created: created.Unix(), CreatedBy: `/bin/sh -c #(nop)  CMD ["/bin/app"]`, Tags: []string{},
+		ID: "sha256:" + id, Created: created.Unix(), CreatedBy: "/bin/sh -c #(nop)  CMD " + string(cmd), Tags: []string{},
 	}}
 	for i := len(layers) - 1; i >= 0; i-- {
 		out = append(out, image.HistoryResponseItem{

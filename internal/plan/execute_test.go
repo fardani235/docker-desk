@@ -239,7 +239,7 @@ func TestProjectRemoveTouchesOnlyItsContainers(t *testing.T) {
 			t.Errorf("%s survived project removal", c)
 		}
 	}
-	if len(r.srv.ContainerNames()) != 8 {
+	if len(r.srv.ContainerNames()) != 9 {
 		t.Errorf("containers outside the project were touched: %v", r.srv.ContainerNames())
 	}
 	if len(r.srv.NetworkNames()) != nets || len(r.srv.VolumeNames()) != vols {

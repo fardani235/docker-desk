@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake3322511445/d.sock  ● connected  [READ-ONLY]
+┌─ 1 Kinds ──────┐┌─ 2 Containers (1 of 13) ────────────────── filter: report ─┐
+│▸ Containers  13││  NAME            IMAGE         STATE          CPU       MEM│
+│  Images      16││▸ report-job      acme/report…  ○ exited                    │
+│  Volumes      7││                                                            │
+│  Networks     7││                                                            │
+│  Compose      2│└────────────────────────────────────────────────────────────┘
+│                │┏━ ◆ 3 Details: report-job ━━━━━━━━━━━━━━━━━━ [Changes] 2/6 ━┓
+│  ● 7 running   │┃                                                            ┃
+│  ‖ 1 paused    │┃packages 3 added, 1 removed, 2 version changed (dpkg)       ┃
+│  ○ 5 stopped   │┃  + curl 7.88.1-10+deb12u8 (L4)                             ┃
+│                │┃  + fonts-dejavu-core:all 2.37-6 (L4)                       ┃
+│                │┃  + libcurl4 7.88.1-10+deb12u8 (L4)                         ┃
+│                │┃  − netbase:all 6.4                                         ┃
+│                │┃↑↓ scroll · 26–31 of 43                                     ┃
+└────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ────────────── 1 done ─┐
+│Waiting for engine events…                  ││▸ ✓ compare images acme/re… 13ms│
+│Everything the daemon does                  ││                                │
+│shows up here as it happens.                ││                                │
+│                                            ││                                │
+└────────────────────────────────────────────┘└────────────────────────────────┘
+ ✓ compare images acme/report:1.4
+ ↑↓ scroll  [ ] tab  s start  t stop  R restart  p pa… Tab pane  ? keys  q quit

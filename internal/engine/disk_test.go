@@ -20,13 +20,13 @@ func TestDiskUsageAsTheDaemonStatesIt(t *testing.T) {
 	if du.Derived {
 		t.Fatal("API 1.56 states its totals: nothing should be derived")
 	}
-	if du.Images.TotalCount != 14 || du.Images.ActiveCount != 10 || du.Images.TotalSize <= 0 {
+	if du.Images.TotalCount != 16 || du.Images.ActiveCount != 11 || du.Images.TotalSize <= 0 {
 		t.Fatalf("images: %+v", du.Images)
 	}
-	if du.Containers.TotalCount != 12 || du.Volumes.TotalCount != 7 || du.BuildCache.TotalCount != 4 {
+	if du.Containers.TotalCount != 13 || du.Volumes.TotalCount != 7 || du.BuildCache.TotalCount != 4 {
 		t.Fatalf("counts: %+v %+v %+v", du.Containers, du.Volumes, du.BuildCache)
 	}
-	if len(du.ImageItems) != 14 || len(du.VolumeItems) != 7 || len(du.BuildItems) != 4 {
+	if len(du.ImageItems) != 16 || len(du.VolumeItems) != 7 || len(du.BuildItems) != 4 {
 		t.Fatalf("items: %d %d %d", len(du.ImageItems), len(du.VolumeItems), len(du.BuildItems))
 	}
 	for _, it := range du.ImageItems {
@@ -96,7 +96,7 @@ func TestSizesAreOnlyMeasuredWhenAsked(t *testing.T) {
 		t.Fatalf("one container: %+v", one)
 	}
 	all, err := eng.ContainerSizes(ctx, nil)
-	if err != nil || len(all) != 12 {
+	if err != nil || len(all) != 13 {
 		t.Fatalf("all: %d %v", len(all), err)
 	}
 }

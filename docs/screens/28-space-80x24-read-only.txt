@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake2969364513/d.sock  ● connected  [READ-ONLY]
-┏━ ◆ Space — where the bytes went ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 14:47:17 ━┓
+ Docker Desk  unix:///tmp/ddfake1270947775/d.sock  ● connected  [READ-ONLY]
+┏━ ◆ Space — where the bytes went ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 10:49:17 ━┓
 ┃   removed; with the containerd image store, the bytes go when its garbage    ┃
 ┃   collector runs.                                                            ┃
 ┃                                                                              ┃
@@ -12,7 +12,7 @@
 ┃   <none> 8bae7d2a8907            410MB    279MB    131MB       -             ┃
 ┃   nginx:1.27                   187.7MB  112.9MB   74.8MB   1 ctr             ┃
 ┃ ▸ shop/worker:dev              219.7MB   88.7MB    131MB   1 ctr             ┃
-┃ ───────────────────────────────────────────────────────── lines 8–19 of 71 ─ ┃
+┃ ───────────────────────────────────────────────────────── lines 8–19 of 75 ─ ┃
 ┃ alone      frees 88.7MB — unique; 131MB shared stay · daemon, 0s ago         ┃
 ┃ together   with the 7 image(s) sharing its layers: frees 2.468GB · computed  ┃
 ┃            from layer sizes, 0s ago                                          ┃

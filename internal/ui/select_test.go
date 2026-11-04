@@ -43,11 +43,11 @@ func (b *bench) planDialog(what string) *dialog {
 func TestSelectionSurvivesRefreshAndDropsVanishedObjects(t *testing.T) {
 	b := newBench(t, benchOpts{})
 	b.mark("redis-cache", "old-migration", "shop-web-1")
-	b.see("2 Containers (12) - 3 selected")
+	b.see("2 Containers (13) - 3 selected")
 	// Space again takes a row out.
 	b.selectRow("shop-web-1")
 	b.keys(" ")
-	b.see("2 Containers (12) - 2 selected")
+	b.see("2 Containers (13) - 2 selected")
 	if got := strings.Join(b.markedNames(), ","); got != "old-migration,redis-cache" {
 		t.Fatalf("marked = %s", got)
 	}
@@ -69,8 +69,8 @@ func TestSelectionSurvivesRefreshAndDropsVanishedObjects(t *testing.T) {
 	b.srv.AddContainer(fakeengine.ContainerSpec{Name: "aaa", Image: "alpine:3.20"})
 	b.srv.Crash("redis-cache", 137)
 	b.srv.Emit("container", "create", "x", nil)
-	b.until("refresh", func() bool { return len(b.m.snap.Containers) == 13 })
-	b.see("2 Containers (13) - 2 selected")
+	b.until("refresh", func() bool { return len(b.m.snap.Containers) == 14 })
+	b.see("2 Containers (14) - 2 selected")
 	if got := strings.Join(b.markedNames(), ","); got != "old-migration,redis-cache" {
 		t.Fatalf("after a refresh, marked = %s", got)
 	}
@@ -82,8 +82,8 @@ func TestSelectionSurvivesRefreshAndDropsVanishedObjects(t *testing.T) {
 	if err := b.eng.RemoveContainer(context.Background(), b.srv.ContainerID("old-migration")); err != nil {
 		t.Fatal(err)
 	}
-	b.until("refresh", func() bool { return len(b.m.snap.Containers) == 12 })
-	b.see("2 Containers (12) - 1 selected")
+	b.until("refresh", func() bool { return len(b.m.snap.Containers) == 13 })
+	b.see("2 Containers (13) - 1 selected")
 	if got := strings.Join(b.markedNames(), ","); got != "redis-cache" {
 		t.Fatalf("after removal, marked = %s", got)
 	}
@@ -365,17 +365,17 @@ func TestSelectAllEscAndSpaceElsewhere(t *testing.T) {
 	b.keys("/")
 	b.typeText("shop-")
 	b.keys("enter", "a")
-	b.see("2 Containers (4 of 12) - 4 selected")
+	b.see("2 Containers (4 of 13) - 4 selected")
 	for _, n := range b.markedNames() {
 		if !strings.HasPrefix(n, "shop-") {
 			t.Fatalf("a selected %q, which the filter hides", n)
 		}
 	}
 	b.keys("esc")
-	b.see("2 Containers (4 of 12)")
+	b.see("2 Containers (4 of 13)")
 	b.notSee("selected")
 	b.keys("esc")
-	b.see("2 Containers (12)")
+	b.see("2 Containers (13)")
 	if b.m.focus != PaneList {
 		t.Fatal("Esc left the pane while there was a filter to clear")
 	}

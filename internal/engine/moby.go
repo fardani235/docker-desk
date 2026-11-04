@@ -641,6 +641,55 @@ func (m *mobyEngine) ImageLayers(ctx context.Context, id string) (ImageLayers, e
 	return out, nil
 }
 
+func (m *mobyEngine) ImageFacts(ctx context.Context, id string) (ImageFacts, error) {
+	res, err := m.cli.ImageInspect(ctx, id)
+	if err != nil {
+		return ImageFacts{}, m.wrap("inspect image", err)
+	}
+	f := ImageFacts{
+		ID: res.ID, RepoTags: res.RepoTags, RepoDigests: res.RepoDigests, Size: res.Size,
+		Created: parseTime(res.Created), OS: res.Os, Architecture: res.Architecture, Variant: res.Variant,
+		DiffIDs: append([]string(nil), res.RootFS.Layers...),
+	}
+	if c := res.Config; c != nil {
+		f.Cmd, f.Entrypoint, f.User, f.WorkingDir = c.Cmd, c.Entrypoint, c.User, c.WorkingDir
+		f.Labels = c.Labels
+		for p := range c.ExposedPorts {
+			f.ExposedPorts = append(f.ExposedPorts, p)
+		}
+		sort.Strings(f.ExposedPorts)
+		if c.Healthcheck != nil && len(c.Healthcheck.Test) > 0 && c.Healthcheck.Test[0] != "NONE" {
+			f.Healthcheck = append([]string(nil), c.Healthcheck.Test...)
+		}
+		f.EnvNames = EnvNames(c.Env)
+	}
+	hist, err := m.cli.ImageHistory(ctx, id)
+	if err != nil {
+		return ImageFacts{}, m.wrap("image history", err)
+	}
+	for i := len(hist.Items) - 1; i >= 0; i-- {
+		h := hist.Items[i]
+		f.History = append(f.History, HistoryEntry{CreatedBy: h.CreatedBy, Size: h.Size})
+	}
+	return f, nil
+}
+
+// EnvNames returns the sorted, distinct names of NAME=value entries. The
+// values are not kept.
+func EnvNames(env []string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, e := range env {
+		name, _, _ := strings.Cut(e, "=")
+		if name != "" && !seen[name] {
+			seen[name] = true
+			out = append(out, name)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
 func (m *mobyEngine) ContainerSizes(ctx context.Context, ids []string) ([]ContainerSize, error) {
 	opts := client.ContainerListOptions{All: true, Size: true}
 	if len(ids) > 0 {

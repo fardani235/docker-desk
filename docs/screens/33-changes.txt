@@ -1,0 +1,40 @@
+ Docker Desk  unix:///tmp/ddfake1152243092/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┌─ 2 Containers (1 of 13) ────────────────── filter: report ─┐┌─ 4 Events ──────────────── ● live ─┐
+│▸ Containers    13││  NAME            IMAGE         STATE          CPU       MEM││Waiting for engine events…          │
+│  Images        16││▸ report-job      acme/report…  ○ exited                    ││Everything the daemon does          │
+│  Volumes        7││                                                            ││shows up here as it happens.        │
+│  Networks       7││                                                            ││                                    │
+│  Compose        2││                                                            ││                                    │
+│                  ││                                                            ││                                    │
+│  ● 7 running     ││                                                            ││                                    │
+│  ‖ 1 paused      ││                                                            ││                                    │
+│  ○ 5 stopped     ││                                                            ││                                    │
+│                  ││                                                            ││                                    │
+│                  ││                                                            ││                                    │
+│                  ││                                                            ││                                    │
+│                  │└────────────────────────────────────────────────────────────┘│                                    │
+│                  │┏━ ◆ 3 Details: report-job ━━━━━━━━━━━━━━━━━━ [Changes] 2/6 ━┓│                                    │
+│                  │┃  label       org.opencontainers.image.version 1.4.0 → 1.4.2┃│                                    │
+│                  │┃  env         − DEBUG                                       ┃│                                    │
+│                  │┃  env         + FONT_DIR                                    ┃│                                    │
+│                  │┃         Variables are compared by name; their values are   ┃│                                    │
+│                  │┃         never read, so one whose value changed is not      ┃│                                    │
+│                  │┃         shown.                                             ┃│                                    │
+│                  │┃                                                            ┃│                                    │
+│                  │┃packages 3 added, 1 removed, 2 version changed (dpkg)       ┃│                                    │
+│                  │┃  + curl 7.88.1-10+deb12u8 (L4)                             ┃│                                    │
+│                  │┃  + fonts-dejavu-core:all 2.37-6 (L4)                       ┃│                                    │
+│                  │┃  + libcurl4 7.88.1-10+deb12u8 (L4)                         ┃└────────────────────────────────────┘
+│                  │┃  − netbase:all 6.4                                         ┃┌─ 5 Jobs ────────────────── 1 done ─┐
+│                  │┃  ~ libssl3 3.0.11-1~deb12u2 → 3.0.15-1~deb12u1             ┃│▸ ✓ compare images acme/report… 14ms│
+│                  │┃  ~ openssl 3.0.11-1~deb12u2 → 3.0.15-1~deb12u1             ┃│                                    │
+│                  │┃findings 1 appeared, 2 disappeared (from the archives; live ┃│                                    │
+│                  │┃         findings are on the image's own tab)               ┃│                                    │
+│                  │┃  + L5 secret.file /app/config.yml GitHub token:            ┃│                                    │
+│                  │┃    ghp_************ (40 chars)                             ┃│                                    │
+│                  │┃  − config.healthcheck no HEALTHCHECK                       ┃│                                    │
+│                  │┃  − config.root-user User ""                                ┃│                                    │
+│                  │┃↑↓ scroll · 20–39 of 43                                     ┃│                                    │
+└──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└────────────────────────────────────┘
+ ✓ compare images acme/report:1.4
+ ↑↓ scroll  [ ] tab  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell Tab pane  ? keys  q quit

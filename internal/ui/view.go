@@ -331,9 +331,18 @@ func (m *Model) renderHints() string {
 			if m.tabName() == tabLogs {
 				add("f", "follow")
 			}
-			if m.tabName() == tabProcesses {
+			switch m.tabName() {
+			case tabProcesses:
 				add("r", "new snapshot")
-			} else {
+			case tabChanges:
+				if m.chg.run != nil {
+					add("c", "cancel")
+				} else if t, ok := m.changesTarget(); ok && t.refusal.None() && t.old != nil && t.new != nil {
+					if _, _, done := m.contentFor(t); !done {
+						add("⏎", "compare contents")
+					}
+				}
+			default:
 				add("w", "wrap")
 			}
 		}
@@ -419,6 +428,18 @@ func (m *Model) helpLines(w int) []string {
 		"  Only running containers have processes; a stopped one says so.",
 		"  Command lines are shown exactly as the daemon reports them, arguments",
 		"  included — nothing is masked, and nothing is written to jobs, logs or files.",
+	)
+
+	sect("Containers › Changes tab")
+	row("Enter", "compare contents: packages and findings of both images (a job)")
+	row("c", "cancel the comparison in progress")
+	out = append(out,
+		"  What differs between the image the container runs and the image its",
+		"  reference names now. Identities, layers and config are read at once",
+		"  (inspect and history of each image); no archive is read before Enter.",
+		"  Environment variables are compared by name; values are never read.",
+		"  Restarting keeps the image a container runs; only re-creating it takes",
+		"  the new one, which this desk does not do. Nothing to compare is said, why.",
 	)
 
 	sect("Images › Findings tab (Details pane focused)")

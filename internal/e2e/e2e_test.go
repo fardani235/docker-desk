@@ -17,6 +17,7 @@ import (
 
 	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/fakeengine"
+	"github.com/fardani235/docker-desk/internal/forensics/fixture"
 	"github.com/fardani235/docker-desk/internal/ptyscreen"
 )
 
@@ -160,7 +161,7 @@ func TestSession(t *testing.T) {
 
 	// --- the desk: five panes, and which daemon it is pointed at ----------
 	d.see("Docker Desk", srv.Host(), "ctx default", "● connected",
-		"1 Kinds", "2 Containers (12)", "3 Details", "4 Events", "5 Jobs", "shop-web-1")
+		"1 Kinds", "2 Containers (13)", "3 Details", "4 Events", "5 Jobs", "shop-web-1")
 	if !d.term.AltScreen() {
 		t.Fatal("the desk is not on the alternate screen")
 	}
@@ -169,7 +170,7 @@ func TestSession(t *testing.T) {
 
 	// --- moving between kinds: the list follows the highlight -------------
 	d.keys("1", ptyscreen.Down)
-	d.see("2 Images (14, 15 refs)", "REPOSITORY", "nginx", "lts-alpine", "USED BY")
+	d.see("2 Images (16, 17 refs)", "REPOSITORY", "nginx", "lts-alpine", "USED BY")
 	d.shot("02-images")
 	d.keys(ptyscreen.Down)
 	d.see("2 Volumes (7)", "shop_pgdata", "(anonymous)")
@@ -179,11 +180,11 @@ func TestSession(t *testing.T) {
 	d.see("2 Compose (2)", "blog", "shop", "Grouped by the com.docker.compose.project label")
 	d.shot("03-compose")
 	d.keys(ptyscreen.Up, ptyscreen.Up, ptyscreen.Up, ptyscreen.Up)
-	d.see("2 Containers (12)")
+	d.see("2 Containers (13)")
 
 	// --- filter to one container ------------------------------------------
 	d.keys("2", "/", "s", "h", "o", "p", "-", "w", "e", "b", P)
-	d.see("2 Containers (1 of 12)", "filter: shop-web", "3 Details: shop-web-1")
+	d.see("2 Containers (1 of 13)", "filter: shop-web", "3 Details: shop-web-1")
 
 	// --- act: stop. One key opens a confirmation and sends nothing --------
 	srv.ResetRequests()
@@ -214,6 +215,8 @@ func TestSession(t *testing.T) {
 
 	// --- logs of a stopped container, then start it and follow ------------
 	d.keys("]")
+	d.see("[Changes]", "same image on both sides")
+	d.keys("]")
 	d.see("[Logs]", "nginx/1.27.0 started", "end of output: the container is not running")
 	d.keys("s")
 	d.see("Start container", "shop-web-1")
@@ -234,7 +237,7 @@ func TestSession(t *testing.T) {
 
 	// --- a slow job, sent off; the desk stays usable ----------------------------
 	d.keys(ptyscreen.Esc) // clear the filter
-	d.see("2 Containers (12)")
+	d.see("2 Containers (13)")
 	d.keys("1", ptyscreen.Down, "2", "P")
 	d.see("Pull image", "Image reference:", "one tag, never all of them")
 	d.keys("h", "e", "l", "l", "o", "-", "w", "o", "r", "l", "d")
@@ -317,14 +320,14 @@ func TestSession(t *testing.T) {
 	d.see("42 150")
 	d.shot("13-in-shell")
 	d.keys("e", "x", "i", "t", P)
-	d.see("Back from the shell in shop-api-1", "2 Containers (1 of 12)", "3 Details: shop-api-1", "4 Events", "exec_die exit 0")
+	d.see("Back from the shell in shop-api-1", "2 Containers (1 of 13)", "3 Details: shop-api-1", "4 Events", "exec_die exit 0")
 	if !d.term.AltScreen() {
 		t.Fatal("the desk did not return to the alternate screen")
 	}
 	d.shot("14-back-from-shell")
 	// The desk is fully alive again: keys work and streams are current.
 	d.keys(ptyscreen.Esc)
-	d.see("2 Containers (12)")
+	d.see("2 Containers (13)")
 
 	// --- help, then quit: the terminal is given back ---------------------------------
 	d.keys("?")
@@ -365,7 +368,7 @@ func TestResponsiveUnderFlood(t *testing.T) {
 	})
 	d := launch(t, srv, 45, 160)
 	d.see("2 Containers (7)", "aa-flood")
-	d.keys("]")
+	d.keys("]", "]")
 	d.see("[Logs]", "● following", "older lines scrolled out")
 	before := srv.LinesWritten("aa-flood")
 	t0 := time.Now()
@@ -433,11 +436,11 @@ func TestResponsiveUnderFlood(t *testing.T) {
 func TestCompactLayoutAndResize(t *testing.T) {
 	srv := startFake(t, func(s *fakeengine.Server) { s.SeedDemo() })
 	d := launch(t, srv, 24, 80)
-	d.see("1 Kinds", "2 Containers (12)", "3 Details", "4 Events", "5 Jobs", srv.Host(), "connected")
+	d.see("1 Kinds", "2 Containers (13)", "3 Details", "4 Events", "5 Jobs", srv.Host(), "connected")
 	d.shot("16-compact-80x24")
 
 	// Selection and focus survive a resize.
-	d.keys("/", "r", "e", "d", "i", "s", ptyscreen.Enter, "]")
+	d.keys("/", "r", "e", "d", "i", "s", ptyscreen.Enter, "]", "]")
 	d.see("3 Details: redis-cache", "[Logs]")
 	if err := d.term.Resize(20, 60); err != nil {
 		t.Fatal(err)
@@ -457,7 +460,7 @@ func TestCompactLayoutAndResize(t *testing.T) {
 func TestReadOnlyFlag(t *testing.T) {
 	srv := startFake(t, func(s *fakeengine.Server) { s.SeedDemo() })
 	d := launch(t, srv, 40, 140, "--read-only")
-	d.see("[READ-ONLY]", "2 Containers (12)")
+	d.see("[READ-ONLY]", "2 Containers (13)")
 	for _, k := range []string{"s", "t", "R", "p", "u", "K", "d", "e"} {
 		d.keys(k)
 		d.see("Read-only mode")
@@ -467,7 +470,7 @@ func TestReadOnlyFlag(t *testing.T) {
 	d.see("Read-only mode: \"pull…\" is disabled")
 	d.keys("X", "d", "1", ptyscreen.Down, "2", "n", "X", "d", "1", ptyscreen.Down, "2", "n", "c", "D", "X", "d", "1", ptyscreen.Down, "2", "t", "d")
 	// Looking still works.
-	d.keys("1", "g", "2", "]")
+	d.keys("1", "g", "2", "]", "]")
 	d.see("[Logs]", "● following")
 	d.keys("q")
 	if code := d.quit(); code != 0 {
@@ -587,7 +590,7 @@ func TestRealDaemonReadOnlyTour(t *testing.T) {
 	d.see("Docker Desk", host, "[READ-ONLY]", "● connected", "1 Kinds", "2 Containers", "3 Details", "4 Events", "5 Jobs")
 	time.Sleep(1500 * time.Millisecond) // let statistics arrive
 	d.shot("real-containers")
-	for _, tab := range []string{"[Logs]", "[Stats]", "[Processes]", "[Inspect]", "[Info]"} {
+	for _, tab := range []string{"[Changes]", "[Logs]", "[Stats]", "[Processes]", "[Inspect]", "[Info]"} {
 		d.keys("]")
 		d.see(tab)
 		time.Sleep(700 * time.Millisecond)
@@ -637,10 +640,10 @@ func TestNoColor(t *testing.T) {
 	}
 	t.Cleanup(term.Close)
 	d := &desk{t: t, srv: srv, term: term}
-	d.see("┏━ ◆ 2 Containers (12)", "┌─ 1 Kinds", "┌─ 3 Details", "▸ ")
+	d.see("┏━ ◆ 2 Containers (13)", "┌─ 1 Kinds", "┌─ 3 Details", "▸ ")
 	d.keys(ptyscreen.Tab)
-	d.see("┏━ ◆ 3 Details", "┌─ 2 Containers (12)")
-	d.keys("]")
+	d.see("┏━ ◆ 3 Details", "┌─ 2 Containers (13)")
+	d.keys("]", "]")
 	d.see("[Logs]")
 	d.keys("q")
 	d.quit()
@@ -706,7 +709,7 @@ func TestImageFindings(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			srv := startFake(t, func(s *fakeengine.Server) { s.SeedDemo() })
 			d := launch(t, srv, tc.rows, tc.cols, tc.args...)
-			d.see("2 Containers (12)")
+			d.see("2 Containers (13)")
 			d.keys("1", ptyscreen.Down, "2", "/", "s", "h", "o", "p", "/", "a", ptyscreen.Enter)
 			d.see("3 Details: shop/api:dev")
 			d.keys("3", "]", "]")
@@ -755,10 +758,10 @@ func TestProcessesView(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			srv := startFake(t, func(s *fakeengine.Server) { s.SeedDemo() })
 			d := launch(t, srv, tc.rows, tc.cols)
-			d.see("2 Containers (12)")
+			d.see("2 Containers (13)")
 			d.keys("/", "s", "h", "o", "p", "-", "w", "e", "b", ptyscreen.Enter)
 			d.see("3 Details: shop-web-1")
-			d.keys("3", "]", "]", "]")
+			d.keys("3", "]", "]", "]", "]")
 			d.see("UID", "PID", "CMD", "snapshot at")
 			checkFrame(t, d.shot(tc.name), tc.rows, tc.cols)
 			tops := func() int { return srv.CountRequests("GET", `^/containers/[^/]+/top$`) }
@@ -825,7 +828,7 @@ func TestPackagesView(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			srv := startFake(t, func(s *fakeengine.Server) { s.SeedDemo() })
 			d := launch(t, srv, tc.rows, tc.cols, tc.args...)
-			d.see("2 Containers (12)")
+			d.see("2 Containers (13)")
 			d.keys("1", ptyscreen.Down, "2", "/", "p", "y", "t", "h", "o", "n", ptyscreen.Enter)
 			d.see("3 Details: python:3.12-slim")
 			d.keys("3", "]", "]")
@@ -881,5 +884,59 @@ func packagesFrame(t *testing.T, screen string, cols int) {
 	}
 	if !strings.Contains(screen, "┗━") || !strings.Contains(screen, "Esc close") {
 		t.Fatalf("the view's frame is not whole:\n%s", screen)
+	}
+}
+
+// TestChangesView opens Containers › Changes on report-job, whose tag has
+// moved to a newer build: the lineage and config are drawn at once, and
+// Enter compares the archives as a job — at 120 columns, and at 80×24 in
+// read-only mode. No archive is read before Enter, no environment value
+// is ever on screen, and nothing but GET and HEAD is sent.
+func TestChangesView(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		rows, cols int
+		args       []string
+	}{
+		{"33-changes", 40, 120, nil},
+		{"34-changes-80x24-read-only", 24, 80, []string{"--read-only"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := startFake(t, func(s *fakeengine.Server) { s.SeedDemo() })
+			d := launch(t, srv, tc.rows, tc.cols, tc.args...)
+			d.see("2 Containers (13)")
+			d.keys("/", "r", "e", "p", "o", "r", "t", ptyscreen.Enter)
+			d.see("3 Details: report-job")
+			d.keys("3", "]")
+			d.see("[Changes]", "base intact: all 3 layers shared, 2 added", "+ L4")
+			exports := func() int { return srv.CountRequests("GET", `^/images(/.+)?/get$`) }
+			if n := exports(); n != 0 {
+				t.Fatalf("%d archives read before Enter", n)
+			}
+			d.keys(ptyscreen.Enter)
+			d.see("compare images")
+			if err := d.term.WaitUntil(wait, "both archives", func(string) bool { return exports() == 2 }); err != nil {
+				t.Fatal(err)
+			}
+			d.see("compare images acme/report:1.4")
+			for i := 0; i < 12 && !strings.Contains(d.term.Screen(), "version changed"); i++ {
+				d.keys(ptyscreen.PgDn)
+				time.Sleep(80 * time.Millisecond)
+			}
+			d.see("version changed")
+			checkFrame(t, d.shot(tc.name), tc.rows, tc.cols)
+			for _, v := range fixture.ChangesEnvValues {
+				if strings.Contains(d.term.Screen(), v) {
+					t.Fatalf("an environment value is on screen")
+				}
+			}
+			for _, r := range srv.Requests() {
+				if r.Method != "GET" && r.Method != "HEAD" {
+					t.Fatalf("the Changes view sent %s", r)
+				}
+			}
+			d.keys("q")
+			d.quit()
+		})
 	}
 }

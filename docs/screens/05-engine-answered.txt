@@ -1,34 +1,34 @@
- Docker Desk  unix:///tmp/ddfake2330034966/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
-┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-web ━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│▸ Containers    12│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│14:46:41 ctr kill sig 15 shop-web-1           │
-│  Images        14│┃▸ shop-web-1       nginx:1.27     ○ exited                      Exited (0) 0 …  ┃│14:46:41 ctr die exit 0 shop-web-1            │
-│  Volumes        7│┃                                                                                ┃│14:46:41 net disconnect shop_default  ← shop-…│
-│  Networks       7│┃                                                                                ┃│14:46:41 ctr stop       shop-web-1            │
+ Docker Desk  unix:///tmp/ddfake4060377278/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-web ━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│10:48:37 ctr kill sig 15 shop-web-1           │
+│  Images        16│┃▸ shop-web-1       nginx:1.27     ○ exited                      Exited (0) 0 …  ┃│10:48:37 ctr die exit 0 shop-web-1            │
+│  Volumes        7│┃                                                                                ┃│10:48:37 net disconnect shop_default  ← shop-…│
+│  Networks       7│┃                                                                                ┃│10:48:37 ctr stop       shop-web-1            │
 │  Compose        2│┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │  ● 6 running     │┃                                                                                ┃│                                              │
 │  ‖ 1 paused      │┃                                                                                ┃│                                              │
-│  ○ 5 stopped     │┃                                                                                ┃│                                              │
+│  ○ 6 stopped     │┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                              │
-│                  │┌─ 3 Details: shop-web-1 ────────────────── [Info] Logs Stats Processes Inspect ─┐│                                              │
+│                  │┌─ 3 Details: shop-web-1 ────────── [Info] Changes Logs Stats Processes Inspect ─┐│                                              │
 │                  ││Name      shop-web-1                                                            ││                                              │
 │                  ││ID        f948ec4de9e4                                                          ││                                              │
 │                  ││Image     nginx:1.27                                                            ││                                              │
 │                  ││State     ○ exited   Exited (0) 0 seconds ago                                   ││                                              │
 │                  ││Compose   shop / web                                                            ││                                              │
-│                  ││Started   2026-11-03 11:46:40                                                   ││                                              │
-│                  ││Finished  2026-11-03 14:46:41   exit code 0                                     ││                                              │
+│                  ││Started   2026-11-04 07:48:36                                                   ││                                              │
+│                  ││Finished  2026-11-04 10:48:37   exit code 0                                     ││                                              │
 │                  ││Command   nginx -g daemon off;                                                  ││                                              │
 │                  ││Restart   no (restarted 0×)                                                     ││                                              │
 │                  ││Runtime   tty=false  privileged=false  env vars=1                               ││                                              │
-│                  ││Created   2026-11-03 11:46:40                                                   ││                                              │
+│                  ││Created   2026-11-04 07:48:36                                                   ││                                              │
 │                  ││                                                                                │└──────────────────────────────────────────────┘
 │                  ││Ports                                                                           │┌─ 5 Jobs ──────────────────────────── 1 done ─┐
-│                  ││  none                                                                          ││▸ ✓ stop container shop-web-1              0ms│
+│                  ││  none                                                                          ││▸ ✓ stop container shop-web-1              1ms│
 │                  ││                                                                                ││                                              │
 │                  ││Networks                                                                        ││                                              │
 │                  ││  shop_default  (no address: not running)                                       ││                                              │

@@ -69,13 +69,14 @@ type History struct {
 type Image struct {
 	OS, Architecture, Variant string
 
-	User        string
-	Cmd         []string
-	Entrypoint  []string
-	Env         []string
-	WorkingDir  string
-	Healthcheck []string // nil: none; e.g. {"CMD", "true"}
-	Labels      map[string]string
+	User         string
+	Cmd          []string
+	Entrypoint   []string
+	Env          []string
+	WorkingDir   string
+	Healthcheck  []string // nil: none; e.g. {"CMD", "true"}
+	ExposedPorts []string // "8000/tcp"
+	Labels       map[string]string
 
 	Layers []Layer
 	// History overrides the history derived from the layers (one non-empty
@@ -133,6 +134,19 @@ func digest(b []byte) string {
 }
 
 func hexOf(d string) string { return strings.TrimPrefix(d, "sha256:") }
+
+// DiffID is the layer's diff ID: the digest of its uncompressed tar, as
+// the image config's rootfs lists it.
+func (l Layer) DiffID() string { return digest(layerTar(l)) }
+
+// ContentSize is the bytes of file content the layer adds.
+func (l Layer) ContentSize() int64 {
+	var n int64
+	for _, f := range l.Files {
+		n += int64(len(f.Body))
+	}
+	return n
+}
 
 // layerTar returns the uncompressed tar of a layer.
 func layerTar(l Layer) []byte {
@@ -215,6 +229,13 @@ func (img Image) config(diffIDs []string) []byte {
 	}
 	if img.Healthcheck != nil {
 		cfg["Healthcheck"] = healthcheck{Test: img.Healthcheck}
+	}
+	if len(img.ExposedPorts) > 0 {
+		ports := map[string]any{}
+		for _, p := range img.ExposedPorts {
+			ports[p] = map[string]any{}
+		}
+		cfg["ExposedPorts"] = ports
 	}
 	hist := img.History
 	if hist == nil {

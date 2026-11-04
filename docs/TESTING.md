@@ -702,6 +702,42 @@ Stated plainly, because a control plane deserves it:
 - `e2e.TestProcessesView` — the real binary at 140×40 and 80×24: open, refresh, another
   container, a stopped one; screens 29 and 30.
 
+## Round eight: image changes
+
+- `changes.TestFindPairRefusals` — the pair from a reference: a moved tag, the default
+  registry and `:latest` normalisation, a digest, an image ID (full and short), a tag that no
+  longer resolves, the same image; and the platform refusal.
+- `changes.TestLineage` — base intact with layers added, divergence, no layer in common, a
+  history that does not map (no instruction, the reason said), and a build argument's value
+  kept out of the instruction.
+- `changes.TestConfigNeverCarriesEnvValues` — every config field, labels added, removed and
+  changed, and environment names only: no value in any change.
+- `changes.TestContent` — packages added, removed and version changed; a pseudo-package
+  skipped; findings that appeared and disappeared, a layer finding whose share changed not
+  counted as either; an unknown database said, not compared; an unreadable layer refuses.
+- `engine.TestImageFactsKeepsNoEnvValue` — two GETs per image, the decoded fields, and no
+  environment value anywhere in the struct, printed every way. `readMethods` lists
+  `ImageFacts`, so `TestReadOnlyCoversEveryMutation` still counts 18 mutations.
+- `ui.TestChangesMovedTag` (120×40 and 80×24) — the witness is the fake's request log: at most
+  four requests on opening, exactly four image reads, no export before Enter; the shared
+  prefix, the added layers with their instructions, the config difference; after Enter two
+  exports, the package and finding differences, the token masked, the job succeeded; leaving
+  and returning draws in the same frame with no request; both reports in Findings' cache.
+- `ui.TestChangesEveryTheme` — every theme at 80×24 and 120 columns, frame geometry intact.
+- `ui.TestChangesCancelAndRetry` — a slowed export cancelled with `c`, said, and retried.
+- `ui.TestChangesRefusals` — on `SeedChanges`: pinned, created from an ID, unresolved, the
+  same image, another platform (Enter reads nothing for any of them), an unreadable zstd
+  layer after Enter, and a rebuild on another base.
+- `ui.TestChangesReadOnly` — the whole flow with `--read-only`: no mutation, only GET/HEAD.
+- Every UI test above checks, through `noEnvValue`, that no environment value of either build
+  is on screen, in the status line, or in any job's title, status, error or log.
+- `e2e.TestChangesView` — the real binary at 120×40 and at 80×24 read-only: no export before
+  Enter, the comparison, no environment value on screen, only GET/HEAD; screens 33 and 34.
+
+What these do not show: a real daemon's moved tag. The fake serves the two builds' real
+archives, inspect and history consistently, but the comparison has not been run against
+images pulled from a registry.
+
 ## Running everything
 
 ```sh

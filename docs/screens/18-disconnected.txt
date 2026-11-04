@@ -1,30 +1,30 @@
- Docker Desk  unix:///tmp/ddfake3075919687/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ✗ DISCONNECTED — retrying
-┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Images (14, 15 refs) ─────────────────────────────────────────────────┐┌─ 4 Events ────────────── ✗ disconnected ─┐
-┃  Containers    12┃│  REPOSITORY          TAG         IMAGE ID          SIZE    AGE   USED BY ││14:46:49 ── event stream interrupted: eve…│
-┃▸ Images        14┃│▸ alpine              3.20        bbfb6bb5502a     7.8MB    24h     2 ctr ││                                          │
-┃  Volumes        7┃│  busybox             1.36        b227a1c6d0d2     4.3MB    24h     1 ctr ││                                          │
-┃  Networks       7┃│  gcr.io/distroless…  nonroot     37588eec338e     2.0MB    24h     1 ctr ││                                          │
-┃  Compose        2┃│  ghost               5           da2f78b4d6ff     494MB    24h     1 ctr ││                                          │
-┃                  ┃│  mysql               8           11a7b13fbf86     584MB    24h     1 ctr ││                                          │
-┃  ● 7 running     ┃│  nginx               1.27        f673addec473     188MB    24h     1 ctr ││                                          │
-┃  ‖ 1 paused      ┃│  node                22-alpine   3b9daf1cabe0     154MB    40d         - ││                                          │
-┃  ○ 4 stopped     ┃│  node                lts-alpine  3b9daf1cabe0     154MB    40d         - ││                                          │
+ Docker Desk  unix:///tmp/ddfake1988205130/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ✗ DISCONNECTED — retrying
+┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Images (16, 17 refs) ─────────────────────────────────────────────────┐┌─ 4 Events ────────────── ✗ disconnected ─┐
+┃  Containers    13┃│  REPOSITORY          TAG         IMAGE ID          SIZE    AGE   USED BY ││10:48:45 ── event stream interrupted: eve…│
+┃▸ Images        16┃│▸ acme/report         1.4         efc03945f57b     114MB     0s         - ││                                          │
+┃  Volumes        7┃│  alpine              3.20        bbfb6bb5502a     7.8MB    24h     2 ctr ││                                          │
+┃  Networks       7┃│  busybox             1.36        b227a1c6d0d2     4.3MB    24h     1 ctr ││                                          │
+┃  Compose        2┃│  gcr.io/distroless…  nonroot     37588eec338e     2.0MB    24h     1 ctr ││                                          │
+┃                  ┃│  ghost               5           da2f78b4d6ff     494MB    24h     1 ctr ││                                          │
+┃  ● 7 running     ┃│  mysql               8           11a7b13fbf86     584MB    24h     1 ctr ││                                          │
+┃  ‖ 1 paused      ┃│  nginx               1.27        f673addec473     188MB    24h     1 ctr ││                                          │
+┃  ○ 5 stopped     ┃│  node                22-alpine   3b9daf1cabe0     154MB    40d         - ││                                          │
+┃                  ┃│  node                lts-alpine  3b9daf1cabe0     154MB    40d         - ││                                          │
 ┃                  ┃│  postgres            16          bf2c21e18612     424MB    24h     1 ctr ││                                          │
 ┃                  ┃│  python              3.12-slim   90db23bd5600     131MB    14d         - ││                                          │
-┃                  ┃│  redis               7           742705926f80     116MB    24h     1 ctr ││                                          │
 ┃                  ┃└──────────────────────────────────────────────────────────────────────────┘│                                          │
-┃                  ┃┌─ 3 Details: alpine:3.20 ─────────────────────── [Info] Inspect Findings ─┐│                                          │
-┃                  ┃│Reference  alpine:3.20                                                    ││                                          │
-┃                  ┃│ID         bbfb6bb5502a                                                   ││                                          │
-┃                  ┃│Size       7.8MB                                                          ││                                          │
-┃                  ┃│Created    2026-11-02 14:46:49  (24h ago)                                 ││                                          │
+┃                  ┃┌─ 3 Details: acme/report:1.4 ─────────────────── [Info] Inspect Findings ─┐│                                          │
+┃                  ┃│Reference  acme/report:1.4                                                ││                                          │
+┃                  ┃│ID         efc03945f57b                                                   ││                                          │
+┃                  ┃│Size       114MB                                                          ││                                          │
+┃                  ┃│Created    2026-11-04 10:48:45  (0s ago)                                  ││                                          │
 ┃                  ┃│                                                                          ││                                          │
 ┃                  ┃│References                                                                ││                                          │
-┃                  ┃│  alpine:3.20                                                             ││                                          │
+┃                  ┃│  acme/report:1.4                                                         ││                                          │
 ┃                  ┃│                                                                          ││                                          │
 ┃                  ┃│Used by                                                                   ││                                          │
-┃                  ┃│  ● noisy-logger  running                                                 ││                                          │
-┃                  ┃│  ‖ paused-batch  paused                                                  │└──────────────────────────────────────────┘
+┃                  ┃│  no container                                                            ││                                          │
+┃                  ┃│                                                                          │└──────────────────────────────────────────┘
 ┃                  ┃│                                                                          │┌─ 5 Jobs ─────────────────────────────────┐
 ┃                  ┃│                                                                          ││No jobs yet.                              │
 ┃                  ┃│                                                                          ││Everything that changes the daemon        │
@@ -36,5 +36,5 @@
 ┃                  ┃│                                                                          ││                                          │
 ┃                  ┃│                                                                          ││                                          │
 ┗━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────┘
- Lost the connection to the Docker daemon at unix:///tmp/ddfake3075919687/d.sock — retrying. Data on screen may be stale.
+ Lost the connection to the Docker daemon at unix:///tmp/ddfake1988205130/d.sock — retrying. Data on screen may be stale.
  ↑↓ pick a kind  Enter go to list                                                                                  Tab pane  ? keys  q quit

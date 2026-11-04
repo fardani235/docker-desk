@@ -26,7 +26,7 @@ const (
 )
 
 var kindTabs = [kindCount][]string{
-	KindContainers: {tabInfo, tabLogs, tabStats, tabProcesses, tabInspect},
+	KindContainers: {tabInfo, tabChanges, tabLogs, tabStats, tabProcesses, tabInspect},
 	KindImages:     {tabInfo, tabInspect, tabFindings},
 	KindVolumes:    {tabInfo, tabInspect},
 	KindNetworks:   {tabInfo, tabInspect},
@@ -815,6 +815,8 @@ func (m *Model) renderDetails(w, h int) []string {
 		return m.renderStats(w, h)
 	case tabProcesses:
 		return m.renderProcesses(w, h)
+	case tabChanges:
+		return m.renderChanges(w, h)
 	case tabInspect:
 		if len(m.inspect.lines) == 0 {
 			if m.detail.err != "" {

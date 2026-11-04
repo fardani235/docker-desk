@@ -257,6 +257,9 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 	if m.tabName() == tabFindings && m.onFindingsKey(key) {
 		return nil
 	}
+	if m.tabName() == tabChanges && m.onChangesKey(key) {
+		return nil
+	}
 	page := max(m.detailHeight-2, 1)
 	scroll := func(delta int) {
 		switch m.tabName() {
@@ -266,6 +269,8 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 			m.inspect.scroll(delta)
 		case tabProcesses:
 			m.proc.view.scroll(delta)
+		case tabChanges:
+			m.chg.view.scroll(delta)
 		case tabInfo:
 			m.info1.scroll(delta)
 		}

@@ -144,11 +144,11 @@ func TestQuit(t *testing.T) {
 
 func TestKindsAndLists(t *testing.T) {
 	b := newBench(t, benchOpts{})
-	b.see("Containers    12", "Images        14", "Volumes        7", "Networks       7", "Compose        2")
+	b.see("Containers    13", "Images        16", "Volumes        7", "Networks       7", "Compose        2")
 
 	// Moving the highlight in the Kinds pane is enough: no Enter needed.
 	b.keys("1", "down")
-	b.see("2 Images (14, 15 refs)", "REPOSITORY", "TAG", "SIZE")
+	b.see("2 Images (16, 17 refs)", "REPOSITORY", "TAG", "SIZE")
 	// One row per tag; untagged images are <none>.
 	rows := strings.Join(b.rowNames(), "|")
 	if !strings.Contains(rows, "node:22-alpine") || !strings.Contains(rows, "node:lts-alpine") || !strings.Contains(rows, "<untagged>") {
@@ -163,7 +163,7 @@ func TestKindsAndLists(t *testing.T) {
 	b.keys("down")
 	b.see("2 Compose (2)", "PROJECT", "RUNNING", "/home/dev/src/shop")
 	b.keys("g")
-	b.see("2 Containers (12)", "STATE", "● running", "○ exited", "‖ paused")
+	b.see("2 Containers (13)", "STATE", "● running", "○ exited", "‖ paused")
 
 	// Counts follow the daemon without any key.
 	if _, err := b.eng.CreateVolume(context.Background(), "fresh"); err != nil {
@@ -205,7 +205,7 @@ func TestHighlightFollowsTheObject(t *testing.T) {
 	// Rows appear above it.
 	b.srv.AddContainer(fakeengine.ContainerSpec{Name: "aaa", Image: "alpine:3.20"})
 	b.srv.Emit("container", "create", "x", nil)
-	b.until("refresh", func() bool { return len(b.m.snap.Containers) == 13 })
+	b.until("refresh", func() bool { return len(b.m.snap.Containers) == 14 })
 	if r, _ := b.m.currentRow(); r.name != "redis-cache" || b.m.sel[KindContainers].idx != before+1 {
 		t.Fatalf("highlight is on %q at %d (was %d)", r.name, b.m.sel[KindContainers].idx, before)
 	}
@@ -224,7 +224,7 @@ func TestHighlightFollowsTheObject(t *testing.T) {
 	if err := b.eng.RemoveContainer(context.Background(), b.srv.ContainerID("redis-cache")); err != nil {
 		t.Fatal(err)
 	}
-	b.until("refresh", func() bool { return len(b.m.snap.Containers) == 12 })
+	b.until("refresh", func() bool { return len(b.m.snap.Containers) == 13 })
 	b.settle()
 	r, ok := b.m.currentRow()
 	if !ok || r.name == "redis-cache" || b.m.sel[KindContainers].idx != idx {
@@ -241,7 +241,7 @@ func TestFilter(t *testing.T) {
 	b.m.focus = PaneList
 	b.keys("/")
 	b.typeText("SHOP-") // case-insensitive, live
-	b.see("2 Containers (4 of 12)", "/SHOP-")
+	b.see("2 Containers (4 of 13)", "/SHOP-")
 	b.keys("enter")
 	b.see("filter: SHOP-")
 	for _, n := range b.rowNames() {
@@ -252,12 +252,12 @@ func TestFilter(t *testing.T) {
 	// Esc while editing restores the previous filter.
 	b.keys("/")
 	b.typeText("db")
-	b.see("(1 of 12)")
+	b.see("(1 of 13)")
 	b.keys("esc")
-	b.see("(4 of 12)")
+	b.see("(4 of 13)")
 	// Esc in the list clears it.
 	b.keys("esc")
-	b.see("2 Containers (12)")
+	b.see("2 Containers (13)")
 	b.keys("/")
 	b.typeText("zzz")
 	b.keys("enter")
@@ -283,7 +283,7 @@ func TestDetails(t *testing.T) {
 	// Raw inspect: the daemon's whole document, scrollable.
 	b.selectRow("shop-web-1")
 	b.see("0.0.0.0:8080 → 80/tcp")
-	b.keys("]", "]", "]", "]") // Info Logs Stats Processes Inspect
+	b.keys("]", "]", "]", "]", "]") // Info Changes Logs Stats Processes Inspect
 	b.see("[Inspect]", `"Id": "`+b.srv.ContainerID("shop-web-1")+`"`, `"State": {`)
 	top := b.screen()
 	b.keys("3", "pgdown")
@@ -331,7 +331,7 @@ func TestLogsView(t *testing.T) {
 	}})
 	b.m.focus = PaneList
 	b.selectRow("app")
-	b.keys("]")
+	b.keys("]", "]") // Info Changes Logs
 	b.see("[Logs]", "boot ok", "● following")
 	if b.srv.LogFollowers("app") != 1 {
 		t.Fatal("no log stream is open")
@@ -412,7 +412,7 @@ func TestStatsView(t *testing.T) {
 		cpu, mem := b.m.liveCells(b.m.rows[KindContainers][b.m.sel[KindContainers].idx])
 		return strings.HasSuffix(cpu, "%") && strings.HasSuffix(mem, "iB")
 	})
-	b.keys("]", "]")
+	b.keys("]", "]", "]") // Info Changes Logs Stats
 	b.see("[Stats]", "CPU", "%", "MEM", "/ 16.0GiB", "NET", "↓", "↑", "DISK", "PIDS", "samples")
 	first := b.screen()
 	b.until("figures move", func() bool { b.settle(); return b.screen() != first })
@@ -746,8 +746,8 @@ func TestConnectAndDisconnectPickers(t *testing.T) {
 			t.Errorf("already-attached container offered: %s", it.label)
 		}
 	}
-	if len(b.m.dlg.items) != 8 {
-		t.Errorf("want 8 candidates, got %d", len(b.m.dlg.items))
+	if len(b.m.dlg.items) != 9 {
+		t.Errorf("want 9 candidates, got %d", len(b.m.dlg.items))
 	}
 	b.keys("esc")
 

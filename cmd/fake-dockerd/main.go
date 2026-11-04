@@ -29,11 +29,15 @@ func main() {
 	socket := flag.String("socket", "/tmp/docker-desk-sandbox.sock", "unix socket to listen on")
 	tcp := flag.String("tcp", "", "listen on this TCP address (host:port, without TLS) instead of the unix socket")
 	empty := flag.Bool("empty", false, "start with no containers, images, volumes or custom networks")
+	changes := flag.Bool("changes", false, "also seed a container for every case the Changes tab has nothing to compare")
 	flag.Parse()
 
 	srv := fakeengine.New()
 	if !*empty {
 		srv.SeedDemo()
+	}
+	if *changes {
+		srv.SeedChanges()
 	}
 	var err error
 	if *tcp != "" {
