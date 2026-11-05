@@ -35,6 +35,9 @@ func main() {
 	srv := fakeengine.New()
 	if !*empty {
 		srv.SeedDemo()
+		// Images › Upstream: a moved, a current and a gone tag on a
+		// registry that never resolves, so the daemon answers.
+		srv.SeedUpstream()
 	}
 	if *changes {
 		srv.SeedChanges()

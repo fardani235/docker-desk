@@ -16,7 +16,7 @@ var readMethods = map[string]bool{
 	"Containers": true, "Images": true, "Volumes": true, "Networks": true,
 	"InspectContainer": true, "InspectImage": true, "InspectVolume": true, "InspectNetwork": true,
 	"SaveImage": true, "DiskUsage": true, "ImageSizes": true, "ImageLayers": true, "ImageFacts": true, "ContainerSizes": true,
-	"Events": true, "Logs": true, "Stats": true, "Processes": true,
+	"DistributionInspect": true, "Events": true, "Logs": true, "Stats": true, "Processes": true,
 	"ExecInspect": true,
 }
 

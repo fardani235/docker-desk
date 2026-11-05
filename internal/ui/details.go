@@ -29,7 +29,7 @@ const (
 
 var kindTabs = [kindCount][]string{
 	KindContainers: {tabInfo, tabChanges, tabLogs, tabStats, tabProcesses, tabInspect},
-	KindImages:     {tabInfo, tabInspect, tabFindings},
+	KindImages:     {tabInfo, tabInspect, tabFindings, tabUpstream},
 	KindVolumes:    {tabInfo, tabInspect},
 	KindNetworks:   {tabInfo, tabInspect},
 	KindCompose:    {tabInfo},
@@ -888,6 +888,8 @@ func (m *Model) renderTab(w, h int) []string {
 	switch m.tabName() {
 	case tabFindings:
 		return m.renderFindings(w, h)
+	case tabUpstream:
+		return m.renderUpstream(w, h)
 	case tabLogs:
 		return m.renderLogs(w, h)
 	case tabStats:

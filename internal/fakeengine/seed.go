@@ -223,3 +223,26 @@ func (s *Server) seedDisk() {
 		BuildRecord{ID: "b5c9d3e7f1g5h9j3k7l1m5n9", Type: "regular", Description: "[worker 3/4] RUN pip install -r requirements.txt", Size: 276_800_000, LastUsed: time.Now().Add(-9 * day)},
 	)
 }
+
+// SandboxRegistry is the registry the demo's Upstream tags live on. It is
+// under .invalid, which never resolves: the desk's own request fails at once,
+// without touching the network, and the fake daemon answers in its place —
+// the fallback, with no network at all.
+const SandboxRegistry = "registry.sandbox.invalid"
+
+// SeedUpstream gives Images › Upstream one tag that moved, one that is
+// current and one that is gone. The sandbox (fake-dockerd) calls it after
+// SeedDemo; it is separate so the demo's own figures, which tests pin, stay
+// as they are.
+func (s *Server) SeedUpstream() {
+	moved := SandboxRegistry + "/acme/web:2.3"
+	s.AddImage(88_000_000, 6*24*time.Hour, moved)
+	s.SetUpstream(moved, Upstream{Digest: "sha256:" + stableID("upstream", "acme/web:2.3 rebuilt"),
+		Platforms: []UpstreamPlatform{{OS: "linux", Architecture: "amd64"}, {OS: "linux", Architecture: "arm64", Variant: "v8"}}})
+	current := SandboxRegistry + "/acme/cron:1"
+	s.AddImage(23_000_000, 3*24*time.Hour, current)
+	s.SetUpstream(current, Upstream{})
+	gone := SandboxRegistry + "/acme/legacy:0.9"
+	s.AddImage(61_000_000, 90*24*time.Hour, gone)
+	s.SetUpstream(gone, Upstream{Gone: true})
+}

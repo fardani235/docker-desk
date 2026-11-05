@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake4060377278/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake2916155526/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Compose (2) ────────────────────────────────────────────────────────────────┐┌─ 4 Events ────────────────────────── ● live ─┐
 ┃  Containers    13┃│  PROJECT                       CONTAINERS   RUNNING  WORKING DIR               ││Waiting for engine events…                    │
 ┃  Images        16┃│▸ blog                                   2         0  /home/dev/src/blog        ││Everything the daemon does                    │

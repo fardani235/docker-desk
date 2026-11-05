@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake780936345/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake3915978737/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ────────────────────── ● live ─┐
 │▸ Containers    13│┃  NAME           IMAGE        STATE          CPU       MEM  STATUS        ┃│Waiting for engine events…                │
 │  Images        16│┃▸ distroless-s…  gcr.io/dis…  ● running        …         …  Up 5 hours    ┃│Everything the daemon does                │
@@ -18,11 +18,11 @@
 │                  ││ID       86f975de6cbb                                                     ││                                          │
 │                  ││Image    gcr.io/distroless/static:nonroot                                 ││                                          │
 │                  ││State    ● running   Up 5 hours                                           ││                                          │
-│                  ││Started  2026-11-04 05:49:16                                              ││                                          │
+│                  ││Started  2026-11-05 07:00:18                                              ││                                          │
 │                  ││Command  /svc                                                             ││                                          │
 │                  ││Restart  no (restarted 0×)                                                ││                                          │
 │                  ││Runtime  tty=false  privileged=false  env vars=1                          ││                                          │
-│                  ││Created  2026-11-04 05:49:16                                              ││                                          │
+│                  ││Created  2026-11-05 07:00:18                                              ││                                          │
 │                  ││                                                                          ││                                          │
 │                  ││Ports                                                                     │└──────────────────────────────────────────┘
 │                  ││  none                                                                    │┌─ 5 Jobs ─────────────────────────────────┐

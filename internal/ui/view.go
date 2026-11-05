@@ -321,6 +321,12 @@ func (m *Model) renderHints() string {
 			}
 			add("/", "filter")
 			add("⏎", "actions")
+		} else if m.tabName() == tabUpstream {
+			add("r", "ask again")
+			if m.up.run != nil || m.up.batch != nil {
+				add("c", "cancel")
+			}
+			add("[ ]", "tab")
 		} else if m.tabName() == tabFindings {
 			m.searchHints(add)
 			add("↑↓", "finding")
@@ -355,6 +361,9 @@ func (m *Model) renderHints() string {
 				continue // n steps through matches while a search is open
 			}
 			add(a.key, strings.TrimSuffix(a.label, "…"))
+		}
+		if m.kind == KindImages {
+			add("U", "upstream")
 		}
 	case m.focus == PaneEvents && m.evHeld:
 		add("↑↓", "move")
@@ -484,6 +493,24 @@ func (m *Model) helpLines(w int) []string {
 		"  Opening the tab reads the image's own archive (GET /images/get) once and",
 		"  keeps the report for its ID and platform. Findings name a rule, a source",
 		"  (daemon, image, desk), a certainty, the layer and the build instruction.",
+	)
+
+	sect("Images › Upstream tab, and U")
+	row("r", "ask the registry again (only while the tab is shown); the answer is replaced")
+	row("c", "cancel the check, or the check of every image, in progress")
+	row("U", "Images: check every tagged image, one at a time, as one job")
+	out = append(out,
+		"  Does the tag this image carries name a different build upstream today?",
+		"  Opening the tab asks the tag's registry once, as a job, after naming the host",
+		"  and whether a credential from the Docker configuration is involved. The answer",
+		"  is kept with its age; nothing polls, and a list refresh asks nothing.",
+		"  current, moved, gone, unknown or not applicable: never newer, never stale.",
+		"  moved shows both build times as their producers wrote them, which is later",
+		"  and by how much, and the layers the two share. When the desk cannot reach",
+		"  the registry the daemon is asked instead; that answer says via the daemon",
+		"  and has no build time. U stops at a quota refusal and says when it resets.",
+		"  The list's UPSTREAM column is filled only by a check. --no-registry forbids",
+		"  every registry request; read-only mode does not, since the check only reads.",
 	)
 
 	sect("Packages view (i, from Images › Findings)")

@@ -16,9 +16,10 @@ package forensics
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
+
+	"github.com/fardani235/docker-desk/internal/secret"
 )
 
 // Source says where a finding's evidence came from.
@@ -108,38 +109,12 @@ func (f Finding) Key() string {
 	return fmt.Sprintf("%s|%d|%s|%s|%s", f.Rule, f.Layer, f.Path, f.Subject, f.Evidence)
 }
 
-// Secret is a value that must never be printed except on purpose. Every
-// formatting path — fmt verbs, JSON, text marshalling — yields the mask;
-// only Reveal returns the value.
-type Secret struct {
-	v *string
-}
-
-const secretMask = "[masked]"
+// Secret is a value that must never be printed except on purpose. It is
+// the desk-wide type of internal/secret; see that package.
+type Secret = secret.Secret
 
 // NewSecret wraps a value.
-func NewSecret(v string) Secret { return Secret{v: &v} }
-
-// Present reports whether there is a value to reveal.
-func (s Secret) Present() bool { return s.v != nil }
-
-// Reveal returns the value. Callers display it and keep it nowhere else.
-func (s Secret) Reveal() string {
-	if s.v == nil {
-		return ""
-	}
-	return *s.v
-}
-
-func (s Secret) String() string   { return secretMask }
-func (s Secret) GoString() string { return secretMask }
-
-// Format makes every fmt verb print the mask.
-func (s Secret) Format(f fmt.State, _ rune) { _, _ = io.WriteString(f, secretMask) }
-
-// MarshalJSON and MarshalText keep the value out of any encoding.
-func (s Secret) MarshalJSON() ([]byte, error) { return []byte(`"` + secretMask + `"`), nil }
-func (s Secret) MarshalText() ([]byte, error) { return []byte(secretMask), nil }
+func NewSecret(v string) Secret { return secret.New(v) }
 
 // Order is how findings are listed.
 type Order int

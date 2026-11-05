@@ -94,6 +94,9 @@ type Server struct {
 
 	buildCache []BuildRecord
 
+	distOnce     sync.Once
+	distribution *distState
+
 	reqMu    sync.Mutex
 	requests []Request
 
@@ -435,6 +438,12 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 		s.handleImageInspect(w, strings.Join(seg[1:len(seg)-1], "/"))
 	case len(seg) >= 2 && seg[0] == "images" && del:
 		s.handleImageRemove(w, r, strings.Join(seg[1:], "/"))
+
+	case path == "/auth" && post:
+		s.handleAuth(w, r)
+	case len(seg) >= 3 && seg[0] == "distribution" && seg[len(seg)-1] == "json" && get:
+		name, _ := distributionName(seg)
+		s.handleDistribution(w, r, name)
 
 	case path == "/volumes" && get:
 		s.handleVolumeList(w, r)

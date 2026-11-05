@@ -1,11 +1,11 @@
- Docker Desk  unix:///tmp/ddfake4060377278/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake2916155526/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (16, 17 refs) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│10:48:37 ctr kill sig 15 shop-web-1           │
-│▸ Images        16│┃▸ acme/report             1.4           efc03945f57b     114MB     2s         - ┃│10:48:37 ctr die exit 0 shop-web-1            │
-│  Volumes        7│┃  alpine                  3.20          bbfb6bb5502a     7.8MB    24h     2 ctr ┃│10:48:37 net disconnect shop_default  ← shop-…│
-│  Networks       7│┃  busybox                 1.36          b227a1c6d0d2     4.3MB    24h     1 ctr ┃│10:48:37 ctr stop       shop-web-1            │
-│  Compose        2│┃  gcr.io/distroless/sta…  nonroot       37588eec338e     2.0MB    24h     1 ctr ┃│10:48:38 net connect    shop_default  ← shop-…│
-│                  │┃  ghost                   5             da2f78b4d6ff     494MB    24h     1 ctr ┃│10:48:38 ctr start      shop-web-1            │
+│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│  11:59:30 ctr kill sig 15 shop-web-1         │
+│▸ Images        16│┃▸ acme/report             1.4           efc03945f57b     114MB     2s         - ┃│  11:59:30 ctr die exit 0 shop-web-1          │
+│  Volumes        7│┃  alpine                  3.20          bbfb6bb5502a     7.8MB    24h     2 ctr ┃│  11:59:30 net disconnect shop_default  ← sho…│
+│  Networks       7│┃  busybox                 1.36          b227a1c6d0d2     4.3MB    24h     1 ctr ┃│  11:59:30 ctr stop       shop-web-1          │
+│  Compose        2│┃  gcr.io/distroless/sta…  nonroot       37588eec338e     2.0MB    24h     1 ctr ┃│  11:59:30 net connect    shop_default  ← sho…│
+│                  │┃  ghost                   5             da2f78b4d6ff     494MB    24h     1 ctr ┃│  11:59:30 ctr start      shop-web-1          │
 │  ● 7 running     │┃  mysql                   8             11a7b13fbf86     584MB    24h     1 ctr ┃│                                              │
 │  ‖ 1 paused      │┃  nginx                   1.27          f673addec473     188MB    24h     1 ctr ┃│                                              │
 │  ○ 5 stopped     │┃  node                    22-alpine     3b9daf1cabe0     154MB    40d         - ┃│                                              │
@@ -15,7 +15,7 @@
 │                  │┃  redis                   7             742705926f80     116MB    24h     1 ctr ┃│                                              │
 │                  │┗━━━━━━━━━━━┏━ ◆ Pull image ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
 │                  │┌─ 3 Details┃                                                                                    ┃                               │
-│                  ││Reference  ┃ daemon     unix:///tmp/ddfake4060377278/d.sock  (context default)                  ┃                               │
+│                  ││Reference  ┃ daemon     unix:///tmp/ddfake2916155526/d.sock  (context default)                  ┃                               │
 │                  ││ID         ┃                                                                                    ┃                               │
 │                  ││Size       ┃ Image reference:                                                                   ┃                               │
 │                  ││Created    ┃ > hello-world                                                                      ┃                               │
@@ -29,7 +29,7 @@
 │                  ││References                                                                      │└──────────────────────────────────────────────┘
 │                  ││  acme/report:1.4                                                               │┌─ 5 Jobs ──────────────────────────── 2 done ─┐
 │                  ││                                                                                ││▸ ✓ start container shop-web-1             0ms│
-│                  ││Used by                                                                         ││  ✓ stop container shop-web-1              1ms│
+│                  ││Used by                                                                         ││  ✓ stop container shop-web-1              0ms│
 │                  ││  no container                                                                  ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
@@ -39,4 +39,4 @@
 │                  ││                                                                                ││                                              │
 └──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
  ✓ start container shop-web-1
- ↑↓ move  Space select  / filter  ⏎ actions  P pull  d remove  X prune                                                       Tab pane  ? keys  q quit
+ ↑↓ move  Space select  / filter  ⏎ actions  P pull  d remove  X prune  U upstream                                           Tab pane  ? keys  q quit

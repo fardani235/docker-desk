@@ -9,6 +9,7 @@ package testguard
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -82,4 +83,24 @@ func CheckRemoteSocket(path string) error {
 		return nil
 	}
 	return fmt.Errorf("test guard: refusing an SSH tunnel to %s — tests may only tunnel to a fake daemon's socket under %s", path, tmp)
+}
+
+// CheckRegistry decides whether the registry client may dial address
+// (host:port). Under the guard only a loopback address may: every fake
+// registry is an httptest server on 127.0.0.1, and no real one is. A test
+// that would reach Docker Hub, GHCR or any other real registry fails here,
+// loudly, before a packet leaves the machine. See docs/DECISIONS.md, round
+// eleven.
+func CheckRegistry(address string) error {
+	if !Active() {
+		return nil
+	}
+	host := address
+	if h, _, err := net.SplitHostPort(address); err == nil {
+		host = h
+	}
+	if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() {
+		return nil
+	}
+	return fmt.Errorf("test guard: refusing a registry connection to %s — tests may only reach a fake registry on a loopback address", address)
 }

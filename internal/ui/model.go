@@ -24,6 +24,7 @@ import (
 
 	"github.com/fardani235/docker-desk/internal/dockerctx"
 	"github.com/fardani235/docker-desk/internal/engine"
+	"github.com/fardani235/docker-desk/internal/freshness"
 	"github.com/fardani235/docker-desk/internal/jobs"
 	"github.com/fardani235/docker-desk/internal/live"
 	"github.com/fardani235/docker-desk/internal/plan"
@@ -106,6 +107,15 @@ type Options struct {
 	// before analysing an image on a remote daemon (500 MB). Negative
 	// never asks.
 	FindingsAskAbove int64
+
+	// NoRegistry forbids every registry request: --no-registry.
+	NoRegistry bool
+	// DockerConfigDir is where registry credentials are read from
+	// ($DOCKER_CONFIG, or ~/.docker); "" for none.
+	DockerConfigDir string
+	// Upstream, when set, is the checker the Upstream tab uses instead of
+	// one built from the fields above (tests).
+	Upstream *freshness.Checker
 }
 
 // Model is the whole desk.
@@ -167,6 +177,8 @@ type Model struct {
 
 	// ---- findings tab (Images) ----
 	fx findingsState
+	// up is the Upstream tab and the list's UPSTREAM column.
+	up upstreamState
 
 	// ---- packages view (Images › Findings, then i) ----
 	pk pkgView
@@ -283,6 +295,7 @@ func New(opts Options) *Model {
 		wasConnected: true,
 	}
 	m.info1.wrap = true
+	m.newUpstream()
 	m.inspect.wrap = true
 	m.ds.in = textinput.New()
 	m.ds.in.CharLimit = 80
@@ -503,8 +516,10 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		if cmd := m.syncFindings(); cmd != nil {
 			cmds = append(cmds, cmd)
 		}
+		m.syncUpstream()
 	} else {
 		m.collectFindings()
+		m.collectUpstream()
 	}
 
 	// A jump from the Events pane still waiting for its row.

@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake3892234192/d.sock  ● connected  [READ-ONLY]
+┌─ 1 Kinds ──────┐┌─ 2 Images (1 of 19) ──────────────────── filter: acme/web ─┐
+│  Containers  13││  REPOSITORY        TAG        IMAGE ID          SIZE    AGE│
+│▸ Images      19││▸ registry.sandbo…  2.3        457d5c729f1c    88.0MB     6d│
+│  Volumes      7││                                                            │
+│  Networks     7││                                                            │
+│  Compose      2│└────────────────────────────────────────────────────────────┘
+│                │┏━ ◆ 3 Details: registry.sandbox.invalid/acme/web:2.3 ━━━━━━━┓
+│  ● 7 running   │┃registry.sandbox.invalid/acme/web:2.3 · asks registry.sandbo┃
+│  ‖ 1 paused    │┃x.invalid anonymously                                       ┃
+│  ○ 5 stopped   │┃                                                            ┃
+│                │┃Moved (via the daemon): the tag names a different build than┃
+│                │┃ this image.                                                ┃
+│                │┃The daemon reports digests only: the upstream build time and┃
+│                │┃ the layer comparison are unknown.                          ┃
+└────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ────────────── 1 done ─┐
+│Waiting for engine events…                  ││▸ ✓ check upstream registry… 1ms│
+│Everything the daemon does                  ││                                │
+│shows up here as it happens.                ││                                │
+│                                            ││                                │
+└────────────────────────────────────────────┘└────────────────────────────────┘
+ ✓ check upstream registry.sandbox.invalid/acme/web:2.3
+ r ask again  [ ] tab  P pull  d remove  X prune  U u… Tab pane  ? keys  q quit

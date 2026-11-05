@@ -647,3 +647,24 @@ func TestCheckTCP(t *testing.T) {
 		t.Fatal("only a TCP endpoint is checked this way")
 	}
 }
+
+func TestConfigDir(t *testing.T) {
+	for _, tc := range []struct {
+		name, cfg, home, want string
+	}{
+		{"DOCKER_CONFIG wins", "/etc/dc", "/home/op", "/etc/dc"},
+		{"home only", "", "/home/op", "/home/op/.docker"},
+		{"blank DOCKER_CONFIG", "  ", "/home/op", "/home/op/.docker"},
+		{"neither", "", "", ""},
+	} {
+		env := func(k string) string {
+			if k == "DOCKER_CONFIG" {
+				return tc.cfg
+			}
+			return ""
+		}
+		if got := ConfigDir(env, tc.home); got != tc.want {
+			t.Errorf("%s: got %q, want %q", tc.name, got, tc.want)
+		}
+	}
+}

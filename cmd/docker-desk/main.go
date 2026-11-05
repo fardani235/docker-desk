@@ -74,6 +74,10 @@ Flags:
   --read-only         look, don't touch: every action that changes or deletes
                       something, and the shell, is disabled; any request other
                       than GET/HEAD is refused before it is sent
+  --no-registry       never contact a registry: the Images › Upstream tab and U
+                      ask nothing, by the desk or through the daemon (the
+                      air-gap switch; --read-only alone still allows the
+                      check, which only reads)
   --check             resolve the daemon, verify it answers, print what would
                       be used, and exit without opening the workspace
   --theme NAME        colour theme (or DOCKER_DESK_THEME); T cycles inside
@@ -101,6 +105,7 @@ func run(args []string, stdin *os.File, stdout, stderr io.Writer) int {
 	fs.SetOutput(io.Discard)
 	readOnly := fs.Bool("read-only", false, "")
 	check := fs.Bool("check", false, "")
+	noRegistry := fs.Bool("no-registry", false, "")
 	showVersion := fs.Bool("version", false, "")
 	var sel dockerctx.Selection
 	fs.StringVar(&sel.Host, "host", "", "")
@@ -264,7 +269,8 @@ The workspace was not opened.
 
 	// Only now is the terminal taken over; Bubble Tea does its own signal
 	// handling from here.
-	uiOpts := ui.Options{Engine: eng, Endpoint: ep, Info: info, ReadOnly: *readOnly, Theme: theme}
+	uiOpts := ui.Options{Engine: eng, Endpoint: ep, Info: info, ReadOnly: *readOnly, Theme: theme,
+		NoRegistry: *noRegistry, DockerConfigDir: dockerctx.ConfigDir(os.Getenv, home)}
 	if tunnel != nil {
 		uiOpts.LinkProblem = tunnel.Problem
 	}

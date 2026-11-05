@@ -187,7 +187,7 @@ the desk keeps answering keys, and everything resumes by itself when the daemon 
 | --- | --- |
 | **1 Kinds** | Containers, Images, Volumes, Networks, Compose — with live counts. Moving the highlight is enough; the list follows. |
 | **2 List** | The objects of that kind. Containers show live CPU and memory. The highlight follows the *object* when the list changes underneath it. |
-| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON; `/` finds a key or value and names its path), for containers **Changes** (what the image its tag names now would bring; see below), **Logs** (live follow; `/` filters), **Stats** (CPU, memory, network, disk — with history) and **Processes** (a snapshot of `docker top`; see below), and for images **Findings** (what the image's own bytes hold; see below). |
+| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON; `/` finds a key or value and names its path), for containers **Changes** (what the image its tag names now would bring; see below), **Logs** (live follow; `/` filters), **Stats** (CPU, memory, network, disk — with history) and **Processes** (a snapshot of `docker top`; see below), and for images **Findings** (what the image's own bytes hold; see below) and **Upstream** (whether the tag names another build today; see below). |
 | **4 Events** | The engine's event stream as it happens. It is the answer to everything you do — and to everything anyone else does to this daemon. |
 | **5 Jobs** | Every change you asked for, running in the background: progress while it runs, the daemon's answer when it ends. |
 | **Space** (`S`) | Not a pane: a full-screen account of the disk — the daemon's totals, unique and shared bytes per image, what a removal frees. See [Space](#space--where-the-bytes-went-and-what-removing-something-frees). |
@@ -330,6 +330,46 @@ Installed OS packages the SBOM does not list become one `supply.undeclared` find
 declared OS packages that are not installed, or are at another version, become one
 `supply.sbom-drift` hint. In the sandbox, `python:3.12-slim` has every kind of disagreement.
 
+### Upstream — what the tag names today
+
+Images › **Upstream** asks the tag's registry whether it still names this image's build. Before
+it asks, the tab names the host and whether a credential from your Docker configuration is
+involved (`asks ghcr.io with the credential from credsStore desktop`); the check runs as a job,
+and its answer is kept for the session with its age. `r` (while the tab is shown) asks again;
+`c` cancels. Nothing polls, and a list refresh asks nothing.
+
+```
+Moved: the tag names a different build than this image.
+Local build:    2026-10-01 00:00 UTC (config created)
+Upstream build: 2026-10-05 00:00 UTC (config created)
+The upstream build is later, by 4d.
+The times are what each build's producer wrote in its config, not a fact.
+First 11 of 13 layers shared; 2 upstream layers differ (local has 13).
+```
+
+The verdict is **current**, **moved**, **gone**, **unknown** (with the reason: refused,
+unreachable, unverified certificate, quota, a credential helper that failed, a platform no longer
+published) or **not applicable** (built here, untagged, pinned to a digest). It never says newer
+or stale: build times are the producers' claims — a reproducible build carries the epoch, a
+rebuild can be dated before what it replaced — so a direction is given only when both times are
+usable and differ. The comparison uses the digest the daemon recorded when the image was pulled
+(`RepoDigests`), never the image ID, which on the classic image store is a different digest.
+
+Credentials come from `$DOCKER_CONFIG`, or `~/.docker` — `credHelpers`, `credsStore`, `auths` —
+under the key the Docker CLI uses (`https://index.docker.io/v1/` for Docker Hub). They are never
+shown, logged or written. When the desk cannot reach the registry (name, TLS, timeout, quota, an
+unreadable answer) it asks the daemon's `GET /distribution/{name}/json` with the same credential;
+that answer says *via the daemon* and has no build time. A refusal is an answer, and is not
+retried through the daemon.
+
+`U` (Images) checks every tagged image, one at a time, as one job, and stops at a quota refusal,
+saying when it resets — Docker Hub's anonymous quota is shared with `docker pull`. The list's
+**UPSTREAM** column shows the answers (`moved +4d`, `current`, `gone`); it appears once a
+check has answered, is filled only by checks, and is the first column to go when the list is
+narrow. `--no-registry` forbids every
+registry request, by the desk or through the daemon; `--read-only` does not, as the check only
+reads. Plain HTTP is used for loopback registries only; there is no private-CA option yet.
+
 ### Space — where the bytes went, and what removing something frees
 
 `S`, from any pane, covers the desk with an account of what this engine holds on disk; `S`
@@ -422,7 +462,8 @@ Press `?` inside the desk for the same list.
 | `a` | in the List: select every row the filter shows |
 | `Esc` | in the List: clear the selection; again, clear the filter; again, back to Kinds |
 | `Enter` | in the List: a menu of what you can do to the highlighted object, or to the selection |
-| `r` | refresh every list now; also takes a new Processes snapshot (now if the tab is shown, else on the next visit) |
+| `r` | refresh every list now; also takes a new Processes snapshot (now if the tab is shown, else on the next visit), and asks upstream again if Images › Upstream is shown |
+| `U` | Images: check every tagged image upstream, one at a time, as one job (see [Upstream](#upstream--what-the-tag-names-today)) |
 | `S` | Space: where the bytes went, and what removing something frees (see above) |
 | `T` | next colour theme |
 | `?` | help |
@@ -641,8 +682,11 @@ make sandbox
 starts `fake-dockerd` — an in-memory engine that speaks the real Docker API, seeded with two
 compose projects, containers in every state, a container that logs 20,000 lines a second, one
 without a shell, one that takes four seconds to stop, dangling images, unused volumes, an
-orphan network, and `report-job`, whose tag `acme/report:1.4` has since moved to a newer build
-(Containers › Changes) — and opens the desk on it. The header shows the sandbox socket. Nothing there
+orphan network, `report-job`, whose tag `acme/report:1.4` has since moved to a newer build
+(Containers › Changes), and three images on `registry.sandbox.invalid` — a name that never
+resolves, so Images › Upstream falls back to the fake daemon, which says `acme/web:2.3` moved,
+`acme/cron:1` is current and `acme/legacy:0.9` is gone, with no network at all — and opens the
+desk on it. The header shows the sandbox socket. Nothing there
 is real; break whatever you like. (The real `docker` CLI works against it too:
 `DOCKER_HOST=unix:///tmp/docker-desk-sandbox.sock docker ps`.)
 
