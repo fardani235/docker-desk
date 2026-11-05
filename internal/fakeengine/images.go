@@ -49,6 +49,19 @@ func (s *Server) AddImage(size int64, age time.Duration, refs ...string) string 
 	return s.addImageLocked(size, age, refs...).ID
 }
 
+// AddImageWithID seeds an image whose ID is id (hex, or sha256:hex) — the
+// digest a registry serves, as on a containerd store, where the ID is the
+// index digest. RepoDigests then names it for every reference.
+func (s *Server) AddImageWithID(id string, size int64, age time.Duration, refs ...string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	img := s.addImageLocked(size, age, refs...)
+	delete(s.images, img.ID)
+	img.ID = strings.TrimPrefix(id, "sha256:")
+	s.images[img.ID] = img
+	return img.ID
+}
+
 func (s *Server) addImageLocked(size int64, age time.Duration, refs ...string) *Image {
 	key := strings.Join(refs, ",")
 	img := &Image{

@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1065301184/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┌─ 2 Images (1 of 19) ──────────────────────────────────────── filter: acme/web ─┐┌─ 4 Events ────────────────────────── ● live ─┐
+│  Containers    13││  REPOSITORY       TAG       IMAGE ID          SIZE    AGE   USED BY  UPSTREAM  ││Waiting for engine events…                    │
+│▸ Images        19││▸ registry.sandb…  2.3       457d5c729f1c    88.0MB     6d         -  moved     ││Everything the daemon does                    │
+│  Volumes        7││                                                                                ││shows up here as it happens.                  │
+│  Networks       7││                                                                                ││                                              │
+│  Compose        2││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│  ● 7 running     ││                                                                                ││                                              │
+│  ‖ 1 paused      ││                                                                                ││                                              │
+│  ○ 5 stopped     ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  │└────────────────────────────────────────────────────────────────────────────────┘│                                              │
+│                  │┏━ ◆ 3 Details: registry.sandbox.invalid/acme/web:2.3 ━━━━━━━━━━ [Upstream] 4/4 ━┓│                                              │
+│                  │┃registry.sandbox.invalid/acme/web:2.3 · asks registry.sandbox.invalid anonymousl┃│                                              │
+│                  │┃y                                                                               ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃Moved (via the daemon): the tag names a different build than this image.        ┃│                                              │
+│                  │┃The daemon reports digests only: the upstream build time and the layer compariso┃│                                              │
+│                  │┃n are unknown.                                                                  ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃local digest     sha256:457d5c729f1c3027bdba76c67eac65574eb23d16323479d69d7e9fff┃│                                              │
+│                  │┃24a0af37                                                                        ┃│                                              │
+│                  │┃upstream digest  sha256:375e7da52cb98e61490797ae046fe3e3eb375e582e5ae6d3f30392ac┃│                                              │
+│                  │┃22d89046                                                                        ┃│                                              │
+│                  │┃answered by the daemon (unix:///tmp/ddfake1065301184/d.sock), because the desk c┃└──────────────────────────────────────────────┘
+│                  │┃ould not ask                                                                    ┃┌─ 5 Jobs ──────────────────────────── 1 done ─┐
+│                  │┃0s ago · r asks again                                                           ┃│▸ ✓ check upstream registry.sandbox.inva… 29ms│
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+└──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────────┘
+ ✓ check upstream registry.sandbox.invalid/acme/web:2.3
+ r ask again  [ ] tab  P pull  d remove  X prune  U upstream                                                                 Tab pane  ? keys  q quit

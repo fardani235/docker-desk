@@ -1,7 +1,7 @@
- Docker Desk  unix:///tmp/TestSearchInTheSandbox2852922700/001/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/TestSearchInTheSandbox2300695728/001/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┌─ 2 Containers (1 of 13) ───────────────────────────────── filter: noisy ─┐┌─ 4 Events ────────────────────── ● live ─┐
 │▸ Containers    13││  NAME           IMAGE        STATE          CPU       MEM  STATUS        ││Waiting for engine events…                │
-│  Images        16││▸ noisy-logger   alpine:3.20  ● running        …         …  Up 12 minutes ││Everything the daemon does                │
+│  Images        19││▸ noisy-logger   alpine:3.20  ● running        …         …  Up 12 minutes ││Everything the daemon does                │
 │  Volumes        7││                                                                          ││shows up here as it happens.              │
 │  Networks       7││                                                                          ││                                          │
 │  Compose        2││                                                                          ││                                          │
@@ -14,27 +14,27 @@
 │                  ││                                                                          ││                                          │
 │                  │└──────────────────────────────────────────────────────────────────────────┘│                                          │
 │                  │┏━ ◆ 3 Details: noisy-logger ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ [Logs] 3/6 ━┓│                                          │
-│                  │┃line 22103 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
+│                  │┃line 21297 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
 │                  │┃0                                                                         ┃│                                          │
-│                  │┃line 22134 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
+│                  │┃line 21328 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
 │                  │┃0                                                                         ┃│                                          │
-│                  │┃line 22165 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
+│                  │┃line 21359 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
 │                  │┃0                                                                         ┃│                                          │
-│                  │┃line 22196 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
+│                  │┃line 21390 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
 │                  │┃0                                                                         ┃│                                          │
-│                  │┃line 22227 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
+│                  │┃line 21421 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
 │                  │┃0                                                                         ┃│                                          │
-│                  │┃line 22258 level=error msg="upstream timed out" path=/api/orders status=50┃└──────────────────────────────────────────┘
+│                  │┃line 21452 level=error msg="upstream timed out" path=/api/orders status=50┃└──────────────────────────────────────────┘
 │                  │┃0                                                                         ┃┌─ 5 Jobs ─────────────────────────────────┐
-│                  │┃line 22289 level=error msg="upstream timed out" path=/api/orders status=50┃│No jobs yet.                              │
+│                  │┃line 21483 level=error msg="upstream timed out" path=/api/orders status=50┃│No jobs yet.                              │
 │                  │┃0                                                                         ┃│Everything that changes the daemon        │
-│                  │┃line 22320 level=error msg="upstream timed out" path=/api/orders status=50┃│runs here, in the background.             │
+│                  │┃line 21514 level=error msg="upstream timed out" path=/api/orders status=50┃│runs here, in the background.             │
 │                  │┃0                                                                         ┃│                                          │
-│                  │┃line 22351 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
+│                  │┃line 21545 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
 │                  │┃0                                                                         ┃│                                          │
-│                  │┃line 22382 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
+│                  │┃line 21576 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
 │                  │┃0                                                                         ┃│                                          │
-│                  │┃filter: error  ● following · 161 of 5000 match · 2000 older lines scrolle…┃│                                          │
+│                  │┃filter: error  ● following · 161 of 5000 match · 2400 older lines scrolle…┃│                                          │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────┘
 
  Esc clear filter  ↑↓ scroll  [ ] tab  f follow  w wrap  s start  t stop  R restart  p pause  u unpause  K kill  … Tab pane  ? keys  q quit

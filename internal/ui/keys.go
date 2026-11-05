@@ -91,7 +91,20 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 		// next visit to its tab — never in the background.
 		m.invalidateProcesses()
 		m.setStatus(toneDim, "Refreshing every list…")
+		// The Upstream tab's answer is asked again only when the tab is
+		// on screen: r there is a request the operator makes.
+		if m.upstreamVisible() {
+			m.askUpstreamAgain()
+			m.setStatus(toneDim, "Refreshing every list, and asking upstream again…")
+		}
 		return nil
+	case "U":
+		// A read, not an action: it changes nothing on the daemon, so it
+		// is not among the kind's guarded actions and works read-only.
+		if m.kind == KindImages && (m.focus == PaneList || m.focus == PaneDetails) {
+			m.startUpstreamBatch()
+			return nil
+		}
 	case "T":
 		m.setTheme(nextTheme(m.st.theme))
 		if dropped {
@@ -273,6 +286,9 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 		return nil
 	}
 	if m.tabName() == tabChanges && m.onChangesKey(key) {
+		return nil
+	}
+	if m.tabName() == tabUpstream && m.onUpstreamKey(key) {
 		return nil
 	}
 	page := max(m.detailHeight-2, 1)

@@ -2288,6 +2288,162 @@ Search in Stats and Findings (not text — Findings has its own `/` in the Packa
 reading older log output; remembering a query across objects; search in the Events and Jobs
 panes. None was asked for, and each would need its own answer to "what was searched".
 
+## Round eleven — image freshness: what the tag names upstream
+
+Images › Upstream, the list's `UPSTREAM` column, `U` and `--no-registry`. The change is
+`openspec/changes/image-freshness/`; its design numbers these decisions F1–F12. Here they are
+**U1–U12**, because F1–F12 already name round four's (image findings) and the code cites both.
+U13 onwards were decided while implementing, where the brief said to decide and record rather
+than stop and ask.
+
+### U1 — The desk becomes a registry client; the verdict is its own capability
+
+**Decided:** `internal/registry` (the wire: references, credentials, challenges, the walk),
+`internal/freshness` (the comparison, the caches, the fallback decision, the batch) and
+`internal/ui/upstream.go`. Nothing in `image-operations` or `resource-browsing` changes.
+**Alternative:** a delta on `image-operations`, which never had a registry.
+
+### U2 — Four requests, and the third only when it can differ
+
+**Decided:** anonymous manifest request with all four media types (OCI index, Docker manifest
+list, OCI manifest, Docker schema 2); the token realm only on a Bearer challenge; the platform
+manifest only when the tag's digest is not the local one; the config only when its digest is
+not already known. A current image costs one request; a moved one three (plus a token).
+**Alternative:** always fetch the config — requests that cannot change the verdict.
+
+### U3 — The local digest is `RepoDigests`, never the image ID
+
+**Decided:** the image's `RepoDigests` entry for the reference's repository, normalised. The
+image ID is used only as a hint for skipping the config request (on a classic store it is the
+config digest) and never as the thing compared. An image with no entry is *not applicable*.
+**Alternative:** the ID — right on a containerd store, silently wrong on a classic one.
+
+### U4 — The reference is normalised before anything is asked
+
+**Decided:** `distribution/reference`. Docker Hub is asked at `registry-1.docker.io`, with the
+path `library/alpine`; a digest-only reference is *not applicable*, not an error; a reference
+with a tag and a digest follows its tag.
+
+### U5 — Credentials: the CLI's key, then helpers, then `auths`
+
+**Decided:** `credHelpers[key]`, then `credsStore`, then `auths[key]`, then anonymous; the key
+is the CLI's (`https://index.docker.io/v1/` for Docker Hub). `auths` keys are compared by host
+name, ignoring a scheme and a path, as the CLI does. `credsStore` answering "credentials not
+found" falls through to `auths`. The configuration directory is `dockerctx.ConfigDir`, the same
+rule the context resolution uses; it is re-read on every check. A helper's name must match
+`[A-Za-z0-9][A-Za-z0-9._-]*`; it runs with a context, a five-second bound and `WaitDelay`, its
+output capped at 64 KiB and never quoted — a failure says how it failed, not what it printed.
+Checked against the real `docker login` (TESTING.md, round eleven).
+
+### U6 — A secret that prints as a mask, in its own package
+
+**Decided:** `internal/secret`; `forensics.Secret` is an alias. Passwords, identity and registry
+tokens, bearer tokens and helper answers are all `secret.Secret`. The token cache is keyed by a
+hash of the credential, never by its text.
+
+### U7 — Anonymous first, then the challenge; tokens cached per scope
+
+**Decided:** the token cache is keyed by registry host, realm, service, scope and credential;
+in memory only. A `401` with a cached token drops it and fetches one fresh, once; a second
+`401` is final. The credential sent to a realm — on whatever host — is the one configured for the
+registry host. Basic is answered only with a configured password.
+
+### U8 — The fallback is sequential, bounded, and only for an absent answer
+
+**Decided:** the desk's attempt is bounded at ten seconds; then `DistributionInspect` with the
+credential as `authconfig.Encode` writes it. `registry.Fallback` decides from the error's kind
+alone: name, connection, TLS, timeout, quota, unreadable, helper → ask the daemon; not found,
+`401`, `403`, a refused token, a local refusal → the answer stands. The daemon's `page not found`
+is `KindUnsupported` (*the daemon cannot ask*), distinct from a missing manifest (*gone*).
+
+### U9 — Every state names its cause, and none says stale
+
+**Decided:** current, moved, gone, unknown, not applicable. A direction is given only when both
+build times parse, are after the epoch, and differ; the sentences say the times are the
+producers' claims. `newer` and `stale` appear nowhere (a test searches for them).
+
+### U10 — Caches keyed by what cannot change meaning
+
+**Decided:** descriptors by host/path:tag, configs by digest, local facts by image ID, fallback
+answers by daemon and name:tag, and the verdict the column shows by image ID and reference. Each
+holds the time it was obtained; the tab shows that age. No TTL, no polling.
+
+### U11 — The surfaces: one tab, one column, one batch key
+
+**Decided:** the tab after Findings; `UPSTREAM` at priority 9, the highest, so it is the first
+column dropped (at 80 columns, and at 120 in the default layout, where the list pane is narrow);
+the cell is one word, `+4d` only when both times were obtained.
+
+### U12 — Egress is a switch, and trust is not widened
+
+**Decided:** `--no-registry` refuses every registry request before a connection, and the
+daemon fallback too (U16). TLS uses the system roots; plain HTTP to loopback hosts only; a
+redirect may not go to plain HTTP elsewhere or downgrade from HTTPS; `Authorization` is dropped
+when a redirect changes host. Bodies: manifests 4 MiB, configs 32 MiB, token answers 1 MiB. The
+config's digest is checked before it is read. Registry and daemon text goes through
+`freshness.Sanitize`.
+
+### U13 — An identity token is exchanged on GET, as a Basic password
+
+**Decided:** an `identitytoken` is sent to the token realm as the Basic password of a GET.
+**Alternative:** the OAuth refresh-token form, which is a POST. **Why:** the check promises GET
+and HEAD only (U12); registries that issue identity tokens (ACR, Harbor) accept them this way.
+**Cost:** a registry that accepts only the POST form answers *refused*, and the daemon is not
+asked, since a refusal is an answer.
+
+### U14 — A platform no longer published is *unknown*, not *moved*
+
+**Decided:** when the tag's index no longer lists the local platform, the verdict is unknown with
+that sentence, and nothing is compared. **Why:** *moved* would invite pulling, which would fail
+or bring another platform.
+
+### U15 — A batch does not retry a quota refusal through the daemon
+
+**Decided:** a single check falls back on `429`; `U` stops on it instead. **Why:** the quota is
+usually per address, and the daemon is usually at the same address: asking it would spend the
+last of the quota on the batch, not on the operator's next pull.
+
+### U16 — `--no-registry` forbids the fallback too
+
+**Decided:** under the switch the daemon is not asked either. **Why:** the switch is the air-gap
+switch; the daemon's distribution request is registry egress made on the desk's behalf.
+
+### U17 — `r` asks again only while the tab is on screen; `U` is a key, not an action
+
+**Decided:** `r` keeps refreshing every list, and when Images › Upstream is shown it also asks
+again — as `r` re-takes the Processes snapshot. `U` is handled beside `S` and `T` rather than in
+the kind's actions, which are the guarded mutations (each needs a confirmation, and read-only
+mode refuses them); `U` only reads and must work in read-only mode.
+
+### U18 — The sandbox's registry is under `.invalid`
+
+**Decided:** `fake-dockerd` seeds `registry.sandbox.invalid/acme/web:2.3` (moved),
+`…/acme/cron:1` (current) and `…/acme/legacy:0.9` (gone), answered by its
+`/distribution/{name}/json`. The registry client treats a name under `.invalid` as not resolving
+without a lookup (RFC 6761), so the sandbox shows the fallback with no network at all — not even
+a DNS query. `SeedUpstream` is separate from `SeedDemo`, whose figures the Space tests pin.
+**Cost:** `U` in the sandbox would still ask Docker Hub about the demo's other images; the
+sandbox does not pass `--no-registry`, so that the tab is seen working.
+
+### U19 — The fake engine answers `POST /auth`
+
+**Decided:** so that the real `docker login` can write a configuration the desk is tested
+against. It checks and keeps nothing.
+
+### U20 — The column appears once something has been checked
+
+**Decided:** until a check has answered in the session, the Images list has exactly the
+columns it had before this round. **Alternative:** always show `UPSTREAM`, blank. **Why:** where
+it fits, a blank column still takes its share of the spare width, and truncated a tag
+(`lts-alp…`) that the CLI shows in full — a cost paid by every operator who never asks. Once the
+operator has asked, it is shown, and it is still the first column dropped when the list is
+narrow.
+
+### U21 — Left out
+
+A private-CA flag, ECR and GCR signing, mirrors on the desk side, ordering versions, listing tags,
+background polling (all non-goals of the design).
+
 ## Process
 
 ### B12 — No commits were made
@@ -2301,9 +2457,20 @@ was not asked for. Everything is in the working tree for review. (Rounds four an
 on `PATH`. Writing outside the repository was left as a one-command decision for the owner of
 the machine. (`go install` into a scratch directory was verified to work.)
 
+### B25 — Round eleven: `make race` is red on this machine, before and after
+
+`make test` and `make e2e` pass. `go test -race ./...` reports no data race, but fails on
+timing-bound tests under the detector's load — on the unchanged `HEAD` too, run the same way
+in a clean worktree: there `e2e.TestReadOnlyFlag` and `e2e.TestImageFindings` timed out; with
+this round, `ui.TestSearchBarCostsNoRowWhenClosed`, whose two screenshots differ by a live CPU
+figure (49.1% → 49.2%) — it fails 4 times in 15 under `-race` on `HEAD` alone. In isolation each
+of these passes. Task 6.3 was marked done on that evidence; making those tests independent of
+timing is a change of its own.
+
 ### B24 — The OpenSpec change is complete but not archived
 
 All tasks are done and the change validates. Archiving — which folds the capability specs into
 `openspec/specs/` — is an acceptance step and was left for after review (`/opsx:archive`). The same holds for
 round five's `disk-space` change, round seven's `image-packages` change, round eight's
-`image-changes` change, and round ten's `details-search` change.
+`image-changes` change, round ten's `details-search` change, and round eleven's
+`image-freshness` change.

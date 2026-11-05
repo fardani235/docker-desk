@@ -169,6 +169,12 @@ func wrap(op string, err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, ErrReadOnly) {
 		return err
 	}
+	if e, ok := err.(*Error); ok {
+		if e.Op == "" {
+			e.Op = op
+		}
+		return e
+	}
 	kind := KindOther
 	var netErr net.Error
 	switch {
@@ -672,6 +678,35 @@ func (m *mobyEngine) ImageFacts(ctx context.Context, id string) (ImageFacts, err
 		f.History = append(f.History, HistoryEntry{CreatedBy: h.CreatedBy, Size: h.Size})
 	}
 	return f, nil
+}
+
+func (m *mobyEngine) DistributionInspect(ctx context.Context, ref, registryAuth string) (Distribution, error) {
+	res, err := m.cli.DistributionInspect(ctx, ref, client.DistributionInspectOptions{EncodedRegistryAuth: registryAuth})
+	if err != nil {
+		return Distribution{}, m.wrap("ask the daemon's registry", distributionError(err))
+	}
+	d := Distribution{Digest: res.Descriptor.Digest.String(), MediaType: res.Descriptor.MediaType}
+	for _, p := range res.Platforms {
+		d.Platforms = append(d.Platforms, Platform{OS: p.OS, Architecture: p.Architecture, Variant: p.Variant})
+	}
+	return d, nil
+}
+
+// distributionError tells the daemon's own "page not found" — it does not
+// serve the endpoint — from the registry's missing manifest, and a refused
+// credential from a state conflict.
+func distributionError(err error) error {
+	if errors.Is(err, context.Canceled) {
+		return err
+	}
+	msg := cleanMessage(err)
+	switch {
+	case cerrdefs.IsNotFound(err) && strings.Contains(strings.ToLower(msg), "page not found"):
+		return &Error{Kind: KindUnsupported, Msg: "the daemon does not serve /distribution (too old, or a proxy in front of it)", Err: err}
+	case cerrdefs.IsUnauthorized(err), cerrdefs.IsPermissionDenied(err):
+		return &Error{Kind: KindDenied, Msg: msg, Err: err}
+	}
+	return err
 }
 
 // EnvNames returns the sorted, distinct names of NAME=value entries. The

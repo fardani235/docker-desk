@@ -461,6 +461,15 @@ func (f ImageFacts) Platform() Platform {
 	return Platform{OS: f.OS, Architecture: f.Architecture, Variant: f.Variant}
 }
 
+// Distribution is what the daemon's registry said a tag names now: its
+// digest, media type and, for an index, the platforms it publishes. It
+// carries no build time — the daemon does not fetch the config.
+type Distribution struct {
+	Digest    string
+	MediaType string
+	Platforms []Platform
+}
+
 // HistoryEntry is one entry of an image's history. The daemon reports the
 // size of the layer the entry made, and 0 for an entry that made none.
 type HistoryEntry struct {

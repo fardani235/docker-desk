@@ -52,6 +52,13 @@ type Engine interface {
 	// (GET /containers/json?all=1&size=1) — all of them, or only ids. The
 	// daemon walks each filesystem to answer; never part of a list refresh.
 	ContainerSizes(ctx context.Context, ids []string) ([]ContainerSize, error)
+	// DistributionInspect asks the daemon to ask the registry what ref's
+	// tag names now (GET /distribution/{ref}/json). It is a GET; the daemon
+	// changes nothing. registryAuth is the credential as authconfig.Encode
+	// writes it, sent as X-Registry-Auth, or "" for none. A daemon that does
+	// not serve the endpoint is KindUnsupported, which is distinct from a
+	// registry that has no such manifest (KindNotFound).
+	DistributionInspect(ctx context.Context, ref, registryAuth string) (Distribution, error)
 
 	// ---- mutations ------------------------------------------------------
 	StartContainer(ctx context.Context, id string) error
@@ -133,6 +140,11 @@ const (
 	KindUnavailable
 	// KindReadOnly: refused locally by read-only mode.
 	KindReadOnly
+	// KindUnsupported: the daemon does not serve the endpoint asked for.
+	KindUnsupported
+	// KindDenied: the daemon, or the registry behind it, refused the
+	// credential (401 or 403 on a request that is not a state change).
+	KindDenied
 )
 
 // Error is an error from the daemon (or from reaching it) with its class.

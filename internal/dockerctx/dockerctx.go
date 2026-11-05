@@ -109,16 +109,26 @@ func Resolve(sel Selection, env Env, homeDir string) (Endpoint, error) {
 	return ep, nil
 }
 
+// ConfigDir is the Docker CLI's configuration directory: $DOCKER_CONFIG, or
+// ~/.docker. It is "" when neither is known — no relative path is tried
+// instead. The registry credentials are read from the same directory.
+func ConfigDir(env Env, homeDir string) string {
+	if d := strings.TrimSpace(env("DOCKER_CONFIG")); d != "" {
+		return d
+	}
+	if homeDir != "" {
+		return filepath.Join(homeDir, ".docker")
+	}
+	return ""
+}
+
 func resolve(sel Selection, env Env, homeDir string) (Endpoint, error) {
 	sel.Host, sel.Context = strings.TrimSpace(sel.Host), strings.TrimSpace(sel.Context)
 	if sel.Host != "" && sel.Context != "" {
 		return Endpoint{}, errors.New("--host and --context cannot be used together: one names a daemon directly, the other names a stored context")
 	}
 
-	cfgDir := strings.TrimSpace(env("DOCKER_CONFIG"))
-	if cfgDir == "" && homeDir != "" {
-		cfgDir = filepath.Join(homeDir, ".docker")
-	}
+	cfgDir := ConfigDir(env, homeDir)
 	envHost := strings.TrimSpace(env("DOCKER_HOST"))
 
 	name, source := "", ""

@@ -1,17 +1,17 @@
- Docker Desk  unix:///tmp/ddfake4060377278/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake2916155526/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Conta┏━ ◆ Keys ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓────────────────────── ● live ─┐
-│▸ Containers    13│┃  NAME     ┃                                                                                    ┃ll sig 15 shop-web-1           │
-│  Images        17│┃  distroles┃                                                                                    ┃e exit 0 shop-web-1            │
-│  Volumes        5│┃  noisy-log┃ Compose (List or Details pane focused)                                             ┃sconnect shop_default  ← shop-…│
-│  Networks       7│┃  paused-ba┃   t                stop every running container of the project                     ┃op       shop-web-1            │
-│  Compose        2│┃  redis-cac┃   d                remove every container of the project (not networks or volumes) ┃nnect    shop_default  ← shop-…│
-│                  │┃▸ shop-api-┃                                                                                    ┃art      shop-web-1            │
-│  ● 7 running     │┃  shop-db-1┃ Events pane                                                                        ┃ll       hello-world           │
-│  ‖ 1 paused      │┃  shop-web-┃   ↑ ↓ PgUp PgDn    scroll back (new events keep being recorded)                    ┃stroy    337d154abf4b…         │
-│  ○ 5 stopped     │┃  slow-stop┃   G or f           return to the newest event and follow                           ┃stroy    43ee5206a7f7…         │
-│                  │┃  blog-app-┃                                                                                    ┃ec_create shop-api-1  sh -c co…│
-│                  │┃  blog-db-1┃ Jobs pane                                                                          ┃ec_start shop-api-1  sh -c com…│
-│                  │┃  old-migra┃   Enter            read the job's full output                                      ┃ec_die exit 0 shop-api-1       │
+│▸ Containers    13│┃  NAME     ┃                                                                                    ┃kill sig 15 shop-web-1         │
+│  Images        17│┃  distroles┃   ↑ ↓ PgUp PgDn    move the cursor; ↑ PgUp g also hold a live view                 ┃die exit 0 shop-web-1          │
+│  Volumes        5│┃  noisy-log┃   Enter            held: go to the event's object in its own list                  ┃disconnect shop_default  ← sho…│
+│  Networks       7│┃  paused-ba┃   ↓ past the end,… resume following (Space and f too)                              ┃stop       shop-web-1          │
+│  Compose        2│┃  redis-cac┃   While held, new events keep being recorded and lists keep refreshing; the        ┃connect    shop_default  ← sho…│
+│                  │┃▸ shop-api-┃   title counts them (held +N). Enter selects the container, image, volume or       ┃start      shop-web-1          │
+│  ● 7 running     │┃  shop-db-1┃   network the event is about, clearing a filter that hides it. An object not       ┃pull       hello-world         │
+│  ‖ 1 paused      │┃  shop-web-┃   listed yet is waited for two seconds. Daemon, plugin and swarm events, and       ┃destroy    337d154abf4b…       │
+│  ○ 5 stopped     │┃  slow-stop┃   the stream's own markers, name no object. Going to one changes nothing.          ┃destroy    43ee5206a7f7…       │
+│                  │┃  blog-app-┃                                                                                    ┃exec_create shop-api-1  sh -c …│
+│                  │┃  blog-db-1┃ Jobs pane                                                                          ┃exec_start shop-api-1  sh -c c…│
+│                  │┃  old-migra┃   Enter            read the job's full output                                      ┃exec_die exit 0 shop-api-1     │
 │                  │┃  report-jo┃   c                cancel the highlighted running job                              ┃                               │
 │                  │┗━━━━━━━━━━━┃   x                clear finished jobs                                             ┃                               │
 │                  │┌─ 3 Details┃                                                                                    ┃                               │
@@ -28,15 +28,15 @@
 │                  ││           ┃     • pull, new volume/network, shell: you type the name; Enter submits.           ┃                               │
 │                  ││Ports      ┃   A dialog ignores those keys for its first quarter of a second, and a key         ┃───────────────────────────────┘
 │                  ││  0.0.0.0:3┃   pressed while a confirmation is still being prepared drops it: nothing typed     ┃────────────────────── 4 done ─┐
-│                  ││           ┃   ahead, or typed for something else, can consent. Esc always works at once.       ┃es 2 volumes                1ms│
-│                  ││Networks   ┃   Nothing is ever forced. If something is in use the dialog says by what and       ┃hello-world:latest        434ms│
+│                  ││           ┃   ahead, or typed for something else, can consent. Esc always works at once.       ┃es 2 volumes                3ms│
+│                  ││Networks   ┃   Nothing is ever forced. If something is in use the dialog says by what and       ┃hello-world:latest        432ms│
 │                  ││  shop_defa┃   refuses. A prune lists exactly what it will delete and deletes only that.        ┃iner shop-web-1             0ms│
-│                  ││           ┃                                                                                    ┃ner shop-web-1              1ms│
+│                  ││           ┃                                                                                    ┃ner shop-web-1              0ms│
 │                  ││Mounts     ┃ Inside a shell (e)                                                                 ┃                               │
 │                  ││  volume sh┃   exit, Ctrl-D     back to the desk                                                ┃                               │
 │                  ││           ┃   Ctrl-] ×3        leave at once, even if the daemon has stopped answering         ┃                               │
 │                  ││           ┃                                                                                    ┃                               │
-│                  ││           ┃ ↑↓ PgUp PgDn scroll  Esc close  125–158 of 158                                     ┃                               │
+│                  ││           ┃ ↑↓ PgUp PgDn scroll  Esc close  168–201 of 201                                     ┃                               │
 └──────────────────┘└───────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───────────────────────────────┘
- Back from the shell in shop-api-1 (510ms).
+ Back from the shell in shop-api-1 (512ms).
  ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell       Tab pane  ? keys  q quit

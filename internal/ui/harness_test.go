@@ -59,6 +59,10 @@ type benchOpts struct {
 	theme string
 	// linkProblem stands in for the SSH tunnel's report on itself.
 	linkProblem func() string
+	// noRegistry and dockerConfig are --no-registry and the Docker
+	// configuration directory registry credentials are read from.
+	noRegistry   bool
+	dockerConfig string
 }
 
 func newBench(t testing.TB, o benchOpts) *bench {
@@ -112,6 +116,9 @@ func newBench(t testing.TB, o benchOpts) *bench {
 		SelectDelay:   10 * time.Millisecond,
 		ArmDelay:      o.arm,
 		JumpWait:      300 * time.Millisecond,
+
+		NoRegistry:      o.noRegistry,
+		DockerConfigDir: o.dockerConfig,
 	})
 	m.hub.MinBackoff, m.hub.MaxBackoff = 10*time.Millisecond, 40*time.Millisecond
 	b := &bench{t: t, srv: srv, eng: eng, m: m, msgs: make(chan tea.Msg, 4096)}

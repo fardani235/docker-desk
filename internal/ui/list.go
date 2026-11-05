@@ -53,6 +53,8 @@ var columns = [kindCount][]column{
 		{title: "SIZE", min: 8, right: true},
 		{title: "AGE", min: 5, right: true, prio: 1},
 		{title: "USED BY", min: 8, right: true, prio: 3},
+		// UPSTREAM is filled only by a check, and is the first to go.
+		{title: "UPSTREAM", min: 9, prio: 9},
 	},
 	KindVolumes: {
 		{title: "NAME", min: 16, grow: 4},
@@ -80,6 +82,8 @@ var columns = [kindCount][]column{
 const (
 	colContainerCPU = 3
 	colContainerMem = 4
+	// colImageUpstream is the image row's UPSTREAM cell.
+	colImageUpstream = 6
 )
 
 func stateTone(state string) tone {
@@ -216,7 +220,7 @@ func (m *Model) ensureRows(k Kind) {
 			}
 			rows = append(rows, row{
 				key: ir.img.ID + "|" + ir.ref, name: name, imageID: ir.img.ID, imageRef: ir.ref, tone: t,
-				cells: []string{ir.repo, ir.tag, engine.ShortID(ir.img.ID), humanBytes(ir.img.Size), humanAge(ir.img.Created, now), used},
+				cells: []string{ir.repo, ir.tag, engine.ShortID(ir.img.ID), humanBytes(ir.img.Size), humanAge(ir.img.Created, now), used, ""},
 			})
 		}
 	case KindVolumes:
@@ -573,9 +577,15 @@ func (m *Model) renderList(w, h int, focused bool) []string {
 	}
 
 	const cursorW = 2
-	idx, widths := layoutColumns(columns[k], w-cursorW)
+	cols := columns[k]
+	if k == KindImages && !m.up.checker.Any() {
+		// UPSTREAM appears once a check has answered: until then the list
+		// is the CLI's, column for column, and no width goes to blanks.
+		cols = cols[:colImageUpstream]
+	}
+	idx, widths := layoutColumns(cols, w-cursorW)
 	cell := func(text string, ci int) string {
-		if columns[k][idx[ci]].right {
+		if cols[idx[ci]].right {
 			return fitRight(text, widths[ci])
 		}
 		return fit(text, widths[ci])
@@ -586,7 +596,7 @@ func (m *Model) renderList(w, h int, focused bool) []string {
 		if ci > 0 {
 			hdr.WriteString("  ")
 		}
-		hdr.WriteString(cell(columns[k][idx[ci]].title, ci))
+		hdr.WriteString(cell(cols[idx[ci]].title, ci))
 	}
 	lines = append(lines, m.st.colHeader.Render(hdr.String()))
 
@@ -610,6 +620,10 @@ func (m *Model) renderList(w, h int, focused bool) []string {
 		if k == KindContainers {
 			cells = append([]string(nil), r.cells...)
 			cells[colContainerCPU], cells[colContainerMem] = m.liveCells(r)
+		}
+		if k == KindImages && len(cells) > colImageUpstream {
+			cells = append([]string(nil), r.cells...)
+			cells[colImageUpstream] = m.upstreamCell(r)
 		}
 		var sb strings.Builder
 		for ci := range idx {

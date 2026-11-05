@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake1152243092/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake986414841/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┌─ 2 Containers (1 of 13) ────────────────── filter: report ─┐┌─ 4 Events ──────────────── ● live ─┐
 │▸ Containers    13││  NAME            IMAGE         STATE          CPU       MEM││Waiting for engine events…          │
 │  Images        16││▸ report-job      acme/report…  ○ exited                    ││Everything the daemon does          │
@@ -26,7 +26,7 @@
 │                  │┃  + fonts-dejavu-core:all 2.37-6 (L4)                       ┃│                                    │
 │                  │┃  + libcurl4 7.88.1-10+deb12u8 (L4)                         ┃└────────────────────────────────────┘
 │                  │┃  − netbase:all 6.4                                         ┃┌─ 5 Jobs ────────────────── 1 done ─┐
-│                  │┃  ~ libssl3 3.0.11-1~deb12u2 → 3.0.15-1~deb12u1             ┃│▸ ✓ compare images acme/report… 14ms│
+│                  │┃  ~ libssl3 3.0.11-1~deb12u2 → 3.0.15-1~deb12u1             ┃│▸ ✓ compare images acme/report… 15ms│
 │                  │┃  ~ openssl 3.0.11-1~deb12u2 → 3.0.15-1~deb12u1             ┃│                                    │
 │                  │┃findings 1 appeared, 2 disappeared (from the archives; live ┃│                                    │
 │                  │┃         findings are on the image's own tab)               ┃│                                    │
@@ -37,4 +37,4 @@
 │                  │┃↑↓ scroll · 20–39 of 43                                     ┃│                                    │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└────────────────────────────────────┘
  ✓ compare images acme/report:1.4
- ↑↓ scroll  [ ] tab  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell Tab pane  ? keys  q quit
+ / find  ↑↓ scroll  [ ] tab  s start  t stop  R restart  p pause  u unpause  K kill  d remove… Tab pane  ? keys  q quit

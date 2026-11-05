@@ -788,6 +788,65 @@ images pulled from a registry.
 What these do not show: how the marks look on a real terminal (the pseudo-terminal capture is
 text only; the unit tests check the sequences written).
 
+## Round eleven: image freshness
+
+No test reaches a real registry. `testguard.CheckRegistry` refuses, loudly, every registry dial
+that is not a loopback address once the guard is installed (`registry`, `freshness`, `ui` and
+`e2e` install it); `registry.TestGuardRefusesRealRegistry` proves a reach for Docker Hub fails
+with *test guard*. Every registry in the suite is `internal/fakeregistry`: an in-process OCI
+registry on 127.0.0.1 with indexes, manifests and configs, a Bearer realm on a second port (a
+different host), Basic, a stale-token refusal, a quota with `Retry-After`, and a request log.
+
+- `secret.TestSecretNeverFormats`, and the whole existing suite unchanged after `forensics.Secret`
+  became an alias.
+- `dockerctx.TestConfigDir` — `$DOCKER_CONFIG`, `~/.docker`, blank, neither.
+- `registry.TestResolveCredentialKeys`, `TestResolveCredentialTokens` — the three-row key table,
+  Docker Hub's legacy key, an empty user name, a password with colons, `identitytoken` and
+  `registrytoken`.
+- `registry.TestCredentialHelper`, `TestCredentialHelperFailures` — a fake
+  `docker-credential-*` on `PATH` that records its standard input (the server key); non-zero
+  exit, garbage, a helper that sleeps past its bound, a missing one, a name with `..`: the
+  error says how it failed and never contains what it printed.
+- `registry.TestParseRef` — bare names, `docker.io/…`, a host with a port, digest-only
+  (*not applicable*), tag and digest.
+- `registry.TestResolveRequestsAndMediaTypes` — all four media types sent; a current image costs
+  one request, a moved one three; the config cached by digest; a platform missing from the index.
+- `registry.TestBearerChallengeAndTokenCache`, `TestBasicChallenge` — anonymous, realm, Bearer;
+  the token reused; a stale token dropped and fetched once; a wrong credential refused at the
+  realm and absent from the error.
+- `registry.TestTypedErrors` — not found, quota with its reset, 403, 500, name, TLS (an
+  untrusted certificate), timeout, connection refused: asserted by kind, never by message.
+- `registry.TestBoundsAndRedirects` — an oversized body cut off; a cross-host redirect that must
+  not receive `Authorization`; no redirect to plain HTTP; a config whose bytes do not match its
+  digest; `--no-registry` sends nothing.
+- `freshness.TestVerdictStates` — current, the explored 13-layer pair (11 shared), earlier,
+  identical, absent `created`, the epoch, gone, digest-only, built here; `newer` and `stale`
+  appear nowhere.
+- `freshness.TestRepoDigestsNotID` — containerd store (ID is the index digest) and classic store
+  (ID is the config digest) reach the same verdict; with no `RepoDigests`, not applicable.
+- `freshness.TestCaches` — a second open sends no request and keeps the age; `r` replaces it.
+- `freshness.TestFallbackDecision` — transport and quota fall back; current, moved, gone, `401`
+  and `403` do not; both failing gives one line with both reasons; *cannot ask* is not *gone*.
+- `freshness.TestFallbackCredentialEncoding` — `X-Registry-Auth` equals `authconfig.Encode`'s
+  output byte for byte.
+- `freshness.TestBatch` — the third request refused for quota stops the batch, answers kept;
+  cancelled after the first, no second request.
+- `engine.TestDistributionInspect`, `TestDistributionInspectReadOnly`, and
+  `DistributionInspect` in the read-only coverage list — at the fake's own API version and at
+  1.40; gone, denied, and the endpoint not served.
+- `ui.TestUpstreamSandboxFallback` — the sandbox's three tags through the daemon; reopening asks
+  nothing; `r` asks again; the column's words; an unchecked image is blank.
+- `ui.TestUpstreamLayouts` — 80×24, 120 and 200 columns, every theme, read-only and not; the
+  column drops before any CLI column.
+- `ui.TestUpstreamBatchQuotaAndCancel`, `TestNoRegistry`, `TestUpstreamReadOnlyCompletes`.
+- `ui.TestNoCredentialAnywhere` — the tab, Inspect, the list, help, and every job's lines,
+  status and error searched for the fixture's secret, its base64 and a rotated password.
+- `e2e.TestCredentialsAgreeWithTheCLI` — the real `docker login` (sent to the fake daemon's
+  `POST /auth`) into a temporary `DOCKER_CONFIG`: the server keys, the base64 shape and the
+  helper path the desk reads are the CLI's. Skipped, saying so, where `docker` is not installed.
+- `e2e.TestImageUpstream` — the real binary on the sandbox seed, wide and 80×24 read-only;
+  screens `37-image-upstream`, `38-image-upstream-80x24`.
+
 ## Running everything
 
 ```sh
