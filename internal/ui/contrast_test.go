@@ -33,7 +33,8 @@ func ratio(a, b lipgloss.TerminalColor) float64 {
 // TestThemesAreLegible: every colour that carries text has a contrast of at
 // least 3:1 against the background its theme is meant for (WCAG's floor for
 // bold and large text; most are far above it), unfocused borders are clearly
-// visible, and the highlighted row is readable and stands out.
+// visible, the highlighted row is readable and stands out, and a search
+// match is as legible as any accent.
 //
 // "ansi" and "mono" have no colours of their own to check.
 func TestThemesAreLegible(t *testing.T) {
@@ -61,6 +62,13 @@ func TestThemesAreLegible(t *testing.T) {
 			for name, col := range map[string]lipgloss.TerminalColor{"accent": th.Accent, "dim": th.Dim, "good": th.Good, "warn": th.Warn, "bad": th.Bad, "title": th.Title} {
 				if r := ratio(col, bg); r < 3.0 {
 					t.Errorf("%s on %s: %s has a contrast of only %.1f:1", th.Name, hex, name, r)
+				}
+			}
+			// A search match is drawn in the accent colour, bold and
+			// underlined; the current one reversed, the accent behind it.
+			if col := newStyles(th).match.GetForeground(); col != nil {
+				if r := ratio(col, bg); r < 3.0 {
+					t.Errorf("%s on %s: a search match has a contrast of only %.1f:1", th.Name, hex, r)
 				}
 			}
 			if r := ratio(th.Border, bg); r < 2.0 {

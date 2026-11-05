@@ -163,6 +163,7 @@ type Model struct {
 	logEnd       uint64
 	logWrap      bool
 	detailHeight int
+	ds           detailSearch // the Details pane's search bar (search.go)
 
 	// ---- findings tab (Images) ----
 	fx findingsState
@@ -283,6 +284,8 @@ func New(opts Options) *Model {
 	}
 	m.info1.wrap = true
 	m.inspect.wrap = true
+	m.ds.in = textinput.New()
+	m.ds.in.CharLimit = 80
 	if m.link.Transport != dockerctx.TransportUnix {
 		// "Is it back?" is asked with a short timeout. Over a network a
 		// new connection can take longer than that to set up, and the desk
@@ -643,6 +646,7 @@ func (m *Model) afterChange() {
 			m.selChangedAt = time.Time{} // first load: no need to wait
 		}
 		m.info1.off, m.inspect.off = 0, 0
+		m.clearSearches() // a query belongs to the object it was typed for
 		if m.proc.target != m.currentContainerID() {
 			m.clearProcesses("") // never leave one container's rows under another
 		}

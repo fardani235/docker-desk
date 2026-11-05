@@ -2114,6 +2114,180 @@ cleared even when the row then turns out to be absent.
 points to `engine-events` for the Events pane. `TestEventsPane` expects `‖ held +0` where it
 expected `‖ +`.
 
+## Round ten — search in the Details pane
+
+`/` in the Details pane: find in Info, Inspect, Processes and Changes; filter in Logs; the
+Inspect key path named in the bar. The brief asked for decisions to be made and recorded rather
+than asked about; every place it left a choice open has an entry. The change is
+`openspec/changes/details-search/`.
+
+### Q1 — Find where the text is a document, filter where it is a stream
+
+**Decided:** one key, two behaviours. Info, Inspect, Processes and Changes *find*: no line is
+hidden, matches are marked, `Enter`, `n` and `N` move between them. Logs *filters*: lines that do
+not match are hidden, and following and scrolling back work inside what is left. The bar says
+which it is doing (`find:` or `filter:`).
+
+**Alternative:** the same behaviour everywhere — filter everything, or find everywhere.
+
+**Why:** a line of an inspect document means something only under its parents —
+`"Status": "healthy"` alone does not say whose status; hiding the lines around it removes the
+answer to "where is this?". A log line is a record that stands alone, and the question asked of
+5000 of them is "show me the ones that say error" — what `grep` answers. Finding in a stream that
+keeps moving would also make `n` chase a target that scrolls away under it. **Cost:** two
+behaviours behind one key; `n`/`N` do nothing in Logs.
+
+### Q2 — One bar, in the last content row; no row while closed
+
+**Decided:** the bar is drawn in the pane's last content row only while it is typed in or a query
+is kept; the tab then lays out in one row fewer. In Logs it lives in the status row, before the
+state (`filter: error  ● following · 12 of 5000 match`). `/` opens it on every tab: on Stats and
+Findings, which are not text, it says `nothing to search on Stats` rather than doing nothing.
+
+**Alternative:** a bar in the pane's border; or `/` ignored on Stats and Findings.
+
+**Why:** the border holds the title and tabs and is already cut at 80 columns. A key that does
+nothing on two tabs is a mode to remember; a bar that says why is not. **Cost:** at 80×24 the
+pane shows six rows of text instead of seven while a search is open.
+
+### Q3 — Matching: case-insensitive substring of the stripped text, literally
+
+**Decided:** escape sequences are removed before matching, whether colour is drawn or not, so
+`ERR\x1b[0mOR` matches `error` and `31m` matches nothing. Case is folded rune by rune
+(`unicode.SimpleFold`), so a match's offsets are always offsets of the text itself, even where
+a rune's other case has a different length. The query is taken as typed — no pattern syntax,
+and spaces are kept (unlike the List filter, which trims), so ` error` can be told from
+`terror`.
+
+**Alternative:** regular expressions; matching the raw line; `strings.ToLower` on both sides.
+
+**Why:** a pattern is a second language to get wrong in a one-row bar, and the brief excluded it.
+The raw line matches the daemon's colour codes. Lowering both sides breaks the mapping from a
+match back to the bytes to mark (`İ` lowers to two runes). The stripping is the desk's own walk
+(`search.Strip`), the same one that marks, so the two cannot disagree on an offset.
+
+### Q4 — A jump is a pending seek, settled in `render` after layout
+
+**Decided:** keys never write `textView.off`. `Enter` sets a pending seek; `n` and `N` add to a
+pending step (two presses before a frame count twice). `render` runs `layout(w)` first, then
+chooses the current match, applies the step, and only then moves the offset — to the wrapped row
+that holds the match's first byte, found from a row → (line, offset) map that `layout` builds. A
+match already on screen does not move the view; one off screen is placed a third of the way
+down, so the lines above it — its parents, in Inspect — are visible. While typing, the view does
+not move; the current match is the first at or below the top row, so `1 of 9` means "the next
+one from here", and Enter goes to it. `n` and `N` step from the current match, not from wherever
+the view was scrolled since.
+
+**Alternative:** move the view as each character is typed (incremental search); compute the row
+in the key handler.
+
+**Why:** the width, and so which row a match is on, is known only inside `render`; a handler that
+guessed would be wrong after a resize or a wrap toggle. Moving while typing makes the text jump
+under every keystroke, and the brief asked for the jump on Enter.
+
+### Q5 — Memoised by (content version, query); the filter grows by what arrived
+
+**Decided:** `textView` gains a version, bumped only when `set` is given lines that differ.
+`set` now ignores identical lines — Info, Processes and Changes call it on every frame — which also
+stops them being re-wrapped every frame. Matches are kept per view for (version, query); Inspect
+key paths for the inspect version. The Logs filter keeps the absolute indices of matching lines
+for (ring, query, scanned-to): each frame tests only the lines that arrived since, drops indices
+the ring has discarded, and copies out of the ring only the matching lines it is about to draw.
+A new query, or a new ring (another container), tests the held lines once.
+
+**Cost:** the indices take at most 40 kB. Under a flood the work per frame is the lines that
+arrived, at most the ring's 5000 — D8's "a frame does not depend on how much arrived" holds for
+an open filter only up to that bound. Testing 5000 lines of 200 bytes takes about 3.6 ms
+(`BenchmarkFind5000Lines`), once per keystroke.
+
+### Q6 — The mark: bold and underlined; reversed for the current one; brackets with no colour
+
+**Decided:** a match is bold and underlined, in the accent colour where the theme has one; the
+current match is reversed too. The marks are written per wrapped row, so a match broken by the
+wrap is marked on both rows, and the line's own colour is restored after each mark (a colour
+change inside a match re-asserts the mark). With no colour at all — `NO_COLOR`, or a terminal
+without it — the renderer draws no attribute (T5), so matches are bracketed: `›…‹`, the current
+one `»…«`.
+
+**Why:** bold and underline survive a theme without colours (`mono`); the accent is checked for
+contrast against every theme's background (`TestThemesAreLegible` now checks the match colour
+too) and, reversed, becomes a background of the same contrast. **Cost:** brackets lengthen a row
+by two cells per match; a row they push past the pane is cut at its end, as any long row is.
+
+### Q7 — The Logs filter says what it searched, and only that
+
+**Decided:** the count is against the lines held: `● following · 12 of 5000 match`, and when
+nothing matches, `no match in the 5000 lines held` — never a bare "no match". The existing
+`N older lines scrolled out` is kept beside it. Nothing is fetched to search further back.
+
+**Alternative:** reopen the stream with a larger tail, or ask the daemon for the whole log.
+
+**Why:** a filter that said "no match" while the daemon held the line would be believed. Reading
+further back is a request the brief excludes, and would still not be exhaustive (the daemon's
+own log rotation). The README and the help say that older output is not searched.
+
+### Q8 — Following and scrolling back inside the filtered set
+
+**Decided:** the position is still an absolute ring index (`logEnd`), so the rest of the Logs
+code is unchanged; with a filter, scrolling moves by matching lines, the bottom of a held view is
+always a matching line, and going past the newest match follows again. The status row counts
+`newer matches`. Changing the query while scrolled back keeps the place; if no match is left
+above it, the oldest match is shown — as when lines scroll out of the ring.
+
+### Q9 — `n` and `N`: shadowing "new" only while a search is open
+
+**Decided:** while the current tab has a query, `n` is the next match and `N` the previous; the
+hints then drop `n new`. When the query is cleared (`Esc`), `n` is "new volume" / "new network"
+again. While the bar is typed in, `n` is a letter.
+
+**Alternative:** other keys for next/previous (`Ctrl+N`, `↓`, `Enter` again).
+
+**Why:** `n`/`N` are what `less`, `vim` and `man` use; `N` meant nothing in the desk. The action
+shadowed opens a form and sends nothing, so a slip — the search was cleared and `n` opens "new
+volume" — costs one `Esc`. B7 said the Details pane's own keys do not collide with actions; this
+is the one exception, and it exists only while a search is open.
+
+### Q10 — While the bar is typed in, every key is text
+
+**Decided:** the bar is routed in `onKey` directly after the List filter — before `q`, `?`, `S`,
+`T`, `r`, the digits, `[` `]`, `Tab`, the pane and every action. Only `Ctrl+C` (and a terminal
+too small to draw) go first, as for every input. A pending confirmation being prepared is dropped
+by the first key, as B26 already does.
+
+### Q11 — Queries are per tab, cleared with the object; the bar stays open
+
+**Decided:** each tab keeps its own query (in its view, or in the search state for Logs, Stats
+and Findings). A new highlighted object clears all of them. If the bar is being typed in at that
+moment — a refresh can move the highlight — it stays open and empty, so the next key typed is
+still text and cannot land on an action of the new object.
+
+**Esc** clears the query and closes the bar, whether typing or not; with no query, `Esc` returns
+to the List. **Cost:** this differs from the List filter, whose Esc restores the previous filter;
+the brief asked for clearing.
+
+### Q12 — The key path: indentation and the last key at each depth
+
+**Decided:** `internal/keypath` derives the path of every line of `json.Indent` output from its
+indentation alone: its parent is the last line opened one level up; its segment is its leading
+`"key":`, or `[n]` in an array. A key that is not a plain name (`com.docker.compose.project`,
+`80/tcp`) is written `Labels["com.docker.compose.project"]`, so the dots stay unambiguous; a
+closing line has the path of what it closes. It is shown on Inspect only, and derived once per
+document. **Found:** the daemon reports a container's health under `State`, so the bar reads
+`at State.Health.Status`; `Config.Healthcheck` holds the test. Tests use the real place.
+
+### Q13 — The fake's log lines vary
+
+**Decided:** a container without a fixed `LogLine` now writes a slow request every 13th line and
+a failed one (`level=error … status=500`) every 31st, so `make sandbox` has something to filter.
+`docs/screens/17-under-flood.txt` was captured before and still shows uniform lines; it was not
+recaptured.
+
+### Q14 — Left out
+
+Search in Stats and Findings (not text — Findings has its own `/` in the Packages view); patterns;
+reading older log output; remembering a query across objects; search in the Events and Jobs
+panes. None was asked for, and each would need its own answer to "what was searched".
+
 ## Process
 
 ### B12 — No commits were made
@@ -2131,5 +2305,5 @@ the machine. (`go install` into a scratch directory was verified to work.)
 
 All tasks are done and the change validates. Archiving — which folds the capability specs into
 `openspec/specs/` — is an acceptance step and was left for after review (`/opsx:archive`). The same holds for
-round five's `disk-space` change, round seven's `image-packages` change, and round eight's
-`image-changes` change.
+round five's `disk-space` change, round seven's `image-packages` change, round eight's
+`image-changes` change, and round ten's `details-search` change.

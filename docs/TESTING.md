@@ -738,6 +738,56 @@ What these do not show: a real daemon's moved tag. The fake serves the two build
 archives, inspect and history consistently, but the comparison has not been run against
 images pulled from a registry.
 
+## Round ten: search in the Details pane
+
+- `search.TestFindFoldsCaseAndDoesNotOverlap`, `TestNoRegularExpressions` — case folded rune by
+  rune with byte offsets of the text itself (`É`, `ß`, the Kelvin sign); a query is never a
+  pattern.
+- `search.TestMatchingStripsEscapes` — a word split by a colour change matches; the bytes of a
+  sequence (`31m`, `[0m`, ESC) never do.
+- `search.TestMarkHighlightOffsetsInStyledText`, `TestMarkWideAndMultibyte`, `TestClip` — marks
+  land at stripped offsets inside styled text, a colour inside a mark re-asserts it, the line's
+  colour is restored after it; wide runes; the part of a match on one wrapped row.
+- `keypath.TestPaths`, `TestClosingLinesAndRoot`, `TestTolerant` — nested objects, arrays and
+  arrays of arrays as `[n]`, keys that need quoting, closing lines, fragments and malformed input.
+- `ui.TestFindHighlightOffsets` — matches marked in a styled Info-like line, current one apart.
+- `ui.TestFindSeeksTheWrappedRow` — a match in the third wrapped row of a line: the handler's
+  request leaves the offset alone, `render` brings that row (not the line's first) into view, at
+  two widths; a match broken by the wrap is marked on both rows.
+- `ui.TestFindNextPrevWrapAround` — `n` past the last goes to the first, `N` before the first to
+  the last; presses between frames add up; while typing, the current match is the first below
+  the top row.
+- `ui.TestFindIsMemoised` — the same lines set again keep the version and the very same matches.
+- `ui.TestInspectFind` — the desk: live count, `at State.Status`, Enter, `n` to
+  `at State.Health.Status` with its row on screen, wrap-around both ways, a quoted label key,
+  `no match in the N lines`, and the bar gone after Esc.
+- `ui.TestSearchBarCostsNoRowWhenClosed` — at 80×24, opening and closing the bar leaves the
+  frame identical; open, the frame keeps its geometry.
+- `ui.TestSearchEscLadder` — Esc while typing clears and stays; Esc again goes to the List; the
+  same after Enter.
+- `ui.TestSearchTypingNeverActs` — on Containers, Images, Volumes and Networks: every action key
+  of the kind, `q ? S T r 1–5 [ ] Tab` and the arrows typed into the bar: no dialog, no plan, no
+  quit, no view, no change of pane, tab or theme, no mutation; the keys are the query. With a
+  query kept, `n` does not open "new"; after Esc it does.
+- `ui.TestSearchClearedWithTheObject` — per-tab queries; another object clears them while the
+  bar stays open, and the next `t` typed stops nothing.
+- `ui.TestLogsFilterAndFollow` — hidden as typed, `● following · 6 of 61 match`; a new match at
+  the bottom, a non-match only counted; scroll-back by matches, holding while a match arrives;
+  `g` to the oldest match, `↓` back to following; `no match in the 64 lines held`.
+- `ui.TestMatchingStripsANSIWithColourOn` — colour drawn: `error in w` matches across colour
+  changes in Logs; `31m` and `[2;` match nothing in Logs or Info; the mark is underlined.
+- `ui.TestMatchStyleInEveryTheme`, `ui.TestThemesAreLegible` — bold and underlined in every
+  theme, current reversed, accent colour at ≥ 3:1 on each theme's background; brackets with no
+  colour.
+- `ui.TestSearchSendsNothing` — on a volume's Inspect, normally and with `--read-only`: typing,
+  Enter, `n`, `N`, Esc add nothing to the fake's request log, and the bar reads the same.
+- `e2e.TestSearchInTheSandbox` — `make sandbox` itself on a pseudo-terminal: find in shop-db-1's
+  Inspect (screen 35), filter `error` in noisy-logger's Logs under 20 000 lines a second
+  (screen 36), `no match in the 5000 lines held`, and Esc back to every line.
+
+What these do not show: how the marks look on a real terminal (the pseudo-terminal capture is
+text only; the unit tests check the sequences written).
+
 ## Running everything
 
 ```sh

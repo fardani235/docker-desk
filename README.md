@@ -187,7 +187,7 @@ the desk keeps answering keys, and everything resumes by itself when the daemon 
 | --- | --- |
 | **1 Kinds** | Containers, Images, Volumes, Networks, Compose — with live counts. Moving the highlight is enough; the list follows. |
 | **2 List** | The objects of that kind. Containers show live CPU and memory. The highlight follows the *object* when the list changes underneath it. |
-| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON), for containers **Changes** (what the image its tag names now would bring; see below), **Logs** (live follow), **Stats** (CPU, memory, network, disk — with history) and **Processes** (a snapshot of `docker top`; see below), and for images **Findings** (what the image's own bytes hold; see below). |
+| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON; `/` finds a key or value and names its path), for containers **Changes** (what the image its tag names now would bring; see below), **Logs** (live follow; `/` filters), **Stats** (CPU, memory, network, disk — with history) and **Processes** (a snapshot of `docker top`; see below), and for images **Findings** (what the image's own bytes hold; see below). |
 | **4 Events** | The engine's event stream as it happens. It is the answer to everything you do — and to everything anyone else does to this daemon. |
 | **5 Jobs** | Every change you asked for, running in the background: progress while it runs, the daemon's answer when it ends. |
 | **Space** (`S`) | Not a pane: a full-screen account of the disk — the daemon's totals, unique and shared bytes per image, what a removal frees. See [Space](#space--where-the-bytes-went-and-what-removing-something-frees). |
@@ -417,7 +417,7 @@ Press `?` inside the desk for the same list.
 | `1` `2` `3` `4` `5` | focus Kinds / List / Details / Events / Jobs |
 | `[` `]` | previous / next Details tab |
 | `↑` `↓` or `k` `j`, `PgUp` `PgDn`, `g` `G` | move / page / first / last |
-| `/` | filter the list as you type (Enter keeps, Esc undoes) |
+| `/` | in the List: filter the list as you type (Enter keeps, Esc undoes). In the Details pane: search — see below |
 | `Space` | in the List: select / unselect the highlighted row (Containers, Images, Volumes, Networks) |
 | `a` | in the List: select every row the filter shows |
 | `Esc` | in the List: clear the selection; again, clear the filter; again, back to Kinds |
@@ -449,6 +449,30 @@ unaffected. The selection is cleared when the job starts, and kept if you declin
 still pages in the Details pane; in the Events pane it holds the view.
 
 **Details**: `←` `→` switch tab · `f` pause/resume following (Logs) · `w` toggle wrapping (not Processes).
+
+**Search in the Details pane** (`/`, on any tab). The bar opens in the pane's last row (on Logs,
+in its status row) and takes no row once closed. Each tab keeps its own query until another
+object is highlighted.
+
+| Key | Info, Inspect, Processes, Changes: **find** | Logs: **filter** |
+| --- | --- | --- |
+| `/` | open the bar; matches are marked as you type and counted: `find: q  3 of 9` | open the bar; lines that do not match are hidden as you type |
+| `Enter` | keep the query, close the input, jump to the current match | keep the filter |
+| `n` `N` | next / previous match, wrapping at either end | — |
+| `Esc` | clear the query; again, back to the List | clear the filter; again, back to the List |
+
+Find hides nothing: every match is bold and underlined (in the accent colour; the current one
+reversed too; with no colour at all, `›…‹` and `»…«`), and on **Inspect** the bar names the key
+of the current match — `at State.Health.Status`, array elements as `[n]`. The Logs filter
+follows the newest *matching* line, scrolls back through matching lines only, and counts them
+against what the desk holds: `● following · 12 of 5000 match`, or `no match in the 5000 lines
+held`. That is all it can see — the last 5000 lines at most, starting from the last 1000 when
+the stream opened; older output on the daemon is **not** searched. Matching ignores case and
+colour codes and takes the query literally (no patterns). While a search is open `n` and `N`
+step through matches, so Volumes' and Networks' `n` (new) waits until `Esc`. Typing in the bar
+can never trigger an action: every key is text until Enter or Esc. Searching sends nothing.
+Stats and Findings are not text; on them the bar says there is nothing to search.
+
 **Processes** (Containers): the daemon's default process listing (`GET /containers/{id}/top`,
 no `ps` arguments), one row per process, columns exactly as the daemon names them. It is a
 snapshot, not a live view: taken when the tab is opened, when the highlight moves to another
@@ -644,6 +668,7 @@ make build
 | [`openspec/changes/docker-desk-workspace/`](openspec/changes/docker-desk-workspace/) | the spec it was built to: proposal, eleven capability specs, design, tasks |
 | [`openspec/changes/remote-daemons-and-themes/`](openspec/changes/remote-daemons-and-themes/) | the second change — remote daemons and themes: proposal, spec deltas, design, tasks |
 | [`openspec/changes/disk-space/`](openspec/changes/disk-space/) | the fifth change — the Space view: proposal, spec, design, tasks |
+| [`openspec/changes/details-search/`](openspec/changes/details-search/) | the tenth change — search in the Details pane: proposal, spec, design, tasks |
 
 One thing from TESTING.md belongs here too: by design, **no mutating request from this program
 had ever been sent to a real Docker daemon when it was handed over** — the build was required

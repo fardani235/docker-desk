@@ -687,6 +687,85 @@ func TestMakeSandbox(t *testing.T) {
 	}
 }
 
+// TestSearchInTheSandbox drives `make sandbox` itself and shows the Details
+// pane's two kinds of search on the demo daemon: find in Inspect (nothing
+// hidden, the key path named) and filter in Logs (under a flood of 20 000
+// lines a second, counted against the lines held).
+func TestSearchInTheSandbox(t *testing.T) {
+	if _, err := exec.LookPath("make"); err != nil {
+		t.Skip("make is not installed")
+	}
+	const rows, cols = 40, 140
+	sock := filepath.Join(t.TempDir(), "sb.sock")
+	root, _ := filepath.Abs(filepath.Join("..", ".."))
+	term, err := ptyscreen.Start(rows, cols, []string{"GOFLAGS=", "GOPATH=" + os.Getenv("GOPATH"), "GOCACHE=" + os.Getenv("GOCACHE")},
+		"make", "-C", root, "--no-print-directory", "sandbox", "SANDBOX_SOCKET="+sock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(term.Close)
+	d := &desk{t: t, term: term}
+	if err := term.WaitFor(60*time.Second, "on sandbox", "shop-web-1"); err != nil {
+		t.Fatal(err)
+	}
+	typeText := func(s string) {
+		for _, r := range s {
+			d.keys(string(r))
+		}
+	}
+
+	// Find, in Inspect: every line stays, the bar counts and names the key.
+	d.keys("/")
+	typeText("shop-db")
+	d.keys(ptyscreen.Enter)
+	d.see("3 Details: shop-db-1")
+	d.keys("3", "[") // Info wraps back to Inspect
+	d.see("[Inspect]", `"Id":`)
+	d.keys("/")
+	typeText("status")
+	d.see("find: status", "1 of 2", "at State.Status")
+	d.keys(ptyscreen.Enter, "n")
+	d.see("find: status  2 of 2  at State.Health.Status", `"Status": "healthy"`, `"Id":`)
+	checkFrame(t, d.shot("35-inspect-find"), rows, cols)
+	d.keys("n")
+	d.see("1 of 2  at State.Status") // n past the last wraps to the first
+
+	// Esc clears the find, a second Esc goes back to the List, a third
+	// clears the List's filter.
+	d.keys(ptyscreen.Esc)
+	d.gone("find: status")
+	d.keys(ptyscreen.Esc, ptyscreen.Esc)
+	d.see("2 Containers (13)")
+
+	// Filter, in Logs, under a flood.
+	d.keys("/")
+	typeText("noisy")
+	d.keys(ptyscreen.Enter)
+	d.see("3 Details: noisy-logger")
+	d.keys("3", "]", "]", "]") // Inspect, Info, Changes, Logs
+	d.see("[Logs]", "● following")
+	d.keys("/")
+	typeText("error")
+	d.see("filter: error", " of 5000 match", "upstream timed out")
+	d.keys(ptyscreen.Enter)
+	d.see("filter: error  ● following · ")
+	screen := d.shot("36-logs-filter")
+	checkFrame(t, screen, rows, cols)
+	if strings.Contains(screen, "request handled") {
+		t.Fatal("a line that does not match the filter is on screen")
+	}
+	d.keys("/")
+	typeText("zzz")
+	d.see("no match in the 5000 lines held")
+	d.keys(ptyscreen.Esc)
+	d.see("● following · 5000 lines", "request handled")
+
+	d.keys("q")
+	if code := d.quit(); code != 0 {
+		t.Fatalf("make sandbox exited with %d", code)
+	}
+}
+
 func lastBytes(s string, n int) string {
 	if len(s) > n {
 		return s[len(s)-n:]
