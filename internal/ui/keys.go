@@ -44,6 +44,11 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 	if m.filtering {
 		return m.onFilterKey(k)
 	}
+	// The Details pane's search bar, likewise: while it is typed in, every
+	// key is text.
+	if m.ds.typing {
+		return m.onSearchKey(k)
+	}
 	// The Packages view covers the panes too.
 	if m.pk.open {
 		return m.onPackagesKey(k)
@@ -257,6 +262,13 @@ func (m *Model) onFilterKey(k tea.KeyMsg) tea.Cmd {
 }
 
 func (m *Model) onDetailsKey(key string) tea.Cmd {
+	if key == "/" {
+		m.openSearch()
+		return nil
+	}
+	if m.onSearchOpenKey(key) {
+		return nil
+	}
 	if m.tabName() == tabFindings && m.onFindingsKey(key) {
 		return nil
 	}

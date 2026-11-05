@@ -6,6 +6,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/muesli/termenv"
+
+	"github.com/fardani235/docker-desk/internal/search"
 )
 
 // tone is the semantic colour of a piece of text.
@@ -49,6 +51,13 @@ type styles struct {
 	hintText    lipgloss.Style
 	dialogTitle lipgloss.Style
 	danger      lipgloss.Style
+
+	// match and matchCur mark what a search found; mark is what is written
+	// around a match: their sequences, or — without colour, where no
+	// attribute is drawn — brackets, › ‹ and for the current match » «.
+	match    lipgloss.Style
+	matchCur lipgloss.Style
+	mark     search.Marks
 }
 
 // newStyles builds every style from a theme. Colours come only from the
@@ -92,7 +101,28 @@ func newStyles(t Theme) styles {
 	s.hintText = fg(t.Dim)
 	s.dialogTitle = lipgloss.NewStyle().Bold(true)
 	s.danger = fg(t.Bad).Bold(true)
+	// A match is bold and underlined, so it is one without colour too; the
+	// accent colour is added where the theme has one. The current match is
+	// also reversed.
+	s.match = fg(t.Accent).Bold(true).Underline(true)
+	s.matchCur = fg(t.Accent).Bold(true).Underline(true).Reverse(true)
+	s.mark = search.Marks{On: "›", Off: "‹", CurOn: "»", CurOff: "«"}
+	if on, off, ok := sgrAround(s.match); ok {
+		curOn, curOff, _ := sgrAround(s.matchCur)
+		s.mark = search.Marks{On: on, Off: off, CurOn: curOn, CurOff: curOff}
+	}
 	return s
+}
+
+// sgrAround returns the sequences a style writes before and after its text.
+// Without colour the renderer writes none (T5), and ok is false.
+func sgrAround(st lipgloss.Style) (on, off string, ok bool) {
+	r := st.Render("x")
+	i := strings.IndexByte(r, 'x')
+	if i <= 0 {
+		return "", "", false
+	}
+	return r[:i], r[i+1:], true
 }
 
 func (s styles) tone(t tone, text string) string {

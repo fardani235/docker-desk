@@ -1,0 +1,40 @@
+ Docker Desk  unix:///tmp/TestSearchInTheSandbox2852922700/001/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┌─ 2 Containers (1 of 13) ─────────────────────────────── filter: shop-db ─┐┌─ 4 Events ────────────────────── ● live ─┐
+│▸ Containers    13││  NAME           IMAGE        STATE          CPU       MEM  STATUS        ││Waiting for engine events…                │
+│  Images        16││▸ shop-db-1      postgres:16  ● running        …         …  Up 3 hours (… ││Everything the daemon does                │
+│  Volumes        7││                                                                          ││shows up here as it happens.              │
+│  Networks       7││                                                                          ││                                          │
+│  Compose        2││                                                                          ││                                          │
+│                  ││                                                                          ││                                          │
+│  ● 7 running     ││                                                                          ││                                          │
+│  ‖ 1 paused      ││                                                                          ││                                          │
+│  ○ 5 stopped     ││                                                                          ││                                          │
+│                  ││                                                                          ││                                          │
+│                  ││                                                                          ││                                          │
+│                  ││                                                                          ││                                          │
+│                  │└──────────────────────────────────────────────────────────────────────────┘│                                          │
+│                  │┏━ ◆ 3 Details: shop-db-1 ━━━ Info Changes Logs Stats Processes [Inspect] ━┓│                                          │
+│                  │┃{                                                                         ┃│                                          │
+│                  │┃  "Id": "e4787a232c7582e869c00faa6e6e5fe85243fc0b3bebb6458f4c380986cb64aa"┃│                                          │
+│                  │┃,                                                                         ┃│                                          │
+│                  │┃  "Created": "2026-11-04T20:16:51.03260511Z",                             ┃│                                          │
+│                  │┃  "Path": "postgres",                                                     ┃│                                          │
+│                  │┃  "Args": [],                                                             ┃│                                          │
+│                  │┃  "State": {                                                              ┃│                                          │
+│                  │┃    "Status": "running",                                                  ┃│                                          │
+│                  │┃    "Running": true,                                                      ┃│                                          │
+│                  │┃    "Paused": false,                                                      ┃│                                          │
+│                  │┃    "Restarting": false,                                                  ┃└──────────────────────────────────────────┘
+│                  │┃    "OOMKilled": false,                                                   ┃┌─ 5 Jobs ─────────────────────────────────┐
+│                  │┃    "Dead": false,                                                        ┃│No jobs yet.                              │
+│                  │┃    "Pid": 4242,                                                          ┃│Everything that changes the daemon        │
+│                  │┃    "ExitCode": 0,                                                        ┃│runs here, in the background.             │
+│                  │┃    "Error": "",                                                          ┃│                                          │
+│                  │┃    "StartedAt": "2026-11-04T20:16:51.03260511Z",                         ┃│                                          │
+│                  │┃    "FinishedAt": "0001-01-01T00:00:00Z",                                 ┃│                                          │
+│                  │┃    "Health": {                                                           ┃│                                          │
+│                  │┃      "Status": "healthy",                                                ┃│                                          │
+│                  │┃find: status  2 of 2  at State.Health.Status                              ┃│                                          │
+└──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────┘
+
+ n N next / prev  Esc clear find  ↑↓ scroll  [ ] tab  w wrap  s start  t stop  R restart  p pause  u unpause  K k… Tab pane  ? keys  q quit

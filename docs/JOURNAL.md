@@ -722,3 +722,26 @@ A row not listed yet is waited for (E5); the test removes a row from the desk's 
 list, so the refresh that finds it is the one the jump asked for. `TestEventsPane` now expects
 `‖ held +0`. `go vet`, gofmt, `go test ./...` and the e2e suite pass; `make build` leaves
 `bin/docker-desk`. Nothing was committed.
+
+## 44. Round ten — search in the Details pane
+
+The brief: `/` in the Details pane, find in the text tabs, filter in Logs, the Inspect key path in
+its own package. A short spec came first (`openspec/changes/details-search/`, valid under
+`--strict`), then two pure packages with their own tests: `search` (matching and marking) and
+`keypath`. `textView` gained a version, a row map and a find whose jumps are settled in `render`
+after layout (DECISIONS Q4). Making the version mean something needed `set` to ignore identical
+lines, which Info, Processes and Changes pass on every frame; they had been re-wrapped every
+frame until then.
+
+Two things found by the tests. Without colour the tests' screens showed no mark at all — T5
+again: the renderer draws no attribute without colour — so matches are bracketed there (Q6). And
+the brief's example path, `Config.Health.Status`, is not where the daemon reports health; the
+bar reads `at State.Health.Status` for the demo's shop-db-1 (Q12).
+
+The fake's generated log lines now vary (Q13), so `make sandbox` has errors to filter for;
+`e2e.TestSearchInTheSandbox` drives `make sandbox` itself and captured screens 35 and 36. One full
+run of `go test ./...` failed `ui.TestSpaceTotalsAreTheDaemons` (unique + shared groups short of
+the daemon's total); the Space code is untouched by this round, the test passed ten times alone
+and in a full rerun, and it was left as found. `go build`, `go vet`, gofmt and `go test ./...`
+pass. Nothing was committed.
+

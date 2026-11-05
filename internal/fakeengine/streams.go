@@ -139,12 +139,26 @@ func (s *Server) generateLogs(c *Container, done chan struct{}) {
 				if text != "" {
 					batch[i] = logEntry{stream, text + " " + strconv.FormatUint(n, 10)}
 				} else {
-					batch[i] = logEntry{stream, "line " + strconv.FormatUint(n, 10) + " level=info msg=\"request handled\" path=/api/items status=200"}
+					batch[i] = logEntry{stream, generatedLine(n)}
 				}
 			}
 			c.logs.appendBatch(batch)
 		}
 	}
+}
+
+// generatedLine is the nth line a container without a LogLine writes: mostly
+// handled requests, a slow one every 13th, a failed one every 31st — enough
+// variety that a filter in the Logs tab has something to find.
+func generatedLine(n uint64) string {
+	num := "line " + strconv.FormatUint(n, 10)
+	switch {
+	case n%31 == 0:
+		return num + ` level=error msg="upstream timed out" path=/api/orders status=500`
+	case n%13 == 0:
+		return num + ` level=warn msg="slow request" path=/api/items status=200 took=1.8s`
+	}
+	return num + ` level=info msg="request handled" path=/api/items status=200`
 }
 
 // LinesWritten returns how many log lines a container has written in total.

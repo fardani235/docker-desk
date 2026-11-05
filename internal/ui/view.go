@@ -306,6 +306,8 @@ func (m *Model) renderHints() string {
 		add("type", "to filter")
 		add("Enter", "keep")
 		add("Esc", "undo")
+	case m.ds.typing:
+		m.searchHints(add) // every key is text: no action can be offered
 	case m.focus == PaneKinds:
 		add("↑↓", "pick a kind")
 		add("Enter", "go to list")
@@ -320,12 +322,14 @@ func (m *Model) renderHints() string {
 			add("/", "filter")
 			add("⏎", "actions")
 		} else if m.tabName() == tabFindings {
+			m.searchHints(add)
 			add("↑↓", "finding")
 			add("o", "order")
 			add("v", "reveal")
 			add("i", "packages")
 			add("[ ]", "tab")
 		} else {
+			m.searchHints(add)
 			add("↑↓", "scroll")
 			add("[ ]", "tab")
 			if m.tabName() == tabLogs {
@@ -347,6 +351,9 @@ func (m *Model) renderHints() string {
 			}
 		}
 		for _, a := range kindActions[m.kind] {
+			if m.shadowed(a.key) {
+				continue // n steps through matches while a search is open
+			}
 			add(a.key, strings.TrimSuffix(a.label, "…"))
 		}
 	case m.focus == PaneEvents && m.evHeld:
@@ -422,6 +429,26 @@ func (m *Model) helpLines(w int) []string {
 	row("← →  or  h l", "switch tab")
 	row("f", "Logs: pause / resume following")
 	row("w", "toggle line wrapping (not Processes: one row per process)")
+
+	sect("Details pane: search (/)")
+	row("/", "Info, Inspect, Processes, Changes: find as you type; Logs: filter")
+	row("Enter", "keep the query; jump to the current match")
+	row("n  N", "next / previous match, wrapping at either end")
+	row("Esc", "clear the search; again, back to the List")
+	out = append(out,
+		"  Find hides nothing: every match is marked (bold, underlined; the current",
+		"  one also reversed; without colour › ‹ and » «), the bar counts them —",
+		"  find: q  3 of 9 — and on Inspect names the key: at State.Health.Status.",
+		"  Logs filter instead: lines that do not match are hidden, following shows the",
+		"  newest that does, scrolling back moves through those only. The count is of",
+		"  the lines held here (5000 at most, the last 1000 when the stream opened);",
+		"  older output on the daemon is not searched. Case is ignored, colour codes",
+		"  are never matched, and a query is plain text, not a pattern. Each tab keeps",
+		"  its own query until another object is highlighted. While a search is open",
+		"  n and N step through matches, so Volumes' and Networks' n (new) waits.",
+		"  Stats and Findings are not text: the bar says there is nothing to search.",
+		"  Searching sends nothing to the daemon.",
+	)
 
 	sect("Containers › Processes tab")
 	row("r", "take a new snapshot (GET /containers/{id}/top, the daemon's default ps)")

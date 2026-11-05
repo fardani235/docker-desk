@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/live"
 	"github.com/fardani235/docker-desk/internal/plan"
+	"github.com/fardani235/docker-desk/internal/search"
 )
 
 // Details tabs.
@@ -45,17 +47,34 @@ func (m *Model) cycleTab(delta int) {
 
 // textView is a scrollable block of static text (info, inspect, job output,
 // help). Lines are wrapped lazily for the width it is drawn at.
+//
+// A view in the Details pane can also hold a find (search.go): its matches
+// are kept for the lines they were found in, and a jump to one is a pending
+// seek that render resolves once the rows exist for the width it draws at.
 type textView struct {
 	lines   []string
 	wrapped []string
 	wrapW   int
 	wrap    bool
 	off     int
+
+	ver      uint64 // changes whenever set is given different lines
+	rowLine  []int  // per wrapped row: the source line it belongs to
+	rowStart []int  // per wrapped row: where it starts in its stripped source line
+	lineRow  []int  // per source line: its first wrapped row
+	find     textFind
 }
 
+// set replaces the text. Views redrawn every frame (Info, Processes,
+// Changes) pass the same lines again and again; those change nothing, so
+// that neither the wrapping nor a find is redone for them.
 func (v *textView) set(lines []string) {
+	if slices.Equal(lines, v.lines) && (lines == nil) == (v.lines == nil) {
+		return
+	}
 	v.lines = lines
 	v.wrapW = -1
+	v.ver++
 }
 
 func (v *textView) layout(w int) {
@@ -64,11 +83,19 @@ func (v *textView) layout(w int) {
 	}
 	v.wrapW = w
 	v.wrapped = v.wrapped[:0]
-	for _, l := range v.lines {
+	v.rowLine, v.rowStart, v.lineRow = v.rowLine[:0], v.rowStart[:0], v.lineRow[:0]
+	for i, l := range v.lines {
+		v.lineRow = append(v.lineRow, len(v.wrapped))
+		parts := []string{l}
 		if v.wrap {
-			v.wrapped = append(v.wrapped, wrapLine(l, w)...)
-		} else {
-			v.wrapped = append(v.wrapped, l)
+			parts = wrapLine(l, w)
+		}
+		at := 0
+		for _, p := range parts {
+			v.wrapped = append(v.wrapped, p)
+			v.rowLine = append(v.rowLine, i)
+			v.rowStart = append(v.rowStart, at)
+			at += len(search.Strip(p))
 		}
 	}
 }
@@ -80,9 +107,10 @@ func (v *textView) toggleWrap() {
 
 func (v *textView) render(w, h int) []string {
 	v.layout(w)
+	v.resolveFind(h)
 	v.off = clamp(v.off, 0, max(len(v.wrapped)-h, 0))
 	end := min(v.off+h, len(v.wrapped))
-	return v.wrapped[v.off:end]
+	return v.markRows(v.off, end)
 }
 
 func (v *textView) scroll(delta int) { v.off = max(v.off+delta, 0) }
@@ -587,6 +615,11 @@ func (m *Model) renderLogs(w, h int) []string {
 		return append(out, m.st.tone(toneDim, fit("opening log stream…", w)))
 	}
 	first, end := ring.Bounds()
+	q := m.ds.logQ
+	var idx []uint64
+	if q != "" {
+		idx = m.logMatches(ring, q)
+	}
 	viewEnd := end
 	if !m.logFollow {
 		viewEnd = m.logEnd
@@ -596,13 +629,22 @@ func (m *Model) renderLogs(w, h int) []string {
 		if viewEnd < first+1 && end > first {
 			viewEnd = first + 1 // the lines we were looking at scrolled out
 		}
+		if q != "" && len(idx) > 0 && viewEnd <= idx[0] {
+			viewEnd = idx[0] + 1 // no matching line left above: show the oldest
+		}
 		m.logEnd = viewEnd
 	}
-	from := first
-	if viewEnd > uint64(bodyH) && viewEnd-uint64(bodyH) > first {
-		from = viewEnd - uint64(bodyH)
+	var src []string
+	if q != "" {
+		// Filtered: only the matching lines that can be drawn are copied.
+		src = filteredLogLines(ring, idx, viewEnd, bodyH)
+	} else {
+		from := first
+		if viewEnd > uint64(bodyH) && viewEnd-uint64(bodyH) > first {
+			from = viewEnd - uint64(bodyH)
+		}
+		src, _ = ring.Read(from, viewEnd)
 	}
-	src, _ := ring.Read(from, viewEnd)
 
 	// Wrap from the bottom up until the pane is full.
 	rows := make([]string, 0, bodyH)
@@ -611,12 +653,7 @@ func (m *Model) renderLogs(w, h int) []string {
 		if !m.st.color {
 			line = ansi.Strip(line)
 		}
-		var parts []string
-		if m.logWrap {
-			parts = wrapLine(line, w)
-		} else {
-			parts = []string{line}
-		}
+		parts := m.logRows(line, w)
 		for j := len(parts) - 1; j >= 0 && len(rows) < bodyH; j-- {
 			rows = append(rows, parts[j])
 		}
@@ -630,25 +667,42 @@ func (m *Model) renderLogs(w, h int) []string {
 		out = append(out, "")
 	}
 
-	// Status row.
+	// Status row. With a filter, what is counted is said: the lines held
+	// here, never the daemon's older output (Q7).
 	var status string
 	t := toneDim
 	held := end - first
+	newer := end - viewEnd
+	newerWhat := "newer lines"
+	if q != "" {
+		newer = uint64(len(idx) - sort.Search(len(idx), func(i int) bool { return idx[i] >= viewEnd }))
+		newerWhat = "newer matches"
+	}
 	switch {
 	case st.Err != "":
 		status, t = "■ log stream failed: "+st.Err, toneBad
 	case !m.logFollow:
-		status, t = fmt.Sprintf("‖ scrolled back — %d newer lines · G or f follows again", end-viewEnd), toneWarn
+		status, t = fmt.Sprintf("‖ scrolled back — %d %s · G or f follows again", newer, newerWhat), toneWarn
 	case st.Ended:
 		status = fmt.Sprintf("■ end of output: the container is not running · %d lines", held)
 	case st.Streaming:
-		status = fmt.Sprintf("● following · %d lines", held)
-		if first > 0 {
-			status += fmt.Sprintf(" · %d older lines scrolled out", first)
+		status = "● following"
+		if q == "" {
+			status += fmt.Sprintf(" · %d lines", held)
 		}
 		t = toneGood
 	default:
 		status = "log stream closed"
+	}
+	if q != "" || m.ds.typing {
+		var none bool
+		status, none = m.logFilterStatus(status, len(idx), held)
+		if none {
+			t = toneWarn
+		}
+	}
+	if st.Streaming && st.Err == "" && !st.Ended && m.logFollow && first > 0 {
+		status += fmt.Sprintf(" · %d older lines scrolled out", first)
 	}
 	if !m.logWrap {
 		status += " · wrap off"
@@ -669,6 +723,10 @@ func (m *Model) currentContainerID() string {
 
 func (m *Model) scrollLogs(delta int) {
 	ring, _ := m.hub.Log()
+	if m.ds.logQ != "" {
+		m.scrollFilteredLogs(ring, delta)
+		return
+	}
 	first, end := ring.Bounds()
 	cur := end
 	if !m.logFollow {
@@ -806,6 +864,27 @@ func (m *Model) renderDetails(w, h int) []string {
 	if _, ok := m.currentRow(); !ok {
 		return []string{m.st.tone(toneDim, "Highlight an object in the list to see its details here.")}
 	}
+	if v := m.tabView(); v != nil {
+		v.find.mk = m.st.mark
+	}
+	// The search bar takes the pane's last row while it is open, and no row
+	// while it is not. Logs keeps it in its status row.
+	if m.tabName() != tabLogs && m.searchOpen() && h >= 2 {
+		body := m.renderTab(w, h-1)
+		if len(body) > h-1 {
+			body = body[:h-1]
+		}
+		out := make([]string, 0, h)
+		out = append(out, body...)
+		for len(out) < h-1 {
+			out = append(out, "")
+		}
+		return append(out, m.findBar(w))
+	}
+	return m.renderTab(w, h)
+}
+
+func (m *Model) renderTab(w, h int) []string {
 	switch m.tabName() {
 	case tabFindings:
 		return m.renderFindings(w, h)
