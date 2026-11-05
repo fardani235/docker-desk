@@ -74,8 +74,8 @@ text (case-insensitively) remain, and the active filter SHALL be displayed.
 ### Requirement: Details of the highlighted object
 The Details pane SHALL always describe the object highlighted in the List pane. It SHALL offer
 a readable summary and the daemon's complete inspect data, and for containers additionally
-Logs and Stats views. Moving the highlight SHALL update the Details pane without any further
-key.
+Logs, Stats, Processes, and Inspect views. Moving the highlight SHALL update the Details pane
+without any further key.
 
 #### Scenario: Container summary
 - **WHEN** a container is highlighted
@@ -84,6 +84,10 @@ key.
 #### Scenario: Raw inspect
 - **WHEN** the operator switches the Details pane to the inspect view
 - **THEN** the full inspect document for the object is shown as indented JSON and can be scrolled
+
+#### Scenario: Container processes
+- **WHEN** the operator switches the Details pane to the Processes view for a container
+- **THEN** the view shows the current process snapshot reported by the daemon, or an explicit loading, empty, stopped-container, stale, or error state
 
 #### Scenario: Network summary
 - **WHEN** a network is highlighted

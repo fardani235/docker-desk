@@ -10,11 +10,6 @@ confirmed and rendered, and how it is executed.
 ### Requirement: Selecting rows
 In the List pane, `Space` SHALL toggle the highlighted row in or out of the current kind's
 selection without moving the highlight, and `a` SHALL add every row the current filter shows.
-Containers, images, volumes and networks SHALL be selectable; compose projects SHALL NOT, and
-`Space` or `a` on them SHALL say so. Each kind SHALL have its own selection. `Space` SHALL keep
-paging in the Details pane; in the Events pane it holds and resumes the view (see
-engine-events). Selecting SHALL send nothing to the daemon and SHALL be
-allowed in read-only mode.
 
 #### Scenario: Marking
 - **WHEN** the operator presses `Space` on two container rows
@@ -27,6 +22,16 @@ allowed in read-only mode.
 #### Scenario: Select what the filter shows
 - **WHEN** the filter is `shop-` and the operator presses `a`
 - **THEN** exactly the rows matching the filter are selected
+
+### Requirement: Which kinds are selectable, and where Space keeps its meaning
+Containers, images, volumes and networks SHALL be selectable; compose projects SHALL NOT, and
+`Space` or `a` on them SHALL say so. Each kind SHALL have its own selection. `Space` SHALL keep
+paging in the Details pane and hold and resume the view in the Events pane. Selecting SHALL
+send nothing to the daemon and SHALL be allowed in read-only mode.
+
+#### Scenario: A compose project
+- **WHEN** the operator presses `Space` on a compose project row
+- **THEN** the status line says a compose project cannot be selected as a set, because each project is acted on as a whole, and nothing is marked
 
 #### Scenario: Space elsewhere
 - **WHEN** the Details pane is focused and the operator presses `Space`

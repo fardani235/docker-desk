@@ -7,19 +7,10 @@ how the desk behaves when that daemon is unreachable, remote, or returns errors.
 ## Requirements
 
 ### Requirement: Single daemon from the current Docker context
-The program SHALL talk to exactly one daemon for its whole lifetime, chosen with the same
-precedence as the Docker CLI: the `--context` flag, then the `--host` flag, then the
-`DOCKER_HOST` environment variable, then the `DOCKER_CONTEXT` environment variable, then
-`currentContext` in the Docker CLI configuration file, then the default context. Giving both
-`--host` and `--context` SHALL be refused. The default context SHALL mean what it means to the
-Docker CLI: the endpoint in `DOCKER_HOST` when that is set, otherwise the local socket
-`unix:///var/run/docker.sock` — or `tcp://localhost:2376` when `DOCKER_TLS_VERIFY` or
-`DOCKER_TLS` is set and no endpoint is named anywhere. The program SHALL NOT offer any way to
-switch daemon while running.
-
-#### Scenario: No configuration at all
-- **WHEN** no flag is given, neither `DOCKER_HOST` nor `DOCKER_CONTEXT` is set and the Docker configuration names no current context
-- **THEN** the program uses `unix:///var/run/docker.sock` and reports the context as `default`
+The program SHALL talk to exactly one daemon for its whole lifetime, chosen with the Docker
+CLI's precedence: `--context`, `--host`, `DOCKER_HOST`, `DOCKER_CONTEXT`, `currentContext` in
+the configuration file, then the default context. Giving both `--host` and `--context` SHALL be
+refused, and the program SHALL NOT offer any way to switch daemon while running.
 
 #### Scenario: DOCKER_HOST is set
 - **WHEN** `DOCKER_HOST` is set and no flag is given
@@ -44,6 +35,15 @@ switch daemon while running.
 #### Scenario: Both flags
 - **WHEN** the program is started with both `--host` and `--context`
 - **THEN** it exits with a non-zero status saying the two cannot be used together, without opening the workspace
+
+### Requirement: The default context means what it means to the Docker CLI
+The default context SHALL resolve to the endpoint in `DOCKER_HOST` when that is set, otherwise to
+the local socket `unix:///var/run/docker.sock` — or `tcp://localhost:2376` when
+`DOCKER_TLS_VERIFY` or `DOCKER_TLS` is set and no endpoint is named anywhere.
+
+#### Scenario: No configuration at all
+- **WHEN** no flag is given, neither `DOCKER_HOST` nor `DOCKER_CONTEXT` is set and the Docker configuration names no current context
+- **THEN** the program uses `unix:///var/run/docker.sock` and reports the context as `default`
 
 #### Scenario: The default context with DOCKER_HOST set
 - **WHEN** the program is started with `--context default` while `DOCKER_HOST` names an endpoint
@@ -113,14 +113,10 @@ known, and SHALL list the possibilities rather than name one when it cannot.
 - **THEN** the program refuses it without writing those characters to the terminal
 
 ### Requirement: Daemon identity is always visible
-While the workspace is open it SHALL permanently display the daemon endpoint as the operator
-named it, the context name, and the engine's name and version, in every layout and behind no
-keystroke. When the daemon is not reached through a local socket, the workspace SHALL
-additionally display, next to the endpoint, how it is reached. Neither the connection state
-nor that indication SHALL be dropped or cut off at any supported terminal size; of the endpoint
-itself, the beginning and the end SHALL always be shown in the header and the whole of it in
-every dialog and in the help. Error messages SHALL name the daemon by that endpoint and never
-by an internal address used to reach it.
+While the workspace is open the desk SHALL permanently display the daemon endpoint as the
+operator named it, the context name, and the engine's name and version, in every layout and
+behind no keystroke. Neither the connection state nor any of these SHALL be dropped at any
+supported terminal size.
 
 #### Scenario: Normal operation
 - **WHEN** the workspace is open
@@ -134,6 +130,19 @@ by an internal address used to reach it.
 - **WHEN** the endpoint is `ssh://` to another machine
 - **THEN** the header shows the `ssh://` endpoint — not the local end of the tunnel — and a tag saying it is remote and reached over ssh
 
+### Requirement: Errors name the daemon by its endpoint
+Error messages SHALL name the daemon by the endpoint the operator selected, and never by an
+internal address used to reach it.
+
+#### Scenario: Errors while the SSH link is down
+- **WHEN** a request fails on an `ssh://` endpoint
+- **THEN** the message names the `ssh://` endpoint and not the local end of the tunnel
+
+### Requirement: A long endpoint or context keeps what identifies it
+Of the endpoint, the beginning and the end SHALL always be shown in the header, and the whole of
+it in every dialog and in the help. A dialog SHALL continue a long endpoint on the next line and
+SHALL give a context name too long to share a line its own.
+
 #### Scenario: Endpoint longer than the header or the dialog
 - **WHEN** the endpoint is too long for the header, or for a dialog's width
 - **THEN** in the header the middle of the endpoint gives way — its beginning and its end stay, as do the connection state and the tags; in a dialog the endpoint continues on the next line and the context and the tag are shown in full
@@ -145,10 +154,6 @@ by an internal address used to reach it.
 #### Scenario: A confirmation on the smallest terminal
 - **WHEN** a confirmation is opened at 80 columns by 24 rows, on any endpoint, with more to say than fits
 - **THEN** what is acted on, the daemon, the prompt, the input and the keys stay on screen, and the effects, warnings and listed objects between them scroll
-
-#### Scenario: Errors while the SSH link is down
-- **WHEN** a request fails on an `ssh://` endpoint
-- **THEN** the message names the `ssh://` endpoint and not the local end of the tunnel
 
 ### Requirement: Daemon errors never end the session
 When the daemon rejects or fails a request, the program SHALL show the daemon's error message
