@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake652938878/d.sock  ● connected  [READ-ONLY]
+┏━ ◆ Repository ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ repository 127.0.0.1:35261/acme/api                                          ┃
+┃ asks       127.0.0.1:35261 anonymously · 100 tags held · Tab asks for the    ┃
+┃            next page · listed 0s ago                                         ┃
+┃            Text order, numbers by value: never by recency.                   ┃
+┃   TAG                DIGEST               PLATFORMS        HERE              ┃
+┃   3.27.0                                                                     ┃
+┃   3.28                                                                       ┃
+┃   3.28.0                                                                     ┃
+┃   3.28.1                                                                     ┃
+┃   3.28.2             sha256:5343c588b2a1  amd64 arm64/v8   here              ┃
+┃   3.28.3                                                                     ┃
+┃ ▸ 3.29.0-rc.1        sha256:ffdcd7c49f8f  no amd64 · arm…  -                 ┃
+┃ ───────────────────────────────────────────────────────── rows 5–11 of 100 ─ ┃
+┃ 127.0.0.1:35261/acme/api:3.29.0-rc.1  · described 0s ago · r asks again      ┃
+┃ digest     sha256:ffdcd7c49f8fc0e99c8920e36be374394d500bfb8ba314b0e87b6b45c0 ┃
+┃            7ecb1f                                                            ┃
+┃ publishes  linux/arm64/v8                                                    ┃
+┃            No build for linux/amd64, this daemon's platform: a pull would    ┃
+┃            fail, and Enter refuses it.                                       ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ Read-only mode: "pull by digest…" is disabled. Nothing was sent to the daemon.
+ ↑↓ move  e name  / filter  Tab next page  d build times  … B Esc close  ? keys

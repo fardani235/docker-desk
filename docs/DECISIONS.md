@@ -2444,6 +2444,170 @@ narrow.
 A private-CA flag, ECR and GCR signing, mirrors on the desk side, ordering versions, listing tags,
 background polling (all non-goals of the design).
 
+## Round twelve — the repository browser: a registry's tags, and one build by its digest
+
+`B`, `registry.ListTags` and `registry.Describe`, `internal/repository`, `plan.PullPinned`, `P` on
+Upstream's moved verdict, and `fake-dockerd -registry`. The change is
+`openspec/changes/repository-browser/`; its design numbers these decisions L1–L16, and so does
+this round. Where the brief left a question, it was decided here and the work went on.
+
+### L1 — Its own capability and its own package
+
+**Decided:** a new capability `repository-browser`; `internal/repository` (the listing, the
+join, the session cache, the build-time batch); the wire in `internal/registry`; the view in
+`internal/ui/repository.go`, a full-screen view after `space.go`. The pinned pull is a delta on
+`image-operations`, which owns pulling. **Alternative:** put it in `internal/freshness` — whose
+subject is one local image, not a repository.
+
+### L2 — Paging follows `Link`, on the same host and path only
+
+**Decided:** `GET /v2/<path>/tags/list?n=100`; the next page is exactly the one the registry's
+`Link: <…>; rel="next"` names, resolved against the request, and followed only if it is the same
+scheme, host and `tags/list` path — a registry cannot send the desk, with its credential, to
+another host by way of a page. A refused link is said in the header. A registry that names no
+next page has none: the desk does not guess `last=` itself. Names outside the tag grammar
+(`[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}`) are dropped and counted, never drawn: they came from the
+registry. The cursor is the link's path and query; a cursor for another repository is refused
+before a request. **Alternative:** build `?last=` from the last tag when `Link` is absent — it
+would invent pages the registry did not offer.
+
+### L3 — 1000 held
+
+**Decided:** at most 1000 tags (ten pages); a page that would pass the cap is cut and the
+listing is marked capped, after which `Tab` says the registry has more. The registry returns
+pages in its own (lexical) order, so the 1000 held are the first 1000 in that order, not the
+newest; the header says pages come in the registry's order.
+
+### L4 — Natural text order, never recency
+
+**Decided:** digit runs compare by value, everything else byte by byte, equal values fall back
+to bytes (`3.28.03` before `3.28.3`, `v01` before `v1`): a total order. The header reads *Tags are
+in text order, numbers by value (3.9 before 3.10): never by recency, which a tag list does not
+carry.* **Alternative:** semver — most tags are not semver, and a semver order looks like a
+release order, which it is not.
+
+### L5 — Describe is one GET, when the highlight rests; not a job
+
+**Decided:** `registry.Describe` sends the tag's manifest request (all four media types) and
+stops: digest, media type, an index's platforms (attestations and `unknown/unknown` left out).
+It runs once the highlight has rested for the desk's select delay — holding `↓` describes only
+where it stops — and a description still in flight for a row the highlight has left is
+cancelled. Answers are kept for the session by host/path:tag with their time; a kept row is not
+asked again until `r`. Listing and describing are single requests bounded at ten seconds and
+shown in the view's title, not jobs: a job per highlighted row would fill the Jobs pane with
+reads. `d`, which can send dozens, is a job.
+
+### L6 — A 401 never claims absence
+
+**Decided:** on the tag list and on a manifest, a 401 that stays a 401 after the challenge is
+answered reads *the registry answered 401 - it does not have this repository, or this credential
+is not allowed to see it* — with *(the request was anonymous: no credential is configured for
+this host)* when it was. Docker Hub and GHCR answer 401 for both cases; the desk cannot tell
+them apart and does not pretend to. A 404 says the registry has no such repository, because that
+is what a 404 says. The sentence is the brief's, ASCII hyphen included. Upstream's own wording
+for its checks is unchanged.
+
+### L7 — The join is by digest, with a precedence
+
+**Decided:** the remote digest is compared with the `RepoDigests` of local images of the same
+repository (`Ref.SameRepository`), never with an image ID (U3). Tags are read from `RepoTags`,
+where a digest-only entry (the containerd store lists `name@sha256:…` there) is not a tag. In
+order:
+
+| HERE | when |
+| --- | --- |
+| `here` | an image records the digest under this tag, or under no tag of the repository |
+| `here, the tag moved upstream` | an image carries this tag and records another digest |
+| `same build as <tag>` | an image records the digest under another tag (the first, naturally) |
+| `-` | none of these |
+
+An image built here, which records no digest, joins nothing — even when it carries the tag:
+there is nothing to compare. **Why this order:** `here` answers "do I need to pull?"; a moved
+tag is about the tag the row names; the same build under another name is the last thing worth
+saying.
+
+### L8 — The daemon's platform is mapped, not guessed
+
+**Decided:** `engine.Info.Architecture` is the kernel's machine name (`x86_64`, `aarch64`,
+`armv7l`); it is mapped to an index's (`amd64`, `arm64`, `arm/v7`), and the OS from `OSType`.
+An index with no build for it says `no amd64 · …` on the row and a sentence below it, and
+`PullPinned` carries a blocker: the daemon would refuse with *no matching manifest*. A single
+manifest, or a daemon whose architecture is not known, is never said to lack a build — nothing
+read could say so.
+
+### L9 — `d` is the rows on screen, as one job shaped like `freshness.Batch`
+
+**Decided:** the rows drawn at that moment, skipping those already timed; one credential
+resolution; then `Resolve` per row with the daemon's platform — up to three requests (the tag's
+manifest, the platform's, its config; a config read before is cached by digest). A quota
+refusal stops the job and says when it resets; what was read is kept. Another failure is that
+row's answer and the job goes on. Cancellation stops it before the next request. A time names
+the platform whose config it came from (`2026-10-20 amd64`), because an index's builds can
+differ. The job also refreshes each row's description. **Alternative:** every row held — up to
+3000 requests, against a quota shared with `docker pull`.
+
+### L10 — One pinned pull
+
+**Decided:** `plan.PullPinned(snap, Pinned{Name, Tag, Digest, NoBuildFor})`: `TierTyped`, `Word`
+= the tag, one `OpPullImage` step whose ID is exactly `name:tag@sha256:<digest>`. The dialog's
+target line is `name:tag (sha256:short)`; the first effect is *Pulls exactly <the full
+reference>*, wrapped and never cut; the second says the daemon fetches the digest, not the tag,
+so a tag that moved since it was read changes nothing. The browser's `Enter` and Images ›
+Upstream's `P` on a moved verdict both build the same action (`pinnedPullAction`) and go through
+`invokeOn`, so read-only mode refuses them where it refuses every pull. `P` anywhere else is the
+pull form, as before. The typed-word input is sized to the word (a tag may be 128 characters).
+
+### L11 — The premise that the pull tags the image did not hold
+
+**Found:** the brief said `name:tag@sha256:…` "already tags the pulled image". It does not, with
+this client: `client.ImagePull` (moby client v0.6.2, `getAPITagFromNamedRef`) sends
+`fromImage=<name>` and `tag=<digest>` when a reference carries both — the tag never reaches the
+daemon, which records the image as `name@sha256:…` (the containerd store lists that among the
+image's tags; the classic store as a `<none>` row with a digest). **Decided:** pull exactly what
+was specified, and say in the dialog what the daemon records and that a local `name:tag` is
+neither created nor moved. The join still says `here` after the pull, because it is by digest.
+**Alternative, not taken:** a second request tagging the image — a second mutation the dialog
+would have to confirm, and one that moves a local tag the operator may rely on.
+
+### L12 — Keys
+
+**Decided:** `B` beside `S` and `U` — a read, not one of the kind's guarded actions, so it works
+read-only; the pull inside it goes through them. In the view: `e` the name line, `/` the filter,
+`Tab` next page, `d` build times, `c` cancel them, `r` forget this repository's answers and ask
+again, `Enter` the pinned pull. While the name line or the filter is typed in every key is text.
+`Esc` steps out of a line (the name line puts back what was there, asking nothing), then clears
+a filter, then closes; `B` closes too. Closing drops a list or a description in flight; a `d`
+job keeps running in Jobs, where `c` cancels it.
+
+### L13 — `--no-registry` refuses to open; read-only browses
+
+**Decided:** under `--no-registry` `B` does not open the view and the status line says why — the
+browser has nothing to show without asking a registry. Read-only mode does not stop it: every
+request is a GET.
+
+### L14 — One registry client for Upstream and the browser
+
+**Decided:** one `registry.Client`, so one token cache, one config cache and one
+`--no-registry`.
+
+### L15 — The sandbox serves a real loopback registry
+
+**Decided:** `fakeregistry.Listen(addr)` refuses anything but a loopback address;
+`fake-dockerd -registry 127.0.0.1:0` serves `acme/api` there — releases for amd64 and arm64/v8,
+`3.28`/`3`/`latest` naming `3.28.3`, an arm64-only `3.29.0-rc.1`, and 92 nightlies so the list
+has a second page — and seeds three local images: `3.28.2` (`here`), `3.28` pulled before it
+moved (`here, the tag moved upstream`) and `stable` (`same build as stable` on `3.27.0`).
+`make sandbox` passes `-registry 127.0.0.1:0`. The fake daemon's pull by digest now records the
+image as the containerd store does — its ID is the digest pulled — so `RepoDigests` names it;
+before, it invented an ID and the join could never have said `here` after a pull.
+`fakeregistry` gained `tags/list` (lexical, `n`, `last`, `Link`), `AliasTags`, `Conceal` (401
+whatever the credential, as Hub answers) and `SetLinkBase` (a `Link` to another host).
+
+### L16 — Left out
+
+Search, `_catalog`, `hub.docker.com`, ordering or filtering by date, deleting or pushing tags,
+tagging the pulled image locally (L11), several repositories at once, polling.
+
 ## Process
 
 ### B12 — No commits were made
@@ -2472,5 +2636,24 @@ timing is a change of its own.
 All tasks are done and the change validates. Archiving — which folds the capability specs into
 `openspec/specs/` — is an acceptance step and was left for after review (`/opsx:archive`). The same holds for
 round five's `disk-space` change, round seven's `image-packages` change, round eight's
-`image-changes` change, round ten's `details-search` change, and round eleven's
-`image-freshness` change.
+`image-changes` change, round ten's `details-search` change, round eleven's
+`image-freshness` change, and round twelve's `repository-browser` change.
+
+### B31 — Round twelve: a race in the Space view's collection, fixed
+
+The full suite once failed `ui.TestRemovalConfirmationStatesWhatItFrees` (*the layers of 1 image
+were not read*). `collectSpace` copied the disk-usage job's results and *then* asked whether the
+job had finished; a job that wrote its last layers in between was dropped with them. It reads
+the job's state first now, so a job seen finished has written everything. Not introduced by
+this round (it failed 1 time in 32 here and 0 in 32 on `HEAD`, which is no difference), but
+found by it and three lines to fix. It is likely what JOURNAL §44 saw in round ten
+(`TestSpaceTotalsAreTheDaemons`, short of the daemon's total), left as found then.
+
+### B32 — Round twelve: `make race` is no redder
+
+`go test -race ./...` passed on the unchanged `HEAD` (a clean worktree) and on this round's tree,
+each run alone on the machine: exit 0, no data race reported. One earlier run of this round's
+tree, overlapping a `make build`, failed three timing-bound tests outside this round's code
+(`ui.TestFloodDoesNotStarveTheDesk`, `ui.TestNothingActsWhileTheDeskCannotBeDrawn`,
+`sshtunnel.TestOpenFailsInSSHsOwnWords`); each passed four times in a row under `-race` alone,
+and the whole suite passed when rerun. B25's caveat about timing under the detector stands.

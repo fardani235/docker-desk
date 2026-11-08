@@ -185,6 +185,8 @@ type Model struct {
 
 	// ---- space view ----
 	sp spaceState
+	// ---- repository browser (B) ----
+	rb repoState
 	// changedAt is when a refresh last found the engine different from what
 	// the desk knew: a list, or the disk account. A figure taken before it
 	// is stale. listPrint is what each list said, for comparison.
@@ -462,12 +464,28 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.onPick(msg)
 		return m, nil
 
+	case repoTagsMsg:
+		m.dirty = true
+		m.onRepoTags(msg)
+		return m, nil
+
+	case repoDescMsg:
+		m.dirty = true
+		m.onRepoDesc(msg)
+		return m, nil
+
 	case shellDoneMsg:
 		m.dirty = true
 		cmd := m.onShellDone(msg)
 		return m, cmd
 	}
 	// Anything else belongs to the focused text input (cursor blink).
+	if m.dlg == nil && m.rb.open && m.rb.editing {
+		var cmd tea.Cmd
+		m.rb.name, cmd = m.rb.name.Update(msg)
+		m.dirty = true
+		return m, cmd
+	}
 	if m.dlg != nil && m.dlg.hasInput {
 		var cmd tea.Cmd
 		m.dlg.input, cmd = m.dlg.input.Update(msg)
@@ -534,6 +552,12 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		}
 	}
 
+	// The repository browser: its build-time job, and the row the
+	// highlight rests on.
+	if cmd := m.syncRepository(now); cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+
 	// 3. Jobs that finished since the last frame.
 	if fin := m.jobs.TakeFinished(); len(fin) > 0 {
 		m.announce(fin)
@@ -583,7 +607,7 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		m.status = statusLine{}
 		m.dirty = true
 	}
-	if m.jobs.RunningCount() > 0 || m.preparing {
+	if m.jobs.RunningCount() > 0 || m.preparing || m.repoBusy() {
 		// Spinner and elapsed times move only while something runs.
 		if next := int(now.UnixMilli()/120) % len(spinnerFrames); next != m.spinner {
 			m.spinner = next

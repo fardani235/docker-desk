@@ -11,8 +11,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -48,12 +51,18 @@ type Registry struct {
 	manifests map[string]stored // "path:tag" or "path@digest"
 	blobs     map[string][]byte
 	log       []Request
+	// concealed repositories answer 401 whatever the credential, as Docker
+	// Hub answers for one that does not exist or that may not be seen.
+	concealed map[string]bool
+	// linkBase, when set, is put before the path of a tags/list Link, so a
+	// test can make the registry name another host.
+	linkBase string
 }
 
 // Request is one request the registry saw.
 type Request struct {
-	Method, Path, Accept, Authorization string
-	Realm                               bool
+	Method, Path, Query, Accept, Authorization string
+	Realm                                      bool
 }
 
 type stored struct {
@@ -63,10 +72,67 @@ type stored struct {
 
 // New starts a registry and its realm.
 func New() *Registry {
-	r := &Registry{tokens: map[string]bool{}, manifests: map[string]stored{}, blobs: map[string][]byte{}}
+	r := newRegistry()
 	r.Realm = httptest.NewServer(http.HandlerFunc(r.serveToken))
 	r.Server = httptest.NewServer(http.HandlerFunc(r.serve))
 	return r
+}
+
+func newRegistry() *Registry {
+	return &Registry{tokens: map[string]bool{}, manifests: map[string]stored{}, blobs: map[string][]byte{}, concealed: map[string]bool{}}
+}
+
+// Listen starts a registry on addr, which must be a loopback address
+// ("127.0.0.1:0" picks a free port): the sandbox's registry, in plain HTTP,
+// which the desk speaks to loopback hosts only.
+func Listen(addr string) (*Registry, error) {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+	if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
+		return nil, fmt.Errorf("the fake registry listens on a loopback address only, not %s", addr)
+	}
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	r := newRegistry()
+	r.Realm = httptest.NewServer(http.HandlerFunc(r.serveToken))
+	r.Server = httptest.NewUnstartedServer(http.HandlerFunc(r.serve))
+	_ = r.Server.Listener.Close()
+	r.Server.Listener = l
+	r.Server.Start()
+	return r, nil
+}
+
+// Conceal makes the registry answer 401 for path whatever the credential.
+func (r *Registry) Conceal(path string) {
+	r.mu.Lock()
+	r.concealed[path] = true
+	r.mu.Unlock()
+}
+
+// SetLinkBase puts base (e.g. "http://elsewhere.example") before the path
+// of every tags/list Link header.
+func (r *Registry) SetLinkBase(base string) {
+	r.mu.Lock()
+	r.linkBase = base
+	r.mu.Unlock()
+}
+
+// AliasTags points each of tags at what path:from names, as a registry
+// does when several tags name one build. It is cheap: nothing is built.
+func (r *Registry) AliasTags(path, from string, tags ...string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	m, ok := r.manifests[path+":"+from]
+	if !ok {
+		return
+	}
+	for _, t := range tags {
+		r.manifests[path+":"+t] = m
+	}
 }
 
 // Close stops both servers.
@@ -224,8 +290,12 @@ func Digest(b []byte) string {
 
 func (r *Registry) serve(w http.ResponseWriter, q *http.Request) {
 	r.mu.Lock()
-	r.log = append(r.log, Request{Method: q.Method, Path: q.URL.Path, Accept: q.Header.Get("Accept"), Authorization: q.Header.Get("Authorization")})
+	r.log = append(r.log, Request{Method: q.Method, Path: q.URL.Path, Query: q.URL.RawQuery, Accept: q.Header.Get("Accept"), Authorization: q.Header.Get("Authorization")})
 	auth, user, pw := r.auth, r.user, r.pw
+	concealed := false
+	for p := range r.concealed {
+		concealed = concealed || strings.HasPrefix(q.URL.Path, "/v2/"+p+"/")
+	}
 	quotaHit := false
 	if r.quota > 0 {
 		r.quota--
@@ -240,8 +310,8 @@ func (r *Registry) serve(w http.ResponseWriter, q *http.Request) {
 		http.NotFound(w, q)
 		return
 	}
-	if !r.authorized(auth, user, pw, q.Header.Get("Authorization")) {
-		if auth == Bearer {
+	if concealed || !r.authorized(auth, user, pw, q.Header.Get("Authorization")) {
+		if auth == Bearer || (auth == Anonymous && concealed) {
 			w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Bearer realm="%s/token",service="fake-registry"`, r.Realm.URL))
 		} else {
 			w.Header().Set("WWW-Authenticate", `Basic realm="fake"`)
@@ -272,6 +342,10 @@ func (r *Registry) serve(w http.ResponseWriter, q *http.Request) {
 		w.Header().Set("Content-Type", m.mediaType)
 		w.Header().Set("Docker-Content-Digest", Digest(m.body))
 		_, _ = w.Write(m.body)
+		return
+	}
+	if path, ok := strings.CutSuffix(rest, "/tags/list"); ok {
+		r.serveTagsLocked(w, q, path)
 		return
 	}
 	if i := strings.LastIndex(rest, "/blobs/"); i >= 0 {
@@ -332,4 +406,35 @@ func (r *Registry) serveToken(w http.ResponseWriter, q *http.Request) {
 	r.tokens[tok] = true
 	r.mu.Unlock()
 	_ = json.NewEncoder(w).Encode(map[string]any{"token": tok, "expires_in": 300})
+}
+
+// serveTagsLocked answers GET /v2/<path>/tags/list in lexical order, as
+// distribution does: n bounds the page, last starts after a tag, and a
+// Link names the next page when more remain.
+func (r *Registry) serveTagsLocked(w http.ResponseWriter, q *http.Request, path string) {
+	var tags []string
+	for k := range r.manifests {
+		if t, ok := strings.CutPrefix(k, path+":"); ok {
+			tags = append(tags, t)
+		}
+	}
+	if len(tags) == 0 {
+		http.Error(w, `{"errors":[{"code":"NAME_UNKNOWN"}]}`, http.StatusNotFound)
+		return
+	}
+	sort.Strings(tags)
+	if last := q.URL.Query().Get("last"); last != "" {
+		i := sort.SearchStrings(tags, last)
+		for i < len(tags) && tags[i] <= last {
+			i++
+		}
+		tags = tags[i:]
+	}
+	n, _ := strconv.Atoi(q.URL.Query().Get("n"))
+	if n > 0 && len(tags) > n {
+		tags = tags[:n]
+		w.Header().Set("Link", fmt.Sprintf(`<%s/v2/%s/tags/list?n=%d&last=%s>; rel="next"`, r.linkBase, path, n, tags[n-1]))
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"name": path, "tags": tags})
 }

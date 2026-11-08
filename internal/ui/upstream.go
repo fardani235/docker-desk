@@ -9,6 +9,7 @@ import (
 
 	"github.com/fardani235/docker-desk/internal/freshness"
 	"github.com/fardani235/docker-desk/internal/jobs"
+	"github.com/fardani235/docker-desk/internal/plan"
 	"github.com/fardani235/docker-desk/internal/registry"
 )
 
@@ -51,15 +52,19 @@ type upstreamTarget struct {
 }
 
 func (m *Model) newUpstream() {
+	// One client for the tab and the repository browser: one token cache,
+	// one --no-registry.
+	client := registry.New(registry.Options{Disabled: m.opts.NoRegistry})
 	m.up.checker = m.opts.Upstream
 	if m.up.checker == nil {
 		m.up.checker = freshness.New(freshness.Options{
 			Daemon:    m.eng,
 			DaemonID:  m.endpoint.Host,
 			ConfigDir: m.opts.DockerConfigDir,
-			Client:    registry.New(registry.Options{Disabled: m.opts.NoRegistry}),
+			Client:    client,
 		})
 	}
+	m.newRepository(client)
 	m.up.failed = map[string]string{}
 	m.up.described = map[string]freshness.Target{}
 }
@@ -350,7 +355,34 @@ func (m *Model) renderUpstream(w, _ int) []string {
 	}
 	add(toneDim, "answered by "+src)
 	add(toneDim, fmt.Sprintf("%s ago · r asks again", humanAge(v.At, time.Now())))
+	if p, ok := m.upstreamPinned(); ok && !m.readOnly {
+		if ref, err := plan.PinnedRef(p); err == nil {
+			add(toneDim, "P pulls the build the tag names now, by its digest: "+ref)
+		}
+	}
 	return out
+}
+
+// upstreamPinned is the build a moved verdict names upstream, as a pinned
+// pull: the tag, and the digest the check read. ok only while the Upstream
+// tab shows a moved verdict for the highlighted image.
+func (m *Model) upstreamPinned() (plan.Pinned, bool) {
+	if !m.upstreamVisible() {
+		return plan.Pinned{}, false
+	}
+	t, ok := m.upstreamTarget()
+	if !ok || t.ref == "" {
+		return plan.Pinned{}, false
+	}
+	v, kept := m.up.checker.Cached(t.imageID, t.ref)
+	if !kept || v.State != freshness.Moved || v.RemoteDigest == "" {
+		return plan.Pinned{}, false
+	}
+	r, err := registry.ParseRef(t.ref)
+	if err != nil {
+		return plan.Pinned{}, false
+	}
+	return plan.Pinned{Name: r.Name, Tag: r.Tag, Digest: v.RemoteDigest}, true
 }
 
 func verdictTone(s freshness.State) tone {

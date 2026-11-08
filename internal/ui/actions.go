@@ -65,7 +65,15 @@ var kindActions = [kindCount][]action{
 		action{key: "e", label: "shell", desc: "open an interactive shell inside it (one container only)", needsRow: true, mutating: true, run: (*Model).openShellForm},
 	),
 	KindImages: {
-		{key: "P", label: "pull…", desc: "pull an image by name", mutating: true, ignoresSet: true, run: func(m *Model, _ row) tea.Cmd { return m.openForm(formPull) }},
+		{key: "P", label: "pull…", desc: "pull an image by name; on Upstream showing moved, the build the tag names now, by its digest", mutating: true, ignoresSet: true,
+			run: func(m *Model, r row) tea.Cmd {
+				// Images › Upstream's moved verdict: the same pinned pull as
+				// the repository browser's, not a second path.
+				if p, ok := m.upstreamPinned(); ok {
+					return pinnedPullAction(p).run(m, r)
+				}
+				return m.openForm(formPull)
+			}},
 		{key: "d", label: "remove…", desc: "remove this reference / image (never forced)", needsRow: true, mutating: true,
 			setOp: plan.OpRemoveImage, setCapable: true,
 			run: func(m *Model, r row) tea.Cmd {

@@ -745,3 +745,25 @@ the daemon's total); the Space code is untouched by this round, the test passed 
 and in a full rerun, and it was left as found. `go build`, `go vet`, gofmt and `go test ./...`
 pass. Nothing was committed.
 
+## 45. Round twelve — the repository browser
+
+The brief: list a repository's tags from its registry, describe the highlighted one, join it with
+the local images, read build times on request, and pull one build by its digest, typed with its
+tag. The registry side came first (`ListTags`, `Describe`, the 401 sentence) with the fake
+registry's `tags/list`, then `internal/repository` with its own tests, then `plan.PullPinned`,
+then the view, then the sandbox and the documents (`openspec/changes/repository-browser/`, valid
+under `--strict`).
+
+One premise did not hold. The brief said a reference carrying a tag and a digest "already tags
+the pulled image"; reading the vendored client showed it sends the digest in place of the tag, so
+the daemon records `name@sha256:…` and no tag. The pull sends what was specified and the dialog
+says what the daemon records (DECISIONS L11). The fake daemon's pull by digest invented an image
+ID, so nothing could have joined it afterwards; it now records the digest as the containerd store
+does.
+
+Found by the tests: reopening the browser on an image did not land on that image's tag when a
+cursor was left from before; a confirmation's typed-word input was 24 characters, short of a
+long tag; the narrow layout broke words in the detail lines. A full run failed a Space test once;
+the cause was a pre-existing ordering race in `collectSpace`, fixed (B31). `go build`, `go vet`
+and `go test ./...` pass. Nothing was committed.
+

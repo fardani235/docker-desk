@@ -113,6 +113,8 @@ func (m *Model) render() []string {
 		// Full screen, under the header that names the daemon; a dialog
 		// opened from it is drawn on top, as anywhere else.
 		body = m.spaceBox(m.width, len(body))
+	case m.rb.open:
+		body = m.repoBox(m.width, len(body))
 	}
 	out := make([]string, 0, m.height)
 	out = append(out, m.renderHeader())
@@ -302,6 +304,8 @@ func (m *Model) renderHints() string {
 		pairs = m.packagesHints()
 	case m.sp.open:
 		pairs = m.spaceHints()
+	case m.rb.open:
+		pairs = m.repoHints()
 	case m.filtering:
 		add("type", "to filter")
 		add("Enter", "keep")
@@ -323,6 +327,9 @@ func (m *Model) renderHints() string {
 			add("⏎", "actions")
 		} else if m.tabName() == tabUpstream {
 			add("r", "ask again")
+			if _, ok := m.upstreamPinned(); ok && !m.readOnly {
+				add("P", "pull by digest")
+			}
 			if m.up.run != nil || m.up.batch != nil {
 				add("c", "cancel")
 			}
@@ -385,6 +392,10 @@ func (m *Model) renderHints() string {
 		right = m.hints("Esc", "close", "?", "keys") + " "
 	case m.sp.open:
 		right = m.hints("S", "close", "?", "keys") + " " // no pane takes keys behind the view
+	case m.rb.open && (m.rb.editing || m.rb.filtering):
+		right = "" // every key is text
+	case m.rb.open:
+		right = m.hints("B Esc", "close", "?", "keys") + " "
 	}
 	lw, rw := ansi.StringWidth(left), ansi.StringWidth(right)
 	if lw+rw+1 > m.width {
@@ -413,6 +424,7 @@ func (m *Model) helpLines(w int) []string {
 	row("[  ]", "previous / next Details tab")
 	row("r", "refresh every list now")
 	row("S", "Space: where the bytes went, and what removing something frees")
+	row("B", "Repository: a registry's tags for the highlighted image's repository")
 	row("T", "next colour theme ("+m.st.theme+" now)")
 	row("?", "this help")
 	row("q, Ctrl+C", "quit (asks first if jobs are running)")
@@ -499,6 +511,9 @@ func (m *Model) helpLines(w int) []string {
 	row("r", "ask the registry again (only while the tab is shown); the answer is replaced")
 	row("c", "cancel the check, or the check of every image, in progress")
 	row("U", "Images: check every tagged image, one at a time, as one job")
+	if !m.readOnly {
+		row("P", "on a moved verdict: pull the build the tag names now, by its digest")
+	}
 	out = append(out,
 		"  Does the tag this image carries name a different build upstream today?",
 		"  Opening the tab asks the tag's registry once, as a job, after naming the host",
@@ -511,6 +526,29 @@ func (m *Model) helpLines(w int) []string {
 		"  and has no build time. U stops at a quota refusal and says when it resets.",
 		"  The list's UPSTREAM column is filled only by a check. --no-registry forbids",
 		"  every registry request; read-only mode does not, since the check only reads.",
+	)
+
+	sect("Repository browser (B, from any pane)")
+	row("↑ ↓ PgUp PgDn", "move between tags; the row the highlight rests on is described")
+	row("Tab", "ask for the next page of tags (100 a page, 1000 held at most)")
+	row("/", "filter the tags held (Enter keeps, Esc undoes)")
+	row("e", "edit the repository name: every key is text until Enter asks or Esc")
+	row("d", "read the build times of the rows on screen, as one job (c cancels)")
+	if !m.readOnly {
+		row("Enter", "pull the highlighted build by its digest: type the tag to confirm")
+	}
+	row("r", "forget what was read about this repository and ask again")
+	row("B, Esc", "close: the desk is as it was (Esc clears a filter first)")
+	out = append(out,
+		"  B on an image lists its repository's tags from its registry: one request",
+		"  for the first page, nothing else. When the highlight rests on a tag, one",
+		"  manifest request says what it names — digest, platforms — kept with its age.",
+		"  HERE joins that digest with the RepoDigests of the images on this daemon:",
+		"  here, here, the tag moved upstream, same build as <tag>, or -. Tags are in",
+		"  text order (numbers by value), never by date. The pull confirmation names",
+		"  name:tag@sha256:…; the daemon fetches the digest, not the tag. A 401 is said",
+		"  as the registry's 401: no repository, or a credential not allowed to see it.",
+		"  --no-registry: the view does not open. Read-only: it browses; it pulls nothing.",
 	)
 
 	sect("Packages view (i, from Images › Findings)")

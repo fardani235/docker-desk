@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1720259143/d.sock  ctx default  Engine 29.0.0-fake  on fake-dockerd  ● connected
+┏━ ◆ Repository — the tags a registry lists, and one build by its digest ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ repository 127.0.0.1:44107/acme/api                                                                                                                ┃
+┃ asks       127.0.0.1:44107 anonymously · 100 tags held · Tab asks for the next page · listed 0s ago                                                ┃
+┃            Tags are in text order, numbers by value (3.9 before 3.10): never by recency, which a tag list does not carry. Pages come in the        ┃
+┃            registry's own order.                                                                                                                   ┃
+┃   TAG                               DIGEST               PLATFORMS                  HERE                            BUILT                          ┃
+┃   3                                 sha256:a58c0cb3fff6  amd64 arm64/v8             -                               2026-10-20 amd64               ┃
+┃   3.9.0                             sha256:de9c87b52eb8  amd64 arm64/v8             -                               2025-03-04 amd64               ┃
+┃   3.10.0                            sha256:f79fbae8102b  amd64 arm64/v8             -                               2025-05-12 amd64               ┃
+┃   3.10.1                            sha256:3736991736d3  amd64 arm64/v8             -                               2025-06-02 amd64               ┃
+┃   3.27.0                            sha256:73f0ebe515b3  amd64 arm64/v8             same build as stable            2026-06-15 amd64               ┃
+┃   3.28                              sha256:a58c0cb3fff6  amd64 arm64/v8             here, the tag moved upstream    2026-10-20 amd64               ┃
+┃   3.28.0                            sha256:2d757e650c14  amd64 arm64/v8             -                               2026-08-03 amd64               ┃
+┃   3.28.1                            sha256:6beef73e2499  amd64 arm64/v8             -                               2026-08-27 amd64               ┃
+┃ ▸ 3.28.2                            sha256:5343c588b2a1  amd64 arm64/v8             here                            2026-09-21 amd64               ┃
+┃   3.28.3                            sha256:a58c0cb3fff6  amd64 arm64/v8             -                               2026-10-20 amd64               ┃
+┃   3.29.0-rc.1                       sha256:ffdcd7c49f8f  no amd64 · arm64/v8        -                               no build here                  ┃
+┃   edge                              sha256:3365cbff7c80  amd64 arm64/v8             -                               2026-11-06 amd64               ┃
+┃   latest                            sha256:a58c0cb3fff6  amd64 arm64/v8             -                               2026-10-20 amd64               ┃
+┃   nightly-20260701                  sha256:001b1b7cc53d  amd64 arm64/v8             -                               2026-07-01 amd64               ┃
+┃   nightly-20260702                  sha256:b291758b99f6  amd64 arm64/v8             -                               2026-07-02 amd64               ┃
+┃   nightly-20260703                  sha256:3af3ea8c6a74  amd64 arm64/v8             -                               2026-07-03 amd64               ┃
+┃   nightly-20260704                  sha256:8018f953ac98  amd64 arm64/v8             -                               2026-07-04 amd64               ┃
+┃   nightly-20260705                  sha256:4b12a22892ae  amd64 arm64/v8             -                               2026-07-05 amd64               ┃
+┃   nightly-20260706                  sha256:b7654b25abf9  amd64 arm64/v8             -                               2026-07-06 amd64               ┃
+┃   nightly-20260707                  sha256:e0769457fc44  amd64 arm64/v8             -                               2026-07-07 amd64               ┃
+┃   nightly-20260708                  sha256:cae9e03a854f  amd64 arm64/v8             -                               2026-07-08 amd64               ┃
+┃   nightly-20260709                  sha256:5b3151009f00  amd64 arm64/v8             -                               2026-07-09 amd64               ┃
+┃   nightly-20260710                  sha256:3b745af94166  amd64 arm64/v8             -                               2026-07-10 amd64               ┃
+┃   nightly-20260711                  sha256:504f07eb8c84  amd64 arm64/v8             -                               2026-07-11 amd64               ┃
+┃   nightly-20260712                  sha256:fa5df07e9d72  amd64 arm64/v8             -                               2026-07-12 amd64               ┃
+┃ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── rows 1–25 of 100 ─ ┃
+┃ 127.0.0.1:44107/acme/api:3.28.2  · described 0s ago · r asks again                                                                                 ┃
+┃ digest     sha256:5343c588b2a12f584aebb1a510ad9b86a81b77a3a4f96f04ef0e239bf06a7041                                                                 ┃
+┃ publishes  linux/amd64, linux/arm64/v8                                                                                                             ┃
+┃ here       here — local image 5343c588b2a1 records this digest                                                                                     ┃
+┃ built      2026-09-21 09:30 UTC (linux/amd64 build's config) — the producer's claim, read 0s ago                                                   ┃
+┃                                                                                                                                                    ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ read build times 127.0.0.1:44107/acme/api · 25 tags
+ ↑↓ move  e name  / filter  Tab next page  d build times  ⏎ pull by digest…  r ask again                                          B Esc close  ? keys

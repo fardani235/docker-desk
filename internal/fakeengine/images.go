@@ -367,6 +367,14 @@ func (s *Server) handleImagePull(w http.ResponseWriter, r *http.Request) {
 	refused := s.Unpullable[repo] || strings.Contains(repo, "nosuch")
 	delay := s.PullStepDelay
 	existing := s.findImageLocked(ref)
+	// A pull by digest: on the containerd store the image's ID is the
+	// digest pulled, and RepoDigests names it.
+	byDigest := strings.TrimPrefix(tag, "sha256:")
+	if byDigest == tag {
+		byDigest = ""
+	} else if img, ok := s.images[byDigest]; ok {
+		existing = img
+	}
 	s.mu.Unlock()
 	if refused {
 		httpError(w, http.StatusNotFound,
@@ -439,6 +447,11 @@ func (s *Server) handleImagePull(w http.ResponseWriter, r *http.Request) {
 	img := s.findImageLocked(ref)
 	if img == nil {
 		img = s.addImageLocked(size, 0, ref)
+		if byDigest != "" {
+			delete(s.images, img.ID)
+			img.ID = byDigest
+			s.images[img.ID] = img
+		}
 	}
 	id := img.ID
 	s.emit("image", "pull", ref, map[string]string{"name": repo})

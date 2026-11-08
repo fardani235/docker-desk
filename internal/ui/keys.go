@@ -57,6 +57,11 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 	if m.sp.open {
 		return m.onSpaceKey(k)
 	}
+	// So does the repository browser; while its name line or its filter is
+	// typed in, every key is text.
+	if m.rb.open {
+		return m.onRepoKey(k)
+	}
 
 	switch key {
 	case "q":
@@ -67,6 +72,10 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 		return nil
 	case "S":
 		return m.openSpace()
+	case "B":
+		// A read, like U: not among the guarded actions, and it works in
+		// read-only mode. Its pull goes through them.
+		return m.openRepository()
 	case "tab":
 		m.focus = (m.focus + 1) % paneCount
 		return nil

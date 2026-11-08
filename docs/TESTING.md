@@ -847,6 +847,46 @@ different host), Basic, a stale-token refusal, a quota with `Retry-After`, and a
 - `e2e.TestImageUpstream` — the real binary on the sandbox seed, wide and 80×24 read-only;
   screens `37-image-upstream`, `38-image-upstream-80x24`.
 
+## Round twelve: the repository browser
+
+Every registry in these tests is `fakeregistry` on 127.0.0.1 (the test guard refuses anything
+else), counting its requests; the daemon is the fake engine.
+
+- `registry.TestListTagsFollowsLink` — 250 tags in three pages, three requests, queries
+  `n=100`, `n=100&last=t099`, `n=100&last=t199`; a cursor for another repository refused with no
+  request. `TestListTagsRefusesAnOffHostLink` — a `Link` to another host is not followed.
+  `TestListTagsDropsInvalidNames` — an escape sequence in a tag name is dropped and counted.
+- `registry.TestRepository401Wording` — a repository answering 401 whatever the credential, on
+  the tag list and a manifest, anonymous and credentialed: the sentence, and no claim of
+  absence; a 404 says so with its code.
+- `registry.TestDescribeIsOneRequest` — an index's platforms in one request; a single manifest.
+- `repository.TestNaturalOrder` — a table, and `Less` checked as a total order on it.
+- `repository.TestListingCap` — ten pages reach 1000 and stop; a 1500-tag page is cut at 1000;
+  a short listing is not capped.
+- `repository.TestJoinOutcomes` — here, the tag moved upstream, same build as (the first tag
+  naturally), `-`; another repository's digest, an image built here, and an image whose ID equals
+  the digest join nothing; a digest-pulled image is here on both stores.
+- `repository.TestBuildTimesQuotaAndCancel` — the three-request bound, the epoch, a missing
+  platform; a quota of four stops after one tag's three requests and the fourth's refusal, the
+  first answer kept; cancelled after two.
+- `plan.TestPullPinned` — the exact reference, `TierTyped`, the word is the tag, the effects,
+  Docker Hub's familiar name, the platform blocker, and four malformed inputs.
+- `ui.TestRepositoryNoRequestOnOpen` — no image: an empty name line, no request; `qdBe?/` typed
+  as text; Esc steps out, then closes onto the same pane and kind; a typed name asks one tag list.
+- `ui.TestRepositoryOnePerHighlightedRow` — one tag list and one manifest on open; one more per
+  row rested on; none on returning; five rows passed quickly cost one; the desk restored on
+  close; reopening asks no kept description again.
+- `ui.TestRepositoryJoinAndPlatforms` — the sandbox seed's eight rows; the arm64-only tag refused
+  before anything is sent; natural order; every theme.
+- `ui.TestRepositoryPagingAndFilter`, `TestRepositoryPinnedPull` (a wrong word refused; the tag
+  accepted; the fake daemon receives `tag=sha256:…`; the row then says `here`),
+  `TestRepositoryReadOnly`, `TestRepositoryNoRegistry`, `TestRepository401`,
+  `TestRepositoryBuildTimesQuota`, `TestUpstreamMovedPullsByDigest` (the same plan from `P`),
+  `TestRepositoryLayouts` (80×24, 120×40, 200×50, read-only and not, every theme, the name line
+  and the filter open).
+- `e2e.TestRepositoryBrowser`, `TestRepositoryBrowserCompactReadOnly` — the real binary; screens
+  `39-repository`, `40-repository-pinned-pull`, `41-repository-80x24-read-only`.
+
 ## Running everything
 
 ```sh

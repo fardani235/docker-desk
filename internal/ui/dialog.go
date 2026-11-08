@@ -197,7 +197,9 @@ func (m *Model) onPlan(msg planMsg) tea.Cmd {
 		fromSet: msg.fromSet, setKind: msg.setKind}
 	if msg.plan.Tier == plan.TierTyped && msg.plan.Runnable() {
 		d.hasInput = true
-		d.input = newInput("", 24) // no placeholder: nothing may look pre-typed
+		// No placeholder: nothing may look pre-typed. Room for the word: a
+		// pinned pull's is a tag, up to 128 characters.
+		d.input = newInput("", max(24, len(msg.plan.Word)+8))
 	}
 	m.dlg = d
 	return nil
