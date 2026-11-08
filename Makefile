@@ -2,6 +2,8 @@ BIN      := bin
 VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS  := -s -w -X main.version=$(VERSION)
 SANDBOX_SOCKET ?= /tmp/docker-desk-sandbox.sock
+# The sandbox's registry: plain HTTP on loopback; port 0 picks a free one.
+SANDBOX_REGISTRY ?= 127.0.0.1:0
 
 .PHONY: all build install test race vet crosscheck e2e real-readonly-check sandbox clean help
 
@@ -37,7 +39,7 @@ real-readonly-check: ## read-only decode and export check against the REAL daemo
 		go test ./internal/engine/ ./internal/space/ -run 'TestRealDaemonReadOnly|TestRealDaemonExportReadOnly|TestRealDaemonDiskUsageReadOnly|TestRealDaemonPackagesReadOnly' -count=1 -v
 
 sandbox: build ## start the fake daemon and open the desk on it — nothing real is touched
-	@$(BIN)/fake-dockerd -socket $(SANDBOX_SOCKET) >/dev/null & fake=$$!; \
+	@$(BIN)/fake-dockerd -socket $(SANDBOX_SOCKET) -registry $(SANDBOX_REGISTRY) >/dev/null & fake=$$!; \
 	for i in 1 2 3 4 5 6 7 8 9 10; do [ -S $(SANDBOX_SOCKET) ] && break; sleep 0.1; done; \
 	DOCKER_HOST=unix://$(SANDBOX_SOCKET) $(BIN)/docker-desk; status=$$?; \
 	kill $$fake 2>/dev/null; wait $$fake 2>/dev/null; exit $$status

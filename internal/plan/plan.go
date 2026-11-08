@@ -9,9 +9,12 @@
 package plan
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/distribution/reference"
 
 	"github.com/fardani235/docker-desk/internal/engine"
 )
@@ -383,6 +386,72 @@ func Pull(snap Snapshot, input string) (Plan, error) {
 		}
 	}
 	return p, nil
+}
+
+// Pinned names one build: the repository, the tag it was chosen under, and
+// the digest that tag named when it was read.
+type Pinned struct {
+	Name, Tag, Digest string
+	// NoBuildFor, when set, is the daemon's platform (linux/amd64) that the
+	// tag's index publishes no build for: the daemon would refuse the pull.
+	NoBuildFor string
+}
+
+// PinnedRef is the reference a pinned pull sends: name:tag@sha256:….
+func PinnedRef(p Pinned) (string, error) {
+	if !strings.HasPrefix(p.Digest, "sha256:") || len(p.Digest) != 71 || !isHex(p.Digest[7:]) {
+		return "", fmt.Errorf("not a sha256 digest: %q", p.Digest)
+	}
+	if p.Tag == "" {
+		return "", errors.New("a pinned pull names the tag it was chosen under")
+	}
+	named, err := reference.ParseNormalizedNamed(p.Name)
+	if err != nil {
+		return "", fmt.Errorf("not a valid repository: %v", err)
+	}
+	ref := reference.TrimNamed(named).Name() + ":" + p.Tag + "@" + p.Digest
+	return normalizeRef(ref)
+}
+
+// PullPinned plans pulling one build by its digest, under the tag it was
+// chosen by. It is a typed confirmation whose word is the tag: the operator
+// types 3.28.3, not seventy-one characters. The repository browser and
+// Images › Upstream's moved verdict both open it; there is no other pinned
+// pull.
+func PullPinned(snap Snapshot, p Pinned) (Plan, error) {
+	ref, err := PinnedRef(p)
+	if err != nil {
+		return Plan{}, err
+	}
+	name, _, _ := strings.Cut(ref, "@")
+	repo := name[:strings.LastIndex(name, ":")]
+	short := p.Digest[:7+12]
+	pl := Plan{
+		Title:     "Pull image by digest",
+		JobTitle:  "pull image",
+		JobTarget: name + "@" + short,
+		Target:    Target{Kind: "image", Name: name, ID: short},
+		Steps:     []Step{{Op: OpPullImage, Kind: "image", ID: ref, Name: ref}},
+		Tier:      TierTyped,
+		Word:      p.Tag,
+		Effects: []string{
+			"Pulls exactly " + ref,
+			fmt.Sprintf("The daemon fetches the digest, not the tag: the build %s, which %s named when it was read. If the tag has moved since, this build is still the one fetched.", short, p.Tag),
+			fmt.Sprintf("The Engine API sends the digest in place of the tag: the daemon records the image as %s@%s. A local %s is neither created nor moved.", repo, short, name),
+			"It is downloaded into this daemon's image store, as a background job.",
+		},
+	}
+	for _, img := range snap.Images {
+		for _, rd := range img.RepoDigests {
+			if n, ok := normalizeRef(rd); ok == nil && n == repo+"@"+p.Digest {
+				pl.Effects = append(pl.Effects, fmt.Sprintf("This build is already here (image %s): the daemon has nothing to fetch.", engine.ShortID(img.ID)))
+			}
+		}
+	}
+	if p.NoBuildFor != "" {
+		pl.Blockers = []string{fmt.Sprintf("The tag's index publishes no build for %s, this daemon's platform: the daemon would refuse the pull. Nothing will be sent.", p.NoBuildFor)}
+	}
+	return pl, nil
 }
 
 // ImageRemove plans removing one row of the image list: a reference of an

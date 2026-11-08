@@ -13,6 +13,12 @@
 //
 //	fake-dockerd -tcp 127.0.0.1:2375 &
 //	docker-desk --host tcp://127.0.0.1:2375
+//
+// With -registry it also serves a registry, in plain HTTP on a loopback
+// address ("127.0.0.1:0" picks a free port), holding a repository worth
+// browsing with B, and seeds the daemon with three images of it:
+//
+//	fake-dockerd -registry 127.0.0.1:0
 package main
 
 import (
@@ -23,6 +29,7 @@ import (
 	"syscall"
 
 	"github.com/fardani235/docker-desk/internal/fakeengine"
+	"github.com/fardani235/docker-desk/internal/fakeregistry"
 )
 
 func main() {
@@ -30,6 +37,7 @@ func main() {
 	tcp := flag.String("tcp", "", "listen on this TCP address (host:port, without TLS) instead of the unix socket")
 	empty := flag.Bool("empty", false, "start with no containers, images, volumes or custom networks")
 	changes := flag.Bool("changes", false, "also seed a container for every case the Changes tab has nothing to compare")
+	regAddr := flag.String("registry", "", "also serve a registry on this loopback address (127.0.0.1:0 picks a port), with a repository to browse")
 	flag.Parse()
 
 	srv := fakeengine.New()
@@ -41,6 +49,17 @@ func main() {
 	}
 	if *changes {
 		srv.SeedChanges()
+	}
+	var reg *fakeregistry.Registry
+	repo := ""
+	if *regAddr != "" {
+		r, err := fakeregistry.Listen(*regAddr)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "fake-dockerd: registry: %v\n", err)
+			os.Exit(1)
+		}
+		reg = r
+		repo = srv.SeedRepository(reg)
 	}
 	var err error
 	if *tcp != "" {
@@ -54,10 +73,17 @@ func main() {
 	}
 	fmt.Printf("fake Docker engine listening on %s\n", srv.Host())
 	fmt.Printf("  docker-desk --host %s\n", srv.Host())
+	if reg != nil {
+		fmt.Printf("fake registry listening on %s (plain HTTP, loopback)\n", reg.Host())
+		fmt.Printf("  B in the desk on Images › %s:3.28.2 browses %s\n", repo, repo)
+	}
 	fmt.Println("Nothing here is real. Ctrl+C to stop.")
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	<-sig
 	srv.Close()
+	if reg != nil {
+		reg.Close()
+	}
 }

@@ -222,6 +222,11 @@ func (m *Model) startWritable() {
 // collectSpace takes what the jobs have produced since the last frame.
 func (m *Model) collectSpace() {
 	if run := m.sp.run; run != nil {
+		// The job's state is read before its results: a job seen finished
+		// has written everything, so nothing it wrote after the copy can be
+		// dropped with the run.
+		j, ok := m.jobs.Get(run.jobID)
+		finished := !ok || j.State != jobs.Running
 		run.mu.Lock()
 		changed := run.ver != run.taken
 		run.taken = run.ver
@@ -244,7 +249,7 @@ func (m *Model) collectSpace() {
 			m.rebuildIndex()
 			m.dirty = true
 		}
-		if j, ok := m.jobs.Get(run.jobID); !ok || j.State != jobs.Running {
+		if finished {
 			m.sp.run = nil
 			m.dirty = true
 			if du == nil {

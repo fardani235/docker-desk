@@ -191,6 +191,7 @@ the desk keeps answering keys, and everything resumes by itself when the daemon 
 | **4 Events** | The engine's event stream as it happens. It is the answer to everything you do — and to everything anyone else does to this daemon. |
 | **5 Jobs** | Every change you asked for, running in the background: progress while it runs, the daemon's answer when it ends. |
 | **Space** (`S`) | Not a pane: a full-screen account of the disk — the daemon's totals, unique and shared bytes per image, what a removal frees. See [Space](#space--where-the-bytes-went-and-what-removing-something-frees). |
+| **Repository** (`B`) | Not a pane: a full-screen list of a repository's tags from its registry — what each names, whether that build is already here, and a pull of one build by its digest. See [Repository](#repository--a-registrys-tags-and-one-build-by-its-digest). |
 
 The focused pane has a heavy border and a `◆` in its title (it does not rely on colour;
 `NO_COLOR` is respected, whatever the theme). Wide terminals (≥ 120 columns) get three columns; from 80×24 up you
@@ -370,6 +371,50 @@ narrow. `--no-registry` forbids every
 registry request, by the desk or through the daemon; `--read-only` does not, as the check only
 reads. Plain HTTP is used for loopback registries only; there is no private-CA option yet.
 
+### Repository — a registry's tags, and one build by its digest
+
+`B`, from any pane, covers the desk with the tags a registry lists for one repository. On an
+image it fills the name line with that image's repository and asks at once; with no image it
+opens on an empty name line (`e` edits it again later — every key is text until Enter asks or
+Esc steps out). Opening sends one request, `GET /v2/<repository>/tags/list?n=100`, and nothing
+else; `Tab` asks for the next page the registry links to (on the same host and path only), up to
+1000 tags held. Tags are in **text order**, numbers by value (`3.9` before `3.10`) — never by
+recency, which a tag list does not carry; the header says so. `/` filters the tags held.
+
+```
+repository 127.0.0.1:5000/acme/api
+asks       127.0.0.1:5000 anonymously · 100 tags held · Tab asks for the next page · listed 4s ago
+  TAG           DIGEST               PLATFORMS             HERE                           BUILT
+  3.27.0        sha256:73f0ebe515b3  amd64 arm64/v8        same build as stable           2026-06-15 amd64
+  3.28          sha256:a58c0cb3fff6  amd64 arm64/v8        here, the tag moved upstream   2026-10-20 amd64
+▸ 3.28.2        sha256:5343c588b2a1  amd64 arm64/v8        here                           2026-09-21 amd64
+  3.29.0-rc.1   sha256:ffdcd7c49f8f  no amd64 · arm64/v8   -                              no build here
+```
+
+When the highlight rests on a row, one manifest request says what the tag names — its digest,
+and an index's platforms — and the answer is kept for the session with its age; moving back to
+the row asks nothing. **HERE** compares that digest with the `RepoDigests` of the images of the
+same repository on this daemon — never an image ID: `here`, `here, the tag moved upstream` (you
+have the tag, as another build), `same build as <tag>` (you have this build, under another tag),
+or `-`. A tag whose index has no build for the daemon's architecture says so on the row, and its
+pull is refused. `d` reads the build times of the rows on screen as one job (up to three
+requests a row, for the daemon's platform; each time names the platform whose config it came
+from), stops at a quota refusal and keeps what it read; `c` cancels it. `r` forgets what was
+read about the repository and asks again. Nothing polls.
+
+`Enter` opens a pull confirmation for exactly `name:tag@sha256:<digest>`: the full reference is
+shown, and it says the daemon fetches the **digest, not the tag** — if the tag moves meanwhile,
+you still get the build you looked at. You confirm by typing the tag (`3.28.3`), not the
+digest. The Engine API carries only the digest to the daemon, which records the image as
+`name@sha256:…`; a local `name:tag` is neither created nor moved, and the dialog says so. The
+same confirmation is what `P` opens on Images › Upstream when it shows **moved**.
+
+A `401` is reported as what it is: *the registry answered 401 - it does not have this
+repository, or this credential is not allowed to see it* — registries such as Docker Hub answer
+both cases the same way. Credentials are the Upstream tab's, from your Docker configuration.
+`--no-registry`: the view does not open, and says why. `--read-only`: it browses; the pull is
+refused like every other change.
+
 ### Space — where the bytes went, and what removing something frees
 
 `S`, from any pane, covers the desk with an account of what this engine holds on disk; `S`
@@ -465,6 +510,7 @@ Press `?` inside the desk for the same list.
 | `r` | refresh every list now; also takes a new Processes snapshot (now if the tab is shown, else on the next visit), and asks upstream again if Images › Upstream is shown |
 | `U` | Images: check every tagged image upstream, one at a time, as one job (see [Upstream](#upstream--what-the-tag-names-today)) |
 | `S` | Space: where the bytes went, and what removing something frees (see above) |
+| `B` | Repository: a registry's tags for the highlighted image's repository, and a pull by digest (see [Repository](#repository--a-registrys-tags-and-one-build-by-its-digest)) |
 | `T` | next colour theme |
 | `?` | help |
 | `q`, `Ctrl+C` | quit (asks first if jobs are running) |
@@ -474,7 +520,7 @@ Press `?` inside the desk for the same list.
 | Kind | Keys |
 | --- | --- |
 | Containers | `s` start · `t` stop · `R` restart · `p` pause · `u` unpause · `K` kill · `d` remove · `e` shell |
-| Images | `P` pull by name · `d` remove · `X` prune |
+| Images | `P` pull by name (on Upstream showing *moved*: the build the tag names now, by digest) · `d` remove · `X` prune |
 | Volumes | `n` new · `d` remove · `X` prune |
 | Networks | `n` new · `d` remove · `X` prune · `c` connect a container · `D` disconnect a container |
 | Compose | `t` stop the whole project · `d` remove the whole project |
@@ -534,6 +580,10 @@ job; nothing is read before it) · `c` cancel the comparison.
 **Space** (`S`): `↑` `↓` move between images, containers and volumes · `Enter` go to the
 highlighted one · `r` read the account again · `m` measure writable layers · `c` cancel a
 measurement · `d` remove… · `X` prune… · `S` or `Esc` close.
+**Repository** (`B`): `↑` `↓` `PgUp` `PgDn` move between tags · `Tab` next page · `/` filter ·
+`e` edit the repository name · `d` build times of the rows on screen · `c` cancel them · `Enter`
+pull the highlighted build by its digest · `r` ask again · `Esc` step out of a line, then clear
+the filter, then close (`B` closes too).
 **Events**: `Space` (or `f`) holds the view: the pane shows a still copy of the history
 (1000 events) with a cursor on the newest, and its title reads `‖ held +N` as new events keep
 being recorded and lists keep refreshing underneath. `↑` `PgUp` `g` hold a live view too. The
@@ -667,6 +717,12 @@ Good to know:
 - Findings do not consult a vulnerability database: Go module versions are listed, not judged.
   zstd-compressed layers cannot be walked (the standard library has no decoder) and are
   reported as unreadable. Stack canaries are judged only for dynamically linked executables.
+- Repository (`B`): no search, no `_catalog`, nothing from `hub.docker.com` — one named
+  repository at a time, from its registry's `tags/list`. At most 1000 tags are held, the first
+  in the registry's own order; the order shown is text order, never date. A registry that pages
+  without a `Link` header shows its first page only. Build times are read only on `d`, for the
+  rows on screen. A pinned pull leaves no local tag (the Engine API sends the digest in place of
+  it); nothing retags, deletes or pushes a tag.
 - Packages: only dpkg, apk and rpm databases are read as the installed side — not npm, pip or
   Go modules, whose SBOM entries are "not checkable". rpm is read from `rpmdb.sqlite` only (rpm
   4.16 and later); an older Berkeley DB or SUSE's NDB database is reported as unknown, as is one
@@ -685,7 +741,11 @@ without a shell, one that takes four seconds to stop, dangling images, unused vo
 orphan network, `report-job`, whose tag `acme/report:1.4` has since moved to a newer build
 (Containers › Changes), and three images on `registry.sandbox.invalid` — a name that never
 resolves, so Images › Upstream falls back to the fake daemon, which says `acme/web:2.3` moved,
-`acme/cron:1` is current and `acme/legacy:0.9` is gone, with no network at all — and opens the
+`acme/cron:1` is current and `acme/legacy:0.9` is gone, with no network at all — plus a
+registry of its own, in plain HTTP on a free loopback port, holding `acme/api` (105 tags,
+arm64-only `3.29.0-rc.1` among them) and three local images of it, so `B` on
+`127.0.0.1:<port>/acme/api:3.28.2` shows `here`, `here, the tag moved upstream` and
+`same build as stable`, and `Enter` on `3.28.3` pulls it by digest — and opens the
 desk on it. The header shows the sandbox socket. Nothing there
 is real; break whatever you like. (The real `docker` CLI works against it too:
 `DOCKER_HOST=unix:///tmp/docker-desk-sandbox.sock docker ps`.)
@@ -713,6 +773,7 @@ make build
 | [`openspec/changes/remote-daemons-and-themes/`](openspec/changes/remote-daemons-and-themes/) | the second change — remote daemons and themes: proposal, spec deltas, design, tasks |
 | [`openspec/changes/disk-space/`](openspec/changes/disk-space/) | the fifth change — the Space view: proposal, spec, design, tasks |
 | [`openspec/changes/details-search/`](openspec/changes/details-search/) | the tenth change — search in the Details pane: proposal, spec, design, tasks |
+| [`openspec/changes/repository-browser/`](openspec/changes/repository-browser/) | the twelfth change — the repository browser and the pinned pull: proposal, spec and delta, design, tasks |
 
 One thing from TESTING.md belongs here too: by design, **no mutating request from this program
 had ever been sent to a real Docker daemon when it was handed over** — the build was required
@@ -739,6 +800,9 @@ internal/engine        the only door to the daemon (Docker's client library behi
 internal/plan          what a mutation will do, decided by pure code before anything is sent
 internal/space         which bytes images share, and what removing a set of them frees (pure)
 internal/changes       what differs between the image a container runs and the one its tag names (pure)
+internal/registry      the registry client: references, credentials, challenges, tags/list, manifests
+internal/freshness     whether a local image's tag names another build upstream (Images › Upstream)
+internal/repository    the repository browser's tags, join, session cache and build-time batch
 internal/forensics     what an image's own archive holds, read as one stream: findings, the SBOM's
                        packages, the installed dpkg/apk/rpm databases (with its own SQLite reader)
 internal/jobs          background jobs and their ledger

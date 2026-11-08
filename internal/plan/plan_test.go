@@ -558,3 +558,46 @@ func TestNoPlanCanForce(t *testing.T) {
 		}
 	}
 }
+
+func TestPullPinned(t *testing.T) {
+	const dg = "sha256:71a9e8a3c3b8f0c6b1f4d6e2a5c7b9d1e3f5a7c9b1d3e5f7a9c1b3d5e7f9a1c3"
+	snap := Snapshot{Images: []engine.Image{{ID: "sha256:abcdef0123456789", RepoTags: []string{"127.0.0.1:5000/acme/api:3.28.2"},
+		RepoDigests: []string{"127.0.0.1:5000/acme/api@" + dg}}}}
+	p, err := PullPinned(snap, Pinned{Name: "127.0.0.1:5000/acme/api", Tag: "3.28.3", Digest: dg})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "127.0.0.1:5000/acme/api:3.28.3@" + dg
+	if p.Tier != TierTyped || p.Word != "3.28.3" || len(p.Steps) != 1 || p.Steps[0].Op != OpPullImage || p.Steps[0].ID != want || !p.Runnable() {
+		t.Fatalf("plan: %+v", p)
+	}
+	all := strings.Join(p.Effects, "\n")
+	for _, s := range []string{"Pulls exactly " + want, "fetches the digest, not the tag", "already here", "neither created nor moved"} {
+		if !strings.Contains(all, s) {
+			t.Errorf("effects lack %q:\n%s", s, all)
+		}
+	}
+
+	// Docker Hub's names are familiar in what is sent.
+	p, _ = PullPinned(Snapshot{}, Pinned{Name: "docker.io/library/alpine", Tag: "3.20", Digest: dg})
+	if p.Steps[0].ID != "alpine:3.20@"+dg || strings.Contains(strings.Join(p.Effects, ""), "already here") {
+		t.Errorf("hub: %+v", p.Steps)
+	}
+
+	// No build for the daemon's platform: refused before anything is sent.
+	p, _ = PullPinned(Snapshot{}, Pinned{Name: "alpine", Tag: "3.20", Digest: dg, NoBuildFor: "linux/amd64"})
+	if p.Runnable() || !strings.Contains(strings.Join(p.Blockers, ""), "no build for linux/amd64") {
+		t.Errorf("no build: %+v", p.Blockers)
+	}
+
+	for _, bad := range []Pinned{
+		{Name: "alpine", Tag: "3.20", Digest: "sha256:short"},
+		{Name: "alpine", Tag: "", Digest: dg},
+		{Name: "Not Valid", Tag: "1", Digest: dg},
+		{Name: "alpine", Tag: "bad tag", Digest: dg},
+	} {
+		if _, err := PullPinned(Snapshot{}, bad); err == nil {
+			t.Errorf("accepted %+v", bad)
+		}
+	}
+}
