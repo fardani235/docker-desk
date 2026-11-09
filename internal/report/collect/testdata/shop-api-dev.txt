@@ -1,0 +1,47 @@
+# docker-desk test findings
+# image	sha256:073fe9aeb7520cc8555d37aca43c089e809f4965ce3f9bf5f0222c9fcc52adfd
+# reference	shop/api:dev
+# platform	linux/amd64
+# findings	26
+# unknown	index.json lists 1 other manifest(s) whose blobs are not in the archive (other platforms): skipped
+# columns	rule	certainty	source	layer	path	subject	evidence	reason
+
+## config	2
+config.healthcheck	certain	image	-	-	-	no HEALTHCHECK	The daemon cannot tell a hung container from a working one: no health status unless one is set at run time.
+config.root-user	certain	image	-	-	-	User ""	Processes run as root (UID 0) unless the container is started with --user.
+
+## layer	2
+layer.cache	certain	image	L2	/var/lib/apt/lists	-	2 files, 74.0kB	Apt package lists: removed in layer 3, but the bytes stay in layer 2. Clean up in the instruction that makes them.
+layer.junk	likely	image	L4	/app/.git	-	2 files, 42B	.git directory copied into the image.
+
+## filesystem	3
+fs.capabilities	certain	image	L1	/usr/bin/ping	-	file capabilities cap_net_raw+ep	File capabilities: whoever runs it gets these, without setuid.
+fs.setuid	certain	image	L1	/usr/bin/passwd	-	mode 4755, owner uid 0	Set-user-ID: it runs with its owner's privileges, whoever starts it.
+fs.world-writable	certain	image	L1	/var/spool/drop	-	directory mode 0777, no sticky bit	Any user in the container can create or replace files in it: it has no sticky bit.
+
+## secrets	5
+secret.deleted	certain	image	L2	/root/.aws/credentials	-	AWS access key ID: AKIA************ (20 chars) (value masked)	Added in layer 2 and deleted in layer 3, yet still in the image bytes: anyone with the image can read layer 2.
+secret.deleted	certain	image	L2	/root/.aws/credentials	-	AWS secret access key: ************ (40 chars) (value masked)	Added in layer 2 and deleted in layer 3, yet still in the image bytes: anyone with the image can read layer 2.
+secret.overwritten	certain	image	L2	/app/config.yml	-	GitHub token: ghp_************ (40 chars) (value masked)	Replaced in layer 4, yet the earlier version is still in the image bytes of layer 2.
+secret.buildarg	certain	image	L3	-	-	NPM_TOKEN=************ (40 chars) (value masked)	This build argument's value is recorded in the image's history: every copy of the image carries it.
+secret.file	likely	image	L4	/app/.env	-	password or token assignment: DB_PASSWORD=************ (19 chars) (value masked)	In the final filesystem: readable in every container started from this image.
+
+## binaries	7
+bin.pie	certain	image	L1	/bin/sh	-	ELF type EXEC: a fixed load address	Not position-independent: address randomisation cannot move its code.
+bin.canary	likely	image	L4	/app/server	-	no __stack_chk_fail among its dynamic symbols	No stack protector imported: stack overflows are not caught at run time.
+bin.go	certain	image	L4	/app/tool	-	go1.22.4 · example.com/desk/tool · 2 modules	A Go program: the toolchain and module versions it was built from are recorded in it.
+bin.packed	likely	image	L4	/app/helper	-	UPX! marker in the first 4 kB	Packed: the code on disk is compressed, so file scanners see only the unpacker.
+bin.pie	certain	image	L4	/app/helper	-	ELF type EXEC: a fixed load address	Not position-independent: address randomisation cannot move its code.
+bin.pie	certain	image	L4	/app/tool	-	ELF type EXEC: a fixed load address	Not position-independent: address randomisation cannot move its code. (The Go toolchain's default unless built with -buildmode=pie.)
+bin.relro	certain	image	L4	/app/server	-	PT_GNU_RELRO without BIND_NOW	Partial RELRO: the GOT stays writable for lazy binding.
+
+## supply	4
+supply.provenance	certain	image	-	-	-	provenance attestation: https://slsa.dev/provenance/v0.2	A record of how the image was built travels with it.
+supply.sbom	certain	image	-	-	-	SBOM present: SPDX-2.3, 12 packages	A software bill of materials travels with the image.
+supply.tag-unpinned	certain	daemon	-	-	old-migration	old-migration was created from shop/api:dev	A tag, not a digest: re-creating the container can give it different bytes.
+supply.tag-unpinned	certain	daemon	-	-	shop-api-1	shop-api-1 was created from shop/api:dev	A tag, not a digest: re-creating the container can give it different bytes.
+
+## live	3
+live.privileged	certain	desk	-	-	old-migration	old-migration: HostConfig.Privileged true (exited)	Privileged and running as root (no USER in the image, none given at run time): root inside is close to root on the host.
+live.published	certain	daemon	-	-	shop-api-1	shop-api-1: 3000→3000/tcp	Published on every host interface, not only on loopback.
+live.secret-exposed	likely	desk	-	-	-	1 secret(s) in the final filesystem; running: shop-api-1	Secrets the image carries are readable inside containers running now.

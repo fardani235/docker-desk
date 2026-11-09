@@ -1,0 +1,597 @@
+{
+  "schema": "docker-desk/image-report/v1",
+  "tool": {
+    "name": "docker-desk",
+    "version": "test"
+  },
+  "id": "sha256:073fe9aeb7520cc8555d37aca43c089e809f4965ce3f9bf5f0222c9fcc52adfd",
+  "reference": "shop/api:dev",
+  "platform": "linux/amd64",
+  "layout": "oci",
+  "bytes_read": 110080,
+  "config": {
+    "present": true,
+    "os": "linux",
+    "architecture": "amd64",
+    "user": "",
+    "entrypoint": [],
+    "cmd": [
+      "/app/server"
+    ],
+    "healthcheck": [],
+    "env_names": [
+      "NODE_ENV",
+      "PATH"
+    ]
+  },
+  "layers": [
+    {
+      "index": 1,
+      "digest": "sha256:e9676cdc34fca349f5511e327983b1f49ad7d097ae61ac2aa7510936846e87b3",
+      "diff_id": "sha256:e9676cdc34fca349f5511e327983b1f49ad7d097ae61ac2aa7510936846e87b3",
+      "diff_id_verified": true,
+      "compression": "none",
+      "stored_bytes": 9728,
+      "content_bytes": 3366,
+      "files": 4,
+      "dirs": 3,
+      "whiteouts": 0,
+      "opaque_dirs": 0,
+      "instruction": "ADD file:9a3c1f0e in /"
+    },
+    {
+      "index": 2,
+      "digest": "sha256:6f3f9c22b9ae52c1265dccafddfe25d3b7afb276197df27d40cb4976c345cbcb",
+      "diff_id": "sha256:6f3f9c22b9ae52c1265dccafddfe25d3b7afb276197df27d40cb4976c345cbcb",
+      "diff_id_verified": true,
+      "compression": "none",
+      "stored_bytes": 78336,
+      "content_bytes": 74174,
+      "files": 4,
+      "dirs": 0,
+      "whiteouts": 0,
+      "opaque_dirs": 0,
+      "instruction": "COPY . /root"
+    },
+    {
+      "index": 3,
+      "digest": "sha256:decec8f91729b9ad3754c0b07e4c5418d658d41bf9734a245543ea03f1846801",
+      "diff_id": "sha256:decec8f91729b9ad3754c0b07e4c5418d658d41bf9734a245543ea03f1846801",
+      "diff_id_verified": true,
+      "compression": "none",
+      "stored_bytes": 2560,
+      "content_bytes": 0,
+      "files": 0,
+      "dirs": 0,
+      "whiteouts": 3,
+      "opaque_dirs": 0,
+      "instruction": "RUN rm -rf /root/.aws /var/lib/apt/lists/*  (build args: NPM_TOKEN)"
+    },
+    {
+      "index": 4,
+      "digest": "sha256:77f20b0c528ee3b1e6a015d595b1a656b937336f6800a8b6b60f1646d30c2814",
+      "diff_id": "sha256:89bbf65d0dd0c245b15c8ecfdc269046fe9b546cd824ea5cd96b775de1e93c11",
+      "diff_id_verified": true,
+      "compression": "gzip",
+      "stored_bytes": 698,
+      "content_bytes": 1482,
+      "files": 7,
+      "dirs": 0,
+      "whiteouts": 0,
+      "opaque_dirs": 0,
+      "instruction": "COPY /out/ /app/"
+    }
+  ],
+  "attestations": [
+    {
+      "predicate_type": "https://slsa.dev/provenance/v0.2",
+      "digest": "sha256:f111b34d92ee3fbca8f4b59bb7c2301fd60c3c6082ff8da8a86564a62ed6d750",
+      "present": true,
+      "packages": -1
+    },
+    {
+      "predicate_type": "https://spdx.dev/Document",
+      "digest": "sha256:8bb8eac7a848deab43e8b1af593b764003b190904a0afbb836088d9d8f45b8f4",
+      "present": true,
+      "packages": 12,
+      "format": "SPDX-2.3"
+    }
+  ],
+  "root_user": true,
+  "final_secrets": 1,
+  "findings": [
+    {
+      "rule": "config.healthcheck",
+      "group": "config",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 0,
+      "evidence": "no HEALTHCHECK",
+      "reason": "The daemon cannot tell a hung container from a working one: no health status unless one is set at run time.",
+      "unknown": "whether a health check is set at run time or by an orchestrator"
+    },
+    {
+      "rule": "config.root-user",
+      "group": "config",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 0,
+      "evidence": "User \"\"",
+      "reason": "Processes run as root (UID 0) unless the container is started with --user.",
+      "unknown": "whether containers are started with --user (the live findings say, for this daemon's)"
+    },
+    {
+      "rule": "layer.cache",
+      "group": "layer",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 2,
+      "path": "/var/lib/apt/lists",
+      "evidence": "2 files, 74.0kB",
+      "reason": "Apt package lists: removed in layer 3, but the bytes stay in layer 2. Clean up in the instruction that makes them.",
+      "instruction": "COPY . /root",
+      "unknown": "whether anything reads the cache at run time (normally nothing does)"
+    },
+    {
+      "rule": "layer.junk",
+      "group": "layer",
+      "source": "image",
+      "certainty": "likely",
+      "layer": 4,
+      "path": "/app/.git",
+      "evidence": "2 files, 42B",
+      "reason": ".git directory copied into the image.",
+      "instruction": "COPY /out/ /app/",
+      "unknown": "whether the application reads these files at run time"
+    },
+    {
+      "rule": "fs.capabilities",
+      "group": "filesystem",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 1,
+      "path": "/usr/bin/ping",
+      "evidence": "file capabilities cap_net_raw+ep",
+      "reason": "File capabilities: whoever runs it gets these, without setuid.",
+      "instruction": "ADD file:9a3c1f0e in /",
+      "unknown": "whether the runtime's capability bounding set lets them through (Docker drops most by default)"
+    },
+    {
+      "rule": "fs.setuid",
+      "group": "filesystem",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 1,
+      "path": "/usr/bin/passwd",
+      "evidence": "mode 4755, owner uid 0",
+      "reason": "Set-user-ID: it runs with its owner's privileges, whoever starts it.",
+      "instruction": "ADD file:9a3c1f0e in /",
+      "unknown": "whether the program can be made to misuse those privileges"
+    },
+    {
+      "rule": "fs.world-writable",
+      "group": "filesystem",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 1,
+      "path": "/var/spool/drop",
+      "evidence": "directory mode 0777, no sticky bit",
+      "reason": "Any user in the container can create or replace files in it: it has no sticky bit.",
+      "instruction": "ADD file:9a3c1f0e in /",
+      "unknown": "whether anything trusted reads or runs what is there"
+    },
+    {
+      "rule": "secret.deleted",
+      "group": "secrets",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 2,
+      "path": "/root/.aws/credentials",
+      "evidence": "AWS access key ID: AKIA************ (20 chars)",
+      "reason": "Added in layer 2 and deleted in layer 3, yet still in the image bytes: anyone with the image can read layer 2.",
+      "instruction": "COPY . /root",
+      "unknown": "whether the value is a live credential, a test fixture or revoked",
+      "value_masked": true
+    },
+    {
+      "rule": "secret.deleted",
+      "group": "secrets",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 2,
+      "path": "/root/.aws/credentials",
+      "evidence": "AWS secret access key: ************ (40 chars)",
+      "reason": "Added in layer 2 and deleted in layer 3, yet still in the image bytes: anyone with the image can read layer 2.",
+      "instruction": "COPY . /root",
+      "unknown": "whether the value is a live credential, a test fixture or revoked",
+      "value_masked": true
+    },
+    {
+      "rule": "secret.overwritten",
+      "group": "secrets",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 2,
+      "path": "/app/config.yml",
+      "evidence": "GitHub token: ghp_************ (40 chars)",
+      "reason": "Replaced in layer 4, yet the earlier version is still in the image bytes of layer 2.",
+      "instruction": "COPY . /root",
+      "unknown": "whether the value is a live credential, a test fixture or revoked",
+      "value_masked": true
+    },
+    {
+      "rule": "secret.buildarg",
+      "group": "secrets",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 3,
+      "evidence": "NPM_TOKEN=************ (40 chars)",
+      "reason": "This build argument's value is recorded in the image's history: every copy of the image carries it.",
+      "instruction": "RUN rm -rf /root/.aws /var/lib/apt/lists/*  (build args: NPM_TOKEN)",
+      "unknown": "whether the value is a live credential, a test fixture or revoked",
+      "value_masked": true
+    },
+    {
+      "rule": "secret.file",
+      "group": "secrets",
+      "source": "image",
+      "certainty": "likely",
+      "layer": 4,
+      "path": "/app/.env",
+      "evidence": "password or token assignment: DB_PASSWORD=************ (19 chars)",
+      "reason": "In the final filesystem: readable in every container started from this image.",
+      "instruction": "COPY /out/ /app/",
+      "unknown": "whether the value is a live credential, a test fixture or revoked",
+      "value_masked": true
+    },
+    {
+      "rule": "bin.pie",
+      "group": "binaries",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 1,
+      "path": "/bin/sh",
+      "evidence": "ELF type EXEC: a fixed load address",
+      "reason": "Not position-independent: address randomisation cannot move its code.",
+      "instruction": "ADD file:9a3c1f0e in /",
+      "unknown": "whether the program has a bug a fixed address would help exploit"
+    },
+    {
+      "rule": "bin.canary",
+      "group": "binaries",
+      "source": "image",
+      "certainty": "likely",
+      "layer": 4,
+      "path": "/app/server",
+      "evidence": "no __stack_chk_fail among its dynamic symbols",
+      "reason": "No stack protector imported: stack overflows are not caught at run time.",
+      "instruction": "COPY /out/ /app/",
+      "unknown": "whether any function needed one; some toolchains protect without this symbol"
+    },
+    {
+      "rule": "bin.go",
+      "group": "binaries",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 4,
+      "path": "/app/tool",
+      "evidence": "go1.22.4 · example.com/desk/tool · 2 modules",
+      "reason": "A Go program: the toolchain and module versions it was built from are recorded in it.",
+      "instruction": "COPY /out/ /app/",
+      "unknown": "whether any of those versions has a known vulnerability: no vulnerability database is consulted",
+      "detail": [
+        "golang.org/x/sys v0.20.0",
+        "github.com/spf13/cobra v1.8.0"
+      ]
+    },
+    {
+      "rule": "bin.packed",
+      "group": "binaries",
+      "source": "image",
+      "certainty": "likely",
+      "layer": 4,
+      "path": "/app/helper",
+      "evidence": "UPX! marker in the first 4 kB",
+      "reason": "Packed: the code on disk is compressed, so file scanners see only the unpacker.",
+      "instruction": "COPY /out/ /app/",
+      "unknown": "what the packed code does"
+    },
+    {
+      "rule": "bin.pie",
+      "group": "binaries",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 4,
+      "path": "/app/helper",
+      "evidence": "ELF type EXEC: a fixed load address",
+      "reason": "Not position-independent: address randomisation cannot move its code.",
+      "instruction": "COPY /out/ /app/",
+      "unknown": "whether the program has a bug a fixed address would help exploit"
+    },
+    {
+      "rule": "bin.pie",
+      "group": "binaries",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 4,
+      "path": "/app/tool",
+      "evidence": "ELF type EXEC: a fixed load address",
+      "reason": "Not position-independent: address randomisation cannot move its code. (The Go toolchain's default unless built with -buildmode=pie.)",
+      "instruction": "COPY /out/ /app/",
+      "unknown": "whether the program has a bug a fixed address would help exploit"
+    },
+    {
+      "rule": "bin.relro",
+      "group": "binaries",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 4,
+      "path": "/app/server",
+      "evidence": "PT_GNU_RELRO without BIND_NOW",
+      "reason": "Partial RELRO: the GOT stays writable for lazy binding.",
+      "instruction": "COPY /out/ /app/",
+      "unknown": "whether the program has a write bug that could reach it"
+    },
+    {
+      "rule": "supply.provenance",
+      "group": "supply",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 0,
+      "evidence": "provenance attestation: https://slsa.dev/provenance/v0.2",
+      "reason": "A record of how the image was built travels with it.",
+      "unknown": "whether the builder is trustworthy: the attestation's signature is not checked"
+    },
+    {
+      "rule": "supply.sbom",
+      "group": "supply",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 0,
+      "evidence": "SBOM present: SPDX-2.3, 12 packages",
+      "reason": "A software bill of materials travels with the image.",
+      "unknown": "whether the SBOM is complete: it could not be checked against the image's package databases"
+    },
+    {
+      "rule": "supply.tag-unpinned",
+      "group": "supply",
+      "source": "daemon",
+      "certainty": "certain",
+      "layer": 0,
+      "subject": "old-migration",
+      "evidence": "old-migration was created from shop/api:dev",
+      "reason": "A tag, not a digest: re-creating the container can give it different bytes.",
+      "unknown": "whether the tag is managed so that it never moves"
+    },
+    {
+      "rule": "supply.tag-unpinned",
+      "group": "supply",
+      "source": "daemon",
+      "certainty": "certain",
+      "layer": 0,
+      "subject": "shop-api-1",
+      "evidence": "shop-api-1 was created from shop/api:dev",
+      "reason": "A tag, not a digest: re-creating the container can give it different bytes.",
+      "unknown": "whether the tag is managed so that it never moves"
+    },
+    {
+      "rule": "live.privileged",
+      "group": "live",
+      "source": "desk",
+      "certainty": "certain",
+      "layer": 0,
+      "subject": "old-migration",
+      "evidence": "old-migration: HostConfig.Privileged true (exited)",
+      "reason": "Privileged and running as root (no USER in the image, none given at run time): root inside is close to root on the host.",
+      "unknown": "what the processes inside do with that access"
+    },
+    {
+      "rule": "live.published",
+      "group": "live",
+      "source": "daemon",
+      "certainty": "certain",
+      "layer": 0,
+      "subject": "shop-api-1",
+      "evidence": "shop-api-1: 3000→3000/tcp",
+      "reason": "Published on every host interface, not only on loopback.",
+      "unknown": "whether a firewall in front of the host filters it"
+    },
+    {
+      "rule": "live.secret-exposed",
+      "group": "live",
+      "source": "desk",
+      "certainty": "likely",
+      "layer": 0,
+      "evidence": "1 secret(s) in the final filesystem; running: shop-api-1",
+      "reason": "Secrets the image carries are readable inside containers running now.",
+      "unknown": "whether a volume mounted over the path hides the file in those containers"
+    }
+  ],
+  "omitted": 0,
+  "notes": [
+    "index.json lists 1 other manifest(s) whose blobs are not in the archive (other platforms): skipped"
+  ],
+  "packages": {
+    "sbom": {
+      "listed": true,
+      "format": "SPDX-2.3",
+      "digest": "sha256:8bb8eac7a848deab43e8b1af593b764003b190904a0afbb836088d9d8f45b8f4",
+      "total": 12,
+      "kept": 12,
+      "others": 0
+    },
+    "databases": [
+      {
+        "ecosystem": "deb",
+        "manager": "dpkg",
+        "state": "absent",
+        "layer": 0,
+        "total": 0,
+        "kept": 0,
+        "notes": []
+      },
+      {
+        "ecosystem": "apk",
+        "manager": "apk",
+        "state": "absent",
+        "layer": 0,
+        "total": 0,
+        "kept": 0,
+        "notes": []
+      },
+      {
+        "ecosystem": "rpm",
+        "manager": "rpm",
+        "state": "absent",
+        "layer": 0,
+        "total": 0,
+        "kept": 0,
+        "notes": []
+      }
+    ],
+    "counts": [
+      {
+        "state": "undeclared",
+        "rows": 0
+      },
+      {
+        "state": "version differs",
+        "rows": 0
+      },
+      {
+        "state": "declared only",
+        "rows": 0
+      },
+      {
+        "state": "not checkable",
+        "rows": 12
+      },
+      {
+        "state": "both",
+        "rows": 0
+      }
+    ],
+    "rows": [
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "pkg-0",
+          "version": "1.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "pkg-1",
+          "version": "1.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "pkg-10",
+          "version": "1.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "pkg-11",
+          "version": "1.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "pkg-2",
+          "version": "1.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "pkg-3",
+          "version": "1.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "pkg-4",
+          "version": "1.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "pkg-5",
+          "version": "1.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "pkg-6",
+          "version": "1.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "pkg-7",
+          "version": "1.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "pkg-8",
+          "version": "1.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "pkg-9",
+          "version": "1.0"
+        },
+        "installed": null
+      }
+    ]
+  }
+}

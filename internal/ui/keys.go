@@ -458,6 +458,9 @@ func (m *Model) onDialogKey(k tea.KeyMsg) tea.Cmd {
 	case dlgPlan:
 		return m.onPlanKey(k)
 
+	case dlgExport:
+		return m.onExportKey(k)
+
 	case dlgForm:
 		switch key {
 		case "esc":

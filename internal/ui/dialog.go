@@ -26,6 +26,7 @@ const (
 	dlgHelp
 	dlgJob // a job's full output
 	dlgQuit
+	dlgExport // format, path and consent for writing a file
 )
 
 type formKind int
@@ -89,6 +90,9 @@ type dialog struct {
 	menuRow    row
 	menuHasRow bool
 	menuSet    []row
+
+	// dlgExport
+	exp *exportDialog
 
 	// dlgHelp, dlgJob
 	title  string
@@ -361,6 +365,8 @@ func (m *Model) renderDialog() (lines []string, w, h int) {
 		title, body = m.jobBody(d, inner, maxBody)
 	case dlgQuit:
 		title, body = m.quitBody(inner)
+	case dlgExport:
+		title, body = m.exportBody(d, inner)
 	}
 	padded := make([]string, 0, len(body)+2)
 	padded = append(padded, "")

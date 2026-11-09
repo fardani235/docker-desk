@@ -1,0 +1,37 @@
+# docker-desk test space
+# totals	daemon
+
+## totals	type	count	active	size	reclaimable
+total	Images	19	11	3562193220	1504702100
+total	Containers	13	8	120538081	37508066
+total	Local Volumes	7	4	2443200000	1872000000
+total	Build Cache	4	0	511700000	511700000
+
+## images	image	size	alone	bytes	together	bytes	reason
+image	acme/report:1.4	114352100	exact	6902100	exact	114352100	-
+image	alpine:3.20	7800000	exact	0	exact	217460000	-
+image	busybox:1.36	4260000	exact	4260000	-	-	-
+image	gcr.io/distroless/static:nonroot	1991200	exact	1991200	-	-	-
+image	ghost:5	494200000	exact	291000000	exact	2468122020	-
+image	mysql:8	584007900	exact	584007900	-	-	-
+image	nginx:1.27	187704620	exact	112904620	exact	2468122020	-
+image	node:22-alpine	154000000	exact	0	exact	217460000	-
+image	postgres:16	423912300	exact	349112300	exact	2468122020	-
+image	python:3.12-slim	131000000	exact	0	exact	2468122020	-
+image	redis:7	116003900	exact	41203900	exact	2468122020	-
+image	registry.sandbox.invalid/acme/cron:1	23000000	exact	23000000	-	-	-
+image	registry.sandbox.invalid/acme/legacy:0.9	61000000	exact	61000000	-	-	-
+image	registry.sandbox.invalid/acme/web:2.3	88000000	exact	88000000	-	-	-
+image	sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a	1250000000	exact	1046800000	exact	2468122020	-
+image	sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b	410000000	exact	279000000	exact	2468122020	-
+image	sha256:eec6d52e67ed510423fd2cce44dd215e1e01c61473e35696ba58aef715ca8928	107450000	exact	0	exact	114352100	-
+image	shop/api:dev	217460000	exact	63460000	exact	217460000	-
+image	shop/worker:dev	219701200	exact	88701200	exact	2468122020	-
+
+## shared	measure	bytes	layers	images	reason
+shared	exact	146200000	2	node:22-alpine · shop/api:dev	-
+shared	exact	128400000	1	ghost:5 · sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a	-
+shared	exact	107450000	3	acme/report:1.4 · sha256:eec6d52e67ed510423fd2cce44dd215e1e01c61473e35696ba58aef715ca8928	-
+shared	exact	74800000	1	ghost:5 · nginx:1.27 · postgres:16 · python:3.12-slim · redis:7 · sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a · sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b · shop/worker:dev	-
+shared	exact	56200000	3	python:3.12-slim · sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b · shop/worker:dev	-
+shared	exact	7800000	1	alpine:3.20 · node:22-alpine · shop/api:dev	-

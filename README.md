@@ -47,6 +47,7 @@ the remote one. The one exception: an `ssh://` daemon is reached through your `s
 | `docker-desk -c staging` | open it on the daemon of that Docker context (`--context`) |
 | `docker-desk --read-only` | look, don't touch: every action that changes something, and the shell, is disabled; anything but `GET`/`HEAD` is refused before it is sent |
 | `docker-desk --check` | say which daemon would be used, how it is reached and whether it answers, then exit |
+| `docker-desk --report ~/py.spdx.json --report-format spdx --report-object python:3.12-slim` | analyse one image as Images › Findings does, write the report, exit — no terminal needed (see [Export](#export--evidence-to-a-file)) |
 | `docker-desk --theme nord` | pick a colour theme (see [Themes](#themes)) |
 | `docker-desk --version`, `--help` | |
 | `make sandbox` | start a **fake** engine full of containers and open the desk on it — the place to try `remove` and `prune` with nothing at stake |
@@ -202,7 +203,8 @@ accepts no key but `q` — nothing can be acted on that is not on screen.
 
 Images › **Findings** reads the image's own archive — the stream `docker save` writes, asked
 for with a GET (`/images/get?names=…&platform=…`) — and reports what is inside it, joined with
-what the daemon runs from it now. Nothing is written to disk; every buffer is bounded.
+what the daemon runs from it now. Nothing is written to disk while it reads (`w` exports the
+report, when you ask); every buffer is bounded.
 
 ```
  26 findings · by layer · 4 layers · 79.0kB · oci · linux/amd64
@@ -473,6 +475,72 @@ build cache. For the highlighted image, two numbers:
 The opening account is itself a job ("measure disk usage"), cancellable with `c`: the daemon
 walks container and volume filesystems to answer it too.
 
+### Export — evidence to a file
+
+`w` writes what the desk has already worked out to **one file on this machine**: in Images ›
+Findings (Details pane focused), in the Packages view, and in the Space view. It is the only
+thing in the program that writes a file, and it asks first.
+
+The dialog offers a format and a path, prefilled as
+`~/docker-desk-<kind>-<object>-<YYYYMMDD>.<ext>` — `~/docker-desk-findings-python-3.12-slim-20261109.json`.
+`Tab` changes the format (the extension follows it); the path can be edited. `Enter` shows the
+**absolute** path that will be written (`~` expanded to your home folder), the format, the size
+in bytes and the mode; only `y` writes it — a `y` typed in the dialog's first quarter of a second
+is not consent — and `n` or `Esc` goes back to the path.
+
+| Format | Holds | Offered in |
+| --- | --- | --- |
+| `json` | the desk's own schema (`docker-desk/image-report/v1`, `docker-desk/space-report/v1`): everything computed — config (environment variable *names* only), layers, attestations, every finding with its source, certainty, layer, instruction and unknown, the notes, the SBOM side, each package database, and every joined package row with its state | Findings, Packages, Space |
+| `spdx` | SPDX 2.3 JSON: the packages only | Findings, Packages (prefilled there) |
+| `cyclonedx` | CycloneDX 1.5 JSON: the packages only | Findings, Packages |
+| `text` | Findings: one tab-separated line per finding, grouped by group. Space: the totals, every image and every shared group, one line each | Findings, Packages, Space |
+
+The rules every export follows:
+
+- **Consent and the file.** One path, confirmed. The file is created with mode `0600`. A path
+  that already holds a file is **refused** — the TUI never replaces one; the command line does
+  only with `--force` — and so is a folder, or a folder that does not exist (none is created).
+  The bytes go to a hidden temporary file beside the target and take the target's name only
+  when all of them are written, so a failure leaves **no partial file** under either name.
+- **Nothing else moves.** No request is sent for an export — the document is collected from
+  what the view already holds — nothing goes over the network, and the daemon is not touched,
+  so `w` works in `--read-only` mode. The file is written in the background: a failed export
+  never holds up the desk, and the status line says why in one sentence (`Not exported: cannot
+  write /srv/x.json: the folder /srv cannot be written to (permission denied).`).
+- **Deterministic.** Every list is sorted by the serializer itself — packages by name, then
+  version; findings by group, then layer, rule and path — never in map order. The same object
+  exports to the same bytes, from the TUI or from `--report`. SPDX's required creation time is
+  therefore fixed at `1970-01-01T00:00:00Z`, and says why; the CycloneDX serial number is a
+  name-based UUID of the content.
+- **What is left out.** No timestamps, no host paths (paths in a report are paths inside the
+  image), no user names, no daemon address or name, no container IDs (containers are named);
+  image IDs and digests stay, because they say which object this is. A secret's **value** is
+  never written: a finding says its evidence, masked, and that it had a value.
+- **Nothing is filled in.** A package that is not checkable — npm, pip, Go modules, no purl, a
+  database that cannot be read — keeps that state and its reason in every format (an SPDX
+  package's `comment`, a CycloneDX component's `docker-desk:` properties). A version neither
+  side states is left out, never guessed; the SBOM's purl is written only beside the version it
+  names; a licence is given as its source wrote it, and SPDX's `licenseDeclared` is
+  `NOASSERTION`, because the desk does not rewrite free text into an SPDX expression.
+- **Space** exports totals (as the daemon states them), each image with what removing it frees
+  alone and together with the images sharing its layers, and the shared groups. Every figure
+  carries `exact`, `at least` or `unknown`, its source, and the reason when it is not exact.
+  Writable layers are included only once `m` has measured them; a figure taken before the engine
+  changed is marked stale.
+
+**Headless.** `--report PATH --report-format json|spdx|cyclonedx|text --report-object REF`
+connects as the desk would, asks exactly what the view asks (inspect, the archive once, the
+containers using it; or the account and every image's layers for `--report-object :space`),
+writes the file and exits: `0` when it is written, `1` when it is not (with nothing left at the
+path), `2` for flags that do not fit together. `--report-format` defaults to `json`; `:space` is
+written as `json` or `text` (no image reference begins with a colon). `--force` replaces an
+existing file. It needs no terminal, and works with `--read-only`.
+
+```sh
+docker-desk --read-only --report ~/api.txt --report-format text --report-object shop/api:dev
+docker-desk --report ~/space.json --report-object :space
+```
+
 ### Themes
 
 | Theme | |
@@ -572,14 +640,14 @@ as it is to `docker top`; process rows are never written to jobs, the status lin
 **Changes** (Containers): `↑` `↓` scroll · `Enter` compare the contents of both images (a
 job; nothing is read before it) · `c` cancel the comparison.
 **Findings** (Images): `↑` `↓` move between findings · `o` order by layer / group / certainty ·
-`v` reveal the highlighted secret · `i` the image's packages · `c` cancel the analysis ·
+`v` reveal the highlighted secret · `i` the image's packages · `w` export… · `c` cancel the analysis ·
 `Enter` analyse when asked first or after a failure.
 **Packages** (`i` on Findings): `↑` `↓` move · `/` search name, version, licence and purl ·
 `o` order by name / state / layer / licence · `s` show all, the disagreements, or one state ·
-`S` show all · `Esc` clear the search, then close.
+`S` show all · `w` export… (SPDX first) · `Esc` clear the search, then close.
 **Space** (`S`): `↑` `↓` move between images, containers and volumes · `Enter` go to the
 highlighted one · `r` read the account again · `m` measure writable layers · `c` cancel a
-measurement · `d` remove… · `X` prune… · `S` or `Esc` close.
+measurement · `w` export… · `d` remove… · `X` prune… · `S` or `Esc` close.
 **Repository** (`B`): `↑` `↓` `PgUp` `PgDn` move between tags · `Tab` next page · `/` filter ·
 `e` edit the repository name · `d` build times of the rows on screen · `c` cancel them · `Enter`
 pull the highlighted build by its digest · `r` ask again · `Esc` step out of a line, then clear
@@ -805,6 +873,9 @@ internal/freshness     whether a local image's tag names another build upstream 
 internal/repository    the repository browser's tags, join, session cache and build-time batch
 internal/forensics     what an image's own archive holds, read as one stream: findings, the SBOM's
                        packages, the installed dpkg/apk/rpm databases (with its own SQLite reader)
+internal/report        evidence files: pure serializers (json, SPDX 2.3, CycloneDX 1.5, text) of plain
+                       structs, and the one function that writes a file (0600, never a partial one)
+internal/report/collect  what a view or --report has computed, as report's structs: the one conversion
 internal/jobs          background jobs and their ledger
 internal/live          bounded buffers and stream supervision for logs, stats and events
 internal/shell         the interactive exec session and the terminal hand-off

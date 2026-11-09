@@ -80,6 +80,13 @@ Flags:
                       check, which only reads)
   --check             resolve the daemon, verify it answers, print what would
                       be used, and exit without opening the workspace
+  --report PATH       write a report of --report-object to PATH and exit,
+                      without opening the workspace (no terminal needed)
+  --report-format F   json (default: everything computed), spdx or cyclonedx
+                      (packages only), or text (findings by group)
+  --report-object REF the image to analyse, by reference or ID; or :space
+                      for the daemon's disk account (json or text)
+  --force             with --report: replace a file already at PATH
   --theme NAME        colour theme (or DOCKER_DESK_THEME); T cycles inside
   --version           print the version and exit
   -h, --help          this text
@@ -107,6 +114,11 @@ func run(args []string, stdin *os.File, stdout, stderr io.Writer) int {
 	check := fs.Bool("check", false, "")
 	noRegistry := fs.Bool("no-registry", false, "")
 	showVersion := fs.Bool("version", false, "")
+	var rep reportFlags
+	fs.StringVar(&rep.path, "report", "", "")
+	fs.StringVar(&rep.format, "report-format", "", "")
+	fs.StringVar(&rep.object, "report-object", "", "")
+	fs.BoolVar(&rep.force, "force", false, "")
 	var sel dockerctx.Selection
 	fs.StringVar(&sel.Host, "host", "", "")
 	fs.StringVar(&sel.Host, "H", "", "")
@@ -133,6 +145,11 @@ func run(args []string, stdin *os.File, stdout, stderr io.Writer) int {
 		*themeName = os.Getenv("DOCKER_DESK_THEME")
 	}
 	theme, err := ui.ThemeByName(*themeName)
+	if err != nil {
+		fmt.Fprintf(stderr, "docker-desk: %v\n", err)
+		return 2
+	}
+	headless, err := rep.check(*check)
 	if err != nil {
 		fmt.Fprintf(stderr, "docker-desk: %v\n", err)
 		return 2
@@ -251,6 +268,10 @@ The workspace was not opened.
 		return unreachable(stderr, ep, link, u)
 	}
 
+	if headless {
+		return runReport(launch, eng, info, rep, stdout, stderr)
+	}
+
 	if *check {
 		mode := "read-write (every change still needs an in-app confirmation)"
 		if *readOnly {
@@ -270,7 +291,8 @@ The workspace was not opened.
 	// Only now is the terminal taken over; Bubble Tea does its own signal
 	// handling from here.
 	uiOpts := ui.Options{Engine: eng, Endpoint: ep, Info: info, ReadOnly: *readOnly, Theme: theme,
-		NoRegistry: *noRegistry, DockerConfigDir: dockerctx.ConfigDir(os.Getenv, home)}
+		NoRegistry: *noRegistry, DockerConfigDir: dockerctx.ConfigDir(os.Getenv, home),
+		Version: version, HomeDir: home}
 	if tunnel != nil {
 		uiOpts.LinkProblem = tunnel.Problem
 	}

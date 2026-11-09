@@ -12,6 +12,7 @@ import (
 	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/forensics"
 	"github.com/fardani235/docker-desk/internal/jobs"
+	"github.com/fardani235/docker-desk/internal/report/collect"
 )
 
 // The Findings tab of an image: what its own archive holds, joined with what
@@ -31,9 +32,6 @@ const findingsCacheSize = 8
 // defaultAskAbove is the image size above which analysing an image on a
 // remote daemon waits for Enter: the whole archive crosses the network.
 const defaultAskAbove = 500_000_000
-
-// factsCap bounds the containers inspected for the live join.
-const factsCap = 20
 
 type findingsState struct {
 	cache map[string]*forensics.Report
@@ -232,11 +230,8 @@ func (m *Model) startAnalysis(t findingsTarget) {
 	}
 	run := &findingsRun{key: t.key, ref: t.ref}
 	eng := m.eng
-	opts := forensics.Options{
-		ImageID: t.img.ID, Ref: t.ref, Platform: t.plat.String(),
-		DaemonOS: m.info.OSType, DaemonArch: m.info.Architecture,
-		Limits: forensics.DefaultLimits(), Thresholds: forensics.DefaultThresholds(),
-	}
+	// The command line's --report analyses with the same options.
+	opts := collect.AnalysisOptions(t.img.ID, t.ref, t.plat, m.info)
 	id, plat := t.img.ID, t.plat
 	run.jobID = m.jobs.Start("analyse image", t.ref, func(ctx context.Context, r *jobs.Run) error {
 		r.Status("asking the daemon for the archive")
@@ -275,12 +270,7 @@ func (m *Model) startAnalysis(t findingsTarget) {
 // is about: those using the image, and those whose listed image is an ID
 // (the list shows that once the tag they were created from has moved).
 func (m *Model) inspectUsers(img engine.Image) tea.Cmd {
-	var ids []string
-	for _, c := range m.snap.Containers {
-		if (c.ImageID == img.ID || strings.HasPrefix(c.Image, "sha256:")) && len(ids) < factsCap {
-			ids = append(ids, c.ID)
-		}
-	}
+	ids := collect.FactsTargets(img, m.snap.Containers)
 	m.fx.factsBusy = true
 	version, eng := m.dataVersion, m.eng
 	return func() tea.Msg {
@@ -344,6 +334,9 @@ func (m *Model) onFindingsKey(key string) bool {
 		return true
 	case "i":
 		m.openPackages()
+		return true
+	case "w":
+		m.exportFindings()
 		return true
 	case "o":
 		m.fx.order = m.fx.order.Next()

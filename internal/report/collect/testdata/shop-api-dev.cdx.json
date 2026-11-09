@@ -1,0 +1,319 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:1c034994-33a5-5e28-bc1d-678a81342706",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "docker-desk",
+          "version": "test"
+        }
+      ]
+    },
+    "component": {
+      "type": "container",
+      "bom-ref": "image",
+      "name": "shop/api:dev",
+      "version": "sha256:073fe9aeb7520cc8555d37aca43c089e809f4965ce3f9bf5f0222c9fcc52adfd",
+      "properties": [
+        {
+          "name": "docker-desk:platform",
+          "value": "linux/amd64"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg-1",
+      "name": "pkg-0",
+      "version": "1.0",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-2",
+      "name": "pkg-1",
+      "version": "1.0",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-3",
+      "name": "pkg-10",
+      "version": "1.0",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-4",
+      "name": "pkg-11",
+      "version": "1.0",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-5",
+      "name": "pkg-2",
+      "version": "1.0",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-6",
+      "name": "pkg-3",
+      "version": "1.0",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-7",
+      "name": "pkg-4",
+      "version": "1.0",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-8",
+      "name": "pkg-5",
+      "version": "1.0",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-9",
+      "name": "pkg-6",
+      "version": "1.0",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-10",
+      "name": "pkg-7",
+      "version": "1.0",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-11",
+      "name": "pkg-8",
+      "version": "1.0",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-12",
+      "name": "pkg-9",
+      "version": "1.0",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    }
+  ]
+}

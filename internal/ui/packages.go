@@ -172,6 +172,8 @@ func (m *Model) onPackagesKey(k tea.KeyMsg) tea.Cmd {
 		m.pk.filter = m.pk.filter.Next()
 	case "S":
 		m.pk.filter = forensics.ShowAll
+	case "w":
+		m.exportPackages()
 	case "down", "j":
 		move(cur + 1)
 	case "up", "k":
@@ -212,7 +214,7 @@ func (m *Model) packagesHints() []string {
 	if m.pk.typing {
 		return []string{"type", "to search", "Enter", "keep", "Esc", "undo"}
 	}
-	pairs := []string{"↑↓", "move", "/", "search", "o", "order", "s", "state"}
+	pairs := []string{"↑↓", "move", "/", "search", "o", "order", "s", "state", "w", "export"}
 	if m.pk.query != "" {
 		pairs = append(pairs, "Esc", "clear search")
 	}
