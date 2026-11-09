@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -262,5 +264,42 @@ func TestBrowserDescribeKeepsAnswers(t *testing.T) {
 	b.Forget(repo)
 	if _, ok := b.Described(repo, "1"); ok {
 		t.Error("Forget kept the answer")
+	}
+}
+
+// The browser shares the freshness check's credential resolution: Docker
+// Hub's server key wins over the sibling entries Docker Desktop files beside
+// it, every time, and the source names only where it came from.
+func TestBrowserCredentialExactKey(t *testing.T) {
+	const pw = "browser-hub-pw-2b71"
+	enc := func(s string) string { return base64.StdEncoding.EncodeToString([]byte(s)) }
+	dir := t.TempDir()
+	cfg := fmt.Sprintf(`{"auths":{
+		"https://index.docker.io/v1/access-token":{"auth":%q},
+		"https://index.docker.io/v1/":{"auth":%q},
+		"https://index.docker.io/v1/refresh-token":{"auth":%q}
+	}}`, enc("access:a-pw"), enc("hubuser:"+pw), enc("refresh:r-pw"))
+	if err := os.WriteFile(filepath.Join(dir, "config.json"), []byte(cfg), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	b := New(Options{ConfigDir: dir})
+	repo, err := registry.ParseRef("library/alpine")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := b.CredentialSource(repo); got != "auths" {
+		t.Errorf("CredentialSource = %q, want auths", got)
+	}
+	for i := 0; i < 100; i++ {
+		c, err := b.Credential(context.Background(), repo)
+		if err != nil {
+			t.Fatalf("resolution %d: %v", i, err)
+		}
+		if c.Source != "auths" || c.Username != "hubuser" || c.Password.Reveal() != pw {
+			t.Fatalf("resolution %d: user %q from %q, want hubuser from auths", i, c.Username, c.Source)
+		}
+		if strings.Contains(fmt.Sprintf("%v %+v %#v", c, c, c), pw) {
+			t.Fatal("the credential formats its password")
+		}
 	}
 }

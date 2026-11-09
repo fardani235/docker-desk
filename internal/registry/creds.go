@@ -8,10 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -63,9 +65,11 @@ var helperName = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
 
 // ResolveCredential reads cfgDir/config.json afresh — a `docker login`
 // elsewhere takes effect at the next check — and returns the credential for
-// key, the Docker CLI's server key (Ref.Key). The order is credHelpers[key],
-// credsStore, auths[key], then none. A missing configuration directory or
-// file is no credential, not an error.
+// key, the Docker CLI's server key (Ref.Key). The order is credHelpers,
+// credsStore, auths, then none; in credHelpers and auths the entry is chosen
+// by serverEntry, so the one filed under key itself wins over any sibling
+// that only shares its host. A missing configuration directory or file is no
+// credential, not an error.
 func ResolveCredential(ctx context.Context, cfgDir, key string) (Credential, error) {
 	if cfgDir == "" {
 		return Credential{}, nil
@@ -91,24 +95,37 @@ func ResolveCredential(ctx context.Context, cfgDir, key string) (Credential, err
 			return c, err
 		}
 	}
-	for k, e := range cf.Auths {
-		if sameServer(k, key) {
-			return fromAuths(e)
-		}
+	if e, ok := serverEntry(cf.Auths, key); ok {
+		return fromAuths(e)
 	}
 	return Credential{}, nil
 }
 
+// lookup names the credential helper credHelpers assigns to key, or "".
 func lookup(m map[string]string, key string) string {
+	v, _ := serverEntry(m, key)
+	return v
+}
+
+// serverEntry picks key's entry from a configuration map as the Docker CLI
+// does: the entry filed under key itself first, and only when there is none
+// the legacy fallback, an entry whose key names the same host. Docker Hub's
+// "https://index.docker.io/v1/" sits beside "…/v1/access-token" and
+// "…/v1/refresh-token", which share its host but are not its credential; the
+// exact pass is what keeps them from being chosen. The fallback walks the
+// keys in sorted order, so when several legacy keys share a host the choice
+// is the same on every call rather than whatever map iteration yields.
+func serverEntry[V any](m map[string]V, key string) (V, bool) {
 	if v, ok := m[key]; ok {
-		return v
+		return v, true
 	}
-	for k, v := range m {
+	for _, k := range slices.Sorted(maps.Keys(m)) {
 		if sameServer(k, key) {
-			return v
+			return m[k], true
 		}
 	}
-	return ""
+	var zero V
+	return zero, false
 }
 
 // sameServer compares configuration keys as the CLI does: by host name,
@@ -251,10 +268,8 @@ func CredentialSource(cfgDir, key string) string {
 	if cf.CredsStore != "" {
 		return "credsStore " + cf.CredsStore
 	}
-	for k, e := range cf.Auths {
-		if sameServer(k, key) && (e.Auth != "" || e.Password != "" || e.IdentityToken != "" || e.RegistryToken != "") {
-			return "auths"
-		}
+	if e, ok := serverEntry(cf.Auths, key); ok && (e.Auth != "" || e.Password != "" || e.IdentityToken != "" || e.RegistryToken != "") {
+		return "auths"
 	}
 	return ""
 }
