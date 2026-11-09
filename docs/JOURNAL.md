@@ -35,7 +35,7 @@ continued straight after the spec validated.
 
 ## 1. Spec
 
-Wrote `openspec/changes/docker-desk-workspace/`: proposal, eleven capability specs, design
+Wrote `openspec/changes/archive/2026-11-03-docker-desk-workspace/`: proposal, eleven capability specs, design
 (23 decisions), 37 tasks, each task carrying its own verification. `openspec validate --strict`
 passes.
 
@@ -247,7 +247,7 @@ The request, in full: *"existing docker desk can only connect to local docker da
 can connect to remote docker daemon through ssh or any other communication protocols. document
 all changes and decisions. additional task: applying theme."* Decisions are in
 [DECISIONS.md](DECISIONS.md#round-two--remote-daemons-and-themes) (R1–R12, T1–T5); the spec is
-`openspec/changes/remote-daemons-and-themes/`.
+`openspec/changes/archive/2026-11-03-remote-daemons-and-themes/`.
 
 ## 13. Before writing anything
 
@@ -726,7 +726,7 @@ list, so the refresh that finds it is the one the jump asked for. `TestEventsPan
 ## 44. Round ten — search in the Details pane
 
 The brief: `/` in the Details pane, find in the text tabs, filter in Logs, the Inspect key path in
-its own package. A short spec came first (`openspec/changes/details-search/`, valid under
+its own package. A short spec came first (`openspec/changes/archive/2026-11-05-details-search/`, valid under
 `--strict`), then two pure packages with their own tests: `search` (matching and marking) and
 `keypath`. `textView` gained a version, a row map and a find whose jumps are settled in `render`
 after layout (DECISIONS Q4). Making the version mean something needed `set` to ignore identical
@@ -751,7 +751,7 @@ The brief: list a repository's tags from its registry, describe the highlighted 
 the local images, read build times on request, and pull one build by its digest, typed with its
 tag. The registry side came first (`ListTags`, `Describe`, the 401 sentence) with the fake
 registry's `tags/list`, then `internal/repository` with its own tests, then `plan.PullPinned`,
-then the view, then the sandbox and the documents (`openspec/changes/repository-browser/`, valid
+then the view, then the sandbox and the documents (`openspec/changes/archive/2026-11-09-repository-browser/`, valid
 under `--strict`).
 
 One premise did not hold. The brief said a reference carrying a tag and a digest "already tags

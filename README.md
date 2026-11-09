@@ -769,11 +769,11 @@ make build
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | every design decision, the alternatives, and the reason — including the ones forced by reality during the build |
 | [`docs/JOURNAL.md`](docs/JOURNAL.md) | the build in order: what was made, checked, found and changed |
 | [`docs/TESTING.md`](docs/TESTING.md) | how it is proven without touching real containers, the measurements, and what is *not* proven |
-| [`openspec/changes/docker-desk-workspace/`](openspec/changes/docker-desk-workspace/) | the spec it was built to: proposal, eleven capability specs, design, tasks |
-| [`openspec/changes/remote-daemons-and-themes/`](openspec/changes/remote-daemons-and-themes/) | the second change — remote daemons and themes: proposal, spec deltas, design, tasks |
-| [`openspec/changes/disk-space/`](openspec/changes/disk-space/) | the fifth change — the Space view: proposal, spec, design, tasks |
-| [`openspec/changes/details-search/`](openspec/changes/details-search/) | the tenth change — search in the Details pane: proposal, spec, design, tasks |
-| [`openspec/changes/repository-browser/`](openspec/changes/repository-browser/) | the twelfth change — the repository browser and the pinned pull: proposal, spec and delta, design, tasks |
+| [`openspec/changes/archive/2026-11-03-docker-desk-workspace/`](openspec/changes/archive/2026-11-03-docker-desk-workspace/) | the spec it was built to: proposal, eleven capability specs, design, tasks |
+| [`openspec/changes/archive/2026-11-03-remote-daemons-and-themes/`](openspec/changes/archive/2026-11-03-remote-daemons-and-themes/) | the second change — remote daemons and themes: proposal, spec deltas, design, tasks |
+| [`openspec/changes/archive/2026-11-05-disk-space/`](openspec/changes/archive/2026-11-05-disk-space/) | the fifth change — the Space view: proposal, spec, design, tasks |
+| [`openspec/changes/archive/2026-11-05-details-search/`](openspec/changes/archive/2026-11-05-details-search/) | the tenth change — search in the Details pane: proposal, spec, design, tasks |
+| [`openspec/changes/archive/2026-11-09-repository-browser/`](openspec/changes/archive/2026-11-09-repository-browser/) | the twelfth change — the repository browser and the pinned pull: proposal, spec and delta, design, tasks |
 
 One thing from TESTING.md belongs here too: by design, **no mutating request from this program
 had ever been sent to a real Docker daemon when it was handed over** — the build was required

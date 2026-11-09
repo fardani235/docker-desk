@@ -2,25 +2,25 @@
 
 Why Docker Desk is built the way it is. Every entry says what was decided, what else was on the
 table, and what tipped it. Entries marked **D** were made when the spec was written (they are
-also in `openspec/changes/docker-desk-workspace/design.md`); entries marked **B** were made
+also in `openspec/changes/archive/2026-11-03-docker-desk-workspace/design.md`); entries marked **B** were made
 during the build, usually because something real contradicted an assumption — the
 [journal](JOURNAL.md) tells those stories in order.
 
 Entries marked **R** (remote daemons) and **T** (themes) belong to the second change,
-`openspec/changes/remote-daemons-and-themes/`, and are collected in
+`openspec/changes/archive/2026-11-03-remote-daemons-and-themes/`, and are collected in
 [their own section](#round-two--remote-daemons-and-themes). Where one of them overturns or
 relaxes a first-round decision, the older entry says so and is kept, because the reasoning it
 records is still the reasoning the newer one had to answer.
 
-Entries marked **S** (selection) belong to the third change, `openspec/changes/multi-select/`,
+Entries marked **S** (selection) belong to the third change, `openspec/changes/archive/2026-11-03-multi-select/`,
 and are collected in [their own section](#round-three--acting-on-a-selection).
 
-Entries marked **F** (findings) belong to the fourth change, `openspec/changes/image-findings/`,
+Entries marked **F** (findings) belong to the fourth change, `openspec/changes/archive/2026-11-05-image-findings/`,
 and are collected in [their own section](#round-four--image-findings). The request asked for
 decisions to be made and recorded rather than asked about; every place it left a choice open
 has an entry.
 
-Entries marked **U** (usage) belong to the fifth change, `openspec/changes/disk-space/`, and
+Entries marked **U** (usage) belong to the fifth change, `openspec/changes/archive/2026-11-05-disk-space/`, and
 are collected in [their own section](#round-five--space), made and recorded the same way.
 
 Where a decision costs something, the cost is stated. Nothing here is presented as free.
@@ -2119,7 +2119,7 @@ expected `‖ +`.
 `/` in the Details pane: find in Info, Inspect, Processes and Changes; filter in Logs; the
 Inspect key path named in the bar. The brief asked for decisions to be made and recorded rather
 than asked about; every place it left a choice open has an entry. The change is
-`openspec/changes/details-search/`.
+`openspec/changes/archive/2026-11-05-details-search/`.
 
 ### Q1 — Find where the text is a document, filter where it is a stream
 
@@ -2291,7 +2291,7 @@ panes. None was asked for, and each would need its own answer to "what was searc
 ## Round eleven — image freshness: what the tag names upstream
 
 Images › Upstream, the list's `UPSTREAM` column, `U` and `--no-registry`. The change is
-`openspec/changes/image-freshness/`; its design numbers these decisions F1–F12. Here they are
+`openspec/changes/archive/2026-11-09-image-freshness/`; its design numbers these decisions F1–F12. Here they are
 **U1–U12**, because F1–F12 already name round four's (image findings) and the code cites both.
 U13 onwards were decided while implementing, where the brief said to decide and record rather
 than stop and ask.
@@ -2448,7 +2448,7 @@ background polling (all non-goals of the design).
 
 `B`, `registry.ListTags` and `registry.Describe`, `internal/repository`, `plan.PullPinned`, `P` on
 Upstream's moved verdict, and `fake-dockerd -registry`. The change is
-`openspec/changes/repository-browser/`; its design numbers these decisions L1–L16, and so does
+`openspec/changes/archive/2026-11-09-repository-browser/`; its design numbers these decisions L1–L16, and so does
 this round. Where the brief left a question, it was decided here and the work went on.
 
 ### L1 — Its own capability and its own package
