@@ -1,0 +1,14 @@
+# docker-desk test findings
+# image	sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d
+# reference	python:3.12-slim
+# platform	linux/amd64
+# findings	4
+# columns	rule	certainty	source	layer	path	subject	evidence	reason
+
+## config	1
+config.inert	likely	image	-	python3	-	python3 is not in the final filesystem	The program the command names is not in the image: a container cannot start.
+
+## supply	3
+supply.sbom	certain	image	-	-	-	SBOM present: SPDX-2.3, 70 packages	A software bill of materials travels with the image.
+supply.sbom-drift	hint	image	-	-	-	1 declared OS package is not installed, 1 installed at another version	The SBOM declares OS packages the image's package database does not list as declared: it may describe another build of the image.
+supply.undeclared	certain	image	L4	/var/lib/dpkg/status	-	3 installed packages the SBOM does not list: curl, libcurl4, netcat-openbsd	The image's own package database lists them as installed; the SBOM that travels with it does not declare them. Whoever relies on the SBOM, for licences or for vulnerabilities, does not know they are there.

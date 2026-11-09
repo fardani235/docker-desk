@@ -116,6 +116,15 @@ type Options struct {
 	// Upstream, when set, is the checker the Upstream tab uses instead of
 	// one built from the fields above (tests).
 	Upstream *freshness.Checker
+
+	// Version is the program's version, written into exported documents.
+	Version string
+	// HomeDir is what ~ means in an export path, and WorkDir what a
+	// relative one is taken from; "" asks the operating system.
+	HomeDir, WorkDir string
+	// Now is the clock that dates an export's prefilled file name; nil is
+	// time.Now.
+	Now func() time.Time
 }
 
 // Model is the whole desk.
@@ -458,6 +467,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dirty = true
 		cmd := m.onPlan(msg)
 		return m, cmd
+
+	case exportDoneMsg:
+		m.dirty = true
+		m.onExportDone(msg)
+		return m, nil
 
 	case pickMsg:
 		m.dirty = true

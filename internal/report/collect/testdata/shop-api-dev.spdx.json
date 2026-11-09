@@ -1,0 +1,211 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "docker-desk packages of shop/api:dev (linux/amd64)",
+  "documentNamespace": "https://docker-desk.invalid/spdx/073fe9aeb7520cc8555d37aca43c089e809f4965ce3f9bf5f0222c9fcc52adfd/linux-amd64/b3eea616947e0bc538015fbeacbba6b1",
+  "creationInfo": {
+    "created": "1970-01-01T00:00:00Z",
+    "creators": [
+      "Tool: docker-desk-test"
+    ],
+    "comment": "The creation time is fixed: the document depends on the image alone, and is the same bytes whenever it is written."
+  },
+  "comment": "The packages of image sha256:073fe9aeb7520cc8555d37aca43c089e809f4965ce3f9bf5f0222c9fcc52adfd for linux/amd64: what its SBOM declares joined with what its own package databases list. Each package's comment gives its state; a package that is not checkable keeps that state and its reason.",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-1",
+      "name": "pkg-0",
+      "versionInfo": "1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "docker-desk state: not checkable; why: the SBOM gives no purl, so its ecosystem is not known; declared-version: 1.0; installed: no"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-2",
+      "name": "pkg-1",
+      "versionInfo": "1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "docker-desk state: not checkable; why: the SBOM gives no purl, so its ecosystem is not known; declared-version: 1.0; installed: no"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-3",
+      "name": "pkg-10",
+      "versionInfo": "1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "docker-desk state: not checkable; why: the SBOM gives no purl, so its ecosystem is not known; declared-version: 1.0; installed: no"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-4",
+      "name": "pkg-11",
+      "versionInfo": "1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "docker-desk state: not checkable; why: the SBOM gives no purl, so its ecosystem is not known; declared-version: 1.0; installed: no"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-5",
+      "name": "pkg-2",
+      "versionInfo": "1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "docker-desk state: not checkable; why: the SBOM gives no purl, so its ecosystem is not known; declared-version: 1.0; installed: no"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-6",
+      "name": "pkg-3",
+      "versionInfo": "1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "docker-desk state: not checkable; why: the SBOM gives no purl, so its ecosystem is not known; declared-version: 1.0; installed: no"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-7",
+      "name": "pkg-4",
+      "versionInfo": "1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "docker-desk state: not checkable; why: the SBOM gives no purl, so its ecosystem is not known; declared-version: 1.0; installed: no"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-8",
+      "name": "pkg-5",
+      "versionInfo": "1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "docker-desk state: not checkable; why: the SBOM gives no purl, so its ecosystem is not known; declared-version: 1.0; installed: no"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-9",
+      "name": "pkg-6",
+      "versionInfo": "1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "docker-desk state: not checkable; why: the SBOM gives no purl, so its ecosystem is not known; declared-version: 1.0; installed: no"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-10",
+      "name": "pkg-7",
+      "versionInfo": "1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "docker-desk state: not checkable; why: the SBOM gives no purl, so its ecosystem is not known; declared-version: 1.0; installed: no"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-11",
+      "name": "pkg-8",
+      "versionInfo": "1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "docker-desk state: not checkable; why: the SBOM gives no purl, so its ecosystem is not known; declared-version: 1.0; installed: no"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-12",
+      "name": "pkg-9",
+      "versionInfo": "1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "docker-desk state: not checkable; why: the SBOM gives no purl, so its ecosystem is not known; declared-version: 1.0; installed: no"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-1"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-2"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-3"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-4"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-5"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-6"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-7"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-8"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-9"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-10"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-11"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-12"
+    }
+  ]
+}

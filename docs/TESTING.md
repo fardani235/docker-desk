@@ -887,6 +887,67 @@ else), counting its requests; the daemon is the fake engine.
 - `e2e.TestRepositoryBrowser`, `TestRepositoryBrowserCompactReadOnly` — the real binary; screens
   `39-repository`, `40-repository-pinned-pull`, `41-repository-80x24-read-only`.
 
+## Round thirteen: evidence export
+
+The daemon is the fake engine with the sandbox's seed (`SeedDemo`, `SeedUpstream`), through a
+read-only engine wherever the test makes its own; every file is written into the test's own
+temporary folder (and, end to end, into a `HOME` of the test's own).
+
+- **Golden files per format** — `collect.TestGoldenPerFormat` analyses `python:3.12-slim` (every
+  package state) and `shop/api:dev` (every findings group) and takes the Space account, as
+  `--report` does, and compares `json`, `spdx`, `cyclonedx` and `text` (Space: `json`, `text`)
+  with `internal/report/collect/testdata/` byte for byte. `go test ./internal/report/collect -update`
+  rewrites them; a diff in review is a change in what a reader of these files gets. No mutating
+  request is sent.
+- **Determinism** — `collect.TestTwoExportsAreIdentical`: two analyses of each image, two accounts,
+  the same bytes in every format. `report.TestEveryFormatIgnoresInputOrder`: twenty shuffles of
+  every list per format, the same bytes, and the caller's slices left in their order.
+  `report.TestPackagesByNameThenVersion`, `TestTextIsOneLinePerFinding` (a value with a line break
+  and a tab stays on its line; findings of a group by path; masked values said),
+  `TestSpaceCarriesMeasures` (exact / at least / unknown and the reason on every figure, in JSON
+  and text; SPDX and CycloneDX refused for Space).
+- **The formats' shapes** — `report.TestSPDXShape`: every field SPDX 2.3 requires, SPDXIDs unique
+  and of the allowed characters, the fixed creation time, a namespace without `#`; a package with
+  no version gets no `versionInfo`; npm and no-purl packages stay *not checkable*; a *version
+  differs* row carries no purl beside the installed version. `TestCycloneDXShape`: the 1.5 header,
+  the schema's serial-number pattern, unique `bom-ref`s, a state on every component, a different
+  serial for different content. `TestNoPackageSet`.
+- **What a file must not hold** — `collect.TestNothingAFileMustNotHold`: every document of the
+  sandbox is searched for the demo's secret values (revealed from the report, the only place they
+  exist), environment values, every container ID, the daemon's socket, address and name, and
+  today's date. None is there.
+- **Refusals** — `report.TestWriteFileRefusals`: an existing file and a symbolic link (unchanged
+  afterwards), a folder (with force too), a missing folder, a parent that is a file, no path — each
+  a one-line `WriteError`, and nothing left in the folder. `TestWriteFileUnwritableParent`: a 0500
+  folder, permission denied, nothing left (skipped as root). `TestWriteFileCreates0600` under a
+  umask of 0. `TestWriteFileForceReplaces`. `TestExpandPath`, `TestDefaultPathAndExtensions`.
+- **Headless** — `main.TestReportHeadlessWritesAndExits`: `--read-only --report` exits 0, says
+  where, writes 0600 and a parseable document, sends no mutation; a second export is the same
+  bytes; every format and `:space`. `TestReportHeadlessRefusals`: an existing file (left as it
+  was), a folder, a missing folder, an unknown image → exit 1; flags that do not fit → exit 2;
+  nothing on stdout, nothing left; `--force` replaces with 0600. `TestReportHeadlessLeavesNoPartialFile`:
+  the fake fails `GET /images/get` part-way → non-zero, and the folder is empty; an unwritable
+  folder → exit 1, empty.
+- **The dialog** — `ui.TestExportFindingsIsTheCommandLinesDocument` (read-only): the prefilled
+  name, the formats, the absolute path asked about before anything is written, `y`, mode 0600, and
+  the file equal to `collect.FetchImage`'s for the same image; `Tab` to text swaps the extension.
+  `TestExportRefusalsNeverBlockTheDesk`: an existing file and a folder refused in the dialog, `~bob`
+  refused, the file unchanged; a 0500 folder fails after consent with one sentence on the status
+  line, nothing left, and the tab still takes keys. `TestExportConsentIsNotTypedAhead`: with the
+  arming delay on, a `y` typed with the question is not consent; `n` goes back.
+  `TestExportPackagesAndSpace` (read-only, 80×24): SPDX prefilled in Packages; Space offers json
+  and text only and writes `collect.FetchSpace`'s bytes; neither view closes.
+- **End to end** — `e2e.TestExportFromTheSandbox` drives `make sandbox` itself with a `HOME` of its
+  own: `w` on `python:3.12-slim`'s Findings tab, in its Packages view and in Space, each through the
+  confirmation; then the binary make built runs `--report` against the same sandbox, while it runs,
+  for the image (json, cyclonedx) and `:space` (text). Every file is parsed: the schema, the
+  reference and platform, the three supply findings, `libssl3` *version differs*, `curl`
+  *undeclared* in layer 4, `pip` and `requests` *not checkable* (pypi) with a reason, `python`
+  *not checkable* for want of a purl; SPDX packages by name then version, as many as the rows;
+  CycloneDX 1.5 with as many components; Space's four totals, its groups and figures each with a
+  measure; mode 0600; no host path. The TUI's image document and `--report`'s are the same bytes.
+  Screens `42-export-findings`, `43-export-confirm`.
+
 ## Running everything
 
 ```sh

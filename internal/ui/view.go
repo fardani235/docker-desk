@@ -340,6 +340,7 @@ func (m *Model) renderHints() string {
 			add("o", "order")
 			add("v", "reveal")
 			add("i", "packages")
+			add("w", "export")
 			add("[ ]", "tab")
 		} else {
 			m.searchHints(add)
@@ -499,6 +500,7 @@ func (m *Model) helpLines(w int) []string {
 	row("o", "order by layer, then group, then certainty")
 	row("v", "reveal the highlighted secret; it hides when the cursor moves")
 	row("i", "the image's packages: what its SBOM declares against what is installed")
+	row("w", "export the analysis to a file: json, spdx, cyclonedx or text (asks first)")
 	row("Enter", "analyse (when asked first, or after a failure)")
 	row("c", "cancel the analysis in progress")
 	out = append(out,
@@ -557,6 +559,7 @@ func (m *Model) helpLines(w int) []string {
 	row("o", "order by name, state, layer or licence")
 	row("s", "show all, the disagreements, undeclared, version differs, declared only,")
 	row("", "not checkable, both — in turn (S shows all again)")
+	row("w", "export the packages to a file: spdx, cyclonedx, json or text (asks first)")
 	row("Esc, i", "close: the desk is as it was (Esc clears a search first)")
 	out = append(out,
 		"  Both lists come from the analysis already made: the SBOM's packages, read",
@@ -572,6 +575,7 @@ func (m *Model) helpLines(w int) []string {
 	row("r", "read the daemon's account again (GET /system/df) and refresh the lists")
 	row("m", "measure every container's writable layer (GET /containers/json?size=1)")
 	row("c", "cancel a measurement in progress")
+	row("w", "export the totals and shared groups to a file: json or text (asks first)")
 	if !m.readOnly {
 		row("d", "the desk's own removal confirmation for the highlighted object")
 		row("X", "the desk's own prune preview for its kind (images, volumes)")

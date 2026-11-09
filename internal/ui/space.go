@@ -401,6 +401,10 @@ func (m *Model) onSpaceKey(k tea.KeyMsg) tea.Cmd {
 		m.startWritable()
 	case "c":
 		m.cancelSpaceJobs()
+	case "w":
+		// A file on this machine, not a change to the daemon: offered in
+		// read-only mode too.
+		m.exportSpace()
 	case "T":
 		m.setTheme(nextTheme(m.st.theme))
 	case "d", "X":
@@ -1128,7 +1132,7 @@ func (m *Model) imageDetail(r spRow, kv func(k, v string, t tone), now time.Time
 }
 
 func (m *Model) spaceHints() []string {
-	pairs := []string{"↑↓", "move", "⏎", "go to", "r", "re-read", "m", "writable"}
+	pairs := []string{"↑↓", "move", "⏎", "go to", "r", "re-read", "m", "writable", "w", "export"}
 	if m.sp.run != nil || m.sp.sizeRun != nil {
 		pairs = append(pairs, "c", "cancel")
 	}

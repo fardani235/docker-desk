@@ -1,11 +1,11 @@
- Docker Desk  unix:///tmp/ddfake3829485017/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
-┏━ ◆ Space — where the bytes went, and what removing something frees ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 12:00:19 ━┓
+ Docker Desk  unix:///tmp/ddfake534596890/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┏━ ◆ Space — where the bytes went, and what removing something frees ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 09:42:46 ━┓
 ┃   TYPE            TOTAL  ACTIVE      SIZE  RECLAIMABLE                                                               ┃
 ┃   Images             16      11    3.39GB  1.333GB (39%)                                                             ┃
 ┃   Containers         13       8   120.5MB  37.51MB (31%)                                                             ┃
 ┃   Local Volumes       7       4   2.443GB  1.872GB (76%)                                                             ┃
 ┃   Build Cache         4       0   511.7MB  511.7MB                                                                   ┃
-┃   daemon (GET /system/df) · 12:00:19, 0s ago                                                                         ┃
+┃   daemon (GET /system/df) · 09:42:46, 0s ago                                                                         ┃
 ┃   Reclaimable is the daemon's estimate. Nothing is freed until something is removed; with the containerd image       ┃
 ┃   store, the bytes go when its garbage collector runs.                                                               ┃
 ┃                                                                                                                      ┃
@@ -37,4 +37,4 @@
 ┃ removal    used by 1 container(s): refused until they are removed — the alone figure is what it frees then           ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
  ✓ measure disk usage GET /system/df
- ↑↓ move  ⏎ go to  r re-read  m writable  d remove…  X prune…                                           S close  ? keys
+ ↑↓ move  ⏎ go to  r re-read  m writable  w export  d remove…  X prune…                                 S close  ? keys

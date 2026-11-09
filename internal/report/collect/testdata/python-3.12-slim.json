@@ -1,0 +1,1416 @@
+{
+  "schema": "docker-desk/image-report/v1",
+  "tool": {
+    "name": "docker-desk",
+    "version": "test"
+  },
+  "id": "sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d",
+  "reference": "python:3.12-slim",
+  "platform": "linux/amd64",
+  "layout": "oci",
+  "bytes_read": 114688,
+  "config": {
+    "present": true,
+    "os": "linux",
+    "architecture": "amd64",
+    "user": "10001",
+    "entrypoint": [],
+    "cmd": [
+      "python3"
+    ],
+    "healthcheck": [
+      "CMD",
+      "python3",
+      "-c",
+      "pass"
+    ],
+    "env_names": []
+  },
+  "layers": [
+    {
+      "index": 1,
+      "digest": "sha256:5dde2acfaf7448a9505916767575ccb3660255bbd911b94fc5c2131932d750f2",
+      "diff_id": "sha256:5dde2acfaf7448a9505916767575ccb3660255bbd911b94fc5c2131932d750f2",
+      "diff_id_verified": true,
+      "compression": "none",
+      "stored_bytes": 18944,
+      "content_bytes": 16181,
+      "files": 2,
+      "dirs": 0,
+      "whiteouts": 0,
+      "opaque_dirs": 0,
+      "instruction": "ADD file:5d6b639e8b6bcc01 in /"
+    },
+    {
+      "index": 2,
+      "digest": "sha256:851bcdb06a88424dc60a1fcc19a6dfef91f97894afbcc2e147a3997129bdd307",
+      "diff_id": "sha256:851bcdb06a88424dc60a1fcc19a6dfef91f97894afbcc2e147a3997129bdd307",
+      "diff_id_verified": true,
+      "compression": "none",
+      "stored_bytes": 21504,
+      "content_bytes": 18492,
+      "files": 2,
+      "dirs": 0,
+      "whiteouts": 0,
+      "opaque_dirs": 0,
+      "instruction": "RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl netbase && rm -rf /var/lib/apt/lists/*"
+    },
+    {
+      "index": 3,
+      "digest": "sha256:7bb83ec90966a52abb9c9441f3d5b5b1bb8cdaf7c3c0fa6b1cc01b3c48049a90",
+      "diff_id": "sha256:7bb83ec90966a52abb9c9441f3d5b5b1bb8cdaf7c3c0fa6b1cc01b3c48049a90",
+      "diff_id_verified": true,
+      "compression": "none",
+      "stored_bytes": 2048,
+      "content_bytes": 23,
+      "files": 1,
+      "dirs": 0,
+      "whiteouts": 0,
+      "opaque_dirs": 0,
+      "instruction": "RUN pip install --no-cache-dir requests"
+    },
+    {
+      "index": 4,
+      "digest": "sha256:5c2702eeef2139d062aaeda56cd42b373bf2fc16d8d1459ca2e9af441558032e",
+      "diff_id": "sha256:5c2702eeef2139d062aaeda56cd42b373bf2fc16d8d1459ca2e9af441558032e",
+      "diff_id_verified": true,
+      "compression": "none",
+      "stored_bytes": 22016,
+      "content_bytes": 19840,
+      "files": 2,
+      "dirs": 0,
+      "whiteouts": 0,
+      "opaque_dirs": 0,
+      "instruction": "RUN apt-get update && apt-get install -y curl netcat-openbsd && rm -rf /var/lib/apt/lists/*"
+    }
+  ],
+  "attestations": [
+    {
+      "predicate_type": "https://spdx.dev/Document",
+      "digest": "sha256:ed4a7151c323a367b731f04a4cc04a6bb9465c63855f880041b95cf0c6ea5537",
+      "present": true,
+      "packages": 70,
+      "format": "SPDX-2.3"
+    }
+  ],
+  "root_user": false,
+  "final_secrets": 0,
+  "findings": [
+    {
+      "rule": "config.inert",
+      "group": "config",
+      "source": "image",
+      "certainty": "likely",
+      "layer": 0,
+      "path": "python3",
+      "evidence": "python3 is not in the final filesystem",
+      "reason": "The program the command names is not in the image: a container cannot start.",
+      "unknown": "programs a volume provides at run time, and links through more than 16 hops"
+    },
+    {
+      "rule": "supply.sbom",
+      "group": "supply",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 0,
+      "evidence": "SBOM present: SPDX-2.3, 70 packages",
+      "reason": "A software bill of materials travels with the image.",
+      "unknown": "whether it is complete for anything but deb (dpkg): only those package databases are read (i opens the list)"
+    },
+    {
+      "rule": "supply.sbom-drift",
+      "group": "supply",
+      "source": "image",
+      "certainty": "hint",
+      "layer": 0,
+      "evidence": "1 declared OS package is not installed, 1 installed at another version",
+      "reason": "The SBOM declares OS packages the image's package database does not list as declared: it may describe another build of the image.",
+      "unknown": "which side is stale: an SBOM made from another build, or a database changed without the package manager",
+      "detail": [
+        "libgnutls30 3.7.9-2+deb12u3  (deb): declared, not installed",
+        "libssl3: declared 3.0.11-1~deb12u2, installed 3.0.15-1~deb12u1  (deb)"
+      ]
+    },
+    {
+      "rule": "supply.undeclared",
+      "group": "supply",
+      "source": "image",
+      "certainty": "certain",
+      "layer": 4,
+      "path": "/var/lib/dpkg/status",
+      "evidence": "3 installed packages the SBOM does not list: curl, libcurl4, netcat-openbsd",
+      "reason": "The image's own package database lists them as installed; the SBOM that travels with it does not declare them. Whoever relies on the SBOM, for licences or for vulnerabilities, does not know they are there.",
+      "instruction": "RUN apt-get update && apt-get install -y curl netcat-openbsd && rm -rf /var/lib/apt/lists/*",
+      "unknown": "why: the SBOM may have been made before they were installed (from an earlier stage or the base image), by a tool that skips them, or edited afterwards. The image's bytes cannot tell which.",
+      "detail": [
+        "curl 7.88.1-10+deb12u8  (deb, layer 4)",
+        "libcurl4 7.88.1-10+deb12u8  (deb, layer 4)",
+        "netcat-openbsd 1.219-1  (deb, layer 4)"
+      ]
+    }
+  ],
+  "omitted": 0,
+  "notes": [],
+  "packages": {
+    "sbom": {
+      "listed": true,
+      "format": "SPDX-2.3",
+      "digest": "sha256:ed4a7151c323a367b731f04a4cc04a6bb9465c63855f880041b95cf0c6ea5537",
+      "total": 70,
+      "kept": 70,
+      "others": 0
+    },
+    "databases": [
+      {
+        "ecosystem": "deb",
+        "manager": "dpkg",
+        "state": "read",
+        "path": "/var/lib/dpkg/status",
+        "layer": 4,
+        "total": 66,
+        "kept": 66,
+        "notes": []
+      },
+      {
+        "ecosystem": "apk",
+        "manager": "apk",
+        "state": "absent",
+        "layer": 0,
+        "total": 0,
+        "kept": 0,
+        "notes": []
+      },
+      {
+        "ecosystem": "rpm",
+        "manager": "rpm",
+        "state": "absent",
+        "layer": 0,
+        "total": 0,
+        "kept": 0,
+        "notes": []
+      }
+    ],
+    "counts": [
+      {
+        "state": "undeclared",
+        "rows": 3
+      },
+      {
+        "state": "version differs",
+        "rows": 1
+      },
+      {
+        "state": "declared only",
+        "rows": 1
+      },
+      {
+        "state": "not checkable",
+        "rows": 6
+      },
+      {
+        "state": "both",
+        "rows": 62
+      }
+    ],
+    "rows": [
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "adduser",
+          "version": "3.134",
+          "license": "GPL-2.0-only",
+          "purl": "pkg:deb/debian/adduser@3.134?arch=all",
+          "arch": "all"
+        },
+        "installed": {
+          "name": "adduser",
+          "version": "3.134",
+          "arch": "all",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "apt",
+          "version": "2.6.1",
+          "license": "GPL-2.0-only",
+          "purl": "pkg:deb/debian/apt@2.6.1"
+        },
+        "installed": {
+          "name": "apt",
+          "version": "2.6.1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "base-files",
+          "version": "12.4+deb12u5",
+          "license": "GPL-2.0-or-later",
+          "purl": "pkg:deb/debian/base-files@12.4+deb12u5"
+        },
+        "installed": {
+          "name": "base-files",
+          "version": "12.4+deb12u5",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "base-passwd",
+          "version": "3.6.1",
+          "license": "GPL-2.0-only",
+          "purl": "pkg:deb/debian/base-passwd@3.6.1"
+        },
+        "installed": {
+          "name": "base-passwd",
+          "version": "3.6.1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "bash",
+          "version": "5.2.15-2+b2",
+          "license": "GPL-3.0-or-later",
+          "purl": "pkg:deb/debian/bash@5.2.15-2+b2"
+        },
+        "installed": {
+          "name": "bash",
+          "version": "5.2.15-2+b2",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "bsdutils",
+          "version": "1:2.38.1-5+deb12u1",
+          "license": "BSD-4-Clause",
+          "purl": "pkg:deb/debian/bsdutils@1%3A2.38.1-5+deb12u1"
+        },
+        "installed": {
+          "name": "bsdutils",
+          "version": "1:2.38.1-5+deb12u1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "ca-certificates",
+          "version": "20230311",
+          "license": "MPL-2.0",
+          "purl": "pkg:deb/debian/ca-certificates@20230311?arch=all",
+          "arch": "all"
+        },
+        "installed": {
+          "name": "ca-certificates",
+          "version": "20230311",
+          "arch": "all",
+          "layer": 2,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "coreutils",
+          "version": "9.1-1",
+          "license": "GPL-3.0-or-later",
+          "purl": "pkg:deb/debian/coreutils@9.1-1"
+        },
+        "installed": {
+          "name": "coreutils",
+          "version": "9.1-1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "undeclared",
+        "type": "deb",
+        "declared": null,
+        "installed": {
+          "name": "curl",
+          "version": "7.88.1-10+deb12u8",
+          "arch": "amd64",
+          "layer": 4,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "dash",
+          "version": "0.5.12-2",
+          "license": "BSD-3-Clause",
+          "purl": "pkg:deb/debian/dash@0.5.12-2"
+        },
+        "installed": {
+          "name": "dash",
+          "version": "0.5.12-2",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "debconf",
+          "version": "1.5.82",
+          "license": "BSD-2-Clause",
+          "purl": "pkg:deb/debian/debconf@1.5.82?arch=all",
+          "arch": "all"
+        },
+        "installed": {
+          "name": "debconf",
+          "version": "1.5.82",
+          "arch": "all",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "debian-archive-keyring",
+          "version": "2023.3+deb12u1",
+          "license": "GPL-2.0-or-later",
+          "purl": "pkg:deb/debian/debian-archive-keyring@2023.3+deb12u1?arch=all",
+          "arch": "all"
+        },
+        "installed": {
+          "name": "debian-archive-keyring",
+          "version": "2023.3+deb12u1",
+          "arch": "all",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "debianutils",
+          "version": "5.7-0.5~deb12u1",
+          "license": "GPL-2.0-or-later",
+          "purl": "pkg:deb/debian/debianutils@5.7-0.5~deb12u1"
+        },
+        "installed": {
+          "name": "debianutils",
+          "version": "5.7-0.5~deb12u1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "diffutils",
+          "version": "1:3.8-4",
+          "license": "GPL-3.0-or-later",
+          "purl": "pkg:deb/debian/diffutils@1%3A3.8-4"
+        },
+        "installed": {
+          "name": "diffutils",
+          "version": "1:3.8-4",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "dpkg",
+          "version": "1.21.22",
+          "license": "GPL-2.0-or-later",
+          "purl": "pkg:deb/debian/dpkg@1.21.22"
+        },
+        "installed": {
+          "name": "dpkg",
+          "version": "1.21.22",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "e2fsprogs",
+          "version": "1.47.0-2",
+          "license": "GPL-2.0-only",
+          "purl": "pkg:deb/debian/e2fsprogs@1.47.0-2"
+        },
+        "installed": {
+          "name": "e2fsprogs",
+          "version": "1.47.0-2",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "findutils",
+          "version": "4.9.0-4",
+          "license": "GPL-3.0-or-later",
+          "purl": "pkg:deb/debian/findutils@4.9.0-4"
+        },
+        "installed": {
+          "name": "findutils",
+          "version": "4.9.0-4",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "gcc-12-base",
+          "version": "12.2.0-14",
+          "license": "GPL-3.0-only",
+          "purl": "pkg:deb/debian/gcc-12-base@12.2.0-14"
+        },
+        "installed": {
+          "name": "gcc-12-base",
+          "version": "12.2.0-14",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "not checkable",
+        "type": "golang",
+        "why": "only deb, apk and rpm packages are checked against the image's own databases",
+        "declared": {
+          "name": "golang.org/x/sys",
+          "version": "v0.20.0",
+          "license": "BSD-3-Clause",
+          "purl": "pkg:golang/golang.org/x/sys@v0.20.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "gpgv",
+          "version": "2.2.40-1.1",
+          "license": "GPL-3.0-or-later",
+          "purl": "pkg:deb/debian/gpgv@2.2.40-1.1"
+        },
+        "installed": {
+          "name": "gpgv",
+          "version": "2.2.40-1.1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "grep",
+          "version": "3.8-5",
+          "license": "GPL-3.0-or-later",
+          "purl": "pkg:deb/debian/grep@3.8-5"
+        },
+        "installed": {
+          "name": "grep",
+          "version": "3.8-5",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "gzip",
+          "version": "1.12-1",
+          "license": "GPL-3.0-or-later",
+          "purl": "pkg:deb/debian/gzip@1.12-1"
+        },
+        "installed": {
+          "name": "gzip",
+          "version": "1.12-1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "hostname",
+          "version": "3.23+nmu1",
+          "license": "GPL-2.0-only",
+          "purl": "pkg:deb/debian/hostname@3.23+nmu1"
+        },
+        "installed": {
+          "name": "hostname",
+          "version": "3.23+nmu1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "init-system-helpers",
+          "version": "1.65.2",
+          "license": "BSD-3-Clause",
+          "purl": "pkg:deb/debian/init-system-helpers@1.65.2?arch=all",
+          "arch": "all"
+        },
+        "installed": {
+          "name": "init-system-helpers",
+          "version": "1.65.2",
+          "arch": "all",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libacl1",
+          "version": "2.3.1-3",
+          "license": "LGPL-2.1-or-later",
+          "purl": "pkg:deb/debian/libacl1@2.3.1-3"
+        },
+        "installed": {
+          "name": "libacl1",
+          "version": "2.3.1-3",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libapt-pkg6.0",
+          "version": "2.6.1",
+          "license": "GPL-2.0-only",
+          "purl": "pkg:deb/debian/libapt-pkg6.0@2.6.1"
+        },
+        "installed": {
+          "name": "libapt-pkg6.0",
+          "version": "2.6.1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libattr1",
+          "version": "1:2.5.1-4",
+          "license": "LGPL-2.1-or-later",
+          "purl": "pkg:deb/debian/libattr1@1%3A2.5.1-4"
+        },
+        "installed": {
+          "name": "libattr1",
+          "version": "1:2.5.1-4",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libaudit1",
+          "version": "1:3.0.9-1",
+          "license": "LGPL-2.1-or-later",
+          "purl": "pkg:deb/debian/libaudit1@1%3A3.0.9-1"
+        },
+        "installed": {
+          "name": "libaudit1",
+          "version": "1:3.0.9-1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libblkid1",
+          "version": "2.38.1-5+deb12u1",
+          "license": "LGPL-2.1-or-later",
+          "purl": "pkg:deb/debian/libblkid1@2.38.1-5+deb12u1"
+        },
+        "installed": {
+          "name": "libblkid1",
+          "version": "2.38.1-5+deb12u1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libbz2-1.0",
+          "version": "1.0.8-5+b1",
+          "license": "BSD-4-Clause",
+          "purl": "pkg:deb/debian/libbz2-1.0@1.0.8-5+b1"
+        },
+        "installed": {
+          "name": "libbz2-1.0",
+          "version": "1.0.8-5+b1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libc-bin",
+          "version": "2.36-9+deb12u7",
+          "license": "LGPL-2.1-or-later",
+          "purl": "pkg:deb/debian/libc-bin@2.36-9+deb12u7"
+        },
+        "installed": {
+          "name": "libc-bin",
+          "version": "2.36-9+deb12u7",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libc6",
+          "version": "2.36-9+deb12u7",
+          "license": "LGPL-2.1-or-later",
+          "purl": "pkg:deb/debian/libc6@2.36-9+deb12u7"
+        },
+        "installed": {
+          "name": "libc6",
+          "version": "2.36-9+deb12u7",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libcap-ng0",
+          "version": "0.8.3-1+b3",
+          "license": "LGPL-2.1-or-later",
+          "purl": "pkg:deb/debian/libcap-ng0@0.8.3-1+b3"
+        },
+        "installed": {
+          "name": "libcap-ng0",
+          "version": "0.8.3-1+b3",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libcrypt1",
+          "version": "1:4.4.33-2",
+          "license": "LGPL-2.1-or-later",
+          "purl": "pkg:deb/debian/libcrypt1@1%3A4.4.33-2"
+        },
+        "installed": {
+          "name": "libcrypt1",
+          "version": "1:4.4.33-2",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "undeclared",
+        "type": "deb",
+        "declared": null,
+        "installed": {
+          "name": "libcurl4",
+          "version": "7.88.1-10+deb12u8",
+          "arch": "amd64",
+          "layer": 4,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libdb5.3",
+          "version": "5.3.28+dfsg2-1",
+          "license": "BSD-3-Clause",
+          "purl": "pkg:deb/debian/libdb5.3@5.3.28+dfsg2-1"
+        },
+        "installed": {
+          "name": "libdb5.3",
+          "version": "5.3.28+dfsg2-1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libexpat1",
+          "version": "2.5.0-1+deb12u1",
+          "license": "MIT",
+          "purl": "pkg:deb/debian/libexpat1@2.5.0-1+deb12u1"
+        },
+        "installed": {
+          "name": "libexpat1",
+          "version": "2.5.0-1+deb12u1",
+          "arch": "amd64",
+          "layer": 2,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libffi8",
+          "version": "3.4.4-1",
+          "license": "MIT",
+          "purl": "pkg:deb/debian/libffi8@3.4.4-1"
+        },
+        "installed": {
+          "name": "libffi8",
+          "version": "3.4.4-1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libgcc-s1",
+          "version": "12.2.0-14",
+          "license": "GPL-3.0-only",
+          "purl": "pkg:deb/debian/libgcc-s1@12.2.0-14"
+        },
+        "installed": {
+          "name": "libgcc-s1",
+          "version": "12.2.0-14",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "declared only",
+        "type": "deb",
+        "declared": {
+          "name": "libgnutls30",
+          "version": "3.7.9-2+deb12u3",
+          "license": "LGPL-2.1-or-later",
+          "purl": "pkg:deb/debian/libgnutls30@3.7.9-2+deb12u3"
+        },
+        "installed": null
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "liblzma5",
+          "version": "5.4.1-0.2",
+          "license": "PD",
+          "purl": "pkg:deb/debian/liblzma5@5.4.1-0.2"
+        },
+        "installed": {
+          "name": "liblzma5",
+          "version": "5.4.1-0.2",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libncursesw6",
+          "version": "6.4-4",
+          "license": "MIT",
+          "purl": "pkg:deb/debian/libncursesw6@6.4-4"
+        },
+        "installed": {
+          "name": "libncursesw6",
+          "version": "6.4-4",
+          "arch": "amd64",
+          "layer": 2,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libpcre2-8-0",
+          "version": "10.42-1",
+          "license": "BSD-3-Clause",
+          "purl": "pkg:deb/debian/libpcre2-8-0@10.42-1"
+        },
+        "installed": {
+          "name": "libpcre2-8-0",
+          "version": "10.42-1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libreadline8",
+          "version": "8.2-1.3",
+          "license": "GPL-3.0-or-later",
+          "purl": "pkg:deb/debian/libreadline8@8.2-1.3"
+        },
+        "installed": {
+          "name": "libreadline8",
+          "version": "8.2-1.3",
+          "arch": "amd64",
+          "layer": 2,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libselinux1",
+          "version": "3.4-1+b6",
+          "license": "PD",
+          "purl": "pkg:deb/debian/libselinux1@3.4-1+b6"
+        },
+        "installed": {
+          "name": "libselinux1",
+          "version": "3.4-1+b6",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libsqlite3-0",
+          "version": "3.40.1-2",
+          "license": "PD",
+          "purl": "pkg:deb/debian/libsqlite3-0@3.40.1-2"
+        },
+        "installed": {
+          "name": "libsqlite3-0",
+          "version": "3.40.1-2",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "version differs",
+        "type": "deb",
+        "declared": {
+          "name": "libssl3",
+          "version": "3.0.11-1~deb12u2",
+          "license": "Apache-2.0",
+          "purl": "pkg:deb/debian/libssl3@3.0.11-1~deb12u2"
+        },
+        "installed": {
+          "name": "libssl3",
+          "version": "3.0.15-1~deb12u1",
+          "arch": "amd64",
+          "layer": 2,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libstdc++6",
+          "version": "12.2.0-14",
+          "license": "GPL-3.0-only",
+          "purl": "pkg:deb/debian/libstdc++6@12.2.0-14"
+        },
+        "installed": {
+          "name": "libstdc++6",
+          "version": "12.2.0-14",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libsystemd0",
+          "version": "252.26-1~deb12u2",
+          "license": "LGPL-2.1-or-later",
+          "purl": "pkg:deb/debian/libsystemd0@252.26-1~deb12u2"
+        },
+        "installed": {
+          "name": "libsystemd0",
+          "version": "252.26-1~deb12u2",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libtinfo6",
+          "version": "6.4-4",
+          "license": "MIT",
+          "purl": "pkg:deb/debian/libtinfo6@6.4-4"
+        },
+        "installed": {
+          "name": "libtinfo6",
+          "version": "6.4-4",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libudev1",
+          "version": "252.26-1~deb12u2",
+          "license": "LGPL-2.1-or-later",
+          "purl": "pkg:deb/debian/libudev1@252.26-1~deb12u2"
+        },
+        "installed": {
+          "name": "libudev1",
+          "version": "252.26-1~deb12u2",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "libzstd1",
+          "version": "1.5.4+dfsg2-5",
+          "license": "BSD-3-Clause",
+          "purl": "pkg:deb/debian/libzstd1@1.5.4+dfsg2-5"
+        },
+        "installed": {
+          "name": "libzstd1",
+          "version": "1.5.4+dfsg2-5",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "login",
+          "version": "1:4.13+dfsg1-1+b1",
+          "license": "GPL-2.0-or-later",
+          "purl": "pkg:deb/debian/login@1%3A4.13+dfsg1-1+b1"
+        },
+        "installed": {
+          "name": "login",
+          "version": "1:4.13+dfsg1-1+b1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "mawk",
+          "version": "1.3.4.20200120-3.1",
+          "license": "GPL-2.0-only",
+          "purl": "pkg:deb/debian/mawk@1.3.4.20200120-3.1"
+        },
+        "installed": {
+          "name": "mawk",
+          "version": "1.3.4.20200120-3.1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "mount",
+          "version": "2.38.1-5+deb12u1",
+          "license": "GPL-2.0-or-later",
+          "purl": "pkg:deb/debian/mount@2.38.1-5+deb12u1"
+        },
+        "installed": {
+          "name": "mount",
+          "version": "2.38.1-5+deb12u1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "ncurses-base",
+          "version": "6.4-4",
+          "license": "MIT",
+          "purl": "pkg:deb/debian/ncurses-base@6.4-4?arch=all",
+          "arch": "all"
+        },
+        "installed": {
+          "name": "ncurses-base",
+          "version": "6.4-4",
+          "arch": "all",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "netbase",
+          "version": "6.4",
+          "license": "GPL-2.0-only",
+          "purl": "pkg:deb/debian/netbase@6.4?arch=all",
+          "arch": "all"
+        },
+        "installed": {
+          "name": "netbase",
+          "version": "6.4",
+          "arch": "all",
+          "layer": 2,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "undeclared",
+        "type": "deb",
+        "declared": null,
+        "installed": {
+          "name": "netcat-openbsd",
+          "version": "1.219-1",
+          "arch": "amd64",
+          "layer": 4,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "openssl",
+          "version": "3.0.15-1~deb12u1",
+          "license": "Apache-2.0",
+          "purl": "pkg:deb/debian/openssl@3.0.15-1~deb12u1"
+        },
+        "installed": {
+          "name": "openssl",
+          "version": "3.0.15-1~deb12u1",
+          "arch": "amd64",
+          "layer": 2,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "passwd",
+          "version": "1:4.13+dfsg1-1+b1",
+          "license": "GPL-2.0-or-later",
+          "purl": "pkg:deb/debian/passwd@1%3A4.13+dfsg1-1+b1"
+        },
+        "installed": {
+          "name": "passwd",
+          "version": "1:4.13+dfsg1-1+b1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "perl-base",
+          "version": "5.36.0-7+deb12u1",
+          "license": "GPL-1.0-or-later",
+          "purl": "pkg:deb/debian/perl-base@5.36.0-7+deb12u1"
+        },
+        "installed": {
+          "name": "perl-base",
+          "version": "5.36.0-7+deb12u1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "not checkable",
+        "type": "pypi",
+        "why": "only deb, apk and rpm packages are checked against the image's own databases",
+        "declared": {
+          "name": "pip",
+          "version": "24.0",
+          "license": "MIT",
+          "purl": "pkg:pypi/pip@24.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "not checkable",
+        "type": "",
+        "why": "the SBOM gives no purl, so its ecosystem is not known",
+        "declared": {
+          "name": "python",
+          "version": "3.12.4",
+          "license": "PSF-2.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "readline-common",
+          "version": "8.2-1.3",
+          "license": "GPL-3.0-or-later",
+          "purl": "pkg:deb/debian/readline-common@8.2-1.3?arch=all",
+          "arch": "all"
+        },
+        "installed": {
+          "name": "readline-common",
+          "version": "8.2-1.3",
+          "arch": "all",
+          "layer": 2,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "not checkable",
+        "type": "pypi",
+        "why": "only deb, apk and rpm packages are checked against the image's own databases",
+        "declared": {
+          "name": "requests",
+          "version": "2.32.3",
+          "license": "Apache-2.0",
+          "purl": "pkg:pypi/requests@2.32.3"
+        },
+        "installed": null
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "sed",
+          "version": "4.9-1",
+          "license": "GPL-3.0-or-later",
+          "purl": "pkg:deb/debian/sed@4.9-1"
+        },
+        "installed": {
+          "name": "sed",
+          "version": "4.9-1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "not checkable",
+        "type": "pypi",
+        "why": "only deb, apk and rpm packages are checked against the image's own databases",
+        "declared": {
+          "name": "setuptools",
+          "version": "69.5.1",
+          "license": "MIT",
+          "purl": "pkg:pypi/setuptools@69.5.1"
+        },
+        "installed": null
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "sysvinit-utils",
+          "version": "3.06-4",
+          "license": "GPL-2.0-or-later",
+          "purl": "pkg:deb/debian/sysvinit-utils@3.06-4"
+        },
+        "installed": {
+          "name": "sysvinit-utils",
+          "version": "3.06-4",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "tar",
+          "version": "1.34+dfsg-1.2+deb12u1",
+          "license": "GPL-3.0-or-later",
+          "purl": "pkg:deb/debian/tar@1.34+dfsg-1.2+deb12u1"
+        },
+        "installed": {
+          "name": "tar",
+          "version": "1.34+dfsg-1.2+deb12u1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "tzdata",
+          "version": "2024a-0+deb12u1",
+          "license": "PD",
+          "purl": "pkg:deb/debian/tzdata@2024a-0+deb12u1?arch=all",
+          "arch": "all"
+        },
+        "installed": {
+          "name": "tzdata",
+          "version": "2024a-0+deb12u1",
+          "arch": "all",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "util-linux",
+          "version": "2.38.1-5+deb12u1",
+          "license": "GPL-2.0-or-later",
+          "purl": "pkg:deb/debian/util-linux@2.38.1-5+deb12u1"
+        },
+        "installed": {
+          "name": "util-linux",
+          "version": "2.38.1-5+deb12u1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      },
+      {
+        "state": "not checkable",
+        "type": "pypi",
+        "why": "only deb, apk and rpm packages are checked against the image's own databases",
+        "declared": {
+          "name": "wheel",
+          "version": "0.43.0",
+          "license": "MIT",
+          "purl": "pkg:pypi/wheel@0.43.0"
+        },
+        "installed": null
+      },
+      {
+        "state": "both",
+        "type": "deb",
+        "declared": {
+          "name": "zlib1g",
+          "version": "1:1.2.13.dfsg-1",
+          "license": "Zlib",
+          "purl": "pkg:deb/debian/zlib1g@1%3A1.2.13.dfsg-1"
+        },
+        "installed": {
+          "name": "zlib1g",
+          "version": "1:1.2.13.dfsg-1",
+          "arch": "amd64",
+          "layer": 1,
+          "source": "/var/lib/dpkg/status"
+        }
+      }
+    ]
+  }
+}

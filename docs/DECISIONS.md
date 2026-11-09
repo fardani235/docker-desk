@@ -23,6 +23,11 @@ has an entry.
 Entries marked **U** (usage) belong to the fifth change, `openspec/changes/archive/2026-11-05-disk-space/`, and
 are collected in [their own section](#round-five--space), made and recorded the same way.
 
+Entries marked **X** (export) belong to the thirteenth round, evidence export, and are collected
+in [their own section](#round-thirteen--evidence-export-what-was-computed-written-to-one-file).
+That round was asked for in one pass — plan, build, write up — with every open question decided
+and recorded here rather than asked; there is no OpenSpec change for it (B33).
+
 Where a decision costs something, the cost is stated. Nothing here is presented as free.
 
 ---
@@ -2608,6 +2613,224 @@ whatever the credential, as Hub answers) and `SetLinkBase` (a `Link` to another 
 Search, `_catalog`, `hub.docker.com`, ordering or filtering by date, deleting or pushing tags,
 tagging the pulled image locally (L11), several repositories at once, polling.
 
+## Round thirteen — evidence export: what was computed, written to one file
+
+The request: write the analysis the desk already computes — an image's findings and packages,
+the Space account — to files, deterministically, with no new dependency. Fixed by the request:
+four formats (the desk's own JSON, SPDX 2.3 JSON and CycloneDX 1.5 JSON for packages only, and
+text); `w` in Findings, Packages and Space with a format, a path and a confirmation, prefilled
+`~/docker-desk-<kind>-<object>-<YYYYMMDD>.<ext>`; a headless `--report`; standard library only;
+sort by name then version and never by map order; identical input, identical bytes; no absolute
+host path, timestamp, user name or unneeded ID; mode 0600; an existing file refused unless
+`--force`, a directory refused, no partial file on error; pure serializers in `internal/report`
+taking plain structs, nothing serialized in a view; works read-only; a failed export never blocks
+the desk and is said in one sentence. Where it left a choice open, the choice is recorded here.
+
+### X1 — Two packages: `report` serializes, `report/collect` decides what goes in
+
+**Decided:** `internal/report` holds plain structs (`Image`, `Space` and what they contain), the
+four serializers, `Render`, and the one function that writes a file. It imports only the standard
+library — nothing of the desk's — so no serializer can reach the daemon, the network, or a
+`Secret`. `internal/report/collect` converts a `forensics.Report` with its live findings, or the
+Space view's account and `space.Index`, into those structs, and also holds the command line's
+fetch (`FetchImage`, `FetchSpace`). The views call `collect` and `report.Render`; they build no
+JSON and format no lines.
+
+**Alternative:** serializers that take `forensics.Report` directly. Shorter, but then "plain
+structs" would be the analysis's own types, a `Secret` would be one field away from every
+encoder, and a change in the analysis would silently change the files.
+
+**Cost:** a second description of a finding and a package (the report structs), kept in step by
+hand; the golden files catch a drift.
+
+### X2 — One image document, whichever view it is exported from
+
+**Decided:** `w` in Findings and `w` in Packages export the same document — the image, its config,
+layers, attestations, notes, findings (from the archive and the live join) and its packages — in
+any of the four formats. Only the prefilled name (`findings` / `packages`) and the format first
+offered (`json` / `spdx`) differ. Space has its own document, in `json` or `text`; SPDX and
+CycloneDX are refused for it, because they describe packages.
+
+**Why:** "json: everything computed, one document per export". Two image documents that each
+held half would make "everything" depend on where the key was pressed.
+
+### X3 — The TUI and `--report` produce the same bytes
+
+**Decided:** both analyse with `collect.AnalysisOptions` (the tab now calls it too), inspect the
+containers `collect.FactsTargets` names (the tab's old loop, moved), join with
+`forensics.LiveFindings`, and convert with `collect.Image`; Space goes through `collect.Space`
+from the same `space.Build` input. `ui.TestExportFindingsIsTheCommandLinesDocument`,
+`ui.TestExportPackagesAndSpace` and `e2e.TestExportFromTheSandbox` compare the two entry points
+byte for byte.
+
+**Cost:** the live half is the daemon's state at the moment of the export. An export of an image
+whose containers change between two exports differs in its live findings — which is the
+evidence changing, not the output being unstable.
+
+### X4 — Determinism: the serializer orders everything itself
+
+**Decided:** each serializer copies its input and sorts every list by a total key — packages by
+name, then version (installed, else declared), then ecosystem, architecture, both versions, purl,
+state and reason; findings by the Findings tab's group order (config, layer, filesystem, secrets,
+binaries, supply, live; an unknown group after them), then layer, rule, path, subject, evidence
+and every other field; layers by index; notes, environment names and references alphabetically;
+databases deb, apk, rpm; Space's groups largest first, then by their images. The package counts
+are recomputed from the rows. JSON is written with `encoding/json` from structs only (no map is
+encoded), indented, HTML characters unescaped, with a final newline. A finding's `Detail` keeps
+its order: it is evidence order, read from the bytes.
+
+**Why:** the caller's order — a map's, a view's chosen sort — must not reach a file.
+`TestEveryFormatIgnoresInputOrder` shuffles the input twenty ways per format;
+`collect.TestTwoExportsAreIdentical` runs the analysis twice.
+
+### X5 — What a file may carry
+
+**Decided:** in: image IDs, layer digests and diff IDs, the reference the operator named,
+platform, paths *inside the image*, container *names* (a live finding is about one), volume names,
+masked evidence, the tool's version. Out: the daemon's address, name and version; container IDs;
+every time (image creation, analysis, account, build-cache last use); the analysis's archive
+paths; environment variable values (names only, as B23); a secret's value — a finding has
+`value_masked: true` instead. `collect.TestNothingAFileMustNotHold` checks every document of the
+sandbox for the demo's secret values, environment values, container IDs, the daemon's socket and
+name, and today's date.
+
+**Cost:** a Space export does not say which daemon it is of, nor when. The file name (with the
+date and the context) and the operator's own records say that; the document says what was
+measured.
+
+### X6 — SPDX 2.3: the schema's required fields, and nothing guessed into them
+
+**Decided:** one package per joined row, `SPDXRef-Package-<n>` in the document order, each
+`DESCRIBES`d by the document. `downloadLocation`, `licenseConcluded`, `licenseDeclared` and
+`copyrightText` are `NOASSERTION`; `filesAnalyzed` false. `versionInfo` is the installed version,
+else the declared one, and absent when neither side states one. The state, the reason, both
+versions, the licence as each source wrote it, the layer and the database are in the package's
+`comment`. `creationInfo.created` — required — is fixed at `1970-01-01T00:00:00Z`, and
+`creationInfo.comment` says why. `documentNamespace` is
+`https://docker-desk.invalid/spdx/<image>/<platform>/<content digest>`: unique per content, never
+resolved (`.invalid`, as U18).
+
+**Alternatives:** the time of writing (breaks byte identity, and is a timestamp the request rules
+out); the image's creation time (not computed by the analysis, and SPDX means the document's
+time); the licence text in `licenseDeclared` (dpkg's and apk's licence fields are free text, and a
+string that is not a valid SPDX expression makes the document invalid; rewriting it into
+`LicenseRef-…` with extracted texts would be the desk inventing structure).
+
+### X7 — CycloneDX 1.5: properties for what the format has no field for
+
+**Decided:** `metadata.component` is the image (`type: container`, the reference as name, the image
+ID as version, the platform as a property); `metadata.tools.components` names docker-desk. Each row
+is a `library` component, `bom-ref: pkg-<n>`, with `version` and `purl` under the same rules as
+SPDX, the licence as `licenses[].license.name` (free text is valid there), and the row's facts as
+`docker-desk:*` properties (`state`, `why`, `declared-version`, `declared-purl`, `installed-version`,
+`layer`, `database`…), in a fixed order. `serialNumber` is a version-5 (name-based) UUID of the
+content, which matches the schema's pattern; `metadata.timestamp`, optional, is left out.
+
+### X8 — Nothing is filled in
+
+**Decided:** a row's state is the view's own word from the same join (K6, K7): an npm, pip or Go
+package, one without a purl, one whose database cannot be read, is `not checkable` with its reason
+in every format. No version is derived; no purl is built for an installed package (its namespace —
+the distribution — is not known); the SBOM's purl is written as the package's purl only when the
+version beside it is the one it names — for a `version differs` row it is kept as
+`declared-purl` instead.
+
+### X9 — Consent: a path shown in full, then `y`
+
+**Decided:** the dialog's first step offers the formats the document has (`Tab`, `↑` `↓`) and the
+path; changing the format swaps a known extension (`.json`, `.spdx.json`, `.cdx.json`, `.txt`) and
+leaves any other name alone. `Enter` expands the path, refuses there and then what would be
+refused (an existing file, a folder, `~user`), renders the bytes, and asks: the absolute path, the
+format, the size, the mode. Only `y` writes, and the question arms afresh (B25): a `y` typed as it
+appears is ignored. `n`, `Esc` or Backspace go back to the path with it as typed. The TUI never
+replaces a file — there is no `--force` inside the desk; `--force` exists for `--report` only, and
+is refused without it.
+
+**Alternatives:** an overwrite prompt in the TUI ("replace? y") — a second consent for the one case
+where the file already there may be someone's earlier evidence; choosing another name costs a few
+keys. `--force` given at launch applying to the TUI — a flag typed once would then consent to every
+later overwrite.
+
+### X10 — The file: 0600, written beside, linked into place
+
+**Decided:** `report.WriteFile` refuses a folder, anything not a regular file or a symbolic link,
+an existing file without force (a symbolic link counts as existing: it is not followed), a missing
+folder (none is created) and a parent that is a file. It writes to `.docker-desk-export-*.tmp` in
+the target's folder (created 0600 by `os.CreateTemp`, `Chmod` 0600 again), syncs, closes, and then
+`os.Link`s it to the target — which fails if a file appeared meanwhile — and removes the temporary
+name; with force, `os.Rename` replaces atomically. A filesystem without hard links falls back to
+`O_CREATE|O_EXCL` on the target, removed again if writing fails. On every error the temporary file
+is removed.
+
+**Cost:** a `kill -9` during the write can leave the hidden temporary file (never a partial file
+under the chosen name).
+
+### X11 — Paths and the prefilled name
+
+**Decided:** `~` and `~/…` are the home folder (`HOME`, as `os.UserHomeDir`), expanded explicitly
+by `report.ExpandPath` — no shell is involved; `~user` is refused rather than guessed; a relative
+path is taken from the desk's working folder. The name is
+`~/docker-desk-<kind>-<object>-<YYYYMMDD>.<ext>`: the kind is `findings`, `packages` or `space`;
+the object is the image as the tab names it (its reference, or short ID when untagged), or for
+Space the Docker context's name (`engine` when there is none), reduced to lower-case letters,
+digits, dots and dashes; the date is the local date when `w` is pressed.
+
+### X12 — Text: one line per finding, tab-separated
+
+**Decided:** header lines begin with `#` (tool, image, reference, platform, count, each unknown, the
+columns); each group is a `## <group>\t<count>` line; each finding one line of eight tab-separated
+fields — rule, certainty, source, layer (`L3` or `-`), path, subject, evidence (with
+`(value masked)` where it had a value), reason — with `-` for an empty field. Tabs, line breaks,
+backslashes and other control characters inside a value are written as escapes, so no value can
+start a line or shift a column. Space's text is the totals, then one line per image (size, alone,
+together, reason) and per shared group (measure, bytes, layers, images, reason).
+
+### X13 — `--report`: the launch sequence, one request set, one file, an exit code
+
+**Decided:** `--report PATH` with `--report-object` runs the same resolution, transport, ping and
+info as the desk, then `collect.FetchImage` (inspect, list, the archive once, the containers using
+it) or, for `--report-object :space`, `collect.FetchSpace` (the account and every image's layers),
+writes, and exits. `--report-format` defaults to `json`; `cdx` and `txt` are accepted as names.
+Exit 0: written, and stdout says where, which format, how many bytes. Exit 1: not written — the
+daemon, the image, the analysis or the path — with nothing left at the path. Exit 2: flags that do
+not fit (`--report-format`, `--report-object` or `--force` without `--report`; `--report` with
+`--check`; a Space export as SPDX or CycloneDX). An existing file or a folder is refused before the
+archive is read, so a refusal does not cost the analysis; it is checked again when writing. A
+signal cancels the analysis and nothing is written (exit 130). No terminal is needed.
+
+**Why `:space`:** an image reference cannot begin with a colon, so the word cannot shadow an image
+called `space`.
+
+### X14 — Space: every figure with its measure, its source and its reason
+
+**Decided:** totals as the daemon states them (or the client library's sums, U1); per image its
+size, shared size (null when the daemon did not compute it), containers, whether its layers are
+`attributed`, `unattributed` or `not read`, **alone** (the daemon's unique size, exact, or unknown)
+and **together** (`space.Index.Frees` of the image and its sharers: exact, at least with "their
+unique sizes: …", or unknown with the reason); the shared groups with exact / at least ("2 of its 3
+layers have no size…") / unknown; volumes; build-cache records without IDs or times; the notes the
+view shows; `stale` when the engine changed after the account was taken (U7). Writable layers are
+included only when `m` has measured them, with their own stale flag; `--report` does not measure
+them, because only `m` asks the daemon to walk container filesystems (U5). An export while layers
+are still being read says so in a note instead of "could not be read".
+
+### X15 — A failed export is a sentence, and the desk goes on
+
+**Decided:** collecting and rendering happen when the operator presses `w` and `Enter` — pure code
+over what the view holds, milliseconds. The write itself runs as a command, off the UI's
+goroutine; the dialog closes on `y`, the status line says "Writing …", then either
+`Exported json to /…/x.json (38576 bytes, mode 0600).` or `Not exported: cannot write /…: <reason>.`
+— the reason in the desk's own words (`the folder /srv cannot be written to (permission denied)`),
+never a stack of wrapped errors. It is not a job: it changes nothing on the daemon, cannot be
+cancelled half-way usefully, and has nothing to show in the Jobs pane that the status line does
+not.
+
+### X16 — Left out
+
+Writing anywhere but a local path (no upload, no stdout for the TUI); exporting several images at
+once; an export of the Changes or Upstream tabs, or of the Repository browser; a vulnerability
+section; SPDX tag-value or CycloneDX XML; signing the files.
+
 ## Process
 
 ### B12 — No commits were made
@@ -2657,3 +2880,25 @@ tree, overlapping a `make build`, failed three timing-bound tests outside this r
 (`ui.TestFloodDoesNotStarveTheDesk`, `ui.TestNothingActsWhileTheDeskCannotBeDrawn`,
 `sshtunnel.TestOpenFailsInSSHsOwnWords`); each passed four times in a row under `-race` alone,
 and the whole suite passed when rerun. B25's caveat about timing under the detector stands.
+
+### B33 — Round thirteen: no OpenSpec change, no commit, and a suite that is redder under load
+
+The request asked for one pass with decisions recorded rather than asked, so the plan is the X
+entries above instead of an OpenSpec change; README and TESTING describe the result. Nothing was
+committed (B12). `go build ./...`, `go vet ./...` and `gofmt -l .` are clean.
+
+`go test ./...` is **not** reliably green on this machine with this round, and the cause is not
+found. Seven full runs of this round's tree (six with `-count=1`): four passed, three failed —
+each time a timing-bound test that is not this round's: `ui` once (an Inspect wrap screen),
+`e2e.TestProcessesView` twice (`29-processes`, `30-processes-80x24`) and
+`e2e.TestSpace/28-space-80x24-read-only` once, all an 8-second wait for a screen after a filter
+typed with keys 15 ms apart. The unchanged `HEAD`, extracted into a scratch folder and run the
+same way, passed five of five. Alone, `go test ./internal/e2e/` and `go test ./internal/ui/` each
+passed two of two, every new test included. So the failures need the whole suite running at once.
+What the round adds to a full run: two small test packages to compile and link and run alongside
+the others, about four seconds of headless analyses in `cmd/docker-desk`, four UI benches, and one
+more `make sandbox` in `e2e` (its build is cached: 0.3 s). None of these touches the code the
+failing tests drive. The likely mechanism is the one K15 met — keys paced for an idle machine
+arriving merged under contention — but that is not proven, and five to seven runs cannot rule out
+that this round's load is what tips it. Making those waits independent of timing, as B25 also
+asks, is a change of its own. The new tests and the touched UI tests pass under `-race`.

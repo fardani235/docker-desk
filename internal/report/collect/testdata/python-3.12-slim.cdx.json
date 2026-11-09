@@ -1,0 +1,3437 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:7162d861-dbf4-598c-88db-04fb39f568b5",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "docker-desk",
+          "version": "test"
+        }
+      ]
+    },
+    "component": {
+      "type": "container",
+      "bom-ref": "image",
+      "name": "python:3.12-slim",
+      "version": "sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d",
+      "properties": [
+        {
+          "name": "docker-desk:platform",
+          "value": "linux/amd64"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg-1",
+      "name": "adduser",
+      "version": "3.134",
+      "purl": "pkg:deb/debian/adduser@3.134?arch=all",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-only"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "3.134"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-only"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "3.134"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "all"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-2",
+      "name": "apt",
+      "version": "2.6.1",
+      "purl": "pkg:deb/debian/apt@2.6.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-only"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2.6.1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-only"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "2.6.1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-3",
+      "name": "base-files",
+      "version": "12.4+deb12u5",
+      "purl": "pkg:deb/debian/base-files@12.4+deb12u5",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "12.4+deb12u5"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "12.4+deb12u5"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-4",
+      "name": "base-passwd",
+      "version": "3.6.1",
+      "purl": "pkg:deb/debian/base-passwd@3.6.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-only"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "3.6.1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-only"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "3.6.1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-5",
+      "name": "bash",
+      "version": "5.2.15-2+b2",
+      "purl": "pkg:deb/debian/bash@5.2.15-2+b2",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "5.2.15-2+b2"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "5.2.15-2+b2"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-6",
+      "name": "bsdutils",
+      "version": "1:2.38.1-5+deb12u1",
+      "purl": "pkg:deb/debian/bsdutils@1%3A2.38.1-5+deb12u1",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-4-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1:2.38.1-5+deb12u1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "BSD-4-Clause"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1:2.38.1-5+deb12u1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-7",
+      "name": "ca-certificates",
+      "version": "20230311",
+      "purl": "pkg:deb/debian/ca-certificates@20230311?arch=all",
+      "licenses": [
+        {
+          "license": {
+            "name": "MPL-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "20230311"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "MPL-2.0"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "20230311"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "2"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "all"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-8",
+      "name": "coreutils",
+      "version": "9.1-1",
+      "purl": "pkg:deb/debian/coreutils@9.1-1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "9.1-1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "9.1-1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-9",
+      "name": "curl",
+      "version": "7.88.1-10+deb12u8",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "undeclared"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared",
+          "value": "no"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "7.88.1-10+deb12u8"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "4"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-10",
+      "name": "dash",
+      "version": "0.5.12-2",
+      "purl": "pkg:deb/debian/dash@0.5.12-2",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "0.5.12-2"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "BSD-3-Clause"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "0.5.12-2"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-11",
+      "name": "debconf",
+      "version": "1.5.82",
+      "purl": "pkg:deb/debian/debconf@1.5.82?arch=all",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-2-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.5.82"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "BSD-2-Clause"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1.5.82"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "all"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-12",
+      "name": "debian-archive-keyring",
+      "version": "2023.3+deb12u1",
+      "purl": "pkg:deb/debian/debian-archive-keyring@2023.3+deb12u1?arch=all",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2023.3+deb12u1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "2023.3+deb12u1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "all"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-13",
+      "name": "debianutils",
+      "version": "5.7-0.5~deb12u1",
+      "purl": "pkg:deb/debian/debianutils@5.7-0.5~deb12u1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "5.7-0.5~deb12u1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "5.7-0.5~deb12u1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-14",
+      "name": "diffutils",
+      "version": "1:3.8-4",
+      "purl": "pkg:deb/debian/diffutils@1%3A3.8-4",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1:3.8-4"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1:3.8-4"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-15",
+      "name": "dpkg",
+      "version": "1.21.22",
+      "purl": "pkg:deb/debian/dpkg@1.21.22",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.21.22"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1.21.22"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-16",
+      "name": "e2fsprogs",
+      "version": "1.47.0-2",
+      "purl": "pkg:deb/debian/e2fsprogs@1.47.0-2",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-only"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.47.0-2"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-only"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1.47.0-2"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-17",
+      "name": "findutils",
+      "version": "4.9.0-4",
+      "purl": "pkg:deb/debian/findutils@4.9.0-4",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "4.9.0-4"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "4.9.0-4"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-18",
+      "name": "gcc-12-base",
+      "version": "12.2.0-14",
+      "purl": "pkg:deb/debian/gcc-12-base@12.2.0-14",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-only"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "12.2.0-14"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-only"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "12.2.0-14"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-19",
+      "name": "golang.org/x/sys",
+      "version": "v0.20.0",
+      "purl": "pkg:golang/golang.org/x/sys@v0.20.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "only deb, apk and rpm packages are checked against the image's own databases"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "golang"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "v0.20.0"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "BSD-3-Clause"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-20",
+      "name": "gpgv",
+      "version": "2.2.40-1.1",
+      "purl": "pkg:deb/debian/gpgv@2.2.40-1.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2.2.40-1.1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "2.2.40-1.1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-21",
+      "name": "grep",
+      "version": "3.8-5",
+      "purl": "pkg:deb/debian/grep@3.8-5",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "3.8-5"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "3.8-5"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-22",
+      "name": "gzip",
+      "version": "1.12-1",
+      "purl": "pkg:deb/debian/gzip@1.12-1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.12-1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1.12-1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-23",
+      "name": "hostname",
+      "version": "3.23+nmu1",
+      "purl": "pkg:deb/debian/hostname@3.23+nmu1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-only"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "3.23+nmu1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-only"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "3.23+nmu1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-24",
+      "name": "init-system-helpers",
+      "version": "1.65.2",
+      "purl": "pkg:deb/debian/init-system-helpers@1.65.2?arch=all",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.65.2"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "BSD-3-Clause"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1.65.2"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "all"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-25",
+      "name": "libacl1",
+      "version": "2.3.1-3",
+      "purl": "pkg:deb/debian/libacl1@2.3.1-3",
+      "licenses": [
+        {
+          "license": {
+            "name": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2.3.1-3"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "LGPL-2.1-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "2.3.1-3"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-26",
+      "name": "libapt-pkg6.0",
+      "version": "2.6.1",
+      "purl": "pkg:deb/debian/libapt-pkg6.0@2.6.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-only"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2.6.1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-only"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "2.6.1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-27",
+      "name": "libattr1",
+      "version": "1:2.5.1-4",
+      "purl": "pkg:deb/debian/libattr1@1%3A2.5.1-4",
+      "licenses": [
+        {
+          "license": {
+            "name": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1:2.5.1-4"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "LGPL-2.1-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1:2.5.1-4"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-28",
+      "name": "libaudit1",
+      "version": "1:3.0.9-1",
+      "purl": "pkg:deb/debian/libaudit1@1%3A3.0.9-1",
+      "licenses": [
+        {
+          "license": {
+            "name": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1:3.0.9-1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "LGPL-2.1-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1:3.0.9-1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-29",
+      "name": "libblkid1",
+      "version": "2.38.1-5+deb12u1",
+      "purl": "pkg:deb/debian/libblkid1@2.38.1-5+deb12u1",
+      "licenses": [
+        {
+          "license": {
+            "name": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2.38.1-5+deb12u1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "LGPL-2.1-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "2.38.1-5+deb12u1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-30",
+      "name": "libbz2-1.0",
+      "version": "1.0.8-5+b1",
+      "purl": "pkg:deb/debian/libbz2-1.0@1.0.8-5+b1",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-4-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.0.8-5+b1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "BSD-4-Clause"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1.0.8-5+b1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-31",
+      "name": "libc-bin",
+      "version": "2.36-9+deb12u7",
+      "purl": "pkg:deb/debian/libc-bin@2.36-9+deb12u7",
+      "licenses": [
+        {
+          "license": {
+            "name": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2.36-9+deb12u7"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "LGPL-2.1-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "2.36-9+deb12u7"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-32",
+      "name": "libc6",
+      "version": "2.36-9+deb12u7",
+      "purl": "pkg:deb/debian/libc6@2.36-9+deb12u7",
+      "licenses": [
+        {
+          "license": {
+            "name": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2.36-9+deb12u7"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "LGPL-2.1-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "2.36-9+deb12u7"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-33",
+      "name": "libcap-ng0",
+      "version": "0.8.3-1+b3",
+      "purl": "pkg:deb/debian/libcap-ng0@0.8.3-1+b3",
+      "licenses": [
+        {
+          "license": {
+            "name": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "0.8.3-1+b3"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "LGPL-2.1-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "0.8.3-1+b3"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-34",
+      "name": "libcrypt1",
+      "version": "1:4.4.33-2",
+      "purl": "pkg:deb/debian/libcrypt1@1%3A4.4.33-2",
+      "licenses": [
+        {
+          "license": {
+            "name": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1:4.4.33-2"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "LGPL-2.1-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1:4.4.33-2"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-35",
+      "name": "libcurl4",
+      "version": "7.88.1-10+deb12u8",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "undeclared"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared",
+          "value": "no"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "7.88.1-10+deb12u8"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "4"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-36",
+      "name": "libdb5.3",
+      "version": "5.3.28+dfsg2-1",
+      "purl": "pkg:deb/debian/libdb5.3@5.3.28+dfsg2-1",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "5.3.28+dfsg2-1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "BSD-3-Clause"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "5.3.28+dfsg2-1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-37",
+      "name": "libexpat1",
+      "version": "2.5.0-1+deb12u1",
+      "purl": "pkg:deb/debian/libexpat1@2.5.0-1+deb12u1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2.5.0-1+deb12u1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "MIT"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "2.5.0-1+deb12u1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "2"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-38",
+      "name": "libffi8",
+      "version": "3.4.4-1",
+      "purl": "pkg:deb/debian/libffi8@3.4.4-1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "3.4.4-1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "MIT"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "3.4.4-1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-39",
+      "name": "libgcc-s1",
+      "version": "12.2.0-14",
+      "purl": "pkg:deb/debian/libgcc-s1@12.2.0-14",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-only"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "12.2.0-14"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-only"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "12.2.0-14"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-40",
+      "name": "libgnutls30",
+      "version": "3.7.9-2+deb12u3",
+      "purl": "pkg:deb/debian/libgnutls30@3.7.9-2+deb12u3",
+      "licenses": [
+        {
+          "license": {
+            "name": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "declared only"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "3.7.9-2+deb12u3"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "LGPL-2.1-or-later"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-41",
+      "name": "liblzma5",
+      "version": "5.4.1-0.2",
+      "purl": "pkg:deb/debian/liblzma5@5.4.1-0.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "PD"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "5.4.1-0.2"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "PD"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "5.4.1-0.2"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-42",
+      "name": "libncursesw6",
+      "version": "6.4-4",
+      "purl": "pkg:deb/debian/libncursesw6@6.4-4",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "6.4-4"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "MIT"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "6.4-4"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "2"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-43",
+      "name": "libpcre2-8-0",
+      "version": "10.42-1",
+      "purl": "pkg:deb/debian/libpcre2-8-0@10.42-1",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "10.42-1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "BSD-3-Clause"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "10.42-1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-44",
+      "name": "libreadline8",
+      "version": "8.2-1.3",
+      "purl": "pkg:deb/debian/libreadline8@8.2-1.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "8.2-1.3"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "8.2-1.3"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "2"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-45",
+      "name": "libselinux1",
+      "version": "3.4-1+b6",
+      "purl": "pkg:deb/debian/libselinux1@3.4-1+b6",
+      "licenses": [
+        {
+          "license": {
+            "name": "PD"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "3.4-1+b6"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "PD"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "3.4-1+b6"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-46",
+      "name": "libsqlite3-0",
+      "version": "3.40.1-2",
+      "purl": "pkg:deb/debian/libsqlite3-0@3.40.1-2",
+      "licenses": [
+        {
+          "license": {
+            "name": "PD"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "3.40.1-2"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "PD"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "3.40.1-2"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-47",
+      "name": "libssl3",
+      "version": "3.0.15-1~deb12u1",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "version differs"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "3.0.11-1~deb12u2"
+        },
+        {
+          "name": "docker-desk:declared-purl",
+          "value": "pkg:deb/debian/libssl3@3.0.11-1~deb12u2"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "Apache-2.0"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "3.0.15-1~deb12u1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "2"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-48",
+      "name": "libstdc++6",
+      "version": "12.2.0-14",
+      "purl": "pkg:deb/debian/libstdc++6@12.2.0-14",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-only"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "12.2.0-14"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-only"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "12.2.0-14"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-49",
+      "name": "libsystemd0",
+      "version": "252.26-1~deb12u2",
+      "purl": "pkg:deb/debian/libsystemd0@252.26-1~deb12u2",
+      "licenses": [
+        {
+          "license": {
+            "name": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "252.26-1~deb12u2"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "LGPL-2.1-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "252.26-1~deb12u2"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-50",
+      "name": "libtinfo6",
+      "version": "6.4-4",
+      "purl": "pkg:deb/debian/libtinfo6@6.4-4",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "6.4-4"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "MIT"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "6.4-4"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-51",
+      "name": "libudev1",
+      "version": "252.26-1~deb12u2",
+      "purl": "pkg:deb/debian/libudev1@252.26-1~deb12u2",
+      "licenses": [
+        {
+          "license": {
+            "name": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "252.26-1~deb12u2"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "LGPL-2.1-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "252.26-1~deb12u2"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-52",
+      "name": "libzstd1",
+      "version": "1.5.4+dfsg2-5",
+      "purl": "pkg:deb/debian/libzstd1@1.5.4+dfsg2-5",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.5.4+dfsg2-5"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "BSD-3-Clause"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1.5.4+dfsg2-5"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-53",
+      "name": "login",
+      "version": "1:4.13+dfsg1-1+b1",
+      "purl": "pkg:deb/debian/login@1%3A4.13+dfsg1-1+b1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1:4.13+dfsg1-1+b1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1:4.13+dfsg1-1+b1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-54",
+      "name": "mawk",
+      "version": "1.3.4.20200120-3.1",
+      "purl": "pkg:deb/debian/mawk@1.3.4.20200120-3.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-only"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.3.4.20200120-3.1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-only"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1.3.4.20200120-3.1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-55",
+      "name": "mount",
+      "version": "2.38.1-5+deb12u1",
+      "purl": "pkg:deb/debian/mount@2.38.1-5+deb12u1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2.38.1-5+deb12u1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "2.38.1-5+deb12u1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-56",
+      "name": "ncurses-base",
+      "version": "6.4-4",
+      "purl": "pkg:deb/debian/ncurses-base@6.4-4?arch=all",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "6.4-4"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "MIT"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "6.4-4"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "all"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-57",
+      "name": "netbase",
+      "version": "6.4",
+      "purl": "pkg:deb/debian/netbase@6.4?arch=all",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-only"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "6.4"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-only"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "6.4"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "2"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "all"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-58",
+      "name": "netcat-openbsd",
+      "version": "1.219-1",
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "undeclared"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared",
+          "value": "no"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1.219-1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "4"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-59",
+      "name": "openssl",
+      "version": "3.0.15-1~deb12u1",
+      "purl": "pkg:deb/debian/openssl@3.0.15-1~deb12u1",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "3.0.15-1~deb12u1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "Apache-2.0"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "3.0.15-1~deb12u1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "2"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-60",
+      "name": "passwd",
+      "version": "1:4.13+dfsg1-1+b1",
+      "purl": "pkg:deb/debian/passwd@1%3A4.13+dfsg1-1+b1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1:4.13+dfsg1-1+b1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1:4.13+dfsg1-1+b1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-61",
+      "name": "perl-base",
+      "version": "5.36.0-7+deb12u1",
+      "purl": "pkg:deb/debian/perl-base@5.36.0-7+deb12u1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-1.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "5.36.0-7+deb12u1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-1.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "5.36.0-7+deb12u1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-62",
+      "name": "pip",
+      "version": "24.0",
+      "purl": "pkg:pypi/pip@24.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "only deb, apk and rpm packages are checked against the image's own databases"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "pypi"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "24.0"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "MIT"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-63",
+      "name": "python",
+      "version": "3.12.4",
+      "licenses": [
+        {
+          "license": {
+            "name": "PSF-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "the SBOM gives no purl, so its ecosystem is not known"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "3.12.4"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "PSF-2.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-64",
+      "name": "readline-common",
+      "version": "8.2-1.3",
+      "purl": "pkg:deb/debian/readline-common@8.2-1.3?arch=all",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "8.2-1.3"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "8.2-1.3"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "2"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "all"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-65",
+      "name": "requests",
+      "version": "2.32.3",
+      "purl": "pkg:pypi/requests@2.32.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "only deb, apk and rpm packages are checked against the image's own databases"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "pypi"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2.32.3"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "Apache-2.0"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-66",
+      "name": "sed",
+      "version": "4.9-1",
+      "purl": "pkg:deb/debian/sed@4.9-1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "4.9-1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "4.9-1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-67",
+      "name": "setuptools",
+      "version": "69.5.1",
+      "purl": "pkg:pypi/setuptools@69.5.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "only deb, apk and rpm packages are checked against the image's own databases"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "pypi"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "69.5.1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "MIT"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-68",
+      "name": "sysvinit-utils",
+      "version": "3.06-4",
+      "purl": "pkg:deb/debian/sysvinit-utils@3.06-4",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "3.06-4"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "3.06-4"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-69",
+      "name": "tar",
+      "version": "1.34+dfsg-1.2+deb12u1",
+      "purl": "pkg:deb/debian/tar@1.34+dfsg-1.2+deb12u1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1.34+dfsg-1.2+deb12u1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-3.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1.34+dfsg-1.2+deb12u1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-70",
+      "name": "tzdata",
+      "version": "2024a-0+deb12u1",
+      "purl": "pkg:deb/debian/tzdata@2024a-0+deb12u1?arch=all",
+      "licenses": [
+        {
+          "license": {
+            "name": "PD"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2024a-0+deb12u1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "PD"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "2024a-0+deb12u1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "all"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-71",
+      "name": "util-linux",
+      "version": "2.38.1-5+deb12u1",
+      "purl": "pkg:deb/debian/util-linux@2.38.1-5+deb12u1",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "2.38.1-5+deb12u1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "GPL-2.0-or-later"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "2.38.1-5+deb12u1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-72",
+      "name": "wheel",
+      "version": "0.43.0",
+      "purl": "pkg:pypi/wheel@0.43.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "not checkable"
+        },
+        {
+          "name": "docker-desk:why",
+          "value": "only deb, apk and rpm packages are checked against the image's own databases"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "pypi"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "0.43.0"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "MIT"
+        },
+        {
+          "name": "docker-desk:installed",
+          "value": "no"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-73",
+      "name": "zlib1g",
+      "version": "1:1.2.13.dfsg-1",
+      "purl": "pkg:deb/debian/zlib1g@1%3A1.2.13.dfsg-1",
+      "licenses": [
+        {
+          "license": {
+            "name": "Zlib"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "docker-desk:state",
+          "value": "both"
+        },
+        {
+          "name": "docker-desk:type",
+          "value": "deb"
+        },
+        {
+          "name": "docker-desk:declared-version",
+          "value": "1:1.2.13.dfsg-1"
+        },
+        {
+          "name": "docker-desk:declared-license",
+          "value": "Zlib"
+        },
+        {
+          "name": "docker-desk:installed-version",
+          "value": "1:1.2.13.dfsg-1"
+        },
+        {
+          "name": "docker-desk:layer",
+          "value": "1"
+        },
+        {
+          "name": "docker-desk:database",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "docker-desk:arch",
+          "value": "amd64"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+ Docker Desk  unix:///tmp/TestExportFromTheSandbox475816664/002/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┌─ 2 Images (1 of 22) ──────────────────────────────────── filter: python ─┐┌─ 4 Events ────────────────────── ● live ─┐
+│  Containers    13││  REPOSITORY          TAG         IMAGE ID          SIZE    AGE   USED BY ││Waiting for engine events…                │
+│▸ Images        22││▸ python              3.12-slim   90db23bd5600     131MB    14d         - ││Everything the daemon does                │
+│  Volumes        7││                                                                          ││shows up here as it happens.              │
+│  Networks       7││                                                                          ││                                          │
+│  Compose        2││                                                                          ││                                          │
+│                  ││                                                                          ││                                          │
+│  ● 7 running     ││                                                                          ││                                          │
+│  ‖ 1 paused      ││                                                                          ││                                          │
+│  ○ 5 stopped     ││                                                                          ││                                          │
+│                  ││      ┏━ ◆ Export findings ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                          │
+│                  ││      ┃                                                                                    ┃                          │
+│                  ││      ┃ object     python:3.12-slim  90db23bd5600  linux/amd64                             ┃                          │
+│                  │└──────┃                                                                                    ┃                          │
+│                  │┏━ ◆ 3 ┃ Write this file?                                                                   ┃                          │
+│                  │┃4 find┃                                                                                    ┃                          │
+│                  │┃live: ┃ path       /tmp/TestExportFromTheSandbox475816664/001/docker-desk-findings-python- ┃                          │
+│                  │┃▸ --  ┃            3.12-slim-20261109.json                                                 ┃                          │
+│                  │┃  --  ┃ format     JSON — everything computed, in the desk's own schema                    ┃                          │
+│                  │┃  --  ┃ size       38576 bytes                                                             ┃                          │
+│                  │┃  L4  ┃ mode       0600: only you can read it                                              ┃                          │
+│                  │┃      ┃                                                                                    ┃                          │
+│                  │┃      ┃ • It is written on this machine and sent nowhere. Secret values are not in it: a   ┃                          │
+│                  │┃      ┃   finding says only that it had one.                                               ┃                          │
+│                  │┃      ┃                                                                                    ┃                          │
+│                  │┃      ┃ y write  n Esc back                                                                ┃──────────────────────────┘
+│                  │┃      ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───────────────── 1 done ─┐
+│                  │┃───────────────────────────────────────────────────────────────── 1 of 4 ─┃│▸ ✓ analyse image python:3.12-slim     7ms│
+│                  │┃why      The program the command names is not in the image: a container ca┃│                                          │
+│                  │┃         nnot start.                                                      ┃│                                          │
+│                  │┃evidence python3 is not in the final filesystem                           ┃│                                          │
+│                  │┃source   image · likely                                                   ┃│                                          │
+│                  │┃unknown  programs a volume provides at run time, and links through more th┃│                                          │
+│                  │┃         an 16 hops                                                       ┃│                                          │
+│                  │┃                                                                          ┃│                                          │
+│                  │┃                                                                          ┃│                                          │
+└──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────┘
+ ✓ analyse image python:3.12-slim
+ / find  ↑↓ finding  o order  v reveal  i packages  w export  [ ] tab  P pull  d remove  X prune  U upstream       Tab pane  ? keys  q quit

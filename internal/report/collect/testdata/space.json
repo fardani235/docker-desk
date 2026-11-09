@@ -1,0 +1,652 @@
+{
+  "schema": "docker-desk/space-report/v1",
+  "tool": {
+    "name": "docker-desk",
+    "version": "test"
+  },
+  "totals_source": "daemon",
+  "totals": [
+    {
+      "type": "Images",
+      "count": 19,
+      "active": 11,
+      "size": 3562193220,
+      "reclaimable": 1504702100
+    },
+    {
+      "type": "Containers",
+      "count": 13,
+      "active": 8,
+      "size": 120538081,
+      "reclaimable": 37508066
+    },
+    {
+      "type": "Local Volumes",
+      "count": 7,
+      "active": 4,
+      "size": 2443200000,
+      "reclaimable": 1872000000
+    },
+    {
+      "type": "Build Cache",
+      "count": 4,
+      "active": 0,
+      "size": 511700000,
+      "reclaimable": 511700000
+    }
+  ],
+  "stale": false,
+  "images": [
+    {
+      "id": "sha256:efc03945f57bbd6731f8018cd04aa9e3ef790c28859bee9d9fb2c01dfd9bf685",
+      "references": [
+        "acme/report:1.4"
+      ],
+      "size": 114352100,
+      "shared": 107450000,
+      "containers": 0,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 6902100,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 114352100,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:eec6d52e67ed510423fd2cce44dd215e1e01c61473e35696ba58aef715ca8928"
+      ]
+    },
+    {
+      "id": "sha256:bbfb6bb5502a04d7538cb6790ab5bedea7bb04a513b427b691ce1dab0713b6a4",
+      "references": [
+        "alpine:3.20"
+      ],
+      "size": 7800000,
+      "shared": 7800000,
+      "containers": 2,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 0,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 217460000,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:073fe9aeb7520cc8555d37aca43c089e809f4965ce3f9bf5f0222c9fcc52adfd",
+        "sha256:3b9daf1cabe0726df6b992ab0c79134d39d00e3c87f5a5472caf1d934fae2c63"
+      ]
+    },
+    {
+      "id": "sha256:b227a1c6d0d22cf7af67371982e3be5761ef735534e3eb637e78dd24778cfb2a",
+      "references": [
+        "busybox:1.36"
+      ],
+      "size": 4260000,
+      "shared": 0,
+      "containers": 1,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 4260000,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": null,
+      "sharers": []
+    },
+    {
+      "id": "sha256:37588eec338ea162fa5c2b9bb763928e17acf991298bc347202ca3eadf5c002e",
+      "references": [
+        "gcr.io/distroless/static:nonroot"
+      ],
+      "size": 1991200,
+      "shared": 0,
+      "containers": 1,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 1991200,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": null,
+      "sharers": []
+    },
+    {
+      "id": "sha256:da2f78b4d6ffefa294dea7339fdd721e5bcf843b89a4ca77da38fdaba262500b",
+      "references": [
+        "ghost:5"
+      ],
+      "size": 494200000,
+      "shared": 203200000,
+      "containers": 1,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 291000000,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 2468122020,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a",
+        "sha256:742705926f80f1d83213a488ea55bc14e60398672f95a16e8eaee39676ca5ce1",
+        "sha256:7f819a2f525664ad1a970ab71e6f8b2940d0488bc036ee6612abaafac68170b3",
+        "sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b",
+        "sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d",
+        "sha256:bf2c21e1861279e5bd510597158fb7d0660f0ac5df67a4ffac3ab42acc9d4095",
+        "sha256:f673addec4731a35198868fce673dc653a0c53bdb7a651d5055c11034abcc45e"
+      ]
+    },
+    {
+      "id": "sha256:11a7b13fbf8666f7d29a050c0bb6183cdc4c8286aa38a61be05da1f8dcc865c6",
+      "references": [
+        "mysql:8"
+      ],
+      "size": 584007900,
+      "shared": 0,
+      "containers": 1,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 584007900,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": null,
+      "sharers": []
+    },
+    {
+      "id": "sha256:f673addec4731a35198868fce673dc653a0c53bdb7a651d5055c11034abcc45e",
+      "references": [
+        "nginx:1.27"
+      ],
+      "size": 187704620,
+      "shared": 74800000,
+      "containers": 1,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 112904620,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 2468122020,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a",
+        "sha256:742705926f80f1d83213a488ea55bc14e60398672f95a16e8eaee39676ca5ce1",
+        "sha256:7f819a2f525664ad1a970ab71e6f8b2940d0488bc036ee6612abaafac68170b3",
+        "sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b",
+        "sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d",
+        "sha256:bf2c21e1861279e5bd510597158fb7d0660f0ac5df67a4ffac3ab42acc9d4095",
+        "sha256:da2f78b4d6ffefa294dea7339fdd721e5bcf843b89a4ca77da38fdaba262500b"
+      ]
+    },
+    {
+      "id": "sha256:3b9daf1cabe0726df6b992ab0c79134d39d00e3c87f5a5472caf1d934fae2c63",
+      "references": [
+        "node:22-alpine",
+        "node:lts-alpine"
+      ],
+      "size": 154000000,
+      "shared": 154000000,
+      "containers": 0,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 0,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 217460000,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:073fe9aeb7520cc8555d37aca43c089e809f4965ce3f9bf5f0222c9fcc52adfd",
+        "sha256:bbfb6bb5502a04d7538cb6790ab5bedea7bb04a513b427b691ce1dab0713b6a4"
+      ]
+    },
+    {
+      "id": "sha256:bf2c21e1861279e5bd510597158fb7d0660f0ac5df67a4ffac3ab42acc9d4095",
+      "references": [
+        "postgres:16"
+      ],
+      "size": 423912300,
+      "shared": 74800000,
+      "containers": 1,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 349112300,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 2468122020,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a",
+        "sha256:742705926f80f1d83213a488ea55bc14e60398672f95a16e8eaee39676ca5ce1",
+        "sha256:7f819a2f525664ad1a970ab71e6f8b2940d0488bc036ee6612abaafac68170b3",
+        "sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b",
+        "sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d",
+        "sha256:da2f78b4d6ffefa294dea7339fdd721e5bcf843b89a4ca77da38fdaba262500b",
+        "sha256:f673addec4731a35198868fce673dc653a0c53bdb7a651d5055c11034abcc45e"
+      ]
+    },
+    {
+      "id": "sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d",
+      "references": [
+        "python:3.12-slim"
+      ],
+      "size": 131000000,
+      "shared": 131000000,
+      "containers": 0,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 0,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 2468122020,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a",
+        "sha256:742705926f80f1d83213a488ea55bc14e60398672f95a16e8eaee39676ca5ce1",
+        "sha256:7f819a2f525664ad1a970ab71e6f8b2940d0488bc036ee6612abaafac68170b3",
+        "sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b",
+        "sha256:bf2c21e1861279e5bd510597158fb7d0660f0ac5df67a4ffac3ab42acc9d4095",
+        "sha256:da2f78b4d6ffefa294dea7339fdd721e5bcf843b89a4ca77da38fdaba262500b",
+        "sha256:f673addec4731a35198868fce673dc653a0c53bdb7a651d5055c11034abcc45e"
+      ]
+    },
+    {
+      "id": "sha256:742705926f80f1d83213a488ea55bc14e60398672f95a16e8eaee39676ca5ce1",
+      "references": [
+        "redis:7"
+      ],
+      "size": 116003900,
+      "shared": 74800000,
+      "containers": 1,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 41203900,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 2468122020,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a",
+        "sha256:7f819a2f525664ad1a970ab71e6f8b2940d0488bc036ee6612abaafac68170b3",
+        "sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b",
+        "sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d",
+        "sha256:bf2c21e1861279e5bd510597158fb7d0660f0ac5df67a4ffac3ab42acc9d4095",
+        "sha256:da2f78b4d6ffefa294dea7339fdd721e5bcf843b89a4ca77da38fdaba262500b",
+        "sha256:f673addec4731a35198868fce673dc653a0c53bdb7a651d5055c11034abcc45e"
+      ]
+    },
+    {
+      "id": "sha256:3b09c5f9ff3bd3f446e686de64f93e8b507e0deb6d1c567e8269653416c62be4",
+      "references": [
+        "registry.sandbox.invalid/acme/cron:1"
+      ],
+      "size": 23000000,
+      "shared": 0,
+      "containers": 0,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 23000000,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": null,
+      "sharers": []
+    },
+    {
+      "id": "sha256:ac2255cb8956a5195e9fedf1b0ff4c2fffeef190dd33776648743cead01a4191",
+      "references": [
+        "registry.sandbox.invalid/acme/legacy:0.9"
+      ],
+      "size": 61000000,
+      "shared": 0,
+      "containers": 0,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 61000000,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": null,
+      "sharers": []
+    },
+    {
+      "id": "sha256:457d5c729f1c3027bdba76c67eac65574eb23d16323479d69d7e9fff24a0af37",
+      "references": [
+        "registry.sandbox.invalid/acme/web:2.3"
+      ],
+      "size": 88000000,
+      "shared": 0,
+      "containers": 0,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 88000000,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": null,
+      "sharers": []
+    },
+    {
+      "id": "sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a",
+      "references": [],
+      "size": 1250000000,
+      "shared": 203200000,
+      "containers": 0,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 1046800000,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 2468122020,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:742705926f80f1d83213a488ea55bc14e60398672f95a16e8eaee39676ca5ce1",
+        "sha256:7f819a2f525664ad1a970ab71e6f8b2940d0488bc036ee6612abaafac68170b3",
+        "sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b",
+        "sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d",
+        "sha256:bf2c21e1861279e5bd510597158fb7d0660f0ac5df67a4ffac3ab42acc9d4095",
+        "sha256:da2f78b4d6ffefa294dea7339fdd721e5bcf843b89a4ca77da38fdaba262500b",
+        "sha256:f673addec4731a35198868fce673dc653a0c53bdb7a651d5055c11034abcc45e"
+      ]
+    },
+    {
+      "id": "sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b",
+      "references": [],
+      "size": 410000000,
+      "shared": 131000000,
+      "containers": 0,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 279000000,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 2468122020,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a",
+        "sha256:742705926f80f1d83213a488ea55bc14e60398672f95a16e8eaee39676ca5ce1",
+        "sha256:7f819a2f525664ad1a970ab71e6f8b2940d0488bc036ee6612abaafac68170b3",
+        "sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d",
+        "sha256:bf2c21e1861279e5bd510597158fb7d0660f0ac5df67a4ffac3ab42acc9d4095",
+        "sha256:da2f78b4d6ffefa294dea7339fdd721e5bcf843b89a4ca77da38fdaba262500b",
+        "sha256:f673addec4731a35198868fce673dc653a0c53bdb7a651d5055c11034abcc45e"
+      ]
+    },
+    {
+      "id": "sha256:eec6d52e67ed510423fd2cce44dd215e1e01c61473e35696ba58aef715ca8928",
+      "references": [],
+      "size": 107450000,
+      "shared": 107450000,
+      "containers": 1,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 0,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 114352100,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:efc03945f57bbd6731f8018cd04aa9e3ef790c28859bee9d9fb2c01dfd9bf685"
+      ]
+    },
+    {
+      "id": "sha256:073fe9aeb7520cc8555d37aca43c089e809f4965ce3f9bf5f0222c9fcc52adfd",
+      "references": [
+        "shop/api:dev"
+      ],
+      "size": 217460000,
+      "shared": 154000000,
+      "containers": 2,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 63460000,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 217460000,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:3b9daf1cabe0726df6b992ab0c79134d39d00e3c87f5a5472caf1d934fae2c63",
+        "sha256:bbfb6bb5502a04d7538cb6790ab5bedea7bb04a513b427b691ce1dab0713b6a4"
+      ]
+    },
+    {
+      "id": "sha256:7f819a2f525664ad1a970ab71e6f8b2940d0488bc036ee6612abaafac68170b3",
+      "references": [
+        "shop/worker:dev"
+      ],
+      "size": 219701200,
+      "shared": 131000000,
+      "containers": 1,
+      "layers": "attributed",
+      "alone": {
+        "bytes": 88701200,
+        "measure": "exact",
+        "source": "daemon"
+      },
+      "together": {
+        "bytes": 2468122020,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      },
+      "sharers": [
+        "sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a",
+        "sha256:742705926f80f1d83213a488ea55bc14e60398672f95a16e8eaee39676ca5ce1",
+        "sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b",
+        "sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d",
+        "sha256:bf2c21e1861279e5bd510597158fb7d0660f0ac5df67a4ffac3ab42acc9d4095",
+        "sha256:da2f78b4d6ffefa294dea7339fdd721e5bcf843b89a4ca77da38fdaba262500b",
+        "sha256:f673addec4731a35198868fce673dc653a0c53bdb7a651d5055c11034abcc45e"
+      ]
+    }
+  ],
+  "shared_groups": [
+    {
+      "images": [
+        "sha256:073fe9aeb7520cc8555d37aca43c089e809f4965ce3f9bf5f0222c9fcc52adfd",
+        "sha256:3b9daf1cabe0726df6b992ab0c79134d39d00e3c87f5a5472caf1d934fae2c63"
+      ],
+      "layers": 2,
+      "layers_unsized": 0,
+      "size": {
+        "bytes": 146200000,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      }
+    },
+    {
+      "images": [
+        "sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a",
+        "sha256:da2f78b4d6ffefa294dea7339fdd721e5bcf843b89a4ca77da38fdaba262500b"
+      ],
+      "layers": 1,
+      "layers_unsized": 0,
+      "size": {
+        "bytes": 128400000,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      }
+    },
+    {
+      "images": [
+        "sha256:eec6d52e67ed510423fd2cce44dd215e1e01c61473e35696ba58aef715ca8928",
+        "sha256:efc03945f57bbd6731f8018cd04aa9e3ef790c28859bee9d9fb2c01dfd9bf685"
+      ],
+      "layers": 3,
+      "layers_unsized": 0,
+      "size": {
+        "bytes": 107450000,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      }
+    },
+    {
+      "images": [
+        "sha256:2407967658b3c29ea87da2c530839f6a3e9f4d718d0413b2432e4260f41f885a",
+        "sha256:742705926f80f1d83213a488ea55bc14e60398672f95a16e8eaee39676ca5ce1",
+        "sha256:7f819a2f525664ad1a970ab71e6f8b2940d0488bc036ee6612abaafac68170b3",
+        "sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b",
+        "sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d",
+        "sha256:bf2c21e1861279e5bd510597158fb7d0660f0ac5df67a4ffac3ab42acc9d4095",
+        "sha256:da2f78b4d6ffefa294dea7339fdd721e5bcf843b89a4ca77da38fdaba262500b",
+        "sha256:f673addec4731a35198868fce673dc653a0c53bdb7a651d5055c11034abcc45e"
+      ],
+      "layers": 1,
+      "layers_unsized": 0,
+      "size": {
+        "bytes": 74800000,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      }
+    },
+    {
+      "images": [
+        "sha256:7f819a2f525664ad1a970ab71e6f8b2940d0488bc036ee6612abaafac68170b3",
+        "sha256:8bae7d2a8907ac6e517abeaf473c982f118c9727b63e78b5ec2214fd8add759b",
+        "sha256:90db23bd5600034c3c32387cd67d006b29d41c304cd07b567d6748bcda819b9d"
+      ],
+      "layers": 3,
+      "layers_unsized": 0,
+      "size": {
+        "bytes": 56200000,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      }
+    },
+    {
+      "images": [
+        "sha256:073fe9aeb7520cc8555d37aca43c089e809f4965ce3f9bf5f0222c9fcc52adfd",
+        "sha256:3b9daf1cabe0726df6b992ab0c79134d39d00e3c87f5a5472caf1d934fae2c63",
+        "sha256:bbfb6bb5502a04d7538cb6790ab5bedea7bb04a513b427b691ce1dab0713b6a4"
+      ],
+      "layers": 1,
+      "layers_unsized": 0,
+      "size": {
+        "bytes": 7800000,
+        "measure": "exact",
+        "source": "computed from the daemon's layer sizes"
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "name": "337d154abf4b15c1c33965f9ff969ac528cdc5c9804e8cc86029bcd0f9f84101",
+      "driver": "local",
+      "size": 52000000,
+      "links": 0
+    },
+    {
+      "name": "43ee5206a7f7f293a3af181969163d8f35c1aa9501021e761c413569c67c79e4",
+      "driver": "local",
+      "size": 0,
+      "links": 0
+    },
+    {
+      "name": "b88cb99671f37435e0c04b6a58716443b4aa1d4690c61299ded39507aa8f1850",
+      "driver": "local",
+      "size": 0,
+      "links": 1
+    },
+    {
+      "name": "blog_db",
+      "driver": "local",
+      "size": 211000000,
+      "links": 1
+    },
+    {
+      "name": "old-backups",
+      "driver": "local",
+      "size": 1820000000,
+      "links": 0
+    },
+    {
+      "name": "shop_pgdata",
+      "driver": "local",
+      "size": 48200000,
+      "links": 1
+    },
+    {
+      "name": "shop_uploads",
+      "driver": "local",
+      "size": 312000000,
+      "links": 1
+    }
+  ],
+  "writable_layers": null,
+  "build_cache": [
+    {
+      "type": "regular",
+      "description": "[worker 3/4] RUN pip install -r requirements.txt",
+      "size": 276800000,
+      "in_use": false,
+      "shared": false
+    },
+    {
+      "type": "exec.cachemount",
+      "description": "mount / from exec /bin/sh -c npm ci --omit=dev",
+      "size": 233000000,
+      "in_use": false,
+      "shared": false
+    },
+    {
+      "type": "regular",
+      "description": "[api 4/5] RUN npm ci --omit=dev",
+      "size": 61300000,
+      "in_use": false,
+      "shared": true
+    },
+    {
+      "type": "source.local",
+      "description": "local source for context",
+      "size": 1900000,
+      "in_use": false,
+      "shared": false
+    }
+  ],
+  "notes": []
+}
