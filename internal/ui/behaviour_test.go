@@ -95,10 +95,14 @@ func TestHelpAndActionMenu(t *testing.T) {
 	b.noMutations("after choosing from the menu")
 	b.keys("esc")
 
-	// Compose offers stop and remove, and nothing like up/down/build.
+	// Compose offers stop, remove and the comparison with its file, and
+	// nothing like up/down/build.
 	b.kind(KindCompose)
 	b.keys("enter")
-	b.see("Actions: blog", "stop project", "remove project…")
+	b.see("Actions: blog", "stop project", "remove project…", "compare with the compose file")
+	if n := len(b.m.dlg.menu); n != 3 {
+		t.Errorf("the compose menu has %d entries, want exactly stop, remove and compare", n)
+	}
 	menu := b.screen()
 	for _, absent := range []string{" up ", "down ", "build", "pull", "scale"} {
 		if strings.Contains(strings.ToLower(menu[strings.Index(menu, "Actions: blog"):strings.Index(menu, "Every action that changes")]), absent) {
@@ -310,7 +314,7 @@ func TestDetails(t *testing.T) {
 	b.kind(KindCompose)
 	b.selectRow("shop")
 	b.see("Project", "4, 3 running", "Services", "web", "shop-web-1", "worker", "shop-worker-1",
-		"network  shop_default", "volume   shop_pgdata", "never reads or runs compose files")
+		"network  shop_default", "volume   shop_pgdata", "No file has been read yet")
 	// The last container of a project disappears: so does the project.
 	for _, c := range []string{"blog-app-1", "blog-db-1"} {
 		if err := b.eng.RemoveContainer(context.Background(), b.srv.ContainerID(c)); err != nil {

@@ -22,6 +22,13 @@ const (
 	LabelComposeConfig     = "com.docker.compose.project.config_files"
 	LabelComposeNetwork    = "com.docker.compose.network"
 	LabelComposeVolume     = "com.docker.compose.volume"
+	// LabelComposeConfigHash is compose's fingerprint of the service
+	// configuration a container was created from. The Declared tab shows it
+	// as evidence; the desk never recomputes it.
+	LabelComposeConfigHash = "com.docker.compose.config-hash"
+	// LabelComposeOneOff is "True" on containers left by `docker compose
+	// run`; they are not compared against the declared services.
+	LabelComposeOneOff = "com.docker.compose.oneoff"
 	// LabelAnonymousVolume is set by the daemon (Docker 23+) on volumes that
 	// were created without a name.
 	LabelAnonymousVolume = "com.docker.volume.anonymous"

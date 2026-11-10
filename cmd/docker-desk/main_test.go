@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"net"
 	"os"
 	"os/exec"
@@ -13,6 +14,7 @@ import (
 	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/fakeengine"
 	"github.com/fardani235/docker-desk/internal/sshtest"
+	"github.com/fardani235/docker-desk/internal/ui"
 )
 
 // These tests run the program's own launch sequence — flags, resolution,
@@ -431,5 +433,30 @@ func TestHelp(t *testing.T) {
 		t.Fatalf("exit %d", code)
 	}
 	wantAll(t, "help", out, "-H, --host URL", "-c, --context NAME", "--theme NAME", "ssh://[user@]host[:port][/path]", "tcp://host[:port]",
-		"DOCKER_TLS_VERIFY", "DOCKER_DESK_SSH", "Themes:", "auto", "dracula", "solarized-light", "mono")
+		"DOCKER_TLS_VERIFY", "DOCKER_DESK_SSH", "Themes:", "auto", "dracula", "solarized-light", "mono",
+		"--no-registry", "--no-compose-files", "Compose › Declared")
+}
+
+// The access flags reach the workspace's options, each on its own.
+func TestAccessFlagsReachOptions(t *testing.T) {
+	for _, tc := range []struct {
+		args []string
+		want ui.Options
+	}{
+		{nil, ui.Options{}},
+		{[]string{"--no-compose-files"}, ui.Options{NoComposeFiles: true}},
+		{[]string{"--no-registry"}, ui.Options{NoRegistry: true}},
+		{[]string{"--read-only", "--no-compose-files"}, ui.Options{ReadOnly: true, NoComposeFiles: true}},
+	} {
+		fs := flag.NewFlagSet("t", flag.ContinueOnError)
+		var acc access
+		acc.register(fs)
+		if err := fs.Parse(tc.args); err != nil {
+			t.Fatal(err)
+		}
+		got := acc.apply(ui.Options{Version: "v"})
+		if got.ReadOnly != tc.want.ReadOnly || got.NoRegistry != tc.want.NoRegistry || got.NoComposeFiles != tc.want.NoComposeFiles || got.Version != "v" {
+			t.Errorf("%v: %+v", tc.args, got)
+		}
+	}
 }

@@ -1,7 +1,7 @@
- Docker Desk  unix:///tmp/ddfake1720259143/d.sock  ctx default  Engine 29.0.0-fake  on fake-dockerd  ● connected
+ Docker Desk  unix:///tmp/ddfake2765526534/d.sock  ctx default  Engine 29.0.0-fake  on fake-dockerd  ● connected
 ┏━ ◆ Repository — the tags a registry lists, and one build by its digest ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ repository 127.0.0.1:44107/acme/api                                                                                                                ┃
-┃ asks       127.0.0.1:44107 anonymously · 100 tags held · Tab asks for the next page · listed 0s ago                                                ┃
+┃ repository 127.0.0.1:41559/acme/api                                                                                                                ┃
+┃ asks       127.0.0.1:41559 anonymously · 100 tags held · Tab asks for the next page · listed 0s ago                                                ┃
 ┃            Tags are in text order, numbers by value (3.9 before 3.10): never by recency, which a tag list does not carry. Pages come in the        ┃
 ┃            registry's own order.                                                                                                                   ┃
 ┃   TAG                               DIGEST               PLATFORMS                  HERE                            BUILT                          ┃
@@ -31,12 +31,12 @@
 ┃   nightly-20260711                  sha256:504f07eb8c84  amd64 arm64/v8             -                               2026-07-11 amd64               ┃
 ┃   nightly-20260712                  sha256:fa5df07e9d72  amd64 arm64/v8             -                               2026-07-12 amd64               ┃
 ┃ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── rows 1–25 of 100 ─ ┃
-┃ 127.0.0.1:44107/acme/api:3.28.2  · described 0s ago · r asks again                                                                                 ┃
+┃ 127.0.0.1:41559/acme/api:3.28.2  · described 0s ago · r asks again                                                                                 ┃
 ┃ digest     sha256:5343c588b2a12f584aebb1a510ad9b86a81b77a3a4f96f04ef0e239bf06a7041                                                                 ┃
 ┃ publishes  linux/amd64, linux/arm64/v8                                                                                                             ┃
 ┃ here       here — local image 5343c588b2a1 records this digest                                                                                     ┃
 ┃ built      2026-09-21 09:30 UTC (linux/amd64 build's config) — the producer's claim, read 0s ago                                                   ┃
 ┃                                                                                                                                                    ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
- ✓ read build times 127.0.0.1:44107/acme/api · 25 tags
+ ✓ read build times 127.0.0.1:41559/acme/api · 25 tags
  ↑↓ move  e name  / filter  Tab next page  d build times  ⏎ pull by digest…  r ask again                                          B Esc close  ? keys

@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake2916155526/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake147989584/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Images (16, 17 refs) ───────────────────────────────────────────────────────┐┌─ 4 Events ────────────────────────── ● live ─┐
 ┃  Containers    13┃│  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ││Waiting for engine events…                    │
 ┃▸ Images        16┃│▸ acme/report             1.4           efc03945f57b     114MB     0s         - ││Everything the daemon does                    │
@@ -18,7 +18,7 @@
 ┃                  ┃│Reference  acme/report:1.4                                                      ││                                              │
 ┃                  ┃│ID         efc03945f57b                                                         ││                                              │
 ┃                  ┃│Size       114MB                                                                ││                                              │
-┃                  ┃│Created    2026-11-05 11:59:29  (0s ago)                                        ││                                              │
+┃                  ┃│Created    2026-11-10 10:57:55  (0s ago)                                        ││                                              │
 ┃                  ┃│                                                                                ││                                              │
 ┃                  ┃│References                                                                      ││                                              │
 ┃                  ┃│  acme/report:1.4                                                               ││                                              │

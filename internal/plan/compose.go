@@ -5,12 +5,15 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/fardani235/docker-desk/internal/composefile"
 	"github.com/fardani235/docker-desk/internal/engine"
 )
 
 // Project is a group of containers that carry the same
-// com.docker.compose.project label. Nothing else defines a project: no
-// compose file is read. See docs/DECISIONS.md, D15.
+// com.docker.compose.project label. Nothing else defines a project. The file
+// the labels name is read only when the operator asks for the Declared
+// comparison, and is never the project's definition (docs/DECISIONS.md, D15
+// and Y1–Y9).
 type Project struct {
 	Name        string
 	Containers  []engine.Container
@@ -50,6 +53,46 @@ func Projects(snap Snapshot) []Project {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out
+}
+
+// ConfigPaths splits the config-files label into the paths it names, in the
+// order compose read them.
+func (p Project) ConfigPaths() []string {
+	var out []string
+	for _, f := range strings.Split(p.ConfigFiles, ",") {
+		if f = strings.TrimSpace(f); f != "" {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+// ComposeActual projects a project's containers for the comparison with its
+// compose file: service, container, image reference and its normalised form,
+// creation time and compose's config hash. Containers left by `docker
+// compose run` (oneoff) are not part of it.
+func ComposeActual(snap Snapshot, name string) []composefile.Actual {
+	var out []composefile.Actual
+	for _, c := range snap.Containers {
+		if c.Project() != name || IsOneOff(c) {
+			continue
+		}
+		out = append(out, composefile.Actual{
+			Service:    c.Service(),
+			Container:  c.Name,
+			Image:      c.Image,
+			Normalized: composefile.Normalize(c.Image),
+			Created:    c.Created,
+			ConfigHash: c.Labels[engine.LabelComposeConfigHash],
+		})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Container < out[j].Container })
+	return out
+}
+
+// IsOneOff reports whether c was left by `docker compose run`.
+func IsOneOff(c engine.Container) bool {
+	return strings.EqualFold(c.Labels[engine.LabelComposeOneOff], "true")
 }
 
 func project(snap Snapshot, name string) (Project, bool) {

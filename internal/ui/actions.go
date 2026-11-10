@@ -125,6 +125,17 @@ var kindActions = [kindCount][]action{
 	},
 }
 
+// kindViews are menu entries that change what the desk shows, not the
+// engine: they have no key of their own, never mutate, and are kept apart
+// from kindActions, every one of which changes something and is guarded as
+// such. They are offered for the highlighted object, not a selection.
+var kindViews = [kindCount][]action{
+	KindCompose: {
+		{label: "compare with the compose file", desc: "the Declared tab: what the file says now against what runs (reads on Enter)", needsRow: true,
+			run: func(m *Model, _ row) tea.Cmd { m.openDeclared(); return nil }},
+	},
+}
+
 func (m *Model) actionFor(key string) (action, bool) {
 	for _, a := range kindActions[m.kind] {
 		if a.key == key {

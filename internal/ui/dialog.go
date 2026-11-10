@@ -9,6 +9,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/jobs"
@@ -683,8 +684,12 @@ func (m *Model) pickerBody(d *dialog, w, maxBody int) (string, []string) {
 func (m *Model) menuBody(d *dialog, w int) (string, []string) {
 	st := m.st
 	var body []string
+	lw := 22
+	for _, a := range d.menu {
+		lw = clamp(ansi.StringWidth(a.label), lw, 30)
+	}
 	for i, a := range d.menu {
-		line := fit(a.key, 3) + " " + fit(a.label, 22) + " " + a.desc
+		line := fit(a.key, 3) + " " + fit(a.label, lw) + " " + a.desc
 		line = fit(line, w-2)
 		if i == d.menuSel {
 			body = append(body, st.selected.Render("▸ "+line))

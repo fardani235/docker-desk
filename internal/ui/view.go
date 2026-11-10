@@ -352,6 +352,12 @@ func (m *Model) renderHints() string {
 			switch m.tabName() {
 			case tabProcesses:
 				add("r", "new snapshot")
+			case tabDeclared:
+				if m.dc.run != nil {
+					add("c", "cancel")
+				} else if t, ok := m.declaredTarget(); ok && m.declaredBlocked(t) == "" {
+					add("⏎", "compare with the file")
+				}
 			case tabChanges:
 				if m.chg.run != nil {
 					add("c", "cancel")
@@ -493,6 +499,21 @@ func (m *Model) helpLines(w int) []string {
 		"  Environment variables are compared by name; values are never read.",
 		"  Restarting keeps the image a container runs; only re-creating it takes",
 		"  the new one, which this desk does not do. Nothing to compare is said, why.",
+	)
+
+	sect("Compose › Declared tab (Details pane focused)")
+	row("Enter", "read the compose file and compare it with what runs (a job); again to re-read")
+	row("c", "cancel the read in progress")
+	out = append(out,
+		"  Also reached from the project's action menu: compare with the compose file.",
+		"  Before Enter only the labels are shown: nothing is opened. Enter reads each",
+		"  file the config-files label names, on this machine only, a regular file of",
+		"  at most 1 MiB. It is parsed and discarded: never run, never interpolated,",
+		"  never shown. Rows: declared only, differs, present only, not compared, match.",
+		"  An image with ${...} is a template and is not compared; a service with",
+		"  profiles is never called missing; `compose run` containers are left out.",
+		"  The file is compared as it is now; its write time is a fact, not a verdict.",
+		"  Over ssh or tcp, or with --no-compose-files, nothing is read and it says why.",
 	)
 
 	sect("Images › Findings tab (Details pane focused)")

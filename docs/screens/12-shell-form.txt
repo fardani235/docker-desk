@@ -1,39 +1,39 @@
- Docker Desk  unix:///tmp/ddfake2916155526/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake147989584/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-api ━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  11:59:30 ctr kill sig 15 shop-web-1         │
-│  Images        17│┃▸ shop-api-1       shop/api:dev   ● running   151.4%    454MiB  Up 3 hours      ┃│  11:59:30 ctr die exit 0 shop-web-1          │
-│  Volumes        5│┃                                                                                ┃│  11:59:30 net disconnect shop_default  ← sho…│
-│  Networks       7│┃                                                                                ┃│  11:59:30 ctr stop       shop-web-1          │
-│  Compose        2│┃                                                                                ┃│  11:59:30 net connect    shop_default  ← sho…│
-│                  │┃                                                                                ┃│  11:59:30 ctr start      shop-web-1          │
-│  ● 7 running     │┃                                                                                ┃│  11:59:31 img pull       hello-world         │
-│  ‖ 1 paused      │┃                                                                                ┃│  11:59:32 vol destroy    337d154abf4b…       │
-│  ○ 5 stopped     │┃                                                                                ┃│  11:59:32 vol destroy    43ee5206a7f7…       │
+│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  10:57:56 ctr kill sig 15 shop-web-1         │
+│  Images        17│┃▸ shop-api-1       shop/api:dev   ● running   150.7%    454MiB  Up 3 hours      ┃│  10:57:56 ctr die exit 0 shop-web-1          │
+│  Volumes        5│┃                                                                                ┃│  10:57:56 net disconnect shop_default  ← sho…│
+│  Networks       7│┃                                                                                ┃│  10:57:56 ctr stop       shop-web-1          │
+│  Compose        2│┃                                                                                ┃│  10:57:57 net connect    shop_default  ← sho…│
+│                  │┃                                                                                ┃│  10:57:57 ctr start      shop-web-1          │
+│  ● 7 running     │┃                                                                                ┃│  10:57:58 img pull       hello-world         │
+│  ‖ 1 paused      │┃                                                                                ┃│  10:57:58 vol destroy    337d154abf4b…       │
+│  ○ 5 stopped     │┃                                                                                ┃│  10:57:58 vol destroy    43ee5206a7f7…       │
 │                  │┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┃           ┏━ ◆ Open a shell ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
 │                  │┗━━━━━━━━━━━┃                                                                                    ┃                               │
 │                  │┌─ 3 Details┃ container  shop-api-1  (e9b5282f33bd)                                              ┃                               │
-│                  ││Name     sh┃ daemon     unix:///tmp/ddfake2916155526/d.sock  (context default)                  ┃                               │
+│                  ││Name     sh┃ daemon     unix:///tmp/ddfake147989584/d.sock  (context default)                   ┃                               │
 │                  ││ID       e9┃                                                                                    ┃                               │
 │                  ││Image    sh┃ Command to run inside the container:                                               ┃                               │
 │                  ││State    ● ┃ > sh -c 'command -v bash >/dev/null 2>&1 && exec bash || exec sh'                  ┃                               │
 │                  ││Compose  sh┃                                                                                    ┃                               │
-│                  ││Started  20┃ The desk hands your terminal to this process. When it exits — or the               ┃                               │
-│                  ││Command  no┃ container stops — you are back here, exactly where you left.                       ┃                               │
-│                  ││Restart  no┃                                                                                    ┃                               │
-│                  ││Runtime  tt┃ Enter open the shell  Esc cancel                                                   ┃                               │
-│                  ││Created  20┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                               │
+│                  ││Command  no┃ The desk hands your terminal to this process. When it exits — or the               ┃                               │
+│                  ││Created  20┃ container stops — you are back here, exactly where you left.                       ┃                               │
+│                  ││           ┃                                                                                    ┃                               │
+│                  ││Ports      ┃ Enter open the shell  Esc cancel                                                   ┃                               │
+│                  ││  0.0.0.0:3┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                               │
 │                  ││                                                                                ││                                              │
-│                  ││Ports                                                                           │└──────────────────────────────────────────────┘
-│                  ││  0.0.0.0:3000 → 3000/tcp                                                       │┌─ 5 Jobs ──────────────────────────── 4 done ─┐
-│                  ││                                                                                ││▸ ✓ prune volumes 2 volumes                3ms│
-│                  ││Networks                                                                        ││  ✓ pull image hello-world:latest        432ms│
-│                  ││  shop_default  172.18.0.3  gw 172.18.0.1                                       ││  ✓ start container shop-web-1             0ms│
-│                  ││                                                                                ││  ✓ stop container shop-web-1              0ms│
-│                  ││Mounts                                                                          ││                                              │
-│                  ││  volume shop_uploads → /data/shop_uploads (rw)                                 ││                                              │
+│                  ││Networks                                                                        │└──────────────────────────────────────────────┘
+│                  ││  shop_default  172.18.0.3  gw 172.18.0.1                                       │┌─ 5 Jobs ──────────────────────────── 4 done ─┐
+│                  ││                                                                                ││▸ ✓ prune volumes 2 volumes                7ms│
+│                  ││Mounts                                                                          ││  ✓ pull image hello-world:latest        437ms│
+│                  ││  volume shop_uploads → /data/shop_uploads (rw)                                 ││  ✓ start container shop-web-1             2ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              8ms│
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │

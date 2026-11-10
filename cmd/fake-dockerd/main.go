@@ -19,6 +19,12 @@
 // browsing with B, and seeds the daemon with three images of it:
 //
 //	fake-dockerd -registry 127.0.0.1:0
+//
+// With -compose-dir it writes the demo's compose files there and points the
+// seeded projects' labels at them, so Compose › Declared has something to
+// compare (shop) and something it cannot (blog, whose file is absent):
+//
+//	fake-dockerd -compose-dir /tmp/docker-desk-sandbox-compose
 package main
 
 import (
@@ -38,9 +44,11 @@ func main() {
 	empty := flag.Bool("empty", false, "start with no containers, images, volumes or custom networks")
 	changes := flag.Bool("changes", false, "also seed a container for every case the Changes tab has nothing to compare")
 	regAddr := flag.String("registry", "", "also serve a registry on this loopback address (127.0.0.1:0 picks a port), with a repository to browse")
+	composeDir := flag.String("compose-dir", "", "write the demo's compose files into this directory and point the seeded labels at them")
 	flag.Parse()
 
 	srv := fakeengine.New()
+	srv.ComposeDir = *composeDir
 	if !*empty {
 		srv.SeedDemo()
 		// Images › Upstream: a moved, a current and a gone tag on a
@@ -73,6 +81,9 @@ func main() {
 	}
 	fmt.Printf("fake Docker engine listening on %s\n", srv.Host())
 	fmt.Printf("  docker-desk --host %s\n", srv.Host())
+	if *composeDir != "" && !*empty {
+		fmt.Printf("compose files in %s (shop has one; blog's is absent on purpose)\n", *composeDir)
+	}
 	if reg != nil {
 		fmt.Printf("fake registry listening on %s (plain HTTP, loopback)\n", reg.Host())
 		fmt.Printf("  B in the desk on Images › %s:3.28.2 browses %s\n", repo, repo)

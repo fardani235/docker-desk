@@ -78,6 +78,9 @@ Flags:
                       ask nothing, by the desk or through the daemon (the
                       air-gap switch; --read-only alone still allows the
                       check, which only reads)
+  --no-compose-files  never read a compose file: the Compose › Declared tab
+                      compares nothing (--read-only alone still allows the
+                      comparison, which only reads)
   --check             resolve the daemon, verify it answers, print what would
                       be used, and exit without opening the workspace
   --report PATH       write a report of --report-object to PATH and exit,
@@ -107,12 +110,34 @@ Inside the desk, press ? for every key.
 
 func usage() string { return usageHead + ui.ThemeHelp() + usageTail }
 
+// access holds the flags that bound what the desk may send or read.
+type access struct {
+	readOnly       bool // --read-only: GET and HEAD only
+	noRegistry     bool // --no-registry: no registry request at all
+	noComposeFiles bool // --no-compose-files: no compose file is read
+}
+
+func (a *access) register(fs *flag.FlagSet) {
+	fs.BoolVar(&a.readOnly, "read-only", false, "")
+	fs.BoolVar(&a.noRegistry, "no-registry", false, "")
+	fs.BoolVar(&a.noComposeFiles, "no-compose-files", false, "")
+}
+
+// apply threads the flags into the workspace's options.
+func (a access) apply(o ui.Options) ui.Options {
+	o.ReadOnly = a.readOnly
+	o.NoRegistry = a.noRegistry
+	o.NoComposeFiles = a.noComposeFiles
+	return o
+}
+
 func run(args []string, stdin *os.File, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("docker-desk", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
-	readOnly := fs.Bool("read-only", false, "")
+	var acc access
+	acc.register(fs)
+	readOnly := &acc.readOnly
 	check := fs.Bool("check", false, "")
-	noRegistry := fs.Bool("no-registry", false, "")
 	showVersion := fs.Bool("version", false, "")
 	var rep reportFlags
 	fs.StringVar(&rep.path, "report", "", "")
@@ -290,9 +315,8 @@ The workspace was not opened.
 
 	// Only now is the terminal taken over; Bubble Tea does its own signal
 	// handling from here.
-	uiOpts := ui.Options{Engine: eng, Endpoint: ep, Info: info, ReadOnly: *readOnly, Theme: theme,
-		NoRegistry: *noRegistry, DockerConfigDir: dockerctx.ConfigDir(os.Getenv, home),
-		Version: version, HomeDir: home}
+	uiOpts := acc.apply(ui.Options{Engine: eng, Endpoint: ep, Info: info, Theme: theme,
+		DockerConfigDir: dockerctx.ConfigDir(os.Getenv, home), Version: version, HomeDir: home})
 	if tunnel != nil {
 		uiOpts.LinkProblem = tunnel.Problem
 	}

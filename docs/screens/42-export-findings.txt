@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/TestExportFromTheSandbox475816664/002/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/TestExportFromTheSandbox106357774/002/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┌─ 2 Images (1 of 22) ──────────────────────────────────── filter: python ─┐┌─ 4 Events ────────────────────── ● live ─┐
 │  Containers    13││  REPOSITORY          TAG         IMAGE ID          SIZE    AGE   USED BY ││Waiting for engine events…                │
 │▸ Images        22││▸ python              3.12-slim   90db23bd5600     131MB    14d         - ││Everything the daemon does                │
@@ -20,13 +20,13 @@
 │                  │┃  --  ┃   text       text — findings by group, one line each                               ┃                          │
 │                  │┃  --  ┃                                                                                    ┃                          │
 │                  │┃  L4  ┃ Path                                                                               ┃                          │
-│                  │┃      ┃ > ~/docker-desk-findings-python-3.12-slim-20261109.json                            ┃                          │
+│                  │┃      ┃ > ~/docker-desk-findings-python-3.12-slim-20261110.json                            ┃                          │
 │                  │┃      ┃                                                                                    ┃                          │
 │                  │┃      ┃ • ~ is your home folder. The folder must exist; a file already there is never      ┃                          │
 │                  │┃      ┃   replaced.                                                                        ┃                          │
 │                  │┃      ┃                                                                                    ┃──────────────────────────┘
 │                  │┃      ┃ Enter review  Tab format  Esc cancel                                               ┃───────────────── 1 done ─┐
-│                  │┃──────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛e python:3.12-slim     7ms│
+│                  │┃──────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛e python:3.12-slim    30ms│
 │                  │┃why      The program the command names is not in the image: a container ca┃│                                          │
 │                  │┃         nnot start.                                                      ┃│                                          │
 │                  │┃evidence python3 is not in the final filesystem                           ┃│                                          │

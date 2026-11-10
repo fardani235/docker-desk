@@ -186,6 +186,8 @@ func (m *Model) tabView() *textView {
 		return &m.proc.view
 	case tabChanges:
 		return &m.chg.view
+	case tabDeclared:
+		return &m.dc.view
 	}
 	return nil
 }
@@ -222,7 +224,7 @@ func (m *Model) searchOpen() bool { return m.ds.typing || m.tabQuery() != "" }
 // bar is being typed in it stays open, empty — the next key typed is still
 // text, never an action.
 func (m *Model) clearSearches() {
-	for _, v := range []*textView{&m.info1, &m.inspect, &m.proc.view, &m.chg.view} {
+	for _, v := range []*textView{&m.info1, &m.inspect, &m.proc.view, &m.chg.view, &m.dc.view} {
 		v.find.clear()
 	}
 	m.ds.logQ = ""

@@ -32,7 +32,7 @@ var kindTabs = [kindCount][]string{
 	KindImages:     {tabInfo, tabInspect, tabFindings, tabUpstream},
 	KindVolumes:    {tabInfo, tabInspect},
 	KindNetworks:   {tabInfo, tabInspect},
-	KindCompose:    {tabInfo},
+	KindCompose:    {tabInfo, tabDeclared},
 }
 
 func (m *Model) tabName() string {
@@ -562,8 +562,10 @@ func (m *Model) infoLines() []string {
 			kv{"Working dir", proj.WorkingDir},
 			kv{"Config files", proj.ConfigFiles},
 			kv{"", st.tone(toneDim, "Grouped by the com.docker.compose.project label. The paths above are")},
-			kv{"", st.tone(toneDim, "what the labels record; Docker Desk never reads or runs compose files.")},
 		)
+		for _, l := range m.declaredReadNote(proj) {
+			p = append(p, kv{"", st.tone(toneDim, l)})
+		}
 		p = append(p, kv{}, section(st, "Services"))
 		for _, c := range proj.Containers {
 			p = append(p, kv{v: fmt.Sprintf("  %s %s  %s", st.tone(stateTone(c.State), stateGlyph(c.State)),
@@ -898,6 +900,8 @@ func (m *Model) renderTab(w, h int) []string {
 		return m.renderProcesses(w, h)
 	case tabChanges:
 		return m.renderChanges(w, h)
+	case tabDeclared:
+		return m.renderDeclared(w, h)
 	case tabInspect:
 		if len(m.inspect.lines) == 0 {
 			if m.detail.err != "" {

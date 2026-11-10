@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake3239496441/d.sock  ctx default  ● connected
+ Docker Desk  unix:///tmp/ddfake1891730697/d.sock  ctx default  ● connected
 ┌─ 1 Kinds ──────┐┌─ 2 Containers (1 of 13) ──────────────── filter: shop-web ─┐
 │▸ Containers  13││  NAME            IMAGE         STATE          CPU       MEM│
 │  Images      16││▸ shop-web-1      nginx:1.27    ● running    72.1%    487MiB│
@@ -7,12 +7,12 @@
 │  Compose      2│└────────────────────────────────────────────────────────────┘
 │                │┏━ ◆ 3 Details: shop-web-1 ━━━━━━━━━━━━━━━━ [Processes] 5/6 ━┓
 │  ● 7 running   │┃UID  PID  PPID C STIME TTY TIME     CMD                     ┃
-│  ‖ 1 paused    │┃root 1985 1984 0 08:59 ?   00:00:01 nginx -g daemon off;    ┃
-│  ○ 5 stopped   │┃root 1986 1985 0 08:59 ?   00:00:00 /bin/sh -c sleep infini…┃
+│  ‖ 1 paused    │┃root 1291 1290 0 07:58 ?   00:00:01 nginx -g daemon off;    ┃
+│  ○ 5 stopped   │┃root 1292 1291 0 07:58 ?   00:00:00 /bin/sh -c sleep infini…┃
 │                │┃                                                            ┃
 │                │┃                                                            ┃
 │                │┃                                                            ┃
-│                │┃snapshot at 11:59:45 · 2 processes · r takes a new one      ┃
+│                │┃snapshot at 10:58:12 · 2 processes · r takes a new one      ┃
 └────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ───────────────────────┐
 │Waiting for engine events…                  ││No jobs yet.                    │

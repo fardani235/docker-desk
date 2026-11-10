@@ -15,6 +15,7 @@ package ui
 
 import (
 	"context"
+	"io/fs"
 	"sort"
 	"strings"
 	"time"
@@ -110,6 +111,12 @@ type Options struct {
 
 	// NoRegistry forbids every registry request: --no-registry.
 	NoRegistry bool
+	// NoComposeFiles forbids reading any compose file: --no-compose-files.
+	// The Compose › Declared tab then compares nothing and names the flag.
+	NoComposeFiles bool
+	// ComposeReader, when set, is how the Declared tab opens a compose file
+	// instead of composefile.ReadInfo (tests count and stand in for reads).
+	ComposeReader func(path string) ([]byte, fs.FileInfo, error)
 	// DockerConfigDir is where registry credentials are read from
 	// ($DOCKER_CONFIG, or ~/.docker); "" for none.
 	DockerConfigDir string
@@ -174,10 +181,11 @@ type Model struct {
 	detail       detailState
 	wantDetail   string
 	selChangedAt time.Time
-	info1        textView     // Info tab
-	inspect      textView     // Inspect tab
-	proc         procState    // Processes tab
-	chg          changesState // Changes tab
+	info1        textView      // Info tab
+	inspect      textView      // Inspect tab
+	proc         procState     // Processes tab
+	chg          changesState  // Changes tab
+	dc           declaredState // Compose › Declared tab
 	logFollow    bool
 	logEnd       uint64
 	logWrap      bool
@@ -557,8 +565,10 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 	// A jump from the Events pane still waiting for its row.
 	m.expireEventJump(now)
 
-	// The Space view's measurements, and its ages, which move each second.
+	// The Space view's measurements, and its ages, which move each second;
+	// and a compose file read for the Declared tab.
 	m.collectSpace()
+	m.collectDeclared()
 	if m.sp.open {
 		if sec := now.Unix(); sec != m.sp.drawnSec {
 			m.sp.drawnSec = sec
