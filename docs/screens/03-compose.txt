@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake2916155526/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake147989584/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Compose (2) ────────────────────────────────────────────────────────────────┐┌─ 4 Events ────────────────────────── ● live ─┐
 ┃  Containers    13┃│  PROJECT                       CONTAINERS   RUNNING  WORKING DIR               ││Waiting for engine events…                    │
 ┃  Images        16┃│▸ blog                                   2         0  /home/dev/src/blog        ││Everything the daemon does                    │
@@ -14,23 +14,23 @@
 ┃                  ┃│                                                                                ││                                              │
 ┃                  ┃│                                                                                ││                                              │
 ┃                  ┃└────────────────────────────────────────────────────────────────────────────────┘│                                              │
-┃                  ┃┌─ 3 Details: blog ───────────────────────────────────────────────────── [Info] ─┐│                                              │
+┃                  ┃┌─ 3 Details: blog ──────────────────────────────────────────── [Info] Declared ─┐│                                              │
 ┃                  ┃│Project       blog                                                              ││                                              │
 ┃                  ┃│Containers    2, 0 running                                                      ││                                              │
 ┃                  ┃│Working dir   /home/dev/src/blog                                                ││                                              │
 ┃                  ┃│Config files  /home/dev/src/blog/compose.yaml                                   ││                                              │
 ┃                  ┃│Grouped by the com.docker.compose.project label. The paths above are            ││                                              │
-┃                  ┃│what the labels record; Docker Desk never reads or runs compose files.          ││                                              │
+┃                  ┃│what the labels record. No file has been read yet: the Declared tab             ││                                              │
+┃                  ┃│reads one when asked (Enter), and never runs it.                                ││                                              │
 ┃                  ┃│                                                                                ││                                              │
 ┃                  ┃│Services                                                                        ││                                              │
 ┃                  ┃│  ○ app             blog-app-1  Exited (0) 15 hours ago                         ││                                              │
 ┃                  ┃│  ○ db              blog-db-1  Exited (0) 15 hours ago                          ││                                              │
-┃                  ┃│                                                                                ││                                              │
-┃                  ┃│Networks and volumes carrying this project's label                              │└──────────────────────────────────────────────┘
-┃                  ┃│  network  blog_default                                                         │┌─ 5 Jobs ─────────────────────────────────────┐
-┃                  ┃│  volume   blog_db                                                              ││No jobs yet.                                  │
-┃                  ┃│  (never removed with the project; see their own kinds)                         ││Everything that changes the daemon            │
-┃                  ┃│                                                                                ││runs here, in the background.                 │
+┃                  ┃│                                                                                │└──────────────────────────────────────────────┘
+┃                  ┃│Networks and volumes carrying this project's label                              │┌─ 5 Jobs ─────────────────────────────────────┐
+┃                  ┃│  network  blog_default                                                         ││No jobs yet.                                  │
+┃                  ┃│  volume   blog_db                                                              ││Everything that changes the daemon            │
+┃                  ┃│  (never removed with the project; see their own kinds)                         ││runs here, in the background.                 │
 ┃                  ┃│                                                                                ││                                              │
 ┃                  ┃│                                                                                ││                                              │
 ┃                  ┃│                                                                                ││                                              │

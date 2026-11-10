@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake3892234192/d.sock  ● connected  [READ-ONLY]
+ Docker Desk  unix:///tmp/ddfake2847088201/d.sock  ● connected  [READ-ONLY]
 ┌─ 1 Kinds ──────┐┌─ 2 Images (1 of 19) ──────────────────── filter: acme/web ─┐
 │  Containers  13││  REPOSITORY        TAG        IMAGE ID          SIZE    AGE│
 │▸ Images      19││▸ registry.sandbo…  2.3        457d5c729f1c    88.0MB     6d│
@@ -15,7 +15,7 @@
 │                │┃ the layer comparison are unknown.                          ┃
 └────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ────────────── 1 done ─┐
-│Waiting for engine events…                  ││▸ ✓ check upstream registry… 1ms│
+│Waiting for engine events…                  ││▸ ✓ check upstream registry… 2ms│
 │Everything the daemon does                  ││                                │
 │shows up here as it happens.                ││                                │
 │                                            ││                                │

@@ -255,6 +255,9 @@ func (m *Model) openMenu() {
 		}
 		items = append(items, a)
 	}
+	if len(set) == 0 && ok {
+		items = append(items, kindViews[m.kind]...)
+	}
 	if len(items) == 0 {
 		return
 	}
@@ -297,6 +300,9 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 	if m.tabName() == tabChanges && m.onChangesKey(key) {
 		return nil
 	}
+	if m.tabName() == tabDeclared && m.onDeclaredKey(key) {
+		return nil
+	}
 	if m.tabName() == tabUpstream && m.onUpstreamKey(key) {
 		return nil
 	}
@@ -311,6 +317,8 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 			m.proc.view.scroll(delta)
 		case tabChanges:
 			m.chg.view.scroll(delta)
+		case tabDeclared:
+			m.dc.view.scroll(delta)
 		case tabInfo:
 			m.info1.scroll(delta)
 		}

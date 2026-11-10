@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"reflect"
 	"strings"
@@ -63,6 +64,10 @@ type benchOpts struct {
 	// configuration directory registry credentials are read from.
 	noRegistry   bool
 	dockerConfig string
+	// noComposeFiles is --no-compose-files; composeReader stands in for the
+	// Declared tab's file reader.
+	noComposeFiles bool
+	composeReader  func(string) ([]byte, fs.FileInfo, error)
 }
 
 func newBench(t testing.TB, o benchOpts) *bench {
@@ -119,6 +124,8 @@ func newBench(t testing.TB, o benchOpts) *bench {
 
 		NoRegistry:      o.noRegistry,
 		DockerConfigDir: o.dockerConfig,
+		NoComposeFiles:  o.noComposeFiles,
+		ComposeReader:   o.composeReader,
 	})
 	m.hub.MinBackoff, m.hub.MaxBackoff = 10*time.Millisecond, 40*time.Millisecond
 	b := &bench{t: t, srv: srv, eng: eng, m: m, msgs: make(chan tea.Msg, 4096)}

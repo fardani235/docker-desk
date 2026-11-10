@@ -1,11 +1,11 @@
- Docker Desk  unix:///tmp/ddfake2916155526/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake147989584/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-web ━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  11:59:30 ctr kill sig 15 shop-web-1         │
-│  Images        16│┃▸ shop-web-1       nginx:1.27     ● running    90.1%    683MiB  Up 0 seconds    ┃│  11:59:30 ctr die exit 0 shop-web-1          │
-│  Volumes        7│┃                                                                                ┃│  11:59:30 net disconnect shop_default  ← sho…│
-│  Networks       7│┃                                                                                ┃│  11:59:30 ctr stop       shop-web-1          │
-│  Compose        2│┃                                                                                ┃│  11:59:30 net connect    shop_default  ← sho…│
-│                  │┃                                                                                ┃│  11:59:30 ctr start      shop-web-1          │
+│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  10:57:56 ctr kill sig 15 shop-web-1         │
+│  Images        16│┃▸ shop-web-1       nginx:1.27     ● running    90.5%    684MiB  Up 0 seconds    ┃│  10:57:56 ctr die exit 0 shop-web-1          │
+│  Volumes        7│┃                                                                                ┃│  10:57:56 net disconnect shop_default  ← sho…│
+│  Networks       7│┃                                                                                ┃│  10:57:56 ctr stop       shop-web-1          │
+│  Compose        2│┃                                                                                ┃│  10:57:57 net connect    shop_default  ← sho…│
+│                  │┃                                                                                ┃│  10:57:57 ctr start      shop-web-1          │
 │  ● 7 running     │┃                                                                                ┃│                                              │
 │  ‖ 1 paused      │┃                                                                                ┃│                                              │
 │  ○ 5 stopped     │┃                                                                                ┃│                                              │
@@ -15,21 +15,21 @@
 │                  │┃                                                                                ┃│                                              │
 │                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                              │
 │                  │┌─ 3 Details: shop-web-1 ────────── Info Changes Logs [Stats] Processes Inspect ─┐│                                              │
-│                  ││CPU     90.1%   peak 90.1%   (100% = one core)                                  ││                                              │
+│                  ││CPU     90.5%   peak 90.5%   (100% = one core)                                  ││                                              │
 │                  ││                                                                               █││                                              │
-│                  ││MEM     683MiB / 16.0GiB   4.2% of limit                                        ││                                              │
+│                  ││MEM     684MiB / 16.0GiB   4.2% of limit                                        ││                                              │
 │                  ││                                                                               █││                                              │
-│                  ││NET   ↓ 163kB/s    ↑ 3.4kB/s     total ↓ 19.2kB ↑ 395B                          ││                                              │
+│                  ││NET   ↓ 164kB/s    ↑ 3.4kB/s     total ↓ 23.6kB ↑ 486B                          ││                                              │
 │                  ││  ↓                                                                            █││                                              │
 │                  ││  ↑                                                                            █││                                              │
-│                  ││DISK  r 999kB/s    w 632kB/s     total r 117kB w 74.2kB                         ││                                              │
+│                  ││DISK  r 1.0MB/s    w 636kB/s     total r 144kB w 91.3kB                         ││                                              │
 │                  ││  r                                                                            █││                                              │
 │                  ││  w                                                                            █││                                              │
 │                  ││PIDS  24                                                                        ││                                              │
 │                  ││                                                                                │└──────────────────────────────────────────────┘
 │                  ││1 samples, about one per second; newest on the right.                           │┌─ 5 Jobs ──────────────────────────── 2 done ─┐
-│                  ││                                                                                ││▸ ✓ start container shop-web-1             0ms│
-│                  ││                                                                                ││  ✓ stop container shop-web-1              0ms│
+│                  ││                                                                                ││▸ ✓ start container shop-web-1             2ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              8ms│
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │

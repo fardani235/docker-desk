@@ -1,19 +1,40 @@
 package fakeengine
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/fardani235/docker-desk/internal/forensics/fixture"
 )
 
-func compose(project, service string) map[string]string {
+// composeLabels returns the labels compose puts on a container. The paths
+// point into ComposeDir when it is set, and at a machine that is not this
+// one otherwise.
+func (s *Server) composeLabels(project, service string) map[string]string {
+	dir := "/home/dev/src/" + project
+	if s.ComposeDir != "" {
+		dir = filepath.Join(s.ComposeDir, project)
+	}
 	return map[string]string{
 		"com.docker.compose.project":              project,
 		"com.docker.compose.service":              service,
-		"com.docker.compose.project.working_dir":  "/home/dev/src/" + project,
-		"com.docker.compose.project.config_files": "/home/dev/src/" + project + "/compose.yaml",
+		"com.docker.compose.project.working_dir":  dir,
+		"com.docker.compose.project.config_files": filepath.Join(dir, "compose.yaml"),
 		"com.docker.compose.container-number":     "1",
+		"com.docker.compose.config-hash":          configHash(project, service),
+		"com.docker.compose.oneoff":               "False",
 	}
+}
+
+// configHash stands in for compose's fingerprint of a service's
+// configuration: 64 hex digits, stable per service.
+func configHash(project, service string) string {
+	sum := sha256.Sum256([]byte(project + "/" + service))
+	return hex.EncodeToString(sum[:])
 }
 
 // SeedDemo fills the fake with a realistic small machine: two compose
@@ -21,19 +42,24 @@ func compose(project, service string) map[string]string {
 // unused volumes and networks. It is what `make sandbox` shows.
 func (s *Server) SeedDemo() {
 	s.Name = "sandbox"
+	if s.ComposeDir != "" {
+		if err := s.writeComposeFiles(); err != nil {
+			panic(fmt.Sprintf("fakeengine: writing the demo compose files: %v", err))
+		}
+	}
 
 	// -- compose project "shop": running ------------------------------------
 	s.AddVolume("shop_pgdata", map[string]string{"com.docker.compose.project": "shop", "com.docker.compose.volume": "pgdata"})
 	s.AddVolume("shop_uploads", map[string]string{"com.docker.compose.project": "shop", "com.docker.compose.volume": "uploads"})
 	s.AddContainer(ContainerSpec{
-		Name: "shop-web-1", Image: "nginx:1.27", Labels: compose("shop", "web"),
+		Name: "shop-web-1", Image: "nginx:1.27", Labels: s.composeLabels("shop", "web"),
 		Networks: []string{"shop_default"}, Ports: []PortSpec{{Private: 80, Public: 8080, Proto: "tcp"}},
 		Cmd:     []string{"nginx", "-g", "daemon off;"},
 		Logs:    []string{"/docker-entrypoint.sh: Configuration complete; ready for start up", "nginx/1.27.0 started"},
 		LogRate: 2, Age: 3 * time.Hour,
 	})
 	s.AddContainer(ContainerSpec{
-		Name: "shop-api-1", Image: "shop/api:dev", Labels: compose("shop", "api"),
+		Name: "shop-api-1", Image: "shop/api:dev", Labels: s.composeLabels("shop", "api"),
 		Networks: []string{"shop_default"}, Volumes: []string{"shop_uploads"},
 		Ports:   []PortSpec{{Private: 3000, Public: 3000, Proto: "tcp"}},
 		Cmd:     []string{"node", "server.js"},
@@ -41,7 +67,7 @@ func (s *Server) SeedDemo() {
 		LogRate: 5, Age: 3 * time.Hour,
 	})
 	s.AddContainer(ContainerSpec{
-		Name: "shop-db-1", Image: "postgres:16", Labels: compose("shop", "db"),
+		Name: "shop-db-1", Image: "postgres:16", Labels: s.composeLabels("shop", "db"),
 		Networks: []string{"shop_default"}, Volumes: []string{"shop_pgdata"},
 		Ports:  []PortSpec{{Private: 5432, Proto: "tcp"}},
 		Cmd:    []string{"postgres"},
@@ -50,7 +76,7 @@ func (s *Server) SeedDemo() {
 		Age:    3 * time.Hour, StopDelay: 1500 * time.Millisecond,
 	})
 	s.AddContainer(ContainerSpec{
-		Name: "shop-worker-1", Image: "shop/worker:dev", Labels: compose("shop", "worker"),
+		Name: "shop-worker-1", Image: "shop/worker:dev", Labels: s.composeLabels("shop", "worker"),
 		Networks: []string{"shop_default"}, State: "exited", ExitCode: 1,
 		Cmd:  []string{"python", "worker.py"},
 		Logs: []string{"connecting to queue…", "Traceback (most recent call last):", "ConnectionRefusedError: [Errno 111] Connection refused"},
@@ -58,14 +84,16 @@ func (s *Server) SeedDemo() {
 	})
 
 	// -- compose project "blog": stopped ------------------------------------
+	// Its compose file is deliberately absent, even with ComposeDir set: the
+	// Declared tab's "cannot be compared" is shown, not assumed.
 	s.AddVolume("blog_db", map[string]string{"com.docker.compose.project": "blog", "com.docker.compose.volume": "db"})
 	s.AddContainer(ContainerSpec{
-		Name: "blog-app-1", Image: "ghost:5", Labels: compose("blog", "app"),
+		Name: "blog-app-1", Image: "ghost:5", Labels: s.composeLabels("blog", "app"),
 		Networks: []string{"blog_default"}, State: "exited", Cmd: []string{"node", "current/index.js"},
 		Logs: []string{"Ghost is shutting down"}, Age: 30 * time.Hour,
 	})
 	s.AddContainer(ContainerSpec{
-		Name: "blog-db-1", Image: "mysql:8", Labels: compose("blog", "db"),
+		Name: "blog-db-1", Image: "mysql:8", Labels: s.composeLabels("blog", "db"),
 		Networks: []string{"blog_default"}, Volumes: []string{"blog_db"}, State: "exited", Cmd: []string{"mysqld"},
 		Logs: []string{"mysqld: Shutdown complete"}, Age: 30 * time.Hour,
 	})
@@ -245,4 +273,69 @@ func (s *Server) SeedUpstream() {
 	gone := SandboxRegistry + "/acme/legacy:0.9"
 	s.AddImage(61_000_000, 90*24*time.Hour, gone)
 	s.SetUpstream(gone, Upstream{Gone: true})
+}
+
+// ShopCompose is the demo's shop/compose.yaml. Against the seeded containers
+// it has one of every row the Declared tab can show: a moved tag (web), a
+// template image (api), a match (db), a service with no container (cache), a
+// profiled service that is not missing (debug), and a running container the
+// file does not declare (worker).
+const ShopCompose = `# The sandbox's compose file for the "shop" project.
+name: shop
+
+x-defaults: &defaults
+  restart: unless-stopped
+  logging: { driver: json-file, options: { max-size: "10m" } }
+
+services:
+  web:
+    <<: *defaults
+    image: nginx:1.26
+    ports: ["8080:80"]
+  api:
+    <<: *defaults
+    image: shop/api:${API_TAG:-dev}
+    environment:
+      DATABASE_URL: postgres://shop@db/shop
+  db:
+    <<: *defaults
+    image: postgres:16
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+  cache:
+    image: redis:7-alpine
+  debug:
+    image: busybox:1.36
+    profiles: [debug]
+    command: ["sleep", "infinity"]
+
+volumes:
+  pgdata: {}
+  uploads: {}
+`
+
+// ShopComposeWritten is how long before seeding the shop file was written:
+// after its containers (three hours old) were created.
+const ShopComposeWritten = 20 * time.Minute
+
+// writeComposeFiles writes the demo's compose files into ComposeDir. Only
+// shop gets one; blog's is left absent (a file already there from an
+// earlier run is renamed aside, never deleted).
+func (s *Server) writeComposeFiles() error {
+	dir := filepath.Join(s.ComposeDir, "shop")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	p := filepath.Join(dir, "compose.yaml")
+	if err := os.WriteFile(p, []byte(ShopCompose), 0o644); err != nil {
+		return err
+	}
+	when := time.Now().Add(-ShopComposeWritten)
+	if err := os.Chtimes(p, when, when); err != nil {
+		return err
+	}
+	blog := filepath.Join(s.ComposeDir, "blog", "compose.yaml")
+	if _, err := os.Lstat(blog); err == nil {
+		return os.Rename(blog, blog+".aside")
+	}
+	return nil
 }

@@ -46,6 +46,7 @@ the remote one. The one exception: an `ssh://` daemon is reached through your `s
 | `docker-desk -H ssh://ops@prod-1` | open it on that daemon instead (`--host`; any `unix://`, `ssh://` or `tcp://` URL) |
 | `docker-desk -c staging` | open it on the daemon of that Docker context (`--context`) |
 | `docker-desk --read-only` | look, don't touch: every action that changes something, and the shell, is disabled; anything but `GET`/`HEAD` is refused before it is sent |
+| `docker-desk --no-compose-files` | never read a compose file: Compose › Declared compares nothing and says which flag forbade it (`--read-only` alone still allows the comparison, which only reads) |
 | `docker-desk --check` | say which daemon would be used, how it is reached and whether it answers, then exit |
 | `docker-desk --report ~/py.spdx.json --report-format spdx --report-object python:3.12-slim` | analyse one image as Images › Findings does, write the report, exit — no terminal needed (see [Export](#export--evidence-to-a-file)) |
 | `docker-desk --theme nord` | pick a colour theme (see [Themes](#themes)) |
@@ -188,7 +189,7 @@ the desk keeps answering keys, and everything resumes by itself when the daemon 
 | --- | --- |
 | **1 Kinds** | Containers, Images, Volumes, Networks, Compose — with live counts. Moving the highlight is enough; the list follows. |
 | **2 List** | The objects of that kind. Containers show live CPU and memory. The highlight follows the *object* when the list changes underneath it. |
-| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON; `/` finds a key or value and names its path), for containers **Changes** (what the image its tag names now would bring; see below), **Logs** (live follow; `/` filters), **Stats** (CPU, memory, network, disk — with history) and **Processes** (a snapshot of `docker top`; see below), and for images **Findings** (what the image's own bytes hold; see below) and **Upstream** (whether the tag names another build today; see below). |
+| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON; `/` finds a key or value and names its path), for containers **Changes** (what the image its tag names now would bring; see below), **Logs** (live follow; `/` filters), **Stats** (CPU, memory, network, disk — with history) and **Processes** (a snapshot of `docker top`; see below), for images **Findings** (what the image's own bytes hold; see below) and **Upstream** (whether the tag names another build today; see below), and for compose projects **Declared** (what the project's compose file says now against what runs; see [Compose, honestly](#compose-honestly)). |
 | **4 Events** | The engine's event stream as it happens. It is the answer to everything you do — and to everything anyone else does to this daemon. |
 | **5 Jobs** | Every change you asked for, running in the background: progress while it runs, the daemon's answer when it ends. |
 | **Space** (`S`) | Not a pane: a full-screen account of the disk — the daemon's totals, unique and shared bytes per image, what a removal frees. See [Space](#space--where-the-bytes-went-and-what-removing-something-frees). |
@@ -591,7 +592,7 @@ Press `?` inside the desk for the same list.
 | Images | `P` pull by name (on Upstream showing *moved*: the build the tag names now, by digest) · `d` remove · `X` prune |
 | Volumes | `n` new · `d` remove · `X` prune |
 | Networks | `n` new · `d` remove · `X` prune · `c` connect a container · `D` disconnect a container |
-| Compose | `t` stop the whole project · `d` remove the whole project |
+| Compose | `t` stop the whole project · `d` remove the whole project · (menu) compare with the compose file — a read, allowed in read-only mode |
 
 **Acting on a selection.** Mark rows with `Space` (or `a` for everything the filter shows):
 they get a `✓` in the gutter and the title says how many, e.g. `2 Containers (12) - 3 selected`.
@@ -639,6 +640,9 @@ arguments included — nothing is masked, so a secret passed on a command line i
 as it is to `docker top`; process rows are never written to jobs, the status line or files.
 **Changes** (Containers): `↑` `↓` scroll · `Enter` compare the contents of both images (a
 job; nothing is read before it) · `c` cancel the comparison.
+**Declared** (Compose): `↑` `↓` scroll · `Enter` read the project's compose file and compare it
+with what runs (a job; nothing is opened before it; again to read it again) · `c` cancel the
+read. Also reached from the project's action menu: *compare with the compose file*.
 **Findings** (Images): `↑` `↓` move between findings · `o` order by layer / group / certainty ·
 `v` reveal the highlighted secret · `i` the image's packages · `w` export… · `c` cancel the analysis ·
 `Enter` analyse when asked first or after a failure.
@@ -733,15 +737,68 @@ Two deliberate differences from the Docker CLI, both on the cautious side:
 
 ## Compose, honestly
 
-Docker Desk never reads, finds or runs a compose file. A "project" is simply every container
-carrying the same `com.docker.compose.project` label — the one Docker Compose already puts on
-them. You can stop the group or remove the group. There is no `up`, `down`, `build`, `pull` or
-scaling.
+A "project" is every container carrying the same `com.docker.compose.project` label — the one
+Docker Compose already puts on them. You can stop the group or remove the group. There is no
+`up`, `down`, `build`, `pull` or scaling, and no compose binary is ever run.
+
+The file is read for one thing: **Declared**, the project's second Details tab, sets what the
+file says now against the containers that run. It reads **one file, on request, on this
+machine; never executed, never interpolated, never rendered**:
+
+- **On request.** Highlighting a project, refreshing, or opening the tab shows only what the
+  labels say — project, containers, working directory, every config path, whether the daemon is
+  local, the newest container's creation — and the words *nothing has been read*. No file is
+  opened, or even stat'ed, before `Enter`. `Enter` reads, as a job, each file the
+  `config_files` label names, in the order it names them.
+- **On this machine.** Only when the daemon is reached over a local Unix socket. Over `ssh://`
+  or `tcp://` the path belongs to the machine that ran compose, and a file at the same path here
+  may be another file: the tab says so and reads nothing.
+- **Bounded.** A regular file, at most 1 MiB, at an absolute path. It is parsed and discarded;
+  the desk keeps the project's `name:` and, per service, its `image:` and `profiles:`.
+- **Never rendered.** No byte of the file is shown, logged or written, except as part of the
+  comparison (a service name, a declared image). The labels a path comes from can be set by an
+  image, so the read is built to disclose nothing else.
+- **Never interpolated.** An image with `$` in it (`app:${TAG:-latest}`) is a template: the row
+  says so and is not compared. `.env` is not read and defaults are not applied.
+
+Rows, disagreements first: **declared only** (a service no container carries), **differs** (a
+literal image that is not the one running: tag, digest or repository), **present only** (a
+container the file does not declare), **not compared** (with the reason), **match**. A service
+declaring `profiles` is never called missing — no label records which profiles were enabled;
+containers left by `docker compose run` (`oneoff`) are not compared; a service that builds its
+image or inherits one through `extends` is not compared; a file with `include:` does not call a
+container undeclared. Scale, ports, volumes, environment, command and health checks are not
+compared at all. Each container's recorded `com.docker.compose.config-hash` is shown as
+evidence and never recomputed. With several files, service names are their union and an image
+comes from the last file that declares one.
+
+The file is compared **as it is now**: nothing records what it said when the containers were
+created. Its write time is reported against the newest container's creation as a fact
+("written 4s before these were created"); when it is later, both times are shown and the tab
+says that alone does not make it wrong.
+
+When nothing is compared, the tab says why in one sentence and shows no rows:
+
+| Refusal | When |
+| --- | --- |
+| `Not compared: --no-compose-files forbids reading compose files.` | the desk was started with `--no-compose-files` |
+| `Not compared: the daemon is reached over ssh` (or `tcp`) `…` | the daemon is not a local Unix socket |
+| `Not compared: the labels record no config file.` | the containers carry no `config_files` label |
+| `Cannot be compared: there is no file at … on this machine.` | not found |
+| `Cannot be compared: … is not a regular file.` | a directory, device, pipe or socket |
+| `Cannot be compared: … is larger than 1 MiB, …` | over 1 MiB |
+| `Cannot be compared: … is not a compose file the desk can read: …` | unparseable: not YAML, more than one document, an explicit tag such as `!reset`, a field of the wrong shape (the reason names a line, never its content) |
+| `Cannot be compared: … cannot be opened: …` | permission denied, or another error from the system |
+| `Cannot be compared: the recorded path … is not absolute.` | a relative path in the label |
+
+`--no-compose-files` removes the whole class, as `--no-registry` removes registry requests;
+`--read-only` does not, since the comparison only reads.
 
 ## What it does not do
 
 One daemon per session; no switching from inside. No Windows named pipes. No Swarm, no compose
-files, no image builds or pushes, no Kubernetes. It does not create or reconfigure containers,
+lifecycle — a compose file is read only for Declared, on request, and never run or
+interpolated (see [Compose, honestly](#compose-honestly)) — no image builds or pushes, no Kubernetes. It does not create or reconfigure containers,
 or copy files in or out. The build cache is accounted for in Space but never removed: the desk
 has no builder, and calls no prune endpoint.
 
@@ -804,7 +861,8 @@ make sandbox
 ```
 
 starts `fake-dockerd` — an in-memory engine that speaks the real Docker API, seeded with two
-compose projects, containers in every state, a container that logs 20,000 lines a second, one
+compose projects (`shop`'s compose file is written to `/tmp/docker-desk-sandbox-compose`, with
+one of every Declared row; `blog`'s is absent on purpose, so the refusal shows too), containers in every state, a container that logs 20,000 lines a second, one
 without a shell, one that takes four seconds to stop, dangling images, unused volumes, an
 orphan network, `report-job`, whose tag `acme/report:1.4` has since moved to a newer build
 (Containers › Changes), and three images on `registry.sandbox.invalid` — a name that never

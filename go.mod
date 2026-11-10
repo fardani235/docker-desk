@@ -17,6 +17,7 @@ require (
 	github.com/muesli/cancelreader v0.2.2
 	github.com/muesli/termenv v0.16.0
 	github.com/opencontainers/image-spec v1.1.1
+	go.yaml.in/yaml/v3 v3.0.6
 	golang.org/x/sys v0.49.0
 	golang.org/x/term v0.47.0
 )

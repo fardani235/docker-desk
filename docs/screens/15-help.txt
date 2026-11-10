@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake2916155526/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake147989584/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Conta┏━ ◆ Keys ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓────────────────────── ● live ─┐
 │▸ Containers    13│┃  NAME     ┃                                                                                    ┃kill sig 15 shop-web-1         │
 │  Images        17│┃  distroles┃   ↑ ↓ PgUp PgDn    move the cursor; ↑ PgUp g also hold a live view                 ┃die exit 0 shop-web-1          │
@@ -28,15 +28,15 @@
 │                  ││           ┃     • pull, new volume/network, shell: you type the name; Enter submits.           ┃                               │
 │                  ││Ports      ┃   A dialog ignores those keys for its first quarter of a second, and a key         ┃───────────────────────────────┘
 │                  ││  0.0.0.0:3┃   pressed while a confirmation is still being prepared drops it: nothing typed     ┃────────────────────── 4 done ─┐
-│                  ││           ┃   ahead, or typed for something else, can consent. Esc always works at once.       ┃es 2 volumes                3ms│
-│                  ││Networks   ┃   Nothing is ever forced. If something is in use the dialog says by what and       ┃hello-world:latest        432ms│
-│                  ││  shop_defa┃   refuses. A prune lists exactly what it will delete and deletes only that.        ┃iner shop-web-1             0ms│
-│                  ││           ┃                                                                                    ┃ner shop-web-1              0ms│
+│                  ││           ┃   ahead, or typed for something else, can consent. Esc always works at once.       ┃es 2 volumes                7ms│
+│                  ││Networks   ┃   Nothing is ever forced. If something is in use the dialog says by what and       ┃hello-world:latest        437ms│
+│                  ││  shop_defa┃   refuses. A prune lists exactly what it will delete and deletes only that.        ┃iner shop-web-1             2ms│
+│                  ││           ┃                                                                                    ┃ner shop-web-1              8ms│
 │                  ││Mounts     ┃ Inside a shell (e)                                                                 ┃                               │
 │                  ││  volume sh┃   exit, Ctrl-D     back to the desk                                                ┃                               │
 │                  ││           ┃   Ctrl-] ×3        leave at once, even if the daemon has stopped answering         ┃                               │
 │                  ││           ┃                                                                                    ┃                               │
-│                  ││           ┃ ↑↓ PgUp PgDn scroll  Esc close  168–201 of 201                                     ┃                               │
+│                  ││           ┃ ↑↓ PgUp PgDn scroll  Esc close  215–248 of 248                                     ┃                               │
 └──────────────────┘└───────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───────────────────────────────┘
- Back from the shell in shop-api-1 (512ms).
+ Back from the shell in shop-api-1 (508ms).
  ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell       Tab pane  ? keys  q quit

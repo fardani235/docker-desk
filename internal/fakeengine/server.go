@@ -91,6 +91,10 @@ type Server struct {
 	// APIVersion: a client then negotiates down to it, as with an older
 	// daemon.
 	AdvertiseAPI string
+	// ComposeDir, when set before SeedDemo, is where the demo's compose
+	// files are written; the seeded projects' labels point into it. Unset,
+	// the labels name paths on no machine at all.
+	ComposeDir string
 
 	buildCache []BuildRecord
 

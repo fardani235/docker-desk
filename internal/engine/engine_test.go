@@ -173,6 +173,10 @@ func TestInspect(t *testing.T) {
 	if d.Image != "postgres:16" || d.RestartPolicy != "no" || len(d.Raw) == 0 || !bytes.Contains(d.Raw, []byte(`"Id"`)) {
 		t.Fatalf("detail: image=%q policy=%q raw=%d", d.Image, d.RestartPolicy, len(d.Raw))
 	}
+	// The two compose labels the Declared tab reads, from the inspect document.
+	if h := d.Labels[LabelComposeConfigHash]; len(h) != 64 || d.Labels[LabelComposeOneOff] != "False" {
+		t.Fatalf("compose labels: config-hash %q, oneoff %q", h, d.Labels[LabelComposeOneOff])
+	}
 	if len(d.Ports) != 1 || d.Ports[0].PrivatePort != 5432 || d.Ports[0].HostPort != 0 {
 		t.Fatalf("exposed-only port: %+v", d.Ports)
 	}

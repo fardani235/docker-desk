@@ -28,6 +28,12 @@ in [their own section](#round-thirteen--evidence-export-what-was-computed-writte
 That round was asked for in one pass — plan, build, write up — with every open question decided
 and recorded here rather than asked; there is no OpenSpec change for it (B33).
 
+Entries marked **Y** (declared) belong to the fourteenth round, the OpenSpec change
+`compose-declared-vs-actual`, and are collected in
+[their own section](#round-fourteen--compose-what-the-file-declares-against-what-runs). Y1–Y9 are
+the change's design; Y10 onwards were decided while building it, where the plan left a choice
+open. The round relaxes D15.
+
 Where a decision costs something, the cost is stated. Nothing here is presented as free.
 
 ---
@@ -336,6 +342,12 @@ data stays.
 impossible while a container runs.
 
 ### D15 — Compose is a label, and "remove project" removes containers only
+
+> **Relaxed by [Y1](#y1--the-file-may-be-read-never-run-d15-relaxed).** A project is still a
+> label and "remove project" still removes containers only. What changed: the desk may now read
+> the compose file the labels name — one file, on request, on this machine — to compare it with
+> what runs. It still never runs, interpolates or renders one, and `--no-compose-files` restores
+> the old guarantee.
 
 **Decided:** a project is the set of containers carrying the same
 `com.docker.compose.project` label. Stop stops the running ones. Remove removes the containers
@@ -2830,6 +2842,172 @@ not.
 Writing anywhere but a local path (no upload, no stdout for the TUI); exporting several images at
 once; an export of the Changes or Upstream tabs, or of the Repository browser; a vulnerability
 section; SPDX tag-value or CycloneDX XML; signing the files.
+
+## Round fourteen — compose: what the file declares against what runs
+
+The request: a compose project's Details gains a **Declared** tab that checks the claim "these
+containers came from that file" — the declared services against the containers, a literal image
+against the running one, the file's write time against the newest container's creation, and
+compose's recorded config hash as evidence. The plan is the OpenSpec change
+`compose-declared-vs-actual` (proposal, design, a spec delta for `compose-projects`, tasks). It
+was implemented in one pass with the instruction to decide and record rather than ask; every
+choice the plan left open is an entry below.
+
+### Y1 — The file may be read, never run: D15 relaxed
+
+**Decided:** the desk may read the compose file the `config_files` label names, on request, to
+compare it with what runs. It never runs the compose tool, never runs `up`, `down`, `build`,
+`pull` or `scale`, never interpolates, never writes, and never treats the file as the project's
+definition — a project is still its label (D15). Rows are exactly: a declared service no
+container carries, a container whose service the file does not declare, an image that differs
+when both sides are literals; plus the facts in the header.
+
+| Option | What it gives | Why not |
+| --- | --- | --- |
+| Keep D15 as it was | nothing to own | the operator's belief that the stack is the file is never checked |
+| Fingerprints only (path, existence, mtime, config hash) | no parser | a timestamp and no verdict: it is this screen's header, not a screen |
+| **Service set and literal image** | the two mistakes that matter, correct without interpolation | — |
+| Full configuration (ports, volumes, env, command, health) | everything | merge order, interpolation and normalisation make most rows "not comparable" |
+| `docker compose config --format json` | compose's own merge | runs the tool D15 forbids, needs a binary the desk does not control, interpolates with today's environment |
+
+### Y2 — `go.yaml.in/yaml/v3`: a parser that fails loudly
+
+**Decided:** one module, `go.yaml.in/yaml/v3` v3.0.6, the first runtime dependency the desk has
+added for a file format. The document is decoded into a node tree, checked, then into a flat
+struct of typed strings — `name`, and per service `image`, `profiles`, and whether `build:`,
+`extends:` or a top-level `include:` are present. Any decode error, more than one document, or an
+explicit tag refuses the whole file.
+
+**Alternatives:** `gopkg.in/yaml.v3` — the same code frozen at v3.0.1 (2022), the module this
+path replaces. A hand-written subset scanner — the house style for SQLite and the SBOM stream
+(K1, K2), but those were forced by a request that ruled dependencies out (K2's alternative); YAML's scanner has
+to step over block scalars, quoted strings containing colons, flow collections, anchors and merge
+keys to reach the fields at all, and a real file (a GitLab one with a 20-line block scalar
+holding a flow map, now a test fixture) has every one of them.
+
+**Why:** the choice is not "dependency or none" but "how does it fail". A full parser fails
+loudly; a scanner fails plausibly, returning a wrong image from inside a block scalar. Anchors and
+`x-` fields are common, and a strict scanner would refuse exactly the files worth comparing.
+**Cost:** 1 module in `go.mod`, compiled in, and owned. A `recover` net sits around `Parse`, as in
+K2: the mutation sweep and the fuzz test call the unexported `parse` without it, and a planted
+fault shows the net catches what `parse` alone does not — so a fault the checks miss is found
+rather than caught. An alias bomb is refused by the decoder's own aliasing limit; the 1 MiB cap
+bounds everything else.
+
+### Y3 — One read, on request, and never a rendered byte
+
+**Decided:** nothing touches the filesystem — not even a stat — until `Enter` on the tab. The
+read is a job: `os.Stat` first, refusing directories, devices, pipes, sockets and files over
+1 MiB without opening them; then the file is opened read-only and non-blocking, `fstat`ed again
+(a path swapped for a FIFO in between is refused, not waited on), and read through a limit of
+1 MiB + 1. The bytes are parsed and dropped.
+
+**The hostile label.** The path comes from container labels, and an image's labels become its
+containers' labels: an image can manufacture a project whose config file is `/etc/shadow`. So no
+byte of the file is rendered, logged, or put in a job line, except as part of the comparison — a
+service name or an image a document of the right shape declares. Parse errors keep only a line
+number: the decoder quotes values in its messages (``cannot unmarshal !!str `…` ``), and those
+are rewritten. A file that is not a compose document is refused in one sentence; a preview of an
+unparseable file was the alternative, and the one place a hostile label could disclose a file.
+
+### Y4 — Local transport only
+
+**Decided:** the comparison runs only when the daemon was reached over a Unix socket. Over SSH or
+TCP the tab says the path belongs to the machine that ran compose and reads nothing — not the
+remote file (a new class of remote execution), and not a local file at the same path (possibly
+another file: a wrong answer is worse than none). Docker Desktop forwards a Unix socket from a
+filesystem the desk can read, so the common desktop case is included.
+
+### Y5 — No interpolation: `$` is a refusal, not a value
+
+**Decided:** a declared image containing `$` is a template and is not compared. `.env` is not
+read; defaults are not applied, even when, as on the machine this was built on, the default
+happens to match. The plan said `${`; bare `$VAR` is compose interpolation too, so the test is a
+`$` anywhere (a literal `$` is `$$` in compose, and invalid in a reference either way).
+
+### Y6 — Profiles, one-offs, builds and includes are not drift
+
+**Decided:** a declared service with no container that declares `profiles` is "declared with
+profiles; the desk cannot know if they were enabled" — not counted as missing. Containers with
+`com.docker.compose.oneoff=True` (left by `docker compose run`) are excluded, both by the plan's
+projection and, defensively, by `Compare`. Two cases the plan did not name, decided the same way:
+a service that declares `build:` but no `image:`, or inherits through `extends:`, is not compared
+(the image it would get is not in front of the desk); a file with a top-level `include:` does not
+call a container undeclared, since the included files are not read.
+
+### Y7 — Time is a fact in the header
+
+**Decided:** the file's write time against the newest compared container's creation, as
+"written 4s before / 3h after these were created". When the file is later, both times are shown
+and the tab says that alone does not make it wrong. No "modified since deploy" verdict: a
+checkout, a `touch`, a bind mount or clock skew all move mtime (the same rule as Upstream's
+producer timestamps).
+
+### Y8 — Package boundaries
+
+**Decided:** `internal/composefile` holds `Parse`, `Read`/`ReadInfo`, `Merge` and `Compare`, on
+plain structs; it imports the standard library, the YAML module and `distribution/reference`
+(for normalising a declared image the way Docker does) — nothing of the daemon, the engine or the
+UI. `internal/plan` projects the snapshot into `[]composefile.Actual`. `internal/ui` draws the
+tab and runs the job. Nothing else imports `composefile`, so removing the tab compiles it out.
+
+### Y9 — `--no-compose-files`, and sandbox fixtures that exist
+
+**Decided:** `--no-compose-files` has `--no-registry`'s shape: it forbids the class, the refusal
+names the flag, and `--read-only` does not imply it (the comparison only reads). `fake-dockerd
+-compose-dir DIR` writes `shop/compose.yaml` and points the seeded labels into DIR; `blog`'s file
+is deliberately absent. Against the seeded containers the shop file holds one of every row: a
+moved tag (`web`), a template (`api`), a match (`db`), a service with no container (`cache`), a
+profiled service (`debug`), and a container the file does not declare (`worker`). Its write time
+is set twenty minutes back, after the containers' creation, so the time fact is shown too.
+
+### Y10 — The comparison is reached from the action menu, but is not an action
+
+**Decided:** "compare with the compose file" is in the Compose action menu, below stop and remove,
+with no key of its own; choosing it shows the Declared tab and focuses the Details pane. It lives
+in a separate list (`kindViews`), not in `kindActions`.
+
+**Why:** every entry of `kindActions` changes something, and is guarded as such — the safety
+tests require each to be marked mutating, to have a key and a safety test, and to be refused in
+read-only mode. The comparison is a read and must work read-only. Giving it a key was also
+declined: the Compose kind has `t` and `d`, the desk's key space is crowded, and `]` already
+reaches the tab.
+
+### Y11 — An explicit tag refuses the whole file
+
+**Decided:** `!reset`, `!override`, `!!str` or any other explicit tag anywhere refuses the file.
+The design's risk list said a tagged service would be refused alone; its Y2 and the task list
+said the document. The document it is: what a tag means is compose's merge logic, and a tag on
+`ports` of one service may change which `image` another file's merge produces.
+
+### Y12 — Before Enter, the write time is "unknown: nothing has been read"
+
+**Decided:** the header shows a "written" line from the start, reading *unknown: nothing has been
+read* until `Enter`. The task list put the write time in the header that is drawn before
+anything is read; Y3 forbids even a stat before `Enter`. Y3 wins: the line is there, empty,
+saying why.
+
+### Y13 — The containers' side is live; the file's is as read
+
+**Decided:** the job keeps the merged declaration (names, images, profiles) and the files' write
+times; every frame compares it with the current snapshot. A container stopped, removed or
+re-created after the read moves its row at once; the file is read again only on `Enter`. The
+header says when it was read. A comparison of up to 32 projects is kept, by project and
+config-files label.
+
+### Y14 — The sandbox writes to a fixed directory
+
+**Decided:** `make sandbox` passes `-compose-dir /tmp/docker-desk-sandbox-compose`
+(`SANDBOX_COMPOSE`), rewritten on every start, rather than a fresh temporary directory removed on
+exit. Removing a directory named by a shell variable was refused by the environment's own safety
+check while building this, and a stale file there is harmless: the fake rewrites shop's and moves
+a stray blog file aside rather than deleting anything.
+
+### Y15 — Left out
+
+Reading a file over SSH; interpolation in any form; comparing ports, volumes, environment,
+command, health checks or replicas; recomputing the config hash; reading `include:`d or
+`extends:` files; a "show the file" view; watching the file for changes.
 
 ## Process
 

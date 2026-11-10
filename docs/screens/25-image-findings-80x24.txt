@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake2454619424/d.sock  ● connected  [READ-ONLY]
+ Docker Desk  unix:///tmp/ddfake1768330280/d.sock  ● connected  [READ-ONLY]
 ┌─ 1 Kinds ──────┐┌─ 2 Images (1 of 16) ────────────────────── filter: shop/a ─┐
 │  Containers  13││  REPOSITORY        TAG        IMAGE ID          SIZE    AGE│
 │▸ Images      16││▸ shop/api          dev        073fe9aeb752     217MB    24h│

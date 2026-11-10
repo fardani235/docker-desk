@@ -1,0 +1,40 @@
+ Docker Desk  unix:///tmp/ddfake3641417068/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┌─ 1 Kinds ────────┐┌─ 2 Compose (2) ──────────────────────────────────────────────────────────┐┌─ 4 Events ────────────────────── ● live ─┐
+│  Containers    13││  PROJECT                    CONTAINERS   RUNNING  WORKING DIR            ││Waiting for engine events…                │
+│  Images        16││  blog                                2         0  /tmp/TestComposeDeclar…││Everything the daemon does                │
+│  Volumes        7││▸ shop                                4         3  /tmp/TestComposeDeclar…││shows up here as it happens.              │
+│  Networks       7││                                                                          ││                                          │
+│▸ Compose        2││                                                                          ││                                          │
+│                  ││                                                                          ││                                          │
+│  ● 7 running     ││                                                                          ││                                          │
+│  ‖ 1 paused      ││                                                                          ││                                          │
+│  ○ 5 stopped     ││                                                                          ││                                          │
+│                  ││                                                                          ││                                          │
+│                  ││                                                                          ││                                          │
+│                  ││                                                                          ││                                          │
+│                  │└──────────────────────────────────────────────────────────────────────────┘│                                          │
+│                  │┏━ ◆ 3 Details: shop ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Info [Declared] ━┓│                                          │
+│                  │┃                               nginx:1.27                                 ┃│                                          │
+│                  │┃                               config hash 97375646b1de                   ┃│                                          │
+│                  │┃present only    worker         shop-worker-1 runs shop/worker:dev         ┃│                                          │
+│                  │┃                               the file does not declare it               ┃│                                          │
+│                  │┃                               config hash bc6d4c67dc04                   ┃│                                          │
+│                  │┃not compared    api            declares shop/api:${API_TAG:-dev} ·        ┃│                                          │
+│                  │┃                               shop-api-1 runs shop/api:dev               ┃│                                          │
+│                  │┃                               the image is a template                    ┃│                                          │
+│                  │┃                               (shop/api:${API_TAG:-dev}); the desk does  ┃│                                          │
+│                  │┃                               not interpolate                            ┃│                                          │
+│                  │┃                               config hash 737a40b9f86b                   ┃└──────────────────────────────────────────┘
+│                  │┃not compared    debug          declares busybox:1.36                      ┃┌─ 5 Jobs ──────────────────────── 1 done ─┐
+│                  │┃                               declared with profiles (debug); the desk   ┃│▸ ✓ compare with the compose file shop 1ms│
+│                  │┃                               cannot know if they were enabled           ┃│                                          │
+│                  │┃match           db             declares postgres:16 · shop-db-1 runs      ┃│                                          │
+│                  │┃                               postgres:16                                ┃│                                          │
+│                  │┃                               config hash ad9c1afeaa0f                   ┃│                                          │
+│                  │┃                                                                          ┃│                                          │
+│                  │┃Compared: which services exist, and literal images. Not compared: scale,  ┃│                                          │
+│                  │┃ports, volumes, environment, command, health checks. Config hashes are    ┃│                                          │
+│                  │┃↑↓ scroll · 20–39 of 40                                                   ┃│                                          │
+└──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────┘
+ ✓ compare with the compose file shop
+ / find  ↑↓ scroll  [ ] tab  ⏎ compare with the file  t stop project  d remove project                             Tab pane  ? keys  q quit

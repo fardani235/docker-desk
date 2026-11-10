@@ -1,0 +1,50 @@
+# Shaped like a real single-node GitLab file: a templated image, a .env
+# beside it, and a 20-line block scalar that contains a flow map and colons.
+name: gitlab
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:${GITLAB_VERSION:-19.5.1-ce.0}
+    container_name: gitlab
+    hostname: ${GITLAB_HOSTNAME:-gitlab}
+    restart: unless-stopped
+    shm_size: "256m"
+    logging: *logging
+    environment:
+      TZ: ${TZ:-Asia/Jakarta}
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url '${GITLAB_EXTERNAL_URL}'
+        gitlab_rails['gitlab_shell_ssh_port'] = ${GITLAB_SSH_PORT}
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+        letsencrypt['enable'] = false
+        nginx['proxy_set_headers'] = {
+          "X-Forwarded-Proto" => "https",
+          "X-Forwarded-Ssl" => "on"
+        }
+        puma['worker_processes'] = 0
+        puma['min_threads'] = 1
+        puma['max_threads'] = 4
+        sidekiq['concurrency'] = 4
+        gitlab_rails['env'] = { 'MALLOC_ARENA_MAX' => '2' }
+        postgresql['shared_buffers'] = '256MB'
+        redis['maxmemory'] = '256mb'
+        nginx['worker_processes'] = 2
+        prometheus_monitoring['enable'] = false
+        image: not-this-one:1.0
+        services: { fake: { image: nor-this } }
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${GITLAB_SSH_PORT:-2222}:22"
+    volumes:
+      - ./config:/etc/gitlab
+      - ./logs:/var/log/gitlab
+
+  runner:
+    <<: *logging
+    image: "gitlab/gitlab-runner:v18.5.0"
+    profiles: [ci]
