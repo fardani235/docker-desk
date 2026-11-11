@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake1604896791/d.sock  ● connected  [READ-ONLY]
-┏━ ◆ Space — where the bytes went ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 10:58:44 ━┓
+ Docker Desk  unix:///tmp/ddfake3269878758/d.sock  ● connected  [READ-ONLY]
+┏━ ◆ Space — where the bytes went ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 06:32:12 ━┓
 ┃   removed; with the containerd image store, the bytes go when its garbage    ┃
 ┃   collector runs.                                                            ┃
 ┃                                                                              ┃

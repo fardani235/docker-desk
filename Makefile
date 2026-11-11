@@ -38,7 +38,7 @@ e2e: build ## scripted pseudo-terminal session against the fake daemon; screens 
 
 real-readonly-check: ## read-only decode and export check against the REAL daemon (GET/HEAD only, enforced)
 	DOCKER_DESK_REAL_HOST=$${DOCKER_HOST:-unix:///var/run/docker.sock} \
-		go test ./internal/engine/ ./internal/space/ -run 'TestRealDaemonReadOnly|TestRealDaemonExportReadOnly|TestRealDaemonDiskUsageReadOnly|TestRealDaemonPackagesReadOnly' -count=1 -v
+		go test ./internal/engine/ ./internal/space/ -run 'TestRealDaemonReadOnly|TestRealDaemonExportReadOnly|TestRealDaemonDiskUsageReadOnly|TestRealDaemonPackagesReadOnly|TestRealDaemonFilesReadOnly' -count=1 -v
 
 sandbox: build ## start the fake daemon and open the desk on it — nothing real is touched
 	@$(BIN)/fake-dockerd -socket $(SANDBOX_SOCKET) -registry $(SANDBOX_REGISTRY) -compose-dir $(SANDBOX_COMPOSE) >/dev/null & fake=$$!; \

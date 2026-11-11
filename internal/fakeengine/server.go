@@ -414,6 +414,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 		s.handleStats(w, r, seg[1])
 	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "top" && get:
 		s.handleTop(w, r, seg[1])
+	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "changes" && get:
+		s.handleChanges(w, seg[1])
 	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "exec" && post:
 		s.handleExecCreate(w, r, seg[1])
 	case len(seg) == 3 && seg[0] == "containers" && post:

@@ -78,24 +78,39 @@ func (f Format) Describe(space bool) string {
 	return "JSON — everything computed, in the desk's own schema"
 }
 
-// Document is what one export describes: an image, or the Space account.
-// Exactly one is set.
+// DescribeFor is the format in words for the document a dialog writes.
+func (f Format) DescribeFor(d Document) string {
+	if d.Files != nil {
+		if f == Text {
+			return "text — one path per line, tab-separated, names escaped"
+		}
+		return "JSON — every path with its type, size, mode and layer, names escaped"
+	}
+	return f.Describe(d.Space != nil)
+}
+
+// Document is what one export describes: an image, the Space account, or
+// an image's file listing. Exactly one is set.
 type Document struct {
 	Image *Image
 	Space *Space
+	Files *Files
 }
 
 // Kind is the document's kind, as the prefilled file name says it.
 func (d Document) Kind() string {
-	if d.Space != nil {
+	switch {
+	case d.Space != nil:
 		return "space"
+	case d.Files != nil:
+		return "files"
 	}
 	return "findings"
 }
 
 // FormatsFor lists the formats the document can be written in.
 func FormatsFor(d Document) []Format {
-	if d.Space != nil {
+	if d.Space != nil || d.Files != nil {
 		return []Format{JSON, Text}
 	}
 	return Formats
@@ -103,9 +118,23 @@ func FormatsFor(d Document) []Format {
 
 // Render serializes the document in the format.
 func Render(f Format, d Document) ([]byte, error) {
+	set := 0
+	for _, x := range []bool{d.Image != nil, d.Space != nil, d.Files != nil} {
+		if x {
+			set++
+		}
+	}
 	switch {
-	case d.Image != nil && d.Space != nil, d.Image == nil && d.Space == nil:
-		return nil, fmt.Errorf("an export describes exactly one image or the Space account")
+	case set != 1:
+		return nil, fmt.Errorf("an export describes exactly one image, the Space account or a file listing")
+	case d.Files != nil:
+		switch f {
+		case JSON:
+			return FilesJSON(*d.Files)
+		case Text:
+			return FilesText(*d.Files), nil
+		}
+		return nil, fmt.Errorf("%s holds packages only; a file listing is written as json or text", f)
 	case d.Space != nil:
 		switch f {
 		case JSON:

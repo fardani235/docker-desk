@@ -156,7 +156,16 @@ func (a *analyser) finish() (*Report, error) {
 		}
 	}
 
+	rep.Instructions = instr
 	a.attestations(rep)
+	if a.files != nil {
+		rep.Files = a.listing(scans, instr)
+	}
+	if a.opts.Mode == ModeFiles {
+		// Headers only: no rule runs and no package list is made.
+		rep.Notes = a.notes
+		return rep, nil
+	}
 	rep.Packages = &PackageSet{SBOM: a.declared(rep), DBs: a.installed(scans)}
 
 	b := &builder{lim: a.lim, count: map[string]int{}, overflow: map[string]*Finding{}}

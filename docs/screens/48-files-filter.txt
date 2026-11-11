@@ -1,0 +1,30 @@
+ Docker Desk  unix:///tmp/ddfake1033943153/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┏━ ◆ Files — the image's layers merged into one tree ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ python:3.12-slim ━┓
+┃ by name · 7 rows · filter: requests · 2 matches of 18 searched                                                       ┃
+┃   image      python:3.12-slim · 90db23bd5600 · linux/amd64 · 4 layers · 131MB (the daemon's size)                    ┃
+┃   indexed    7 entries indexed, every one the archive holds                                                          ┃
+┃   size       the tree's files 19.9kB · the daemon's size 131MB — different measurements, not a contradiction: layers ┃
+┃              overlap                                                                                                 ┃
+┃                                                                                                                      ┃
+┃   NAME                                                                                         SIZE  TYPE      LAYER ┃
+┃   - usr/                                                                                       495B  dir 2           ┃
+┃     - local/                                                                                    23B  dir 1           ┃
+┃       - lib/                                                                                    23B  dir 1           ┃
+┃         - python3.12/                                                                           23B  dir 1           ┃
+┃           - site-packages/                                                                      23B  dir 1           ┃
+┃             - requests/                                                                         23B  dir 1           ┃
+┃ ▸               __init__.py                                                                     23B  file      L3    ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃ ─────────────────────────────────────────────────────────────────────────────────────────────────────────── 7 of 7 ─ ┃
+┃ path       /usr/local/lib/python3.12/site-packages/requests/__init__.py                                              ┃
+┃ type       regular file · mode 0644 (-rw-r--r--) · uid 0 gid 0 · modified 2024-01-02 03:04:05 UTC                    ┃
+┃ size       23B, as the archive records it                                                                            ┃
+┃ layer      3 of 4 · RUN pip install --no-cache-dir requests                                                          ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ read the image archive python:3.12-slim
+ ↑↓ move  →← open  s order  / filter  w export  Esc clear filter                                    F Esc close  ? keys

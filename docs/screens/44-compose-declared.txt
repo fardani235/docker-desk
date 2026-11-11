@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake3641417068/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake673555874/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┌─ 2 Compose (2) ──────────────────────────────────────────────────────────┐┌─ 4 Events ────────────────────── ● live ─┐
 │  Containers    13││  PROJECT                    CONTAINERS   RUNNING  WORKING DIR            ││Waiting for engine events…                │
 │  Images        16││  blog                                2         0  /tmp/TestComposeDeclar…││Everything the daemon does                │
@@ -26,7 +26,7 @@
 │                  │┃                               not interpolate                            ┃│                                          │
 │                  │┃                               config hash 737a40b9f86b                   ┃└──────────────────────────────────────────┘
 │                  │┃not compared    debug          declares busybox:1.36                      ┃┌─ 5 Jobs ──────────────────────── 1 done ─┐
-│                  │┃                               declared with profiles (debug); the desk   ┃│▸ ✓ compare with the compose file shop 1ms│
+│                  │┃                               declared with profiles (debug); the desk   ┃│▸ ✓ compare with the compose file shop 3ms│
 │                  │┃                               cannot know if they were enabled           ┃│                                          │
 │                  │┃match           db             declares postgres:16 · shop-db-1 runs      ┃│                                          │
 │                  │┃                               postgres:16                                ┃│                                          │

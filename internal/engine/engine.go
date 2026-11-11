@@ -102,6 +102,13 @@ type Engine interface {
 	// a running container (GET /containers/{id}/top, no ps arguments). A
 	// container that is not running is refused with a KindConflict error.
 	Processes(ctx context.Context, id string) (ProcessList, error)
+	// ContainerChanges is the daemon's list of the paths a container has
+	// added, changed or deleted since its image (GET
+	// /containers/{id}/changes, what `docker diff` prints). It is a GET and
+	// cheap: the storage driver compares the writable layer with the
+	// image's, and no file's bytes cross the connection. Paths are the
+	// daemon's, unescaped and untrusted.
+	ContainerChanges(ctx context.Context, id string) ([]Change, error)
 
 	// ---- exec ------------------------------------------------------------
 	// ExecCreate prepares an interactive TTY process in a running container.

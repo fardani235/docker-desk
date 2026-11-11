@@ -476,6 +476,88 @@ build cache. For the highlighted image, two numbers:
 The opening account is itself a job ("measure disk usage"), cancellable with `c`: the daemon
 walks container and volume filesystems to answer it too.
 
+### Files — what is inside an image, and what a container wrote
+
+`F`, on the highlighted image or container and from any pane, covers the desk with the
+image's filesystem: its layers merged into one tree, each path with its type, size, mode and
+the layer — and that layer's build instruction — that last wrote it. `F` or Esc puts the desk
+back exactly as it was.
+
+```
+   NAME                                      SIZE  TYPE      LAYER  CHANGE
+   - etc/                                    258B  dir 5            changed
+     - nginx/                                171B  dir 3            changed
+       + conf.d/                              50B  dir 1
+ ▸       nginx.conf                           88B  file      L2     changed
+         traversal.conf                       33B  file      L3
+       os-release                             55B  file      L1
+ ────────────────────────────────────────────────────────────────── 7 of 24 ─
+ path       /etc/nginx/nginx.conf
+ type       regular file · mode 0644 (-rw-r--r--) · uid 0 gid 0 · modified
+            2024-01-02 03:04:05 UTC
+ size       88B, the image's: the container changed this file, and its own
+            size is not read
+ layer      2 of 3 · RUN apt-get update && apt-get install -y nginx=1.27.2 &&
+            rm -rf /var/lib/apt/lists/* && apt-get clean
+ change     changed by the container since its image
+```
+
+**Two sources, and only one of them is expensive.**
+
+- **An image's tree** comes from its archive — the stream `docker save` writes
+  (`GET /images/get`) — read once per session, as one job, and only when you press `Enter`.
+  Until then the view shows what the desk already knows (the image, its platform, its layer
+  count and the daemon's size for it) and says *nothing has been read*. The job reads tar
+  headers only: names, types, sizes, modes, owners and times. **No file's contents are read,
+  shown or searched.** `c` cancels it; closing the view cancels it too. A cancelled or failed
+  read keeps nothing and says why. The last two images read are kept, so reopening is
+  instant and the archive is not read again.
+- **A container's files** are its image's tree with the daemon's own change list laid over it
+  — `GET /containers/{id}/changes`, what `docker diff` prints — read when the view opens and
+  again on `r`, which reads nothing else. Paths the container **added** are marked and have no
+  size (the desk does not read a container's archive), a directory it added cannot be opened
+  and says its contents are not read, a **changed** file keeps the image's size and says so,
+  and a **deleted** path is struck through with the image's size and layer. Opened before the
+  image is read, the view lists the changes alone, without sizes, and says the image's files
+  have not been read and that `Enter` reads them. With no changes it says *this container has
+  written nothing since its image*. The list's age is shown ("read 12s ago"); the image's tree
+  never goes stale, since an image's archive cannot change.
+
+**The tree is the merged filesystem.** A path several layers wrote appears once, with the last
+writer's size and mode; a path a later layer removed is not drawn, and the header counts how
+many were; an opaque directory shows only what its own and later layers put in it. Symlinks
+show their target and are never followed; a hard link is one entry naming another; devices,
+FIFOs and sockets are typed and never opened. A directory's size is computed from the files it
+holds, says so, shows how many files those are (`dir 12`), and carries no layer (several layers
+can write one). A file's layer is marked `L3?` when a layer above it could not be read: that layer
+may have replaced or removed it, and the detail says which and why. The daemon's size for the
+image and the tree's own total are shown side by side as **different measurements, not a
+contradiction**: layers overlap, and the daemon counts what a later layer replaced or removed.
+
+**Bounds, stated.** At most **200,000 entries**, 4 KiB a path (Linux's `PATH_MAX`) and 48 MB of
+path text are kept. The header says how many were indexed of how many were seen
+("200,000 entries indexed of 812,431 seen") and which bound dropped the rest; while the index
+is cut, the filter says it may miss a path the image holds. A **zstd-compressed layer cannot be
+read** — the desk carries no zstd decoder — and the header names it: no row is drawn, and no
+path is said to be absent, on its account.
+
+**Moving.** `↑` `↓` `PgUp` `PgDn` `g` `G` move; `→` or `Enter` opens a directory, `←` closes it
+or goes to the one it is in; `s` orders by name or by size (largest first, directories by
+their files); `/` filters by path, case ignored, showing every match with the directories that
+hold it and counting the matches among the paths searched. `Esc` clears the filter and keeps
+the cursor on its path. Long names are cut on the left, so the end of a name stays visible.
+
+**Names are hostile.** Whoever built the image chose them. Every name is escaped before it is
+drawn or written — a newline as `\n`, other control characters, `DEL` and invalid UTF-8 as
+`\xNN`, a backslash doubled — so a name cannot colour the screen, move the cursor or forge a
+row of the listing. A name shaped like `../../etc/passwd` is a name in the tree; no path is
+ever opened, resolved or joined to the machine's filesystem.
+
+**Export.** `w` writes the listing through the evidence dialog below — text (one path per line,
+tab-separated) or JSON — with every path's type, size, mode and layer and, for a container,
+what it did to it; names escaped as on screen. Before the archive is read there is no index,
+and nothing is written.
+
 ### Export — evidence to a file
 
 `w` writes what the desk has already worked out to **one file on this machine**: in Images ›
@@ -579,6 +661,7 @@ Press `?` inside the desk for the same list.
 | `r` | refresh every list now; also takes a new Processes snapshot (now if the tab is shown, else on the next visit), and asks upstream again if Images › Upstream is shown |
 | `U` | Images: check every tagged image upstream, one at a time, as one job (see [Upstream](#upstream--what-the-tag-names-today)) |
 | `S` | Space: where the bytes went, and what removing something frees (see above) |
+| `F` | Files: the highlighted image's merged tree, or a container's changes over it (see [Files](#files--what-is-inside-an-image-and-what-a-container-wrote)) |
 | `B` | Repository: a registry's tags for the highlighted image's repository, and a pull by digest (see [Repository](#repository--a-registrys-tags-and-one-build-by-its-digest)) |
 | `T` | next colour theme |
 | `?` | help |
@@ -848,6 +931,11 @@ Good to know:
   without a `Link` header shows its first page only. Build times are read only on `d`, for the
   rows on screen. A pinned pull leaves no local tag (the Engine API sends the digest in place of
   it); nothing retags, deletes or pushes a tag.
+- Files (`F`): no container archive, no file contents, no file-level difference. A container's
+  side is the daemon's change list over its image's tree: a changed file's own size and what an
+  added directory holds are not read (that needs the container's archive, a later change). No
+  file is previewed, and nothing is compared between a container and its image beyond what the
+  daemon lists. The index keeps at most 200,000 entries; zstd layers are named as unread.
 - Packages: only dpkg, apk and rpm databases are read as the installed side — not npm, pip or
   Go modules, whose SBOM entries are "not checkable". rpm is read from `rpmdb.sqlite` only (rpm
   4.16 and later); an older Berkeley DB or SUSE's NDB database is reported as unknown, as is one
@@ -871,7 +959,12 @@ resolves, so Images › Upstream falls back to the fake daemon, which says `acme
 registry of its own, in plain HTTP on a free loopback port, holding `acme/api` (105 tags,
 arm64-only `3.29.0-rc.1` among them) and three local images of it, so `B` on
 `127.0.0.1:<port>/acme/api:3.28.2` shows `here`, `here, the tag moved upstream` and
-`same build as stable`, and `Enter` on `3.28.3` pulls it by digest — and opens the
+`same build as stable`, and `Enter` on `3.28.3` pulls it by digest — plus, for Files (`F`),
+`nginx:1.27`, whose archive has a deep tree, a file a later layer replaces, a whiteout, an opaque
+directory, a symlink, a hard link, a device, a FIFO, a traversal-shaped name and a **hostile name**
+(an ANSI colour, a newline and a byte that is not UTF-8, drawn escaped), and `shop-web-1`, made
+from it, which has written **the four change cases** — a file added, a file changed, a file
+deleted and a directory added (with an entry beneath it the desk does not read) — and opens the
 desk on it. The header shows the sandbox socket. Nothing there
 is real; break whatever you like. (The real `docker` CLI works against it too:
 `DOCKER_HOST=unix:///tmp/docker-desk-sandbox.sock docker ps`.)

@@ -55,6 +55,8 @@ type Container struct {
 	// Processes, when set, replaces the derived top listing (see
 	// SetProcesses).
 	Processes *ProcessTable
+	// Changes is what GET /containers/{id}/changes returns (SetChanges).
+	Changes []Change
 
 	logs         *logBuffer
 	runDone      chan struct{} // closed when the current run ends

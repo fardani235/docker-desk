@@ -1,0 +1,30 @@
+ Docker Desk  unix:///tmp/ddfake1033943153/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+┏━ ◆ Files — the image's tree with the container's changes over it ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ shop-web-1 ━┓
+┃ by name · 13 rows                                                                                                    ┃
+┃   container  shop-web-1 · f948ec4de9e4 · from nginx:1.27 (f673addec473)                                              ┃
+┃   changes    15 listed by the daemon, read 0s ago · r reads them again                                               ┃
+┃   overlay    3 added; sizes and layers are the image's                                                               ┃
+┃   not read   1 change beneath a directory the container added: not drawn, its contents are not read                  ┃
+┃   deleted    1 deleted paths are not drawn until the image's files are read                                          ┃
+┃   image      nginx:1.27 · f673addec473 · platform: the daemon's default · 188MB (the daemon's size)                  ┃
+┃   image      The image's files have not been read: Enter reads its archive (188MB from the daemon) as one job. Until ┃
+┃              then the rows are the container's changes alone, without sizes.                                         ┃
+┃                                                                                                                      ┃
+┃   NAME                                                                              SIZE  TYPE      LAYER  CHANGE    ┃
+┃ ▸ - etc/                                                                               —  dir       —      changed   ┃
+┃     - nginx/                                                                           —  dir       —      changed   ┃
+┃         nginx.conf                                                                     —  ?         —      changed   ┃
+┃   - run/                                                                               —  dir       —      changed   ┃
+┃       nginx.pid                                                                        —  ?         —      added     ┃
+┃ ────────────────────────────────────────────────────────────────────────────────────────────────────────── 1 of 13 ─ ┃
+┃ path       /etc                                                                                                      ┃
+┃ type       directory                                                                                                 ┃
+┃ size       not known: the image's index does not hold this path                                                      ┃
+┃ layer      none: not in the image's tree                                                                             ┃
+┃ change     changed by the container since its image                                                                  ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┃                                                                                                                      ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ Exported text to /tmp/TestFilesView120x30631282873/001/docker-desk-files-python-3.12-slim-20261111.txt (1600 bytes, mo…
+ ⏎ read the archive  ↑↓ move  →← open  s order  / filter  w export  r changes                       F Esc close  ? keys

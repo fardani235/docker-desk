@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/TestExportFromTheSandbox106357774/002/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/TestExportFromTheSandbox2305446202/002/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┌─ 2 Images (1 of 22) ──────────────────────────────────── filter: python ─┐┌─ 4 Events ────────────────────── ● live ─┐
 │  Containers    13││  REPOSITORY          TAG         IMAGE ID          SIZE    AGE   USED BY ││Waiting for engine events…                │
 │▸ Images        22││▸ python              3.12-slim   90db23bd5600     131MB    14d         - ││Everything the daemon does                │
@@ -15,8 +15,8 @@
 │                  │└──────┃                                                                                    ┃                          │
 │                  │┏━ ◆ 3 ┃ Write this file?                                                                   ┃                          │
 │                  │┃4 find┃                                                                                    ┃                          │
-│                  │┃live: ┃ path       /tmp/TestExportFromTheSandbox106357774/001/docker-desk-findings-python- ┃                          │
-│                  │┃▸ --  ┃            3.12-slim-20261110.json                                                 ┃                          │
+│                  │┃live: ┃ path       /tmp/TestExportFromTheSandbox2305446202/001/docker-desk-findings-python ┃                          │
+│                  │┃▸ --  ┃            -3.12-slim-20261111.json                                                ┃                          │
 │                  │┃  --  ┃ format     JSON — everything computed, in the desk's own schema                    ┃                          │
 │                  │┃  --  ┃ size       38576 bytes                                                             ┃                          │
 │                  │┃  L4  ┃ mode       0600: only you can read it                                              ┃                          │
@@ -26,7 +26,7 @@
 │                  │┃      ┃                                                                                    ┃                          │
 │                  │┃      ┃ y write  n Esc back                                                                ┃──────────────────────────┘
 │                  │┃      ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───────────────── 1 done ─┐
-│                  │┃───────────────────────────────────────────────────────────────── 1 of 4 ─┃│▸ ✓ analyse image python:3.12-slim    30ms│
+│                  │┃───────────────────────────────────────────────────────────────── 1 of 4 ─┃│▸ ✓ analyse image python:3.12-slim    10ms│
 │                  │┃why      The program the command names is not in the image: a container ca┃│                                          │
 │                  │┃         nnot start.                                                      ┃│                                          │
 │                  │┃evidence python3 is not in the final filesystem                           ┃│                                          │

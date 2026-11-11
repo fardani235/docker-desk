@@ -1,7 +1,7 @@
- Docker Desk  unix:///tmp/ddfake147989584/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake3128835518/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Images (16, 17 refs) ───────────────────────────────────────────────────────┐┌─ 4 Events ────────────────────────── ● live ─┐
 ┃  Containers    13┃│  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ││Waiting for engine events…                    │
-┃▸ Images        16┃│▸ acme/report             1.4           efc03945f57b     114MB     0s         - ││Everything the daemon does                    │
+┃▸ Images        16┃│▸ acme/report             1.4           efc03945f57b     114MB     1s         - ││Everything the daemon does                    │
 ┃  Volumes        7┃│  alpine                  3.20          bbfb6bb5502a     7.8MB    24h     2 ctr ││shows up here as it happens.                  │
 ┃  Networks       7┃│  busybox                 1.36          b227a1c6d0d2     4.3MB    24h     1 ctr ││                                              │
 ┃  Compose        2┃│  gcr.io/distroless/sta…  nonroot       37588eec338e     2.0MB    24h     1 ctr ││                                              │
@@ -18,7 +18,7 @@
 ┃                  ┃│Reference  acme/report:1.4                                                      ││                                              │
 ┃                  ┃│ID         efc03945f57b                                                         ││                                              │
 ┃                  ┃│Size       114MB                                                                ││                                              │
-┃                  ┃│Created    2026-11-10 10:57:55  (0s ago)                                        ││                                              │
+┃                  ┃│Created    2026-11-11 06:31:16  (1s ago)                                        ││                                              │
 ┃                  ┃│                                                                                ││                                              │
 ┃                  ┃│References                                                                      ││                                              │
 ┃                  ┃│  acme/report:1.4                                                               ││                                              │

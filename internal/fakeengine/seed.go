@@ -156,6 +156,28 @@ func (s *Server) SeedDemo() {
 	// python:3.12-slim carries an SBOM made from another build: its
 	// package view (Findings, then i) has every kind of disagreement.
 	s.SetImageArchive("python:3.12-slim", fixture.OCI(fixture.DemoPackages("python:3.12-slim")).Archive)
+	// nginx:1.27 is the image the Files view has most to draw in — a
+	// replaced file, a whiteout, an opaque directory, links, devices and a
+	// hostile name — in the classic layout; shop-web-1, made from it, has
+	// written one of every change `docker diff` can list (F, then Enter).
+	s.SetImageArchive("nginx:1.27", fixture.Legacy(fixture.DemoFiles("nginx:1.27")).Archive)
+	s.SetChanges("shop-web-1", DemoChanges()...)
+}
+
+// DemoChanges is what shop-web-1 has written since its image: a file
+// changed (nginx.conf), a file added (state.db) in a directory the image
+// has, a file deleted (/tmp/seed) and a directory added
+// (/var/cache/nginx/client_temp, with an entry the desk does not read), in
+// the order the daemon lists them, parents with their own C.
+func DemoChanges() []Change {
+	return []Change{
+		Changed("/etc"), Changed("/etc/nginx"), Changed("/etc/nginx/nginx.conf"),
+		Changed("/run"), Added("/run/nginx.pid"),
+		Changed("/tmp"), Deleted("/tmp/seed"),
+		Changed("/var"), Changed("/var/cache"), Changed("/var/cache/nginx"),
+		Added("/var/cache/nginx/client_temp"), Added("/var/cache/nginx/client_temp/00000001"),
+		Changed("/var/lib"), Changed("/var/lib/nginx"), Added("/var/lib/nginx/state.db"),
+	}
 }
 
 // seedDisk gives the demo's images the layers real ones have — most of them

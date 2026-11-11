@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake441006594/d.sock  ● connected  [READ-ONLY]
+┏━ ◆ Files ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ shop-web-1 ━┓
+┃ by name · 3 rows · filter: nginx.conf · 1 match of 46 searched               ┃
+┃              daemon's size)                                                  ┃
+┃   indexed    50 entries indexed, every one the archive holds                 ┃
+┃   removed    1 path removed by later layers, 2 entries beneath or under      ┃
+┃              opaque directories; not drawn                                   ┃
+┃   size       the tree's files 4.8kB · the daemon's size 188MB — different    ┃
+┃              measurements, not a contradiction: layers overlap               ┃
+┃                                                                              ┃
+┃   NAME                                      SIZE  TYPE      LAYER  CHANGE    ┃
+┃   - etc/                                    258B  dir 5            changed   ┃
+┃     - nginx/                                171B  dir 3            changed   ┃
+┃ ▸       nginx.conf                           88B  file      L2     changed   ┃
+┃ ─────────────────────────────────────────────────────────────────── 3 of 3 ─ ┃
+┃ path       /etc/nginx/nginx.conf                                             ┃
+┃ type       regular file · mode 0644 (-rw-r--r--) · uid 0 gid 0 · modified    ┃
+┃            2024-01-02 03:04:05 UTC                                           ┃
+┃ size       88B, the image's: the container changed this file, and its own    ┃
+┃            size is not read                                                  ┃
+┃ layer      2 of 3 · RUN apt-get update && apt-get install -y nginx=1.27.2 && ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ read the image archive nginx:1.27
+ ↑↓ move  →← open  s order  / filter  w export  r changes … F Esc close  ? keys

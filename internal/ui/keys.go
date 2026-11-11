@@ -53,6 +53,10 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 	if m.pk.open {
 		return m.onPackagesKey(k)
 	}
+	// So does the Files view.
+	if m.fs.open {
+		return m.onFilesKey(k)
+	}
 	// The Space view covers the panes: no key reaches them behind it.
 	if m.sp.open {
 		return m.onSpaceKey(k)
@@ -72,6 +76,10 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 		return nil
 	case "S":
 		return m.openSpace()
+	case "F":
+		// A read, like S and B: it works in read-only mode, and opening it
+		// reads nothing expensive (an image: nothing at all).
+		return m.openFiles()
 	case "B":
 		// A read, like U: not among the guarded actions, and it works in
 		// read-only mode. Its pull goes through them.

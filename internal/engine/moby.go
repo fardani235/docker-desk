@@ -1064,6 +1064,18 @@ func (m *mobyEngine) Processes(ctx context.Context, id string) (ProcessList, err
 	return ProcessList{Titles: res.Titles, Rows: res.Processes}, nil
 }
 
+func (m *mobyEngine) ContainerChanges(ctx context.Context, id string) ([]Change, error) {
+	res, err := m.cli.ContainerDiff(ctx, id, client.ContainerDiffOptions{})
+	if err != nil {
+		return nil, m.wrap("list changes", err)
+	}
+	out := make([]Change, 0, len(res.Changes))
+	for _, c := range res.Changes {
+		out = append(out, Change{Path: c.Path, Kind: ChangeKind(c.Kind)})
+	}
+	return out, nil
+}
+
 func rawStats(s container.StatsResponse) RawStats {
 	r := RawStats{
 		Read:       s.Read,

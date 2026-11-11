@@ -202,6 +202,8 @@ type Model struct {
 
 	// ---- space view ----
 	sp spaceState
+	// ---- files view (F, on an image or a container) ----
+	fs filesState
 	// ---- repository browser (B) ----
 	rb repoState
 	// changedAt is when a refresh last found the engine different from what
@@ -480,6 +482,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dirty = true
 		m.onExportDone(msg)
 		return m, nil
+	case filesChangesMsg:
+		m.dirty = true
+		m.onFilesChanges(msg)
+		return m, nil
 
 	case pickMsg:
 		m.dirty = true
@@ -569,6 +575,14 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 	// and a compose file read for the Declared tab.
 	m.collectSpace()
 	m.collectDeclared()
+	m.collectFiles()
+	if m.fs.open {
+		// The change list's age moves each second; a read's progress too.
+		if sec := now.Unix(); sec != m.fs.drawnSec || m.fs.run != nil {
+			m.fs.drawnSec = sec
+			m.dirty = true
+		}
+	}
 	if m.sp.open {
 		if sec := now.Unix(); sec != m.sp.drawnSec {
 			m.sp.drawnSec = sec

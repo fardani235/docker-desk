@@ -1,11 +1,11 @@
- Docker Desk  unix:///tmp/ddfake147989584/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake3128835518/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-web ━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  10:57:56 ctr kill sig 15 shop-web-1         │
-│  Images        16│┃▸ shop-web-1       nginx:1.27     ● running        …         …  Up 0 seconds    ┃│  10:57:56 ctr die exit 0 shop-web-1          │
-│  Volumes        7│┃                                                                                ┃│  10:57:56 net disconnect shop_default  ← sho…│
-│  Networks       7│┃                                                                                ┃│  10:57:56 ctr stop       shop-web-1          │
-│  Compose        2│┃                                                                                ┃│  10:57:57 net connect    shop_default  ← sho…│
-│                  │┃                                                                                ┃│  10:57:57 ctr start      shop-web-1          │
+│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  06:31:18 ctr kill sig 15 shop-web-1         │
+│  Images        16│┃▸ shop-web-1       nginx:1.27     ● running        …         …  Up 0 seconds    ┃│  06:31:18 ctr die exit 0 shop-web-1          │
+│  Volumes        7│┃                                                                                ┃│  06:31:18 net disconnect shop_default  ← sho…│
+│  Networks       7│┃                                                                                ┃│  06:31:18 ctr stop       shop-web-1          │
+│  Compose        2│┃                                                                                ┃│  06:31:18 net connect    shop_default  ← sho…│
+│                  │┃                                                                                ┃│  06:31:18 ctr start      shop-web-1          │
 │  ● 7 running     │┃                                                                                ┃│                                              │
 │  ‖ 1 paused      │┃                                                                                ┃│                                              │
 │  ○ 5 stopped     │┃                                                                                ┃│                                              │
@@ -29,7 +29,7 @@
 │                  ││                                                                                │└──────────────────────────────────────────────┘
 │                  ││                                                                                │┌─ 5 Jobs ──────────────────────────── 2 done ─┐
 │                  ││                                                                                ││▸ ✓ start container shop-web-1             2ms│
-│                  ││                                                                                ││  ✓ stop container shop-web-1              8ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              3ms│
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
