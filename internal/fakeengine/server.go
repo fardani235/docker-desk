@@ -26,6 +26,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/moby/moby/api/types/events"
@@ -64,6 +65,7 @@ func (r Request) String() string {
 // Server is the fake engine.
 type Server struct {
 	mu         sync.Mutex
+	statsOpen  atomic.Int64          // statistics streams currently open
 	containers map[string]*Container // by ID
 	images     map[string]*Image     // by ID
 	volumes    map[string]*Volume    // by name

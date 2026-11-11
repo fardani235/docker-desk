@@ -1,6 +1,7 @@
 # Docker Desk
 
-One screen for a Docker engine — the one on this machine, or one on another, over SSH or TCP.
+One screen for Docker engines — the one on this machine, or ones on others, over SSH or TCP;
+one at a time in front of you, the rest watched in the background.
 Not a table you scroll — a desk: the kinds of things
 Docker has on the left, the objects of the kind you picked in the middle with their details
 underneath, the engine's own event stream ticking by on the right, and the slow work you sent
@@ -8,6 +9,7 @@ off in the corner. All alive at once, all from the keyboard.
 
 ```
  Docker Desk  unix:///var/run/docker.sock  ctx default  Engine 29.8.2  on myhost  ● connected
+ Daemons [◆1 local ●] │ 2 staging ● │ 3 prod-1 ✗                                       M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (12) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ─────────── ● live ─┐
 │▸ Containers    12│┃  NAME            IMAGE         STATE        CPU      MEM     ┃│06:51:17 ctr kill sig 15 web   │
 │  Images        14│┃▸ shop-web-1      nginx:1.27    ● running   0.3%  12.1MiB     ┃│06:51:17 ctr die exit 0 web    │
@@ -45,7 +47,7 @@ the remote one. The one exception: an `ssh://` daemon is reached through your `s
 | `docker-desk` | open the desk on the daemon your current Docker context points at |
 | `docker-desk -H ssh://ops@prod-1` | open it on that daemon instead (`--host`; any `unix://`, `ssh://` or `tcp://` URL) |
 | `docker-desk -c staging` | open it on the daemon of that Docker context (`--context`) |
-| `docker-desk --read-only` | look, don't touch: every action that changes something, and the shell, is disabled; anything but `GET`/`HEAD` is refused before it is sent |
+| `docker-desk --read-only` | look, don't touch: every action that changes something, and the shell, is disabled; anything but `GET`/`HEAD` is refused before it is sent — on every daemon of the session, including those added later |
 | `docker-desk --no-compose-files` | never read a compose file: Compose › Declared compares nothing and says which flag forbade it (`--read-only` alone still allows the comparison, which only reads) |
 | `docker-desk --check` | say which daemon would be used, how it is reached and whether it answers, then exit |
 | `docker-desk --report ~/py.spdx.json --report-format spdx --report-object python:3.12-slim` | analyse one image as Images › Findings does, write the report, exit — no terminal needed (see [Export](#export--evidence-to-a-file)) |
@@ -55,12 +57,14 @@ the remote one. The one exception: an `ssh://` daemon is reached through your `s
 
 ### Which daemon?
 
-Exactly one, for the whole session, decided the way the Docker CLI decides it: `--context`,
+The desk opens on one daemon, decided the way the Docker CLI decides it: `--context`,
 then `--host`, then `DOCKER_HOST`, then `DOCKER_CONTEXT`, then the context chosen with
 `docker context use`, then `unix:///var/run/docker.sock`. (`--host` and `--context` together
-are refused. As in the CLI, the context named `default` *is* `DOCKER_HOST` when that is set.) The endpoint is on the top line of the screen at all times, and again inside
-every confirmation, so you know the blast radius before you touch anything. There is no way to
-switch daemon from inside.
+are refused. As in the CLI, the context named `default` *is* `DOCKER_HOST` when that is set.)
+More can be added while it runs, from the picker — see
+[Several daemons](#several-daemons-in-one-session). The focused daemon's endpoint is on the top
+line of the screen at all times, and again inside every confirmation, so you know the blast
+radius before you touch anything.
 
 | Endpoint | Reached how |
 | --- | --- |
@@ -182,6 +186,55 @@ certificate from the wrong authority; a client certificate missing or refused.
 If the daemon goes away while the desk is open — or the network between you and it does — the
 header says `✗ DISCONNECTED — retrying`, the last known data stays on screen marked as stale,
 the desk keeps answering keys, and everything resumes by itself when the daemon is back.
+
+### Several daemons in one session
+
+The daemon the desk opened on is the first member of a **session**; `M` opens the **picker**,
+which lists the session's daemons and every context in this machine's Docker configuration
+(`$DOCKER_CONFIG`, or `~/.docker`) — the same names and endpoints as `docker context ls`, each
+endpoint in full with how it is reached (`[REMOTE ssh]`, `[tls]`, …). `Enter` on a context
+adds its daemon; on a daemon of the session, it focuses it. A context that cannot be used — an
+`npipe://` endpoint, unreadable metadata — is listed with the reason and cannot be added. A
+daemon is one member however it is named: two contexts that reach the same socket, host and
+port (and, for TLS, the same certificates) are one daemon, and the picker says so.
+
+**One daemon is focused.** The panes, every action, the Events history, statistics and logs are
+the focused daemon's: an action always has that one target, named in its confirmation. `>` and
+`<` move the focus through the connected daemons in order; the line under the header — the
+**strip** — lists every member, marks the focused one with `◆`, and shows each one's state
+(`●` connected, `✗` disconnected, `…` connecting, `ro` read-only). When focus moves, the
+previous daemon's lists, details and selection leave the screen at once, its statistics and log
+streams are closed, and the panes say `Loading…` until the newly focused daemon answers; an
+answer still on its way from the previous daemon is dropped, never shown.
+
+**The others are watched, not shown.** A daemon that is not focused keeps one event stream and a
+ping, nothing else. What matters from it is a **notice** in the status line, with its name: a
+container that exited (`staging: container shop-web-1 exited (code 137)`), the daemon going away
+or coming back. Its events are recorded in its own history — focus it and the Events pane shows
+them — and never in the focused daemon's.
+
+**A daemon added from the picker never asks.** It is reached exactly as at launch, with the same
+checks and time bound, but nothing is asked on the terminal: an ssh login that would need a
+passphrase, a password or a host-key confirmation fails, and the daemon is shown disconnected
+with ssh's own words. (Load the key into your agent, or accept the host key once with `ssh`,
+and it connects on its next try.) A daemon that is down when added is kept, shown disconnected
+with the reason, and retried every 1 to 15 seconds; the rest of the session is unaffected.
+
+**Removing a daemon** — `d` on it in the picker, then `y` — is allowed for any member, the launch
+daemon too. It is refused while a job runs on that daemon, and the picker names the job: let it
+finish, or cancel it in the Jobs pane. Removal closes the daemon's streams and connection and
+ends the ssh process started for it; nothing on the daemon changes. When the focused daemon
+goes, focus moves to another connected one and the status line says which. When the last one
+goes, the desk stays open on an empty state that says no daemon is connected: no action key
+does anything there, `M` adds one, `q` quits.
+
+**Jobs belong to their daemon.** A pull keeps running on its daemon when you focus another, and
+the Jobs pane lists it with that daemon's name (`pull image redis:7 @staging`); its outcome is
+announced the same way.
+
+**Read-only is one flag for the whole session.** With `--read-only` every daemon refuses
+changes, including those added later; the picker says so before you add one, and the strip marks
+each `ro`.
 
 ## The desk
 
@@ -663,6 +716,8 @@ Press `?` inside the desk for the same list.
 | `S` | Space: where the bytes went, and what removing something frees (see above) |
 | `F` | Files: the highlighted image's merged tree, or a container's changes over it (see [Files](#files--what-is-inside-an-image-and-what-a-container-wrote)) |
 | `B` | Repository: a registry's tags for the highlighted image's repository, and a pull by digest (see [Repository](#repository--a-registrys-tags-and-one-build-by-its-digest)) |
+| `M` | the daemon picker: this session's daemons and this machine's Docker contexts (see [Several daemons](#several-daemons-in-one-session)) |
+| `>` `<` | focus the next / previous connected daemon |
 | `T` | next colour theme |
 | `?` | help |
 | `q`, `Ctrl+C` | quit (asks first if jobs are running) |
@@ -686,6 +741,10 @@ highlighted one. `e` shell, `c` connect and `D` disconnect work on one object on
 (nothing is sent); `X` prune chooses its own objects and refuses too; `P` pull and `n` new are
 unaffected. The selection is cleared when the job starts, and kept if you decline. `Space`
 still pages in the Details pane; in the Events pane it holds the view.
+
+**In the daemon picker** (`M`): `↑` `↓` move · `Enter` focus the daemon, or add the context ·
+`d` remove the daemon (then `y` to confirm, `n` to keep it) · `r` read the contexts again ·
+`Esc`, `q` or `M` close.
 
 **Details**: `←` `→` switch tab · `f` pause/resume following (Logs) · `w` toggle wrapping (not Processes).
 
@@ -879,7 +938,9 @@ When nothing is compared, the tab says why in one sentence and shows no rows:
 
 ## What it does not do
 
-One daemon per session; no switching from inside. No Windows named pipes. No Swarm, no compose
+No view across daemons: one is focused at a time, and nothing acts on two at once — no copying
+images or volumes between them. No per-daemon read-only flag, and nothing about the session is
+saved for the next run. No Windows named pipes. No Swarm, no compose
 lifecycle — a compose file is read only for Declared, on request, and never run or
 interpolated (see [Compose, honestly](#compose-honestly)) — no image builds or pushes, no Kubernetes. It does not create or reconfigure containers,
 or copy files in or out. The build cache is accounted for in Space but never removed: the desk
@@ -894,6 +955,9 @@ Good to know:
 - The Info tab shows how many environment variables a container has, not their values; the
   Inspect tab shows everything.
 - Quitting cancels running jobs. A request the daemon had already accepted may still complete.
+- Each `ssh://` daemon of a session holds one `ssh` process of its own; there is no cap on how
+  many daemons a session holds. The strip shows as many as fit at the terminal's width, always
+  the focused one, and counts the rest (`‹2 more`, `3 more›`).
 - Over SSH: a server whose `sshd_config` forbids forwarding (`AllowStreamLocalForwarding no`,
   `AllowTcpForwarding no`, `PermitOpen none`, `DisableForwarding yes`) cannot be used, and the
   desk says so at launch. The remote user's own Docker context is not consulted — name the
@@ -1015,6 +1079,7 @@ cmd/docker-desk        the program: resolve the daemon, open the way to it, chec
 cmd/fake-dockerd       the sandbox engine
 internal/dockerctx     which daemon is meant, how it is reached (socket, SSH, TCP/TLS); why it cannot be
 internal/sshtunnel     the one supervised ssh process that carries an ssh:// daemon's connections
+internal/session       the session's daemons: which is focused, adding (never asking), removing, notices
 internal/engine        the only door to the daemon (Docker's client library behind a narrow interface)
 internal/plan          what a mutation will do, decided by pure code before anything is sent
 internal/space         which bytes images share, and what removing a set of them frees (pure)

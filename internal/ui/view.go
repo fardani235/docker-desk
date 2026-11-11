@@ -18,6 +18,9 @@ type rect struct{ x, y, w, h int }
 //
 // Compact (80–119 columns): the right column becomes a strip under the
 // centre so that all five panes stay on screen.
+//
+// Above the panes, at every size, are two lines: the header naming the
+// focused daemon, and the daemon strip listing the session's members.
 type layout struct {
 	kinds, list, details, events, jobs rect
 	wide                               bool
@@ -25,8 +28,11 @@ type layout struct {
 
 const wideMinWidth = 120
 
+// headerLines is the header and the daemon strip.
+const headerLines = 2
+
 func computeLayout(w, h int) layout {
-	const top = 1        // header
+	const top = headerLines
 	bodyH := h - top - 2 // status line and key hints
 	var l layout
 	if w >= wideMinWidth {
@@ -77,10 +83,19 @@ func (m *Model) Frames() uint64 { return m.frames }
 
 func (m *Model) render() []string {
 	if m.width == 0 || m.height == 0 {
+		if m.cur == nil {
+			return []string{"Docker Desk — no daemon connected"}
+		}
 		return []string{"Docker Desk — " + m.endpoint.Host}
 	}
 	if m.tooSmall() {
 		return m.renderTooSmall()
+	}
+	if m.cur == nil {
+		// No daemon: the panes are not drawn at all — there is nothing in
+		// them that could be about one.
+		return m.overlayDialog(append([]string{m.renderHeader(), m.renderStrip()},
+			append(m.emptyBody(m.width, m.height-headerLines-2), m.renderStatus(), m.renderHints())...))
 	}
 	l := computeLayout(m.width, m.height)
 
@@ -119,16 +134,20 @@ func (m *Model) render() []string {
 		body = m.repoBox(m.width, len(body))
 	}
 	out := make([]string, 0, m.height)
-	out = append(out, m.renderHeader())
+	out = append(out, m.renderHeader(), m.renderStrip())
 	out = append(out, body...)
 	out = append(out, m.renderStatus(), m.renderHints())
+	return m.overlayDialog(out)
+}
 
+// overlayDialog draws the open dialog, if any, over the frame.
+func (m *Model) overlayDialog(out []string) []string {
 	if m.dlg != nil {
 		box, w, h := m.renderDialog()
 		x := (m.width - w) / 2
 		y := (m.height - h) / 2
-		if y < 1 {
-			y = 1 // never cover the header: the daemon stays visible
+		if y < headerLines {
+			y = headerLines // never cover the header or the strip: the daemon stays visible
 		}
 		out = m.st.overlay(out, box, x, y, w)
 	}
@@ -149,7 +168,7 @@ func (m *Model) renderTooSmall() []string {
 		fmt.Sprintf("The desk needs at least %d×%d", MinWidth, MinHeight),
 		"to show all its panes.",
 		"",
-		"daemon: " + m.endpoint.Host + m.linkSuffix(),
+		m.tooSmallDaemon(),
 		"",
 		"Enlarge the window, or q to quit.",
 		"(No other key does anything while",
@@ -166,11 +185,25 @@ func (m *Model) renderTooSmall() []string {
 	return out
 }
 
-// renderHeader shows which daemon the desk is pointed at. The endpoint and
-// the connection state are never dropped; less important parts give way
-// first when the terminal is narrow.
+func (m *Model) tooSmallDaemon() string {
+	if m.cur == nil {
+		return "daemon: none connected"
+	}
+	return "daemon: " + m.endpoint.Host + m.linkSuffix()
+}
+
+// renderHeader shows which daemon the desk is pointed at: the focused one.
+// The endpoint and the connection state are never dropped; less important
+// parts give way first when the terminal is narrow.
 func (m *Model) renderHeader() string {
 	st := m.st
+	if m.cur == nil {
+		line := st.header.Render(" Docker Desk") + st.headerKey.Render("  ") + st.headerAlert.Render("no daemon connected")
+		if m.readOnly {
+			line += st.headerKey.Render("  ") + st.tone(toneWarn, "[READ-ONLY]")
+		}
+		return fit(line, m.width)
+	}
 	sep := st.headerKey.Render("  ")
 	title := st.header.Render(" Docker Desk")
 	endpoint := st.tone(toneAccent, m.endpoint.Host)
@@ -426,12 +459,33 @@ func (m *Model) helpLines(w int) []string {
 	sect := func(title string) { out = append(out, "", st.tone(toneAccent, title)) }
 	row := func(k, v string) { out = append(out, "  "+st.hintKey.Render(fit(k, 16))+" "+v) }
 
-	out = append(out, wrapWords("Docker Desk talks to one daemon: "+m.endpoint.Host, w)...)
-	for _, line := range []string{"chosen by: " + m.endpoint.Source, "reached over: " + m.link.Words} {
-		for _, part := range wrapWords(line, w) {
-			out = append(out, st.tone(toneDim, part))
+	if m.cur == nil {
+		out = append(out, wrapWords("No daemon is connected. "+keyDaemons+" opens the picker.", w)...)
+	} else {
+		out = append(out, wrapWords("Focused daemon: "+m.endpoint.Host, w)...)
+		for _, line := range []string{"chosen by: " + m.endpoint.Source, "reached over: " + m.link.Words} {
+			for _, part := range wrapWords(line, w) {
+				out = append(out, st.tone(toneDim, part))
+			}
 		}
 	}
+	if n := m.sess.Len(); n > 1 {
+		out = append(out, st.tone(toneDim, fmt.Sprintf("%d daemons in this session; the strip under the header lists them.", n)))
+	}
+
+	sect("Daemons")
+	row(keyDaemons, "the picker: this session's daemons and this machine's Docker contexts")
+	row(keyNextFocus+"  "+keyPrevFocus, "focus the next / previous connected daemon")
+	row("in the picker", "⏎ focus a daemon or add a context · d remove · r re-read · Esc close")
+	out = append(out,
+		"  The panes, actions, Events, statistics and logs are the focused daemon's;",
+		"  every action has that one target. The others keep only an event stream and",
+		"  a ping: a container exiting there, or the daemon going away or coming back,",
+		"  is a notice in the status line, named — never a line in this Events pane.",
+		"  A daemon added from the picker never asks anything on the terminal: an ssh",
+		"  login that needs a passphrase, a password or a host key fails, and says why.",
+		"  A daemon with a running job cannot be removed. --read-only covers all of them.",
+	)
 
 	sect("Everywhere")
 	row("Tab / Shift+Tab", "next / previous pane")

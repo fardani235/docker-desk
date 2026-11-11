@@ -331,7 +331,7 @@ func TestSession(t *testing.T) {
 
 	// --- help, then quit: the terminal is given back ---------------------------------
 	d.keys("?")
-	d.see("Keys", "Docker Desk talks to one daemon: "+srv.Host(), "Everywhere")
+	d.see("Keys", "Focused daemon: "+srv.Host(), "Everywhere")
 	d.keys("G")
 	d.see("How changes are confirmed", "Nothing is ever forced")
 	d.shot("15-help")
@@ -618,7 +618,7 @@ func TestRealDaemonReadOnlyTour(t *testing.T) {
 		d.keys("[")
 	}
 	d.keys("4", ptyscreen.Up, "G", "5", "?")
-	d.see("Keys", "Docker Desk talks to one daemon: "+host)
+	d.see("Keys", "Focused daemon: "+host)
 	d.keys("G")
 	d.see("This desk is READ-ONLY")
 	d.keys(ptyscreen.Esc, "q")
@@ -695,7 +695,7 @@ func TestSearchInTheSandbox(t *testing.T) {
 	if _, err := exec.LookPath("make"); err != nil {
 		t.Skip("make is not installed")
 	}
-	const rows, cols = 40, 140
+	const rows, cols = 41, 140 // one row more since the daemon strip took one (M11)
 	sock := filepath.Join(t.TempDir(), "sb.sock")
 	root, _ := filepath.Abs(filepath.Join("..", ".."))
 	term, err := ptyscreen.Start(rows, cols, []string{"GOFLAGS=", "GOPATH=" + os.Getenv("GOPATH"), "GOCACHE=" + os.Getenv("GOCACHE")},

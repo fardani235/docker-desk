@@ -116,7 +116,7 @@ func (m *Model) startDeclared(t declaredTarget) {
 	paths := append([]string{}, t.paths...)
 	read := m.readComposeFile
 	actual := plan.ComposeActual(m.snap, t.proj.Name)
-	run.jobID = m.jobs.Start("compare with the compose file", t.proj.Name, func(ctx context.Context, r *jobs.Run) error {
+	run.jobID = m.startJob("compare with the compose file", t.proj.Name, func(ctx context.Context, r *jobs.Run) error {
 		out := &declaredOutcome{at: time.Now()}
 		defer func() {
 			run.mu.Lock()

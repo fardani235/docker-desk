@@ -226,7 +226,8 @@ func TestSpaceTotalsAreTheDaemons(t *testing.T) {
 }
 
 func TestSharedImageFreesLessAloneThanItsSize(t *testing.T) {
-	b := newBench(t, benchOpts{width: 160, height: 45})
+	// One row more than before the daemon strip, which took one.
+	b := newBench(t, benchOpts{width: 160, height: 46})
 	b.openSpace()
 	b.spaceTo("shop/worker:dev")
 	it := b.usage("shop/worker:dev")

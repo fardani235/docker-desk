@@ -27,7 +27,8 @@ const (
 	dlgHelp
 	dlgJob // a job's full output
 	dlgQuit
-	dlgExport // format, path and consent for writing a file
+	dlgExport  // format, path and consent for writing a file
+	dlgDaemons // the session's daemons and this machine's contexts (M)
 )
 
 type formKind int
@@ -94,6 +95,9 @@ type dialog struct {
 
 	// dlgExport
 	exp *exportDialog
+
+	// dlgDaemons
+	dm *daemonPicker
 
 	// dlgHelp, dlgJob
 	title  string
@@ -251,7 +255,7 @@ func (m *Model) runPlan(p plan.Plan) {
 		return
 	}
 	eng := m.eng
-	id := m.jobs.Start(p.JobTitle, p.JobTarget, func(ctx context.Context, run *jobs.Run) error {
+	id := m.startJob(p.JobTitle, p.JobTarget, func(ctx context.Context, run *jobs.Run) error {
 		return plan.Execute(ctx, eng, p, run)
 	})
 	m.jobSel = id
@@ -368,6 +372,8 @@ func (m *Model) renderDialog() (lines []string, w, h int) {
 		title, body = m.quitBody(inner)
 	case dlgExport:
 		title, body = m.exportBody(d, inner)
+	case dlgDaemons:
+		title, body = m.daemonsBody(d, inner, maxBody)
 	}
 	padded := make([]string, 0, len(body)+2)
 	padded = append(padded, "")

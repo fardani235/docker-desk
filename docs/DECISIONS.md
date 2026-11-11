@@ -34,6 +34,12 @@ Entries marked **Y** (declared) belong to the fourteenth round, the OpenSpec cha
 the change's design; Y10 onwards were decided while building it, where the plan left a choice
 open. The round relaxes D15.
 
+Entries marked **M** (members) belong to the sixteenth round, the OpenSpec change
+[`multi-daemon-session`](../openspec/changes/multi-daemon-session/), and are collected in
+[their own section](#round-sixteen--several-daemons-in-one-session). M1–M9 are the change's design
+(D1–D9 of its `design.md`); M10 onwards were decided while building it, where the plan left a
+choice open. The round supersedes the single-daemon reasoning of B20 and R7.
+
 Where a decision costs something, the cost is stated. Nothing here is presented as free.
 
 ---
@@ -655,6 +661,14 @@ endpoint — the same mechanism you rely on to know your blast radius.
 **Since relaxed (R7):** `--host` and `--context` now exist. They are the Docker CLI's own two
 ways of naming a daemon, not a product-specific one, and the argument against `--demo` stands.
 
+**Superseded (M1, round sixteen):** "the product talks to exactly one daemon … and should have no
+second way to choose" no longer holds: a session holds several daemons, and the picker adds them
+from this machine's Docker contexts while the desk runs
+([`multi-daemon-session`](../openspec/changes/multi-daemon-session/)). The conclusion — no
+`--demo` — stands on what is left of the argument: the picker offers only what the Docker CLI
+itself would reach (its stored contexts), never a product-specific endpoint, and the sandbox
+still shows up as its socket, like any other daemon.
+
 ### B3 — Tests cannot open a read-write connection to a real daemon
 
 **Decided:** every test package that builds an engine calls `engine.InstallTestGuard()` from
@@ -956,6 +970,13 @@ the one program it is given to.
 
 **Not added:** `--tlsverify`, `--tlscacert` and the rest. The variables and the context store
 cover it, and six more flags to keep in step with the CLI's is six more places to diverge.
+
+**Superseded in part (M1, round sixteen):** the flags were added on the understanding that they
+choose *the* daemon, once, for a session that never changes it — the round-two proposal listed
+"more than one daemon per session" as out of scope. They now choose the **launch** daemon only;
+the precedence and the refusal of both flags together are unchanged, and the launch daemon must
+still answer before the workspace opens (M9). More daemons are added from the picker
+([`multi-daemon-session`](../openspec/changes/multi-daemon-session/)).
 
 ### R8 — A remote failure is explained for what it is
 
@@ -3315,6 +3336,230 @@ Reading a container's own archive; a file's contents, a preview or a hash of one
 difference between a container and its image beyond the daemon's list; globs or regular
 expressions in the filter; a size pre-flight dialog before `Enter`; sharing the index with the
 Findings report; packing the index node (V11).
+
+## Round sixteen — several daemons in one session
+
+The request: let one session hold several daemons — the launch one, and any added from a picker of
+this machine's Docker contexts while the desk is open — with one focused at a time and the others
+kept under watch; read-only for the whole session; jobs tied to their daemon; removal of any
+member, refused while its jobs run; an empty state when none is left. The plan is the OpenSpec
+change [`multi-daemon-session`](../openspec/changes/multi-daemon-session/) (proposal, design
+D1–D9, spec deltas for `daemon-session`, `daemon-connection`, `engine-events`, `background-jobs`,
+`live-stream-responsiveness` and `workspace-layout`, tasks). It was implemented in one pass with
+the instruction to decide and record rather than ask; every choice the plan left open is an entry
+below, from M10.
+
+### M1 — A session of members; the focused member's engine is what the panes see (design D1)
+
+**Decided:** a new package, `internal/session`, owns an ordered list of members. Each holds its
+endpoint, its engine, its hub and, for `ssh://`, its tunnel. `ui.Model` keeps `eng` and `hub` as
+the focused member's, and replaces them on a focus change; the call sites that read `m.eng` are
+unchanged, and so are the tests that build a desk on one engine — they build a session of one.
+
+**Alternative:** carry a daemon identifier through every call and every job. **Why not:** it
+touches every call site and test for a rule that matters only when focus moves.
+
+**Supersedes:** B20's and R7's premise that a session has exactly one daemon (see both).
+
+### M2 — Background members run an events-only hub (design D2)
+
+**Decided:** `live.Hub` has two modes. `ModeFull` is the focused member's: events, ping,
+statistics, logs. `ModeEventsOnly` is every other member's: switching to it closes every
+statistics and log stream at once, and while in it `SyncStats` and `SetLogTarget` open nothing.
+Each member keeps its own event ring, so focusing one shows what it recorded while it was not.
+
+**Alternative:** one shared ring with a daemon column. **Why not:** it is the merged view the
+proposal rules out, and a busy daemon would push a quiet one's history out.
+
+### M3 — Nothing of one daemon is shown as another's (design D3)
+
+**Decided:** everything in `ui.Model` that describes the focused daemon — the lists, rows,
+highlight, selection, details, every tab's state, the full-screen views, the held Events
+snapshot, any open dialog except the picker — is rebuilt from nothing on a focus change
+(`switchTo`). What belongs to the operator survives: the pane, the kind, each kind's tab and
+filter text, the theme, the jobs, the status line. The new daemon's lists are requested at once,
+and the panes say `Loading…` until they answer.
+
+**Cost:** the first frame after a focus change is one listing round trip slower; over ssh that is
+a visible pause, and the loading state covers it.
+
+### M4 — Jobs record their daemon; removal and job start take one lock (design D4)
+
+**Decided:** `jobs.Job` has a `Daemon` field — the endpoint as the operator named it — and
+`Manager.StartOn` records it. `Manager.CloseDaemon` is the job side of a removal: under the lock
+`StartOn` takes, it either returns the jobs running on that daemon (and the removal is refused,
+naming them) or marks the daemon closing, after which `StartOn` will not run anything there. The
+manager stays process-wide: Cancel and the Jobs pane are unchanged apart from the label.
+
+**Proof:** `jobs.TestStartAndRemoveRaceHasOneWinner` (500 rounds) and
+`session.TestJobStartAndRemovalRace` (200 rounds, through `Session.Remove`) start a job and remove
+its daemon at the same moment and assert that exactly one wins, every time.
+
+### M5 — The picker reads the Docker context store (design D5)
+
+**Decided:** `dockerctx.ListContexts` reads `contexts/meta/*/meta.json` under the configuration
+directory and resolves each with the same `contextEndpoint` `--context` uses — the same TLS
+material, the same rules. The implicit `default` context is listed as the CLI lists it (it is
+`DOCKER_HOST` when that is set), and the current one is starred. Entries that cannot be used are
+listed with the reason. A daemon is one member however it is named (`session.Canonical`): scheme,
+host (case-insensitively), port, socket path (symbolic links resolved), and for TLS the CA and
+client certificate by content and whether the server is verified.
+
+### M6 — Notices are a fixed, small set (design D6)
+
+**Decided:** from an unfocused member the status line carries a container exit (`die`, `oom`), the
+member losing or regaining its connection, and — for a member added from the picker — its first
+answer, or why it cannot be reached. Nothing else. Each names the member.
+
+### M7 — A daemon added from the picker never asks on the terminal (design D7)
+
+**Decided:** `session.Connect` opens the tunnel with `Interactive: false` and no `Stderr`: ssh runs
+in batch mode from its first connection, without a controlling terminal (the tunnel's existing
+`quiet`), and what it says is kept for the reason. A key that needs its passphrase, a password or
+an unknown host key makes the member disconnected with ssh's words.
+
+**Proof:** `session.TestPickedSSHNeverAsks` (an ssh stub that records batch mode, session
+leadership and whether it could open `/dev/tty`), and the same against the real ssh client and a
+real sshd with a passphrase-protected key and with an unknown host key
+(`TestPickedSSHNeverAsksRealSSH`, `TestPickedSSHUnknownHostKeyRealSSH`).
+
+### M8 — Read-only is one flag on every engine of the session (design D8)
+
+**Decided:** the session carries the flag and hands it to every engine `Connect` builds, which
+`engine.New` turns into both layers of D17 — the wrapper that refuses before a request is built,
+and the request hook below the client. The picker says the session is read-only before anything is
+added, and the strip marks every member `ro`. The test guard (B3) is per engine and unchanged.
+
+### M9 — The launch is unchanged; the picker path never exits (design D9)
+
+**Decided:** `main.go` keeps every check of the launch daemon, including the exit when it does
+not answer. The explanations it prints come from the same functions the picker uses
+(`session.ExplainTunnel`, `session.ExplainPing`, moved there from `main.go`); a failure on the
+picker path is a disconnected member with that reason, never an exit.
+
+### M10 — The keys: `M` for the picker, `>` and `<` for focus
+
+**Decided:** `M` (members) opens the picker; `>` and `<` move focus to the next and previous
+connected daemon, wrapping. None is used by any pane, kind action, view or the global switch —
+`TestDaemonKeysDoNotConflict` presses each in every pane of every kind and checks that nothing but
+the focus (or the picker) changed. In the picker: `Enter` focuses a member or adds a context, `d`
+asks to remove a member and `y` confirms it (armed like every confirmation, B25), `r` reads the
+store again, `Esc`/`q`/`M` close.
+
+**Why these:** every lower-case letter and most capitals are already actions somewhere; `M` was
+free everywhere, and `>`/`<` read as "next"/"previous" and are free in every pane, including the
+Details pane, whose search bar only takes text while it is open. The design left both keys open
+(its Open Questions).
+
+### M11 — The strip has a line of its own, at every size
+
+**Decided:** the second line of the screen, under the header: `Daemons`, then each member as
+`◆N name ●` (the focused one bracketed and marked), and the keys at the right. The panes lose one
+row to it at every size, with one member as with ten. When the members do not fit, the focused
+one is always shown, the hidden ones are counted on either side (`‹2 more`, `3 more›`), and the
+key reminder gives way first.
+
+**Alternatives:** the header line (too full already at 80 columns: R11 keeps its endpoint whole),
+or a strip shown only with two members or more (the spec asks for it in every layout, and a layout
+that changes when a daemon is added is worse than one row less). **Cost:** one row fewer for the
+panes everywhere. At 80×24 it comes out of the List, which shows three rows instead of four; the
+Details pane keeps its seven. Three tests whose line sat on the last row now use a terminal one
+row taller: a Space test, and the e2e search and repository tours.
+
+### M12 — Answers carry the focus generation they were asked under
+
+**Decided:** `Update` tags every command's answer — lists, details, plans, pickers, facts —
+with a counter that a focus change increments, and drops an answer that carries an older value
+before anything looks at it. The runtime's own messages (frame ticks, quit, the shell's terminal
+hand-off) pass untagged. One mechanism, at one place, instead of a check in each handler that
+would have to know which daemon its request went to.
+
+**Proof:** `TestFocusChangeShowsOnlyTheNewDaemon` stalls the first daemon's container list so
+that its answer arrives after focus has moved, and watches every frame for its objects.
+
+### M13 — A job refused on a closing daemon is a failed job, not a missing one
+
+**Decided:** when `StartOn` refuses (M4), the job is still recorded — failed, with "the daemon is
+being removed from the session" — and its function never runs. Every view that starts a job keeps
+its ID and later reads its outcome; a job that simply did not exist would have needed a new path
+in each of them. In the desk a removal is decided on the same goroutine that starts jobs, so the
+case cannot arise there; the lock is what makes it true for any other caller.
+
+### M14 — What a member is called
+
+**Decided:** its context's name; for an endpoint named directly (the `default` context), a short
+form of it — `local` for the default socket, the socket path for another socket on this machine,
+`[user@]host` for ssh, `host:port` for tcp. The strip shortens a name in its middle past 22
+cells. The endpoint itself is always shown whole where a decision is made: the header, the picker
+and every confirmation (R11).
+
+### M15 — A picked daemon that does not answer is retried by the session
+
+**Decided:** until a picked member has answered once it has no engine and no hub; the session
+tries it again every 1 to 15 seconds (doubling), with the same `Connect`, and stops when it is
+removed or the desk quits. Once it has answered, its hub's own reconnection takes over, as for the
+launch daemon. A member that answers while nothing is focused — the session was empty — takes the
+focus, and the status line says so. Focus moves only to connected members: `>`/`<` pass over the
+others, and the picker's `Enter` on one says why it cannot be focused.
+
+### M16 — Background exits are collected, at most one notice per member every 2 seconds
+
+**Decided:** exits that arrive within two seconds of a member's last notice are held and said in
+the next one (`… exited (code 1), and 2 more container event(s)`), and the notices of one frame
+share the status line. The design asked for rate limiting without a figure; two seconds keeps a
+crash loop on a busy daemon from owning the line while still saying the first exit at once.
+
+### M17 — `DOCKER_DESK_SSH` is checked at launch even when the launch daemon is not ssh
+
+**Decided:** an unusable `DOCKER_DESK_SSH` stops the program at launch (exit 2, as before for an
+`ssh://` launch), whatever the launch daemon is. **Why:** the picker may later reach an `ssh://`
+daemon with it, and must not quietly fall back to plain `ssh`. **Cost:** a malformed value that
+used to be ignored when nothing was reached over ssh now refuses to start.
+
+### M18 — The Jobs pane names a job's daemon only where it could be mistaken
+
+**Decided:** `pull image redis:7 @staging` — the daemon's name is added to a job's line, and `on
+staging` to its announcement, when the session has more than one member or the job is not the
+focused daemon's. With one daemon the header already says it, and the screens of earlier rounds
+are unchanged. A job's output (`Enter`) always says `on daemon <endpoint>`.
+
+### M19 — "The operator guide" is the README and the in-app help
+
+**Decided:** task 7.1 names the README and "the operator guide"; there is no separate guide in the
+repository. The README's new section *Several daemons in one session*, its key table and the
+picker's keys, and the `?` help's new *Daemons* section are that guide.
+`TestDocumentedDaemonKeysAreTheKeySwitchs` reads the README and the help and checks every documented
+key against the key switch, and that each does what both say.
+
+### M20 — The picker lists what `docker context ls` lists, and a broken entry too
+
+**Decided:** the same names, endpoints, descriptions and current marker as `docker context ls` —
+`TestListContextsMatchesDockerCLI` runs the real CLI (29.9.3 here) on the same configuration
+directory under three environments (none, `DOCKER_HOST`, `DOCKER_CONTEXT`) and compares entry by
+entry; it is skipped where the CLI is not installed. One difference on purpose: the CLI refuses to
+list anything when one context's metadata is malformed; the picker lists that entry as unusable,
+with the parse error, and the rest as usual.
+
+### M21 — No cap on the number of members
+
+**Decided:** none, as the design deferred. Measured in the tests: each `ssh://` member holds one
+ssh process and its streams; an idle background member holds one event stream and nothing else
+(`TestBackgroundMemberHoldsOnlyItsEventStream`). Removing members and quitting return the
+goroutine count to what it was before the session and leave no ssh process
+(`session.TestNoGoroutineOrSSHLeftBehind`; the e2e scenarios count ssh processes after a removal
+and after quit). A cap is a follow-up if real sessions need one.
+
+### M22 — Round sixteen: what was run, and one old flake made deterministic
+
+Nothing was committed (B12); the change is complete and not archived (B24). The commands and
+their results are in the change's [`verification.md`](../openspec/changes/multi-daemon-session/verification.md).
+
+`ui.TestSearchBarCostsNoRowWhenClosed` — B34's intermittent test, whose two screenshots differ by
+a live CPU figure — failed more often under `-race` on this tree than on `HEAD` (16 of 20 runs
+against 8 of 20, measured back to back in a clean worktree of `HEAD`): every frame now also draws
+the strip, which widens the window in which a statistics sample can land between the two
+screenshots. The test now holds the fake's statistics still before it takes them, and passed 20 of
+20 under `-race`. Nothing else about it changed.
 
 ## Process
 

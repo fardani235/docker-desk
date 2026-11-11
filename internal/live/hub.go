@@ -48,7 +48,28 @@ type LogStatus struct {
 	Err       string // why the stream failed, if it did
 }
 
-// Hub owns every live stream of the desk.
+// Mode is how much a hub streams.
+type Mode int
+
+const (
+	// ModeFull is the focused daemon's hub: the event stream, the ping, and
+	// the statistics and log streams the panes ask for.
+	ModeFull Mode = iota
+	// ModeEventsOnly is a background daemon's hub: the event stream and the
+	// ping that notices it coming back, and nothing else. Statistics and
+	// log requests are refused while in this mode, and switching to it
+	// closes every one that was open.
+	ModeEventsOnly
+)
+
+func (m Mode) String() string {
+	if m == ModeEventsOnly {
+		return "events only"
+	}
+	return "full"
+}
+
+// Hub owns every live stream of one daemon.
 type Hub struct {
 	eng    engine.Engine
 	ctx    context.Context
@@ -62,6 +83,7 @@ type Hub struct {
 	dirty     atomic.Uint32
 
 	mu        sync.Mutex
+	mode      Mode // guarded by mu
 	logTarget string
 	logRing   *Ring[string]
 	logCancel context.CancelFunc
@@ -104,6 +126,45 @@ func NewHub(eng engine.Engine) *Hub {
 	}
 	h.connected.Store(true)
 	return h
+}
+
+// MarkDown records, before Start, that the daemon is not known to answer:
+// a daemon added while it was down starts out disconnected, and the hub's
+// first successful ping is what connects it.
+func (h *Hub) MarkDown() { h.connected.Store(false) }
+
+// SetMode switches between the focused daemon's streams and a background
+// daemon's. Leaving ModeFull closes every statistics stream and the log
+// stream at once; the event stream is never touched.
+func (h *Hub) SetMode(mode Mode) {
+	h.mu.Lock()
+	if h.mode == mode {
+		h.mu.Unlock()
+		return
+	}
+	h.mode = mode
+	closed := false
+	if mode == ModeEventsOnly {
+		for id, st := range h.stats {
+			st.cancel()
+			delete(h.stats, id)
+			closed = true
+		}
+	}
+	h.mu.Unlock()
+	if closed {
+		h.statsVersion.Add(1)
+	}
+	if mode == ModeEventsOnly {
+		h.openLog("")
+	}
+}
+
+// Mode returns the hub's current mode.
+func (h *Hub) Mode() Mode {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.mode
 }
 
 // Start begins following the engine event stream.
@@ -158,6 +219,15 @@ func (h *Hub) eventLoop() {
 	var last time.Time // time of the newest event seen
 	backoff := h.MinBackoff
 	first := true
+	if !h.connected.Load() {
+		// Started down (MarkDown): connected is what a ping says, not what
+		// a request left hanging says, so wait for the first answer.
+		if !h.awaitPing(&backoff) {
+			return
+		}
+		h.connected.Store(true)
+		h.MarkDirty(DirtyAll)
+	}
 	for {
 		since := time.Time{}
 		if !first {
@@ -195,26 +265,34 @@ func (h *Hub) eventLoop() {
 		}
 
 		// Wait until the daemon answers again.
-		for {
-			select {
-			case <-h.ctx.Done():
-				return
-			case <-time.After(backoff):
-			}
-			pctx, cancel := context.WithTimeout(h.ctx, h.PingTimeout)
-			perr := h.eng.Ping(pctx)
-			cancel()
-			if perr == nil {
-				break
-			}
-			if backoff *= 2; backoff > h.MaxBackoff {
-				backoff = h.MaxBackoff
-			}
+		if !h.awaitPing(&backoff) {
+			return
 		}
 		h.connected.Store(true)
 		h.Events.Append(EventEntry{Marker: "event stream resumed", Time: time.Now()})
 		h.MarkDirty(DirtyAll)
 		h.restartLogIfEnded()
+	}
+}
+
+// awaitPing pings the daemon, backing off, until it answers; false when the
+// hub was closed first.
+func (h *Hub) awaitPing(backoff *time.Duration) bool {
+	for {
+		select {
+		case <-h.ctx.Done():
+			return false
+		case <-time.After(*backoff):
+		}
+		pctx, cancel := context.WithTimeout(h.ctx, h.PingTimeout)
+		perr := h.eng.Ping(pctx)
+		cancel()
+		if perr == nil {
+			return true
+		}
+		if *backoff *= 2; *backoff > h.MaxBackoff {
+			*backoff = h.MaxBackoff
+		}
 	}
 }
 
@@ -241,8 +319,13 @@ func (h *Hub) onEvent(e engine.Event) {
 // SetLogTarget makes the hub follow the logs of one container, or none when
 // id is empty. Any previous stream is closed. Calling it again with the same
 // target keeps the existing stream and buffer.
+//
+// In ModeEventsOnly no log stream is opened: the target is ignored.
 func (h *Hub) SetLogTarget(id string) {
 	h.mu.Lock()
+	if h.mode == ModeEventsOnly {
+		id = ""
+	}
 	same := h.logTarget == id
 	h.mu.Unlock()
 	if same {
@@ -274,7 +357,7 @@ func (h *Hub) openLog(id string) {
 	ring := NewRing[string](LogLines, nil)
 	h.logRing = ring
 	h.logStatus = LogStatus{Target: id, Streaming: id != ""}
-	if id == "" || h.ctx.Err() != nil {
+	if id == "" || h.ctx.Err() != nil || h.mode == ModeEventsOnly {
 		h.logStatus.Streaming = false
 		h.mu.Unlock()
 		return
@@ -326,8 +409,12 @@ func (h *Hub) Log() (*Ring[string], LogStatus) {
 // SyncStats makes the set of statistics streams match the running
 // containers: at most MaxStatsStreams, always including selected when it is
 // running. Streams for containers no longer in the set are closed; streams
-// that ended while their container is still running are reopened.
+// that ended while their container is still running are reopened. In
+// ModeEventsOnly the wanted set is empty: nothing is opened.
 func (h *Hub) SyncStats(running []string, selected string) {
+	if h.Mode() == ModeEventsOnly {
+		running, selected = nil, ""
+	}
 	want := make(map[string]bool, len(running))
 	isRunning := false
 	for _, id := range running {
@@ -361,7 +448,10 @@ func (h *Hub) SyncStats(running []string, selected string) {
 			delete(h.stats, id)
 		}
 	}
-	if h.ctx.Err() != nil {
+	if h.ctx.Err() != nil || h.mode == ModeEventsOnly {
+		if changed {
+			h.statsVersion.Add(1)
+		}
 		return
 	}
 	for id := range want {

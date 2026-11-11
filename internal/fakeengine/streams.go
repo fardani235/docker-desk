@@ -403,6 +403,8 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, ref string)
 	if !stream || !running {
 		return
 	}
+	s.statsOpen.Add(1)
+	defer s.statsOpen.Add(-1)
 	t := time.NewTicker(interval)
 	defer t.Stop()
 	for {
@@ -430,6 +432,10 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, ref string)
 		}
 	}
 }
+
+// StatsStreams returns the number of statistics streams open on the daemon,
+// across every container.
+func (s *Server) StatsStreams() int { return int(s.statsOpen.Load()) }
 
 // StallStats makes a container's statistics stream stop delivering samples
 // (the connection stays open), or resume.

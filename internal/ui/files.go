@@ -278,7 +278,7 @@ func (m *Model) startFilesRead() {
 		plat, opts.Platform = fs.plat, fs.plat.String()
 	}
 	size := fs.imageSize
-	run.jobID = m.jobs.Start("read the image archive", fs.imageRef, func(ctx context.Context, r *jobs.Run) error {
+	run.jobID = m.startJob("read the image archive", fs.imageRef, func(ctx context.Context, r *jobs.Run) error {
 		r.Status("asking the daemon for the archive")
 		rc, err := eng.SaveImage(ctx, id, plat)
 		if err != nil {

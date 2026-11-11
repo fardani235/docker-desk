@@ -1,0 +1,42 @@
+ Docker Desk  ssh://127.0.0.1:36445/tmp/ddfake3737419565/d.sock  ctx far  Engine 29.0.0-fake  on far-away  ● connected  [ssh]
+ Daemons  1 /tmp/ddfake…538/d.sock ● │ [◆2 far ●]                                                                                           M picker  < > focus
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (2) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ───────────────────────────── ● live ─┐
+│  Containers     2│┃  REPOSITORY                   TAG             IMAGE ID          SIZE    AGE   USED BY ┃│Waiting for engine events…                       │
+│▸ Images         2│┃▸ nginx                        1.27            f673addec473    51.4MB    24h     1 ctr ┃│Everything the daemon does                       │
+│  Volumes        0│┃  postgres                     16              ca55c0406de1    54.6MB    24h     1 ctr ┃│shows up here as it happens.                     │
+│  Networks       3│┃                                                                                       ┃│                                                 │
+│  Compose        0│┃                                                                                       ┃│                                                 │
+│                  │┃                                                                                       ┃│                                                 │
+│  ● 2 running     │┃                                                                                       ┃│                                                 │
+│  ○ 0 stopped     │┃                                                                                       ┃│                                                 │
+│                  │┃                ┏━ ◆ Daemons ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                    │
+│                  │┃                ┃                                                                                    ┃                                    │
+│                  │┃                ┃ In this session                                                                    ┃                                    │
+│                  │┃                ┃     /tmp/ddfake2256838538/d.sock  ● connected                                      ┃                                    │
+│                  │┃                ┃       unix:///tmp/ddfake2256838538/d.sock                                          ┃                                    │
+│                  │┗━━━━━━━━━━━━━━━━┃ ▸ ◆ far  ● connected  [ssh]                                                        ┃                                    │
+│                  │┌─ 3 Details: ngi┃       ssh://127.0.0.1:36445/tmp/ddfake3737419565/d.sock                            ┃                                    │
+│                  ││Reference  nginx┃       1 job is running on it — pull image hello-world:latest                       ┃                                    │
+│                  ││ID         f673a┃                                                                                    ┃                                    │
+│                  ││Size       51.4M┃ Contexts on /tmp/TestTwoDaemonsOneOverSSH655094487/001                             ┃                                    │
+│                  ││Created    2026-┃     default *  in the session                                                      ┃                                    │
+│                  ││Platform   linux┃       unix:///tmp/ddfake2256838538/d.sock                                          ┃                                    │
+│                  ││Layers     2    ┃     far  in the session  [ssh]                                                     ┃                                    │
+│                  ││Command    /bin/┃       ssh://127.0.0.1:36445/tmp/ddfake3737419565/d.sock                            ┃                                    │
+│                  ││Workdir    /    ┃                                                                                    ┃                                    │
+│                  ││                ┃ Cannot remove far: 1 job is running on it — pull image hello-world:latest. Let     ┃                                    │
+│                  ││References      ┃ them finish, or cancel them in the Jobs pane (c), then remove it.                  ┃                                    │
+│                  ││  nginx:1.27    ┃                                                                                    ┃────────────────────────────────────┘
+│                  ││                ┃ ↑↓ move  ⏎ focus / add  d remove  r re-read  Esc close                             ┃────────────────────── ⠇ 1 running ─┐
+│                  ││Used by         ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛e hello-world:latest @far — la… 39ms│
+│                  ││  ● far-web  running                                                                   ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+└──────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└─────────────────────────────────────────────────┘
+ started: pull image hello-world:latest
+ ↑↓ move  Space select  / filter  ⏎ actions  P pull  d remove  X prune  U upstream                                                     Tab pane  ? keys  q quit

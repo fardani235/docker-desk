@@ -233,7 +233,7 @@ func (m *Model) startAnalysis(t findingsTarget) {
 	// The command line's --report analyses with the same options.
 	opts := collect.AnalysisOptions(t.img.ID, t.ref, t.plat, m.info)
 	id, plat := t.img.ID, t.plat
-	run.jobID = m.jobs.Start("analyse image", t.ref, func(ctx context.Context, r *jobs.Run) error {
+	run.jobID = m.startJob("analyse image", t.ref, func(ctx context.Context, r *jobs.Run) error {
 		r.Status("asking the daemon for the archive")
 		rc, err := eng.SaveImage(ctx, id, plat)
 		if err != nil {

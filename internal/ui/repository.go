@@ -476,7 +476,7 @@ func (m *Model) startBuildTimes() {
 	for _, t := range todo {
 		delete(m.rb.timeErr, repository.Key(repo, t))
 	}
-	b.jobID = m.jobs.Start("read build times", fmt.Sprintf("%s · %d tags", repo.Repository(), len(todo)), func(ctx context.Context, r *jobs.Run) error {
+	b.jobID = m.startJob("read build times", fmt.Sprintf("%s · %d tags", repo.Repository(), len(todo)), func(ctx context.Context, r *jobs.Run) error {
 		r.Status("asking " + repo.Host)
 		res := br.BuildTimes(ctx, repo, todo, platform, func(done int, tag string, bt repository.BuildTime, err error) {
 			words := buildWords(bt)

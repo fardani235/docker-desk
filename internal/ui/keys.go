@@ -31,6 +31,11 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 	if m.dlg != nil {
 		return m.onDialogKey(k)
 	}
+	// With no daemon focused there is nothing to act on: only the picker,
+	// help, the theme and quitting answer.
+	if m.cur == nil {
+		return m.onEmptyKey(key)
+	}
 	// A key pressed while a confirmation is still being prepared means the
 	// operator has moved on. Drop the pending request, so that its dialog
 	// cannot appear under keys typed for something else — the `y` of a
@@ -74,6 +79,15 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 		m.dlg = &dialog{kind: dlgHelp}
 		m.dlg.text.wrap = true
 		return nil
+	case keyDaemons:
+		// The session's daemons: add, focus, remove. A read: nothing it
+		// does changes a daemon, so it works in read-only mode.
+		m.openDaemons()
+		return nil
+	case keyNextFocus:
+		return m.cycleFocus(1)
+	case keyPrevFocus:
+		return m.cycleFocus(-1)
 	case "S":
 		return m.openSpace()
 	case "F":
@@ -476,6 +490,9 @@ func (m *Model) onDialogKey(k tea.KeyMsg) tea.Cmd {
 
 	case dlgExport:
 		return m.onExportKey(k)
+
+	case dlgDaemons:
+		return m.onDaemonsKey(key)
 
 	case dlgForm:
 		switch key {

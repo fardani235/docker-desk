@@ -152,7 +152,7 @@ func (m *Model) startUpstream(t upstreamTarget, force bool) {
 	id, ref := t.imageID, t.ref
 	tg := m.describeUpstream(ref, true)
 	run := &upstreamRun{key: t.key, ref: ref}
-	run.jobID = m.jobs.Start("check upstream", ref, func(ctx context.Context, r *jobs.Run) error {
+	run.jobID = m.startJob("check upstream", ref, func(ctx context.Context, r *jobs.Run) error {
 		r.Status("asking " + orDash(tg.Host))
 		v, err := ck.Check(ctx, id, ref, freshness.CheckOptions{Force: force})
 		if err != nil {
@@ -218,7 +218,7 @@ func (m *Model) startUpstreamBatch() {
 	}
 	ck := m.up.checker
 	b := &upstreamBatch{}
-	b.jobID = m.jobs.Start("check upstream", fmt.Sprintf("%d images", len(items)), func(ctx context.Context, r *jobs.Run) error {
+	b.jobID = m.startJob("check upstream", fmt.Sprintf("%d images", len(items)), func(ctx context.Context, r *jobs.Run) error {
 		res := ck.Batch(ctx, items, func(done int, it freshness.Item, v freshness.Verdict) {
 			b.done.Add(1)
 			r.Steps(done, len(items))

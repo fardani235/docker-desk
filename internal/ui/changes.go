@@ -260,7 +260,7 @@ func (m *Model) startChanges(t changesTarget) {
 		name, id, ref string
 	}{{"running", t.pair.OldID, engine.ShortID(t.pair.OldID)}, {"new", t.pair.NewID, run.ref}}
 	delete(m.chg.failed, t.key)
-	run.jobID = m.jobs.Start("compare images", run.ref, func(ctx context.Context, r *jobs.Run) error {
+	run.jobID = m.startJob("compare images", run.ref, func(ctx context.Context, r *jobs.Run) error {
 		for i, s := range sides {
 			rep := have[i]
 			if rep != nil {
