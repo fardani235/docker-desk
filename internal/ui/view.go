@@ -109,6 +109,8 @@ func (m *Model) render() []string {
 	switch {
 	case m.pk.open:
 		body = m.packagesBox(m.width, len(body))
+	case m.fs.open:
+		body = m.filesBox(m.width, len(body))
 	case m.sp.open:
 		// Full screen, under the header that names the daemon; a dialog
 		// opened from it is drawn on top, as anywhere else.
@@ -302,6 +304,8 @@ func (m *Model) renderHints() string {
 	switch {
 	case m.pk.open:
 		pairs = m.packagesHints()
+	case m.fs.open:
+		pairs = m.filesHints()
 	case m.sp.open:
 		pairs = m.spaceHints()
 	case m.rb.open:
@@ -397,6 +401,10 @@ func (m *Model) renderHints() string {
 	switch {
 	case m.pk.open:
 		right = m.hints("Esc", "close", "?", "keys") + " "
+	case m.fs.open && m.fs.typing:
+		right = "" // every key is text
+	case m.fs.open:
+		right = m.hints("F Esc", "close", "?", "keys") + " "
 	case m.sp.open:
 		right = m.hints("S", "close", "?", "keys") + " " // no pane takes keys behind the view
 	case m.rb.open && (m.rb.editing || m.rb.filtering):
@@ -607,6 +615,34 @@ func (m *Model) helpLines(w int) []string {
 		"  only that image holds; shared bytes are listed once, against the images that",
 		"  hold them, from the daemon's own per-layer sizes. Every figure names its",
 		"  source and age; one taken before a refresh that changed something is STALE.",
+	)
+
+	sect("Files view (F, on an image or a container)")
+	row("F", "open on the highlighted image or container, from any pane; again to close")
+	row("Enter", "before the image is read: read its archive and build the index (a job)")
+	row("↑ ↓  or  k j", "one row")
+	row("PgUp PgDn", "one page")
+	row("g  G", "first / last row")
+	row("→  Enter  l", "open a directory (again: to its first entry)")
+	row("←  h", "close a directory, or go to the one it is in")
+	row("s", "order by name or by size (largest first; directories by their files)")
+	row("/", "filter by path, case ignored: matches and the directories holding them")
+	row("w", "export the listing: text or json, names escaped (asks first)")
+	row("r", "a container: read its change list again (GET /containers/{id}/changes)")
+	row("c", "cancel the archive read in progress: nothing is kept")
+	row("Esc", "clear the filter; again, close: the desk is as it was")
+	out = append(out,
+		"  Opening reads nothing on an image, and on a container only the daemon's",
+		"  change list (what `docker diff` prints). Enter streams the image's archive",
+		"  once per session (GET /images/get) and keeps headers only: names, types,",
+		"  sizes, modes, owners and the layer that wrote each path. No file's contents",
+		"  are read, shown or searched; names are escaped on screen and in the file.",
+		"  At most 200,000 entries, 4 KiB a path and 48 MB of path text are kept; the",
+		"  header says how many of how many, and the filter says when it may miss.",
+		"  Directory sizes are computed from their files and carry no layer. The",
+		"  daemon's image size and the tree's total are different measurements: layers",
+		"  overlap. On a container, sizes and layers are the image's: a changed file's",
+		"  own size and an added directory's contents are not read.",
 	)
 
 	for k := Kind(0); k < kindCount; k++ {

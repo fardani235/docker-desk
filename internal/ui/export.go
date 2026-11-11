@@ -266,7 +266,7 @@ func capitalise(s string) string {
 func (m *Model) exportBody(d *dialog, w int) (string, []string) {
 	st := m.st
 	x := d.exp
-	title := map[string]string{"findings": "Export findings", "packages": "Export packages", "space": "Export the Space account"}[x.kind]
+	title := map[string]string{"findings": "Export findings", "packages": "Export packages", "space": "Export the Space account", "files": "Export the file listing"}[x.kind]
 	kv := func(k, v string, t tone) []string {
 		var out []string
 		for i, part := range wrapLine(v, max(w-11, 10)) {
@@ -279,18 +279,19 @@ func (m *Model) exportBody(d *dialog, w int) (string, []string) {
 		return out
 	}
 	body := kv("object", x.object, toneNormal)
-	space := x.doc.Space != nil
 	if x.confirm {
 		f := x.formats[x.fsel]
 		body = append(body, "", st.dialogTitle.Render("Write this file?"), "")
 		body = append(body, kv("path", x.abs, toneNormal)...)
-		body = append(body, kv("format", f.Describe(space), toneNormal)...)
+		body = append(body, kv("format", f.DescribeFor(x.doc), toneNormal)...)
 		body = append(body, kv("size", fmt.Sprintf("%d bytes", len(x.data)), toneNormal)...)
 		body = append(body, kv("mode", "0600: only you can read it", toneNormal)...)
 		body = append(body, "")
-		body = append(body, bullets(st, "•", toneDim, []string{
-			"It is written on this machine and sent nowhere. Secret values are not in it: a finding says only that it had one.",
-		}, w)...)
+		sent := "It is written on this machine and sent nowhere. Secret values are not in it: a finding says only that it had one."
+		if x.doc.Files != nil {
+			sent = "It is written on this machine and sent nowhere. No file's contents are in it: names (escaped), types, sizes, modes and layers only."
+		}
+		body = append(body, bullets(st, "•", toneDim, []string{sent}, w)...)
 		body = append(body, "", m.hints("y", "write", "n Esc", "back"))
 		return title, body
 	}
@@ -301,7 +302,7 @@ func (m *Model) exportBody(d *dialog, w int) (string, []string) {
 		if i == x.fsel {
 			mark, t = "▸ ", toneNormal
 		}
-		body = append(body, mark+st.tone(t, fit(string(f), 10)+" "+f.Describe(space)))
+		body = append(body, mark+st.tone(t, fit(string(f), 10)+" "+f.DescribeFor(x.doc)))
 	}
 	x.input.Width = max(w-4, 10) // a long path scrolls; the cursor stays in view
 	body = append(body, "", "Path", x.input.View(), "")

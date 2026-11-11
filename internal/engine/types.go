@@ -491,3 +491,45 @@ type ProcessList struct {
 	Titles []string
 	Rows   [][]string
 }
+
+// ChangeKind is what a container did to a path, numbered as the Engine API
+// numbers it.
+type ChangeKind int
+
+const (
+	ChangeModified ChangeKind = 0 // `C` in docker diff
+	ChangeAdded    ChangeKind = 1 // `A`
+	ChangeDeleted  ChangeKind = 2 // `D`
+)
+
+// Letter is the kind as docker diff prints it; "?" for a number the API
+// does not define.
+func (k ChangeKind) Letter() string {
+	switch k {
+	case ChangeModified:
+		return "C"
+	case ChangeAdded:
+		return "A"
+	case ChangeDeleted:
+		return "D"
+	}
+	return "?"
+}
+
+func (k ChangeKind) String() string {
+	switch k {
+	case ChangeModified:
+		return "changed"
+	case ChangeAdded:
+		return "added"
+	case ChangeDeleted:
+		return "deleted"
+	}
+	return "unknown"
+}
+
+// Change is one entry of a container's change list.
+type Change struct {
+	Path string
+	Kind ChangeKind
+}

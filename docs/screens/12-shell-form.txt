@@ -1,21 +1,21 @@
- Docker Desk  unix:///tmp/ddfake147989584/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake3128835518/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-api ━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  10:57:56 ctr kill sig 15 shop-web-1         │
-│  Images        17│┃▸ shop-api-1       shop/api:dev   ● running   150.7%    454MiB  Up 3 hours      ┃│  10:57:56 ctr die exit 0 shop-web-1          │
-│  Volumes        5│┃                                                                                ┃│  10:57:56 net disconnect shop_default  ← sho…│
-│  Networks       7│┃                                                                                ┃│  10:57:56 ctr stop       shop-web-1          │
-│  Compose        2│┃                                                                                ┃│  10:57:57 net connect    shop_default  ← sho…│
-│                  │┃                                                                                ┃│  10:57:57 ctr start      shop-web-1          │
-│  ● 7 running     │┃                                                                                ┃│  10:57:58 img pull       hello-world         │
-│  ‖ 1 paused      │┃                                                                                ┃│  10:57:58 vol destroy    337d154abf4b…       │
-│  ○ 5 stopped     │┃                                                                                ┃│  10:57:58 vol destroy    43ee5206a7f7…       │
+│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  06:31:18 ctr kill sig 15 shop-web-1         │
+│  Images        17│┃▸ shop-api-1       shop/api:dev   ● running   150.9%    454MiB  Up 3 hours      ┃│  06:31:18 ctr die exit 0 shop-web-1          │
+│  Volumes        5│┃                                                                                ┃│  06:31:18 net disconnect shop_default  ← sho…│
+│  Networks       7│┃                                                                                ┃│  06:31:18 ctr stop       shop-web-1          │
+│  Compose        2│┃                                                                                ┃│  06:31:18 net connect    shop_default  ← sho…│
+│                  │┃                                                                                ┃│  06:31:18 ctr start      shop-web-1          │
+│  ● 7 running     │┃                                                                                ┃│  06:31:19 img pull       hello-world         │
+│  ‖ 1 paused      │┃                                                                                ┃│  06:31:20 vol destroy    337d154abf4b…       │
+│  ○ 5 stopped     │┃                                                                                ┃│  06:31:20 vol destroy    43ee5206a7f7…       │
 │                  │┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┃           ┏━ ◆ Open a shell ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
 │                  │┗━━━━━━━━━━━┃                                                                                    ┃                               │
 │                  │┌─ 3 Details┃ container  shop-api-1  (e9b5282f33bd)                                              ┃                               │
-│                  ││Name     sh┃ daemon     unix:///tmp/ddfake147989584/d.sock  (context default)                   ┃                               │
+│                  ││Name     sh┃ daemon     unix:///tmp/ddfake3128835518/d.sock  (context default)                  ┃                               │
 │                  ││ID       e9┃                                                                                    ┃                               │
 │                  ││Image    sh┃ Command to run inside the container:                                               ┃                               │
 │                  ││State    ● ┃ > sh -c 'command -v bash >/dev/null 2>&1 && exec bash || exec sh'                  ┃                               │
@@ -28,10 +28,10 @@
 │                  ││                                                                                ││                                              │
 │                  ││Networks                                                                        │└──────────────────────────────────────────────┘
 │                  ││  shop_default  172.18.0.3  gw 172.18.0.1                                       │┌─ 5 Jobs ──────────────────────────── 4 done ─┐
-│                  ││                                                                                ││▸ ✓ prune volumes 2 volumes                7ms│
-│                  ││Mounts                                                                          ││  ✓ pull image hello-world:latest        437ms│
+│                  ││                                                                                ││▸ ✓ prune volumes 2 volumes                2ms│
+│                  ││Mounts                                                                          ││  ✓ pull image hello-world:latest        427ms│
 │                  ││  volume shop_uploads → /data/shop_uploads (rw)                                 ││  ✓ start container shop-web-1             2ms│
-│                  ││                                                                                ││  ✓ stop container shop-web-1              8ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              3ms│
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │

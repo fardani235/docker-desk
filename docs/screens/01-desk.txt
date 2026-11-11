@@ -1,14 +1,14 @@
- Docker Desk  unix:///tmp/ddfake147989584/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake3128835518/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ────────────────────────── ● live ─┐
 │▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│Waiting for engine events…                    │
-│  Images        16│┃▸ distroless-svc   gcr.io/distr…  ● running     8.8%   50.3MiB  Up 5 hours      ┃│Everything the daemon does                    │
+│  Images        16│┃▸ distroless-svc   gcr.io/distr…  ● running     8.8%   50.4MiB  Up 5 hours      ┃│Everything the daemon does                    │
 │  Volumes        7│┃  noisy-logger     alpine:3.20    ● running    38.1%    329MiB  Up 12 minutes   ┃│shows up here as it happens.                  │
 │  Networks       7│┃  paused-batch     alpine:3.20    ‖ paused                      Up 50 minutes…  ┃│                                              │
-│  Compose        2│┃  redis-cache      redis:7        ● running     6.9%    375MiB  Up 26 hours     ┃│                                              │
-│                  │┃  shop-api-1       shop/api:dev   ● running    64.8%    407MiB  Up 3 hours      ┃│                                              │
-│  ● 7 running     │┃  shop-db-1        postgres:16    ● running   135.5%    696MiB  Up 3 hours (h…  ┃│                                              │
-│  ‖ 1 paused      │┃  shop-web-1       nginx:1.27     ● running    71.9%    487MiB  Up 3 hours      ┃│                                              │
-│  ○ 5 stopped     │┃  slow-stopper     busybox:1.36   ● running     8.4%    472MiB  Up 40 minutes   ┃│                                              │
+│  Compose        2│┃  redis-cache      redis:7        ● running     6.8%    374MiB  Up 26 hours     ┃│                                              │
+│                  │┃  shop-api-1       shop/api:dev   ● running    63.5%    406MiB  Up 3 hours      ┃│                                              │
+│  ● 7 running     │┃  shop-db-1        postgres:16    ● running   135.6%    696MiB  Up 3 hours (h…  ┃│                                              │
+│  ‖ 1 paused      │┃  shop-web-1       nginx:1.27     ● running    71.2%    486MiB  Up 3 hours      ┃│                                              │
+│  ○ 5 stopped     │┃  slow-stopper     busybox:1.36   ● running     8.3%    473MiB  Up 40 minutes   ┃│                                              │
 │                  │┃  blog-app-1       ghost:5        ○ exited                      Exited (0) 15…  ┃│                                              │
 │                  │┃  blog-db-1        mysql:8        ○ exited                      Exited (0) 15…  ┃│                                              │
 │                  │┃  old-migration    shop/api:dev   ○ exited                      Exited (0) 36…  ┃│                                              │
@@ -19,11 +19,11 @@
 │                  ││ID       86f975de6cbb                                                           ││                                              │
 │                  ││Image    gcr.io/distroless/static:nonroot                                       ││                                              │
 │                  ││State    ● running   Up 5 hours                                                 ││                                              │
-│                  ││Started  2026-11-10 05:57:55                                                    ││                                              │
+│                  ││Started  2026-11-11 01:31:16                                                    ││                                              │
 │                  ││Command  /svc                                                                   ││                                              │
 │                  ││Restart  no (restarted 0×)                                                      ││                                              │
 │                  ││Runtime  tty=false  privileged=false  env vars=1                                ││                                              │
-│                  ││Created  2026-11-10 05:57:55                                                    ││                                              │
+│                  ││Created  2026-11-11 01:31:16                                                    ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││Ports                                                                           ││                                              │
 │                  ││  none                                                                          │└──────────────────────────────────────────────┘

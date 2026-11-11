@@ -1,7 +1,7 @@
- Docker Desk  unix:///tmp/ddfake380892071/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake3524619457/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┌─ 2 Containers (1 of 13) ────────────────────────────── filter: shop-web ─┐┌─ 4 Events ────────────────────── ● live ─┐
 │▸ Containers    13││  NAME           IMAGE        STATE          CPU       MEM  STATUS        ││Waiting for engine events…                │
-│  Images        16││▸ shop-web-1     nginx:1.27   ● running    72.2%    487MiB  Up 3 hours    ││Everything the daemon does                │
+│  Images        16││▸ shop-web-1     nginx:1.27   ● running    73.1%    488MiB  Up 3 hours    ││Everything the daemon does                │
 │  Volumes        7││                                                                          ││shows up here as it happens.              │
 │  Networks       7││                                                                          ││                                          │
 │  Compose        2││                                                                          ││                                          │
@@ -15,8 +15,8 @@
 │                  │└──────────────────────────────────────────────────────────────────────────┘│                                          │
 │                  │┏━ ◆ 3 Details: shop-web-1 ━━ Info Changes Logs Stats [Processes] Inspect ━┓│                                          │
 │                  │┃UID  PID  PPID C STIME TTY TIME     CMD                                   ┃│                                          │
-│                  │┃root 1291 1290 0 07:58 ?   00:00:01 nginx -g daemon off;                  ┃│                                          │
-│                  │┃root 1292 1291 0 07:58 ?   00:00:00 /bin/sh -c sleep infinity             ┃│                                          │
+│                  │┃root 1692 1691 0 03:31 ?   00:00:01 nginx -g daemon off;                  ┃│                                          │
+│                  │┃root 1693 1692 0 03:31 ?   00:00:00 /bin/sh -c sleep infinity             ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
@@ -34,7 +34,7 @@
 │                  │┃                                                                          ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
-│                  │┃snapshot at 10:58:11 · 2 processes · r takes a new one                    ┃│                                          │
+│                  │┃snapshot at 06:31:32 · 2 processes · r takes a new one                    ┃│                                          │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────┘
 
  / find  ↑↓ scroll  [ ] tab  r new snapshot  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e … Tab pane  ? keys  q quit

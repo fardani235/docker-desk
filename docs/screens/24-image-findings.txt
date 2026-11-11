@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake2076054037/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake2787146667/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┌─ 2 Images (1 of 16) ────────────────────────────────────────── filter: shop/a ─┐┌─ 4 Events ────────────────────────── ● live ─┐
 │  Containers    13││  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ││Waiting for engine events…                    │
 │▸ Images        16││▸ shop/api                dev           073fe9aeb752     217MB    24h     2 ctr ││Everything the daemon does                    │
@@ -28,7 +28,7 @@
 │                  │┃  L1  certain bin.pie              /bin/sh  ELF type EXEC: a fixed load address ┃│                                              │
 │                  │┃  L2  certain layer.cache          /var/lib/apt/lists  2 files, 74.0kB          ┃└──────────────────────────────────────────────┘
 │                  │┃▸ L2  certain secret.deleted       /root/.aws/credentials  AWS access key ID: A…┃┌─ 5 Jobs ──────────────────────────── 1 done ─┐
-│                  │┃───────────────────────────────────────────────────────────────────── 15 of 26 ─┃│▸ ✓ analyse image shop/api:dev             7ms│
+│                  │┃───────────────────────────────────────────────────────────────────── 15 of 26 ─┃│▸ ✓ analyse image shop/api:dev            19ms│
 │                  │┃why      Added in layer 2 and deleted in layer 3, yet still in the image bytes: ┃│                                              │
 │                  │┃         anyone with the image can read layer 2.                                ┃│                                              │
 │                  │┃evidence AWS access key ID: AKIA************ (20 chars)   (v reveals)           ┃│                                              │

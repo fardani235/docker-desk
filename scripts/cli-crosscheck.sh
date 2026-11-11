@@ -84,6 +84,28 @@ expect_contains "ps -s writable layer" "$(d ps -a -s --format '{{.Names}} {{.Siz
 expect_eq "history: CMD made no layer" "$(d history --format '{{.Size}}' shop/worker:dev | head -1)" "0B"
 expect_eq "history: layer sizes" "$(d history --format '{{.Size}}' shop/worker:dev | tail -1)" "74.8MB"
 
+echo "== diff (the Files view's container side)"
+# The fake's change list for shop-web-1 (fakeengine.DemoChanges), as the
+# real CLI prints it: one line per path, the kind's letter first.
+want_diff="C /etc
+C /etc/nginx
+C /etc/nginx/nginx.conf
+C /run
+A /run/nginx.pid
+C /tmp
+D /tmp/seed
+C /var
+C /var/cache
+C /var/cache/nginx
+A /var/cache/nginx/client_temp
+A /var/cache/nginx/client_temp/00000001
+C /var/lib
+C /var/lib/nginx
+A /var/lib/nginx/state.db"
+expect_eq "diff shop-web-1: every kind, in the daemon's order" "$(d diff shop-web-1)" "$want_diff"
+expect_eq "diff of a container that wrote nothing" "$(d diff redis-cache)" ""
+expect_fails "diff of an unknown container" "No such container" d diff ghost
+
 echo "== lifecycle"
 d stop redis-cache >/dev/null
 expect_eq "stop -> exited" "$(d inspect --format '{{.State.Status}}' redis-cache)" "exited"

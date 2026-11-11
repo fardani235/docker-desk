@@ -3009,6 +3009,313 @@ Reading a file over SSH; interpolation in any form; comparing ports, volumes, en
 command, health checks or replicas; recomputing the config hash; reading `include:`d or
 `extends:` files; a "show the file" view; watching the file for changes.
 
+## Round fifteen — the Files view
+
+The request: a full-screen **Files** view, opened with `F` on an image or a container, that shows
+what is inside an image — its layers merged into one tree, each path with its type, size, mode and
+the layer and build instruction that put it there — and, for a container, the daemon's own list of
+what the container added, changed or deleted laid over its image's tree. The plan is the OpenSpec
+change `files-explorer` (proposal, design D1–D11, a spec delta for `files-explorer`, tasks). It was
+implemented in one pass with the instruction to decide and record rather than ask; every choice the
+plan left open is an entry below.
+
+### V1 — A mode on the existing analyser, not a second archive parser
+
+**Decided:** `forensics.Options` gains `Mode`. `ModeFindings` is the **zero value** and is exactly
+the analysis as it was, so every caller that predates this round — the Findings tab, `--report`,
+the real-daemon checks — is unchanged without being touched. `ModeFiles` reads tar headers only;
+`ModeBoth` is the Findings analysis with the listing kept as well.
+
+| Option | What it gives | Why not |
+| --- | --- | --- |
+| A second parser in `internal/files` | a package with no `forensics` in it | the archive half is the subtle part — legacy and OCI layouts, a nested index, attestation manifests, platform choice, layer order known only from `manifest.json` (which may come last), gzip, zstd, whiteouts, opaque markers, identical layers stored once and linked. A second copy would drift from the first, and the Files view would then disagree with the Findings tab about the same archive |
+| Always `ModeFindings`, keep the tree | one mode | reads up to 64 KiB of every file and runs every rule — most of a Findings analysis's cost — for a view that needs none of it, and puts file bodies through the secret scanner for a view that promises not to read them |
+| **A mode on the same walk** | one parser, one notion of a layer | — |
+
+### V2 — Headers only, enforced by what is not allocated
+
+**Decided:** in `ModeFiles` the walk records the header and `continue`s before any body is
+touched: no `content`, no ELF read, no `dbCapture`, no observations, no path classification, no
+fingerprints, and no SBOM scan of JSON blobs (the config is still read, for the history and the
+platform). The two buffers file bodies are read into are not even allocated in `ModeFiles`, and a
+test asserts it; `finish` returns before any rule and before the package lists, so `Packages` is
+`nil` and `Findings` empty. The tar reader skips each body itself.
+
+### V3 — One entry per header, per layer, in the manifest's order
+
+**Decided:** `Report.Files` is a `FileListing`: per manifest layer, every header as a
+`FileEntry` — the absolute path cleaned as the walk already cleans layer names (`path.Clean("/"+
+name)`, so nothing can name a place above the root), the tar type flag, mode, size (regular
+files only), uid, gid, mtime and link target — plus the layer's whiteouts and opaque directories,
+its instruction and why it was not read, if it was not. A symlink's target is kept as recorded and
+never resolved; a hard link's is cleaned to an absolute path, since it names another entry of the
+same tree. The merge into one filesystem is not done here (V7): this package says what each layer
+holds, not what the result is. `Report.Files` is tagged `json:"-"` and the report's own collected
+document does not carry it, so the Findings cache and `--report` stay the size they were (D5).
+
+### V4 — Three bounds, counted after they are hit; markers count as entries
+
+**Decided:** 200,000 entries, 4,096 bytes of one path (a path of 4,096 is kept, 4,097 is dropped),
+48 MiB of path text, checked in that order — length first, so a hostile path is named as what it
+is rather than as the entry bound. Every header is counted in `Seen` whatever happens to it, and
+each bound has its own dropped count, so the header can say "200,000 of 812,431" and why. A link
+target counts toward the length and text bounds like a path. Whiteouts and opaque markers are tar
+headers and count toward the bounds too: a dropped marker means a path the image deleted may be
+shown, which is what "the index was cut" already warns of. The three fields default when left
+zero, so a caller that builds its own `Limits` for other bounds keeps these.
+
+**Alternative rejected:** markers outside the bounds. They would make the bound leak (a layer of a
+million whiteouts is as hostile as a million files) for a correctness gain the cut warning already
+states.
+
+### V5 — The instruction map, by 1-based layer, and "unknown" as a word
+
+**Decided:** the `instr` slice the rules already build is kept on the report as `Instructions`,
+and `Report.Instruction(layer)` reads it by 1-based layer number — the numbering the Packages view
+and every finding use. It says `unknown` for an empty history entry, for a history whose
+layer-making entries do not match the layers in number (the existing rule: only an exact count
+maps), and for a layer number out of range. It is never a guess from a neighbouring entry.
+
+### V6 — A layer the desk cannot decode is named, and holds nothing
+
+**Decided:** a zstd layer — and a gzip layer that does not decompress, a damaged tar, or a layer the
+manifest lists and the archive lacks — yields `Unread` with the reason in the desk's own words,
+and the other layers are listed in full. What a damaged layer yielded before it broke is kept; the
+reason still marks it unread, so the tree is incomplete either way. The view names the layers
+(V11) and never claims a path is absent on their account.
+
+**Alternative rejected:** carrying a zstd decoder. It is the one compression the desk meets that
+the standard library does not decode, and a dependency for it is its own decision, as it was for
+the Findings analysis (F13), which reports the same layer the same way.
+
+### V7 — The merge order is the storage driver's, layer by layer
+
+**Decided:** `files.Merge` takes the layers lowest first. Within one layer, its opaque markers and
+whiteouts apply first — to the layers below it — and its own entries are then added, because a
+layer's markers never hide what that same layer writes (overlayfs and the image spec agree on
+this). A later entry at a path replaces the earlier one and becomes its writer; the same
+directory written again keeps its contents and takes the new mode; a file replaced by a directory,
+or a directory by a file, drops what was there. A tar may name a file before its directory, or
+never name the directory at all: such a directory is made and marked `Implicit`, with no layer.
+Hard links are an entry naming another and carry no bytes of their own, so a directory's size is
+not counted twice.
+
+| Option | Why not |
+| --- | --- |
+| Entries first, then the layer's markers | a layer that recreates `/var/cache` opaque and fills it would hide its own files |
+| Highest layer first, first writer wins | the same result for files, but an opaque directory then has to know which lower layers it hides — a second pass for nothing |
+| **Lowest first, markers before entries** | — |
+
+**Counts:** `Removed` is the whiteouts that hit a path the tree held — a whiteout for a path no
+lower layer has is not counted, which is what the header's "removed by later layers" means; and
+`Hidden` is the entries beneath a removed or opaque directory that went with it. Neither is drawn
+(V11 says how many).
+
+### V8 — Directories: computed size, file count, and no layer
+
+**Decided:** after the merge, every directory's size is the sum of the files beneath it and is
+marked `Computed`; `Files` counts the non-directories beneath it. A directory keeps the layer that
+last wrote its header, but the view shows none (D3): a layer number on a directory that six
+layers wrote would read as an answer it is not.
+
+### V9 — Rows are flattened per frame from the expanded set; the cursor is a path
+
+**Decided:** `Flatten(index, expanded, filter, order)` returns only the rows that are visible, so a
+frame costs the rows drawn, and the tree's shape is tested without a terminal. Children are stored
+by name; `BySize` sorts a copy (largest first, files by their own size and directories by their
+computed size, ties by name). The cursor is the path, not a row number. `View.Find` puts it on its
+own row, or — while its directory is collapsed or the filter hides it — on its nearest shown
+ancestor, without forgetting it: reopened, it is back on its path, as the Packages view keeps a
+package a filter hides. Only moving chooses another path.
+
+### V10 — The filter: a substring of the whole path, with its ancestors
+
+**Decided:** case-insensitive substring on the full raw path, so `/usr/local/bin/py` and `python3`
+both find `/usr/local/bin/python3.12`; every match is drawn with the directories that hold it,
+opened whatever was expanded. The view counts the matches and the paths searched — every path the
+index holds — and `MayMiss` is set whenever the index is cut or a layer was not read, so "no path
+matches" is always said with "of N searched" and, when it applies, "the index is incomplete". No
+glob, no regex: a substring cannot be slow on a hostile name, and it is what is typed.
+
+### V11 — Bounds in the header: kept of seen, each bound by name
+
+**Decided:** `Index.Totals(daemonSize).Lines()` is the header's words, built in the pure package so
+a test can read them: "200,000 entries indexed of 812,431 seen", one line per bound that dropped
+anything and which bound it was (the entry count, the 4,096-byte length bound, the 48 MB of text),
+one line per unread layer with its reason, the removed and hidden counts, and the tree's total
+beside the daemon's size for the image. When the two differ, the line says they are **different
+measurements, not a contradiction**, and why: the daemon counts every layer's bytes, including
+what a later layer replaced or removed; the tree counts only the files left at the end. The test
+asserts the sentence, not a ratio.
+
+**Measured at the bound:** building an index of 200,000 entries takes 0.4 to 1.2 s on this machine
+(four runs) and holds 55 MB every time (`files.TestTotalsAtTheEntryBound` logs both). That is twice the design's estimate of
+~25 MB: each node keeps its mtime, owner, link target and the overlay's fields beside its path.
+It is bounded, and the view's cache holds at most two (V17), so the worst case is about 110 MB.
+Packing the node was left for when it is shown to matter.
+
+### V12 — Escaping: one function, reversible, for screen and file
+
+**Decided:** `files.Escape` maps a newline to `\n`, every other C0 control character and `DEL` to
+`\xNN`, each byte of invalid UTF-8 to `\xNN`, a C1 control (U+0080–U+009F, which a terminal can
+read as CSI) to `\u00NN`, and a backslash to `\\`. Everything else — including real non-ASCII names
+and a literal U+FFFD — is kept. The backslash is escaped so the mapping can be undone: without it
+a name containing the four characters `\x1b` could not be told from one containing ESC, and no
+byte of a name is lost or invented. The screen draws the escaped form and the export writes it
+(V20), so they cannot disagree.
+
+| Option | Why not |
+| --- | --- |
+| `strconv.Quote` | escapes every non-ASCII character too: a German or Japanese file name becomes unreadable |
+| Strip control characters | loses bytes; two different names can draw identically |
+| `encoding/json`'s own escaping in the export | replaces invalid UTF-8 with U+FFFD — a byte invented, another lost — and the screen and file then disagree |
+| **One reversible escape, used by both** | — |
+
+### V13 — The overlay copies the path to a change, never the tree
+
+**Decided:** `files.Apply(index, changes)` returns a new index that shares every unchanged
+directory with the image's: only the nodes from the root down to each change are copied, so one
+image's tree serves every container made from it, and opening a container's Files does not cost a
+second tree. Every change path is cleaned as the archive's names are (`path.Clean("/"+p)`), so
+`../../etc/passwd` is `/etc/passwd` and nothing can name a place above the root. A path the index
+holds is marked changed, added or deleted and keeps the image's size and layer; an added path the
+index does not hold is drawn with no size and cannot be expanded; a changed path it does not hold
+is drawn, marked as not in the index, and counted as outside; a deleted path it does not hold is
+not drawn and is counted (D6). Changes beneath a path the container added are counted on it and
+not drawn, because what an added directory holds is not read (D6's deferred archive round); that
+something is beneath it is what says it is a directory, since the change list does not. Each
+directory above a change counts the changes beneath it, which the view shows on collapsed rows.
+`Apply(nil, …)` is the container's changes alone, for a view opened before its image is read.
+
+### V14 — A container's side is `ContainerDiff`, not `CopyFromContainer`
+
+**Decided:** `engine.ContainerChanges(ctx, id)` is `GET /containers/{id}/changes` through the
+client's `ContainerDiff`, returning `[]Change{Path, Kind}` with the API's numbering kept (0
+changed, 1 added, 2 deleted — `C`, `A`, `D` in `docker diff`). It is a read: the read-only wrapper
+passes it through, `TestReadOnlyCoversEveryMutation` lists it among the reads, and the guard on the
+real-daemon checks allows it as a `GET`. The fake serves a seeded list per container
+(`SetChanges`), an empty list for a container that wrote nothing, and 404 for an unknown one;
+`make crosscheck` drives it with the real `docker diff` and compares the output line for line.
+
+**Cost, in bytes:** the change list is a few dozen bytes a path — the sandbox's `shop-web-1`,
+with all four cases and its parents, is 15 entries and **522 bytes** of JSON. Reading the
+container's own archive (`GET /containers/{id}/archive?path=/`, `CopyFromContainer`) streams its
+whole filesystem: the image's bytes again plus the writable layer — for that same container, the
+daemon's **187.7 MB** for `nginx:1.27` — to learn sizes the image's index already has, for every
+path but the few the container wrote. That is five to six orders of magnitude for the same answer,
+and on a remote daemon every byte crosses the network.
+
+**Deferred:** reading a container's own archive is its own later change ("the container archive
+round"), with its own pre-flight (the size shown before `Enter`, as V16 does for an image), so that
+an added directory's contents and a changed file's new size can be shown. Until then the view says
+an added directory's contents are not read and a changed file's size is the image's (V18).
+
+### V15 — `F` from any pane; the view is a read, and closes onto the desk as it was
+
+**Decided:** `F` opens the view when the highlighted kind is Images or Containers, from any pane,
+as `S` and `B` do — and in read-only mode, since it reads only. On a volume, a network or a
+project it is one status sentence and no view. Inside, the view owns every key (the Packages
+idiom); `Esc` clears a filter first and then closes, and `F` closes too. Closing restores focus,
+kind and highlight exactly, as Space does. The view keeps its expanded directories, cursor and
+filter while it is on the same object, and starts from the top on another; the order is the
+operator's and is kept.
+
+**Opening sends nothing on an image.** The facts — reference, short ID, platform, layer count, the
+daemon's size — come from the image list and the Details pane's inspect, which is already loaded;
+if `F` is pressed before that inspect lands, the view adopts it when it does. On a container,
+opening sends exactly one request, the change list (V14). The image's platform is not inspected
+for it: `SaveImage` with no platform lets the daemon pick its default, and the archive's own config
+then says which platform was read.
+
+### V16 — One job, cancellable, and no partial index
+
+**Decided:** `Enter`, while the image has no index, starts the job **"read the image archive"**:
+`SaveImage`, then `forensics.Analyse` in `ModeFiles`, then `files.Build` — the merge runs on the
+job's goroutine, not the UI's, since it takes up to a second at the bound (V11). Its status carries
+bytes read, layers and entries seen, its log counts and the layout, never a path. `c` cancels it,
+and **closing the view cancels it too**: the operator who leaves is not waiting for it, and a
+multi-gigabyte read should not go on unseen. A cancelled, failed or broken read keeps nothing and
+the header says why ("Cancelled: the stream was closed and nothing was kept"); `Enter` tries again.
+There is no size pre-flight beyond the daemon's figure in the opening facts: `Enter` *is* the
+consent, which is what the Findings tab's remote-size question asks for.
+
+### V17 — Two indexes, keyed by image ID, owned by the view
+
+**Decided:** the view keeps the last two images' indexes, least recently used dropped, keyed by
+image ID (D5). The Findings report cache is not used and not touched: it holds no tree (V3), and a
+Files read of an image the Findings tab analysed is a second, visible job — not a hidden cost. A
+container's view finds its image's index there, so reading `nginx:1.27` once serves every
+container made from it, and the overlay is rebuilt only when the index or the change list changes.
+
+### V18 — A container's states, and what each says
+
+**Decided:** the header says, in this order, the container, its change list ("15 listed by the
+daemon, read 12s ago · r reads them again", the age moving each second), what the overlay did
+("3 added · 10 changed · 1 deleted; sizes and layers are the image's"), what it could not draw
+(changes beneath an added directory; changed paths outside the index; deleted paths the index does
+not hold — with "the index is incomplete, which may be why" when it is), and then the image's own
+facts and totals. Four states are distinct: the changes alone, before the image is read (no sizes,
+and "Enter reads its archive"); the overlay; "This container has written nothing since its image"
+(said only once the image's tree is shown — before it, "The daemon lists no changes"); and a change
+list that could not be read ("not read: … — r tries again"). `r` reads the change list only; the
+image's archive never changes, so its tree is never re-read and carries no age (D7).
+
+A change list of at most 64 entries opens every directory that has a change beneath it, so the
+changes are on screen without hunting; a longer one stays closed and each collapsed row says how
+many changes are below it. In the detail, an added directory says how many changes the daemon
+lists beneath it and that its contents are not read; a changed file's size says it is the image's.
+A row beneath a deleted directory is marked as deleted with it.
+
+### V19 — Drawing: the Packages idiom, cut on the left, and a header that can be read
+
+**Decided:** name, size, type and layer columns (and the change, on a container); directories show
+`+`/`-` and a trailing `/`, symlinks and hard links `-> target`, all escaped (V12). The name column
+is cut on the **left**, so the end of a deep name stays visible. The header scrolls with the rows
+but the view opens held at its first line — `k` or `g` at the first row return there, and the first
+`↓` only brings the highlighted row into view — so a container's header, taller than the list at
+80×24, can be read; a kept filter brings its matches into view at once. A directory's type cell
+carries the count of files it holds (`dir 12`, `dir 200k`), beside its computed size, so an opened
+directory's entries each show their count and size as the spec asks, without a fifth column at
+80. A file whose layer has an unread layer above it is drawn `L3?` (the Packages view's mark for
+an unsure layer), and the detail names each such layer and its reason: it may have replaced or
+removed the path. The export keeps the layer number and lists the unread layers once. A deleted row is struck
+through and dimmed where the terminal has colour, and says `deleted` in its own column everywhere,
+so it reads the same without colour (T5). An implied directory (no tar entry of its own) says so in
+the detail instead of showing a mode of `0000` it never had.
+
+### V20 — Export: the evidence dialog, text first, names escaped once
+
+**Decided:** `w` collects a `report.Files` document through `collect.Files`, which escapes every
+name — paths, link targets, the container's name, and the platform, which comes from the image's
+own config and is as untrusted — with `files.Escape`, the function the screen draws with. The
+`report` package stays free of desk imports, as its doc requires: it gets escaped strings. JSON
+and text are offered, text first (one path per line, tab-separated: the escape leaves no tab or
+newline in a name, so a row cannot be forged); SPDX and CycloneDX are refused, as for Space. CSV is
+not offered (D8). JSON stores the escaped string, so `encoding/json` never replaces a byte with
+U+FFFD. A path the container added has `"size": null`; directories carry no layer. Before the
+archive is read there is no index, and `w` writes nothing and says so — on a container too, though
+its change list is known: the export is of an index, and a list of changes alone would read as
+one. The prefilled name is `docker-desk-files-<object>-<date>.txt`.
+
+### V21 — The sandbox: `nginx:1.27` and `shop-web-1`
+
+**Decided:** the demo's `nginx:1.27`, already the image of `shop-web-1`, gets an archive in the
+classic layout (`python:3.12-slim` and `shop/api:dev` are OCI, so both layouts are in the sandbox)
+whose three layers match the fake's inspect: a deep tree, a file a later layer replaces, a whiteout
+and an opaque directory in one `RUN`, a symlink, a hard link, a character device, a FIFO, a
+traversal-shaped name and the hostile name `\x1b[31mred\nforged-row\xff.html`. `shop-web-1`'s
+change list has a file changed, a file added, a file deleted and a directory added with an entry
+beneath it, each with its parents' `C`, in the order `docker diff` prints. The fixture is new
+(`fixture.DemoFiles`) rather than an edit of `DemoPackages`, whose files the packages goldens pin.
+`python:3.12-slim` already holds the deep path the end-to-end session filters for.
+
+### V22 — Left out
+
+Reading a container's own archive; a file's contents, a preview or a hash of one; any file-level
+difference between a container and its image beyond the daemon's list; globs or regular
+expressions in the filter; a size pre-flight dialog before `Enter`; sharing the index with the
+Findings report; packing the index node (V11).
+
 ## Process
 
 ### B12 — No commits were made
@@ -3080,3 +3387,40 @@ failing tests drive. The likely mechanism is the one K15 met — keys paced for 
 arriving merged under contention — but that is not proven, and five to seven runs cannot rule out
 that this round's load is what tips it. Making those waits independent of timing, as B25 also
 asks, is a change of its own. The new tests and the touched UI tests pass under `-race`.
+
+### B34 — Round fifteen: what was run, what was found that is not this round's
+
+Nothing was committed (B12); the change is complete and not archived (B24). `go build ./...`,
+`go vet ./...` and `gofmt -l .` are clean. No data race was reported in any run. `make race` was
+run twice in full: the first passed; the second, after the last UI edits, failed only
+`ui.TestSearchBarCostsNoRowWhenClosed` — B25's test whose two screenshots differ by a live CPU
+figure — and the `ui` package then passed in full under `-race`. That test fails two in five
+under `-race` alone on this tree and two in five on the unchanged `HEAD`. `make test` was run four
+times in full: the first failed one test, `e2e.TestComposeDeclared` (below); the other three
+passed in full. `make real-readonly-check`, with this round's check
+added, passed against this machine's daemon, its objects unchanged (verification.md).
+
+- **`make crosscheck` was red before this round, and is the same three red after it.** The
+  unchanged `HEAD`, in a clean worktree, fails `dangling images` (want 2, got 3), `system df
+  images` and `system df containers`: `fake-dockerd` seeds more than the figures the script
+  expects (an earlier round's `SeedUpstream` and `-changes` images). This round's new section —
+  `docker diff` on `shop-web-1`, on a container that wrote nothing, on an unknown one — passes
+  (73 checks, 70 passed). Fixing the script's old expectations is a change of its own.
+- **`e2e.TestComposeDeclared/44-compose-declared` is intermittent on `HEAD` too**: in back-to-back
+  runs it failed once in four on `HEAD` and once in four on this tree, waiting for "1 declared
+  only, 1 differs", and once in the first full `make test`. The likely mechanism is in its helper:
+  `scrollTo` pages down up to twelve times while the comparison's rows are still arriving, so under
+  load it can page past the header line it waits for, and never pages back. Not changed here; the
+  rest of `make e2e` passed, and so did this test on every rerun. Likewise
+  `e2e.TestSpace`, which B33 found intermittent under load, failed once in a later `make e2e` and
+  passed alone and on the rerun (and three of three on `HEAD`).
+- **The real daemon's change list has no fixed order**, and `docker diff` prints whatever order its
+  call got; the first real-daemon comparison failed on that alone and now compares sorted
+  (verification.md). The fake returns its seeded order, which is also the CLI's.
+- **`make e2e` rewrote every screen in `docs/screens`**: the new seven, the help screen (it grew
+  by the Files section), and 37 others whose only differences are the run's own — the socket path,
+  live CPU and memory figures, timestamps. They are kept, as `make e2e` writes them and as round
+  fourteen kept its.
+- One shell redirection overwrote an existing file (`internal/fakeengine/changes.go`) while
+  creating a new one; it was restored from git at once and the new code put in `diff.go`. The
+  build broke and was fixed in the same minute; nothing else was touched.

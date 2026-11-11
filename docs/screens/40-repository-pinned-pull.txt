@@ -1,7 +1,7 @@
- Docker Desk  unix:///tmp/ddfake2765526534/d.sock  ctx default  Engine 29.0.0-fake  on fake-dockerd  ● connected
+ Docker Desk  unix:///tmp/ddfake3136936083/d.sock  ctx default  Engine 29.0.0-fake  on fake-dockerd  ● connected
 ┏━ ◆ Repository — the tags a registry lists, and one build by its digest ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ repository 127.0.0.1:41559/acme/api                                                                                                                ┃
-┃ asks       127.0.0.1:41559 anonymously · 100 tags held · Tab asks for the next page · listed 0s ago                                                ┃
+┃ repository 127.0.0.1:34587/acme/api                                                                                                                ┃
+┃ asks       127.0.0.1:34587 anonymously · 100 tags held · Tab asks for the next page · listed 0s ago                                                ┃
 ┃            Tags are in text order, numbers by value (3.9 before 3.10): never by recency, which a tag list does not carry. Pages come in the        ┃
 ┃            registry's own order.                                                                                                                   ┃
 ┃   TAG                               DIGEST               PLATFORMS                  HERE                            BUILT                          ┃
@@ -10,18 +10,18 @@
 ┃   3.10.0                            sha256:f79fbae8102b  amd64 arm64/v8             -                               2025-05-12 amd64               ┃
 ┃   3.10.1                      ┏━ ◆ Pull image by digest ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓2025-06-02 amd64               ┃
 ┃   3.27.0                      ┃                                                                                    ┃2026-06-15 amd64               ┃
-┃   3.28                        ┃ image      127.0.0.1:41559/acme/api:3.28.3  (sha256:a58c0cb3fff6)                  ┃2026-10-20 amd64               ┃
-┃   3.28.0                      ┃ daemon     unix:///tmp/ddfake2765526534/d.sock  (context default)                  ┃2026-08-03 amd64               ┃
+┃   3.28                        ┃ image      127.0.0.1:34587/acme/api:3.28.3  (sha256:a58c0cb3fff6)                  ┃2026-10-20 amd64               ┃
+┃   3.28.0                      ┃ daemon     unix:///tmp/ddfake3136936083/d.sock  (context default)                  ┃2026-08-03 amd64               ┃
 ┃   3.28.1                      ┃                                                                                    ┃2026-08-27 amd64               ┃
 ┃   3.28.2                      ┃ • Pulls exactly                                                                    ┃2026-09-21 amd64               ┃
-┃ ▸ 3.28.3                      ┃   127.0.0.1:41559/acme/api:3.28.3@sha256:a58c0cb3fff6b8147b5fabc95eb7ad6efbfeffa94 ┃2026-10-20 amd64               ┃
+┃ ▸ 3.28.3                      ┃   127.0.0.1:34587/acme/api:3.28.3@sha256:a58c0cb3fff6b8147b5fabc95eb7ad6efbfeffa94 ┃2026-10-20 amd64               ┃
 ┃   3.29.0-rc.1                 ┃   adf26d5e655b2939e24ca05                                                          ┃no build here                  ┃
 ┃   edge                        ┃ • The daemon fetches the digest, not the tag: the build sha256:a58c0cb3fff6, which ┃2026-11-06 amd64               ┃
 ┃   latest                      ┃   3.28.3 named when it was read. If the tag has moved since, this build is still   ┃2026-10-20 amd64               ┃
 ┃   nightly-20260701            ┃   the one fetched.                                                                 ┃2026-07-01 amd64               ┃
 ┃   nightly-20260702            ┃ • The Engine API sends the digest in place of the tag: the daemon records the      ┃2026-07-02 amd64               ┃
-┃   nightly-20260703            ┃   image as 127.0.0.1:41559/acme/api@sha256:a58c0cb3fff6. A local                   ┃2026-07-03 amd64               ┃
-┃   nightly-20260704            ┃   127.0.0.1:41559/acme/api:3.28.3 is neither created nor moved.                    ┃2026-07-04 amd64               ┃
+┃   nightly-20260703            ┃   image as 127.0.0.1:34587/acme/api@sha256:a58c0cb3fff6. A local                   ┃2026-07-03 amd64               ┃
+┃   nightly-20260704            ┃   127.0.0.1:34587/acme/api:3.28.3 is neither created nor moved.                    ┃2026-07-04 amd64               ┃
 ┃   nightly-20260705            ┃ • It is downloaded into this daemon's image store, as a background job.            ┃2026-07-05 amd64               ┃
 ┃   nightly-20260706            ┃                                                                                    ┃2026-07-06 amd64               ┃
 ┃   nightly-20260707            ┃ Type 3.28.3 and press Enter to proceed:                                            ┃2026-07-07 amd64               ┃
@@ -31,12 +31,12 @@
 ┃   nightly-20260711            ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛2026-07-11 amd64               ┃
 ┃   nightly-20260712                  sha256:fa5df07e9d72  amd64 arm64/v8             -                               2026-07-12 amd64               ┃
 ┃ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── rows 1–25 of 100 ─ ┃
-┃ 127.0.0.1:41559/acme/api:3.28.3  · described 0s ago · r asks again                                                                                 ┃
+┃ 127.0.0.1:34587/acme/api:3.28.3  · described 0s ago · r asks again                                                                                 ┃
 ┃ digest     sha256:a58c0cb3fff6b8147b5fabc95eb7ad6efbfeffa94adf26d5e655b2939e24ca05                                                                 ┃
 ┃ publishes  linux/amd64, linux/arm64/v8                                                                                                             ┃
-┃ here       no local image of 127.0.0.1:41559/acme/api records this digest                                                                          ┃
+┃ here       no local image of 127.0.0.1:34587/acme/api records this digest                                                                          ┃
 ┃ built      2026-10-20 09:30 UTC (linux/amd64 build's config) — the producer's claim, read 0s ago                                                   ┃
 ┃                                                                                                                                                    ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
- ✓ read build times 127.0.0.1:41559/acme/api · 25 tags
+ ✓ read build times 127.0.0.1:34587/acme/api · 25 tags
  ↑↓ move  e name  / filter  Tab next page  d build times  ⏎ pull by digest…  r ask again                                          B Esc close  ? keys

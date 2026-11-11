@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/TestSearchInTheSandbox2930191603/001/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/TestSearchInTheSandbox1451385827/001/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┌─ 2 Containers (1 of 13) ─────────────────────────────── filter: shop-db ─┐┌─ 4 Events ────────────────────── ● live ─┐
 │▸ Containers    13││  NAME           IMAGE        STATE          CPU       MEM  STATUS        ││Waiting for engine events…                │
 │  Images        22││▸ shop-db-1      postgres:16  ● running        …         …  Up 3 hours (… ││Everything the daemon does                │
@@ -17,7 +17,7 @@
 │                  │┃{                                                                         ┃│                                          │
 │                  │┃  "Id": "e4787a232c7582e869c00faa6e6e5fe85243fc0b3bebb6458f4c380986cb64aa"┃│                                          │
 │                  │┃,                                                                         ┃│                                          │
-│                  │┃  "Created": "2026-11-10T00:58:07.941344938Z",                            ┃│                                          │
+│                  │┃  "Created": "2026-11-10T20:31:28.74125479Z",                             ┃│                                          │
 │                  │┃  "Path": "postgres",                                                     ┃│                                          │
 │                  │┃  "Args": [],                                                             ┃│                                          │
 │                  │┃  "State": {                                                              ┃│                                          │
@@ -30,7 +30,7 @@
 │                  │┃    "Pid": 4242,                                                          ┃│Everything that changes the daemon        │
 │                  │┃    "ExitCode": 0,                                                        ┃│runs here, in the background.             │
 │                  │┃    "Error": "",                                                          ┃│                                          │
-│                  │┃    "StartedAt": "2026-11-10T00:58:07.941344938Z",                        ┃│                                          │
+│                  │┃    "StartedAt": "2026-11-10T20:31:28.74125479Z",                         ┃│                                          │
 │                  │┃    "FinishedAt": "0001-01-01T00:00:00Z",                                 ┃│                                          │
 │                  │┃    "Health": {                                                           ┃│                                          │
 │                  │┃      "Status": "healthy",                                                ┃│                                          │

@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake2697878085/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake594112295/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┌─ 1 Kinds ────────┐┌─ 2 Images (1 of 19) ──────────────────────────────────────── filter: acme/web ─┐┌─ 4 Events ────────────────────────── ● live ─┐
 │  Containers    13││  REPOSITORY       TAG       IMAGE ID          SIZE    AGE   USED BY  UPSTREAM  ││Waiting for engine events…                    │
 │▸ Images        19││▸ registry.sandb…  2.3       457d5c729f1c    88.0MB     6d         -  moved     ││Everything the daemon does                    │
@@ -17,8 +17,6 @@
 │                  │┏━ ◆ 3 Details: registry.sandbox.invalid/acme/web:2.3 ━━━━━━━━━━ [Upstream] 4/4 ━┓│                                              │
 │                  │┃registry.sandbox.invalid/acme/web:2.3 · asks registry.sandbox.invalid anonymousl┃│                                              │
 │                  │┃y                                                                               ┃│                                              │
-│                  │┃⠼ Asking registry.sandbox.invalid what registry.sandbox.invalid/acme/web:2.3 nam┃│                                              │
-│                  │┃es now… c cancels.                                                              ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┃Moved (via the daemon): the tag names a different build than this image.        ┃│                                              │
 │                  │┃The daemon reports digests only: the upstream build time and the layer compariso┃│                                              │
@@ -26,17 +24,19 @@
 │                  │┃                                                                                ┃│                                              │
 │                  │┃local digest     sha256:457d5c729f1c3027bdba76c67eac65574eb23d16323479d69d7e9fff┃│                                              │
 │                  │┃24a0af37                                                                        ┃│                                              │
-│                  │┃upstream digest  sha256:375e7da52cb98e61490797ae046fe3e3eb375e582e5ae6d3f30392ac┃└──────────────────────────────────────────────┘
-│                  │┃22d89046                                                                        ┃┌─ 5 Jobs ──────────────────────────── 1 done ─┐
-│                  │┃answered by the daemon (unix:///tmp/ddfake2697878085/d.sock), because the desk c┃│▸ ✓ check upstream registry.sandbox.inval… 3ms│
-│                  │┃ould not ask                                                                    ┃│                                              │
-│                  │┃0s ago · r asks again                                                           ┃│                                              │
+│                  │┃upstream digest  sha256:375e7da52cb98e61490797ae046fe3e3eb375e582e5ae6d3f30392ac┃│                                              │
+│                  │┃22d89046                                                                        ┃│                                              │
+│                  │┃answered by the daemon (unix:///tmp/ddfake594112295/d.sock), because the desk co┃└──────────────────────────────────────────────┘
+│                  │┃uld not ask                                                                     ┃┌─ 5 Jobs ──────────────────────────── 1 done ─┐
+│                  │┃0s ago · r asks again                                                           ┃│▸ ✓ check upstream registry.sandbox.inval… 2ms│
 │                  │┃P pulls the build the tag names now, by its digest: registry.sandbox.invalid/acm┃│                                              │
 │                  │┃e/web:2.3@sha256:375e7da52cb98e61490797ae046fe3e3eb375e582e5ae6d3f30392ac22d8904┃│                                              │
 │                  │┃6                                                                               ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────────┘
-
- r ask again  P pull by digest  c cancel  [ ] tab  P pull  d remove  X prune  U upstream                                     Tab pane  ? keys  q quit
+ ✓ check upstream registry.sandbox.invalid/acme/web:2.3
+ r ask again  P pull by digest  [ ] tab  P pull  d remove  X prune  U upstream                                               Tab pane  ? keys  q quit

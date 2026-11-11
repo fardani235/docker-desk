@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/ddfake3683342293/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake1217552366/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
 ┏━ ◆ Packages — what the SBOM declares, against what the image's databases say is installed ━━━━━━━━ python:3.12-slim ━┓
 ┃ by name · showing disagreements · 5 of 73 rows                                                                       ┃
 ┃   SBOM       SPDX-2.3 · 70 packages · attestation ed4a7151c323                                                       ┃

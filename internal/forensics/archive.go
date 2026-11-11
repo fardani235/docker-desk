@@ -45,6 +45,15 @@ type Limits struct {
 	// rpmdb.sqlite, a dpkg or apk text database.
 	RPMDB  int64
 	TextDB int64
+
+	// The Files view's index (files.go): FileEntries bounds the entries
+	// kept across every layer, FilePath the bytes of one path (Linux's
+	// PATH_MAX), FileText the bytes of path text kept altogether. A zero
+	// value takes the default, so a caller that sets other bounds keeps
+	// these.
+	FileEntries int
+	FilePath    int
+	FileText    int64
 }
 
 // DefaultLimits are the bounds the desk uses.
@@ -70,6 +79,10 @@ func DefaultLimits() Limits {
 		DBCopies:       4096,
 		RPMDB:          64 << 20,
 		TextDB:         8 << 20,
+
+		FileEntries: 200_000,
+		FilePath:    4096,
+		FileText:    48 << 20,
 	}
 }
 
@@ -85,8 +98,26 @@ func DefaultThresholds() Thresholds {
 	return Thresholds{SizeShare: 0.5, SizeMin: 10 << 20, FileCount: 10_000}
 }
 
+// Mode is what an analysis reads the archive for.
+type Mode int
+
+const (
+	// ModeFindings is the Findings analysis: every rule, the secret scan,
+	// the package databases. The zero value, so every caller that predates
+	// the Files view is unchanged.
+	ModeFindings Mode = iota
+	// ModeFiles reads tar headers only, for the Files view: no file's
+	// bytes are read, no rule is evaluated, no secret is searched for and
+	// no package database is captured. Report.Files holds the listing.
+	ModeFiles
+	// ModeBoth is the Findings analysis with the listing kept as well.
+	ModeBoth
+)
+
 // Options configures one analysis.
 type Options struct {
+	// Mode selects what is read; the zero value is ModeFindings.
+	Mode     Mode
 	ImageID  string
 	Ref      string // the reference the image was chosen by, to pick its manifest entry
 	Platform string // the platform asked for, os/arch[/variant]
@@ -101,6 +132,7 @@ type Options struct {
 type Progress struct {
 	BytesRead int64
 	Layers    int // layer blobs found so far
+	Entries   int // headers seen for the Files listing; 0 in ModeFindings
 }
 
 // analysisError carries only the desk's own words: no daemon text and no
@@ -119,6 +151,16 @@ func Analyse(ctx context.Context, r io.Reader, opts Options, progress func(Progr
 	}
 	if opts.Thresholds == (Thresholds{}) {
 		opts.Thresholds = DefaultThresholds()
+	}
+	def := DefaultLimits()
+	if opts.Limits.FileEntries == 0 {
+		opts.Limits.FileEntries = def.FileEntries
+	}
+	if opts.Limits.FilePath == 0 {
+		opts.Limits.FilePath = def.FilePath
+	}
+	if opts.Limits.FileText == 0 {
+		opts.Limits.FileText = def.FileText
 	}
 	defer func() {
 		// A malformed archive must fail the analysis, not the desk — and
@@ -164,15 +206,24 @@ type analyser struct {
 	sboms  map[string]sbomScan // what each JSON blob declares, by archive path
 	dbBuf  []byte              // reused: one package database file
 	dbUsed int                 // database records kept across all layers
+
+	files *fileBounds // the Files listing's counts; nil in ModeFindings
 }
 
 func newAnalyser(ctx context.Context, opts Options, progress func(Progress)) *analyser {
-	return &analyser{
+	a := &analyser{
 		ctx: ctx, opts: opts, lim: opts.Limits, progress: progress,
 		meta: map[string][]byte{}, json: map[string][]byte{}, bigJSON: map[string]int64{},
 		aliases: map[string]string{}, scans: map[string]*layerScan{}, sboms: map[string]sbomScan{},
-		head: make([]byte, opts.Limits.ScanBytes), elf: make([]byte, opts.Limits.ELFPrefix),
 	}
+	if opts.Mode != ModeFiles {
+		// Headers only: no file's leading bytes are ever read.
+		a.head, a.elf = make([]byte, opts.Limits.ScanBytes), make([]byte, opts.Limits.ELFPrefix)
+	}
+	if opts.Mode != ModeFindings {
+		a.files = &fileBounds{}
+	}
+	return a
 }
 
 func (a *analyser) note(format string, args ...any) {
@@ -209,7 +260,11 @@ func (c *countingReader) Read(p []byte) (int, error) {
 func (a *analyser) tell() {
 	a.lastTold = a.read_.Load()
 	if a.progress != nil {
-		a.progress(Progress{BytesRead: a.lastTold, Layers: a.layers})
+		p := Progress{BytesRead: a.lastTold, Layers: a.layers}
+		if a.files != nil {
+			p.Entries = a.files.seen
+		}
+		a.progress(p)
 	}
 }
 
@@ -300,6 +355,19 @@ func (a *analyser) readJSON(r io.Reader, size int64) ([]byte, error) {
 // so a document too large to keep is still read for those.
 func (a *analyser) jsonBlob(name string, size int64, r io.Reader) error {
 	keep := size <= a.lim.JSONBlob && a.jsonUsed+size <= a.lim.JSONTotal
+	if a.opts.Mode == ModeFiles {
+		// The config is all the listing needs; no SBOM is scanned.
+		b, err := a.readJSON(r, size)
+		if err != nil {
+			return err
+		}
+		if b == nil {
+			a.bigJSON[name] = size
+		} else {
+			a.json[name] = b
+		}
+		return nil
+	}
 	var whole *bytes.Buffer
 	src := r
 	if keep {

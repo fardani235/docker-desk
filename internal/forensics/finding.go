@@ -257,8 +257,26 @@ type Report struct {
 	RootUser bool
 	// FinalSecrets counts secrets still in the final filesystem.
 	FinalSecrets int
-	// Packages is what the SBOM declares and the package databases list.
+	// Packages is what the SBOM declares and the package databases list;
+	// nil in ModeFiles.
 	Packages *PackageSet
+	// Instructions holds each layer's build instruction, Instructions[i]
+	// for layer i+1; "" where the history does not map. Instruction reads
+	// it by 1-based layer.
+	Instructions []string
+	// Files is every layer's headers, in ModeFiles and ModeBoth; nil in
+	// ModeFindings. It is tens of megabytes at its bound, so it is never
+	// serialised with the report.
+	Files *FileListing `json:"-"`
+}
+
+// Instruction is the build instruction of a 1-based layer, or "unknown"
+// when the history does not say — never a guess.
+func (r *Report) Instruction(layer int) string {
+	if layer < 1 || layer > len(r.Instructions) || r.Instructions[layer-1] == "" {
+		return "unknown"
+	}
+	return r.Instructions[layer-1]
 }
 
 // TotalSize is the sum of the layers' content.

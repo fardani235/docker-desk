@@ -948,6 +948,102 @@ temporary folder (and, end to end, into a `HOME` of the test's own).
   measure; mode 0600; no host path. The TUI's image document and `--report`'s are the same bytes.
   Screens `42-export-findings`, `43-export-confirm`.
 
+## Round fifteen: the Files view
+
+Everything below runs against the fake engine and in-memory archives built by
+`internal/forensics/fixture`, except the two opt-in real-daemon checks at the end. Nothing in the
+suite can mutate a daemon; the view sends only `GET`s, and the tests say so.
+
+**What is proven**
+
+- **The headers-only mode** — `forensics.TestFilesModeReadsHeadersOnly`: an archive whose files
+  carry an AWS key, a setuid binary and a dpkg database yields, in `ModeFiles`, no finding and no
+  package list (the same archive in the default mode yields all three, so the silence is the
+  mode's); `ModeBoth` makes the same findings as the default and the listing too.
+  `TestFilesModeAllocatesNoContentBuffer`: the buffers file bodies are read into do not exist in
+  `ModeFiles`. Every analysis test that predates the round passes unchanged: `ModeFindings` is the
+  zero value.
+- **The listing** — `TestListingPerLayer`: three layers, both layouts, `manifest.json` first and
+  last — a replaced file, a whiteout, an opaque directory, a symlink and a hard link give exactly
+  the expected entries per layer, in the manifest's order. `TestListingBounds` sets each bound tiny
+  and sees each dropped count; `TestListingPathAtLinuxsBound`: a 4,096-byte path is kept, 4,097 is
+  dropped as the length bound's. `TestInstructionByLayer`: layer 7 of 12 says its `RUN`, an empty
+  history entry and an unmapped history say `unknown`. `TestListingNamesAZstdLayer`: the zstd
+  layer has no entry and is named; the gzip and plain layers beside it are complete.
+- **The merge** — `files.TestMerge` (a table): replace (the later layer is the writer), remove
+  (the count is the whiteouts that hit a held path, not those that hit nothing), a removed
+  directory (what was beneath it goes, and is counted as hidden), opaque (only the marking layer's
+  and later entries survive), a directory several layers wrote, a hard link (no bytes of its own),
+  a file replaced by a directory and back. `TestMergeNamesAreKeptUnderTheRoot`: `../../etc/passwd`
+  is `/etc/passwd`. `TestMergeSymlinkIsNotFollowed`: a symlink to a directory is a leaf even when
+  asked to open; a device is typed. `TestDirectorySizes`: three files add up to the directory's
+  computed size, and the counts match.
+- **Rows, cursor, filter** — `TestFlattenShowsOnlyWhatIsExpanded` (by name, by size);
+  `TestCursorFollowsItsPath` (across a re-order, a collapse of its parent and the re-open, and
+  every movement); `TestFilterShowsAncestors` (a deep match with its directories, case ignored,
+  the number searched, `MayMiss` when the index is cut).
+- **The escaping** — `files.TestEscape`: names with ESC, CR, LF, `\xff\xfe`, tab, DEL, a C1 CSI and
+  a backslash; no raw control byte is left; real non-ASCII names and a literal U+FFFD are kept.
+  On screen: `ui.TestFilesHostileNameIsDrawnEscapedOnOneLine` (the sandbox's
+  `\x1b[31mred\nforged-row\xff.html`: escaped, on one line, and the raw sequence nowhere in the
+  frame); in the file: `ui.TestFilesExport` (text and JSON, neither holding the raw bytes, nor
+  JSON's `\u001b` or U+FFFD in their place); end to end, `e2e.TestFilesInTheSandbox` searches the
+  terminal's raw output for the name's raw bytes.
+- **The overlay** — `files.TestApplyMarksEachKind` (changed, added, deleted, an added directory
+  whose entry beneath is counted and not drawn, an implied directory; the image's own tree left
+  exactly as it was), `TestApplyCleansPathsUnderTheRoot`, `TestApplyOverACutIndex` (a deleted path
+  the index lacks is counted, not drawn), `TestApplyWithNoImage`. In the view:
+  `ui.TestFilesContainerBeforeAndAfterTheImage` — the changes alone, without sizes, before the
+  image is read; the tree with the changes over it after, without asking the daemon again; each
+  kind's row and detail (the struck-through row checked with colour on); `r` sends one change
+  request and no archive request. `TestFilesContainerWithNoChangesAndAFailedList`.
+- **The request log** — `ui.TestFilesReadsNothingUntilEnter`: opening the view on an image sends
+  **no request at all**; `Enter` sends one `GET /images/get`, and reopening sends none.
+  `TestFilesReadIsCancellable`: `c`, and closing the view, cancel the job; no index is kept.
+  `TestFilesReadOnlySendsOnlyGETs`: read-only, a container's view, the archive, `r` and `w` —
+  every request a `GET`. `engine.TestContainerChanges`: one `GET /containers/{id}/changes`, kinds
+  0, 1 and 2 decoded, read-only lets it through, no mutation. `make crosscheck` compares the real
+  `docker diff` with the fake's list for `shop-web-1`, line for line.
+- **The view** — `TestFilesOpensAndClosesWhereItWas` (both kinds, from every pane, `F` on a volume
+  is one sentence), `TestFilesTreeAt80Columns` (expand, order by size, the columns, `←` to the
+  parent and closed, a symlink that does not open, the frame's geometry), `TestLeftFitKeepsTheBasename`,
+  `TestFilesFilterShowsAncestorsAndClearsOntoThePath`, `TestFilesFilterSaysItMayMiss` (a zstd
+  layer), `TestFilesDetailNamesTheLayerAndItsInstruction` (`7 of 12` and its `RUN`; a changed
+  file's size is the image's), `TestFilesHelpAndFooter`.
+- **End to end** — `e2e.TestFilesView`, at 120×30 and at 80×24 read-only: `python:3.12-slim` ›
+  Files reads nothing on opening; `Enter`, `c` (cancelled, nothing kept), `Enter` again; a filter
+  to the deep `requests/__init__.py`; `w` to a text file in a `HOME` of the test's own, parsed;
+  then `shop-web-1`'s change list alone, and over its image. Three archive requests in all (one
+  cancelled), one change request, nothing but `GET` and `HEAD`. `e2e.TestFilesInTheSandbox` drives
+  `make sandbox` itself: the nginx tree's whiteout count, the hostile name escaped, a symlink, a
+  device and a FIFO, and every overlay state on `shop-web-1`. Screens `47-files-not-read`,
+  `48-files-filter`, `49-files-container-changes-only`, `50-files-container`, and the 80×24 ones.
+
+**Measurements**
+
+- An index at the entry bound — 200,000 entries built from a listing in memory,
+  `files.TestTotalsAtTheEntryBound` — is built in **0.4 to 1.2 s** on this machine (three runs:
+  1.19, 0.98, 1.02 s; an earlier one 0.40 s) and holds **55 MB** of heap after a collection,
+  every run. The design estimated ~25 MB; the node is larger than that estimate assumed (V11). The
+  view keeps two, so its worst case is about 110 MB.
+- A real image (below): 10,330 entries, 66.6 MB of archive read and indexed in 3.4 s.
+
+**What is not proven**
+
+- **A container's own archive is never read**: no test calls `GET /containers/{id}/archive`, and
+  no code does — the engine has no method for it. A changed file's own size and an added
+  directory's contents are therefore never shown; the view says so.
+- The **suite** touches no real daemon. Two opt-in checks do, read-only:
+  `engine.TestRealDaemonFilesReadOnly` (in `make real-readonly-check`) and
+  `e2e.TestRealDaemonFilesTour`. They were run once against this machine's Docker 29.9.3 with
+  a before/after snapshot of its objects, unchanged; the outcome is in
+  `openspec/changes/files-explorer/verification.md`. That is one daemon, one storage driver and
+  five images, not a survey.
+- The 200,000-entry bound is measured on a synthetic listing, not on an image that large: no such
+  image was read.
+- Layouts other than the two the fixture writes (the classic archive and Docker's OCI layout) are
+  not tested here, beyond what the Findings rounds already test of the same walk.
+
 ## Running everything
 
 ```sh

@@ -791,3 +791,70 @@ func TestProcesses(t *testing.T) {
 		t.Fatalf("unavailable daemon: %v", err)
 	}
 }
+
+// TestContainerChanges is task 3.1/3.2: one GET per call, the API's kind
+// numbers decoded, and the demo's container with one of every case.
+func TestContainerChanges(t *testing.T) {
+	srv, eng := startFake(t, func(s *fakeengine.Server) {
+		s.SeedDemo()
+		s.AddContainer(fakeengine.ContainerSpec{Name: "kinds", Image: "app:1", State: "exited"})
+		s.SetChanges("kinds", fakeengine.Changed("/etc/a"), fakeengine.Added("/etc/b"), fakeengine.Deleted("/etc/c"),
+			fakeengine.Change{Path: "/etc/\x1b[31m\nodd", Kind: 1})
+	})
+	ctx := ctxT(t)
+	srv.ResetRequests()
+	cs, err := eng.ContainerChanges(ctx, srv.ContainerID("kinds"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []Change{
+		{Path: "/etc/a", Kind: ChangeModified}, {Path: "/etc/b", Kind: ChangeAdded}, {Path: "/etc/c", Kind: ChangeDeleted},
+		{Path: "/etc/\x1b[31m\nodd", Kind: ChangeAdded},
+	}
+	if !reflect.DeepEqual(cs, want) {
+		t.Fatalf("changes %+v", cs)
+	}
+	if cs[0].Kind.String() != "changed" || cs[1].Kind.String() != "added" || cs[2].Kind.String() != "deleted" || cs[2].Kind.Letter() != "D" {
+		t.Fatal("kind names")
+	}
+	// One request for the list (beside the client's own version ping).
+	if n := srv.CountRequests("GET", `^/(v[0-9.]+/)?containers/`+srv.ContainerID("kinds")+`/changes$`); n != 1 {
+		t.Fatalf("%d change requests: %+v", n, srv.Requests())
+	}
+	for _, r := range srv.Requests() {
+		if !strings.HasSuffix(r.Path, "/changes") && !strings.HasSuffix(r.Path, "/_ping") {
+			t.Fatalf("an unexpected request: %+v", r)
+		}
+	}
+
+	// The demo: shop-web-1 has one of every case; the others none.
+	cs, err = eng.ContainerChanges(ctx, srv.ContainerID("shop-web-1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]ChangeKind{}
+	for _, c := range cs {
+		got[c.Path] = c.Kind
+	}
+	for p, k := range map[string]ChangeKind{
+		"/etc/nginx/nginx.conf": ChangeModified, "/var/lib/nginx/state.db": ChangeAdded,
+		"/tmp/seed": ChangeDeleted, "/var/cache/nginx/client_temp": ChangeAdded,
+	} {
+		if got[p] != k || len(got) != len(fakeengine.DemoChanges()) {
+			t.Fatalf("%s: %v (all: %v)", p, got[p], got)
+		}
+	}
+	if cs, err := eng.ContainerChanges(ctx, srv.ContainerID("redis-cache")); err != nil || len(cs) != 0 || cs == nil {
+		t.Fatalf("a container that wrote nothing: %#v %v", cs, err)
+	}
+	if _, err := eng.ContainerChanges(ctx, "ghost"); !IsNotFound(err) {
+		t.Fatalf("missing: %v", err)
+	}
+	// Read-only mode lets it through.
+	if _, err := ReadOnly(eng).ContainerChanges(ctx, srv.ContainerID("kinds")); err != nil {
+		t.Fatalf("read-only: %v", err)
+	}
+	if n := len(srv.Mutations()); n != 0 {
+		t.Fatalf("%d mutations", n)
+	}
+}

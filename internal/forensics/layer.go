@@ -61,8 +61,9 @@ type layerScan struct {
 	aggs              map[string]*aggregate
 	dropped           map[string]int // observations beyond Limits.PerLayerObs
 	unreadable        string
-	dbs               []dbCopy // copies of package databases (pkgdb.go)
-	dbsDropped        bool     // more than Limits.DBCopies
+	dbs               []dbCopy   // copies of package databases (pkgdb.go)
+	dbsDropped        bool       // more than Limits.DBCopies
+	fl                LayerFiles // the Files listing's headers (files.go)
 }
 
 func fingerprint(p string) uint64 {
@@ -179,11 +180,28 @@ func (a *analyser) walk(s *layerScan, r io.Reader) error {
 		dir = path.Clean(dir)
 		if base == ".wh..wh..opq" {
 			s.opaques[dir] = true
+			a.fileMarker(s, dir, true)
 			continue
 		}
 		if strings.HasPrefix(base, ".wh.") {
+			gone := path.Join(dir, strings.TrimPrefix(base, ".wh."))
 			if len(s.whiteouts) < a.lim.PerLayerObs*100 {
-				s.whiteouts[path.Join(dir, strings.TrimPrefix(base, ".wh."))] = true
+				s.whiteouts[gone] = true
+			}
+			a.fileMarker(s, gone, false)
+			continue
+		}
+		a.fileEntry(s, p, h)
+		if a.opts.Mode == ModeFiles {
+			// Headers only: the layer's counts, and nothing of any body.
+			switch h.Typeflag {
+			case tar.TypeDir:
+				s.dirs++
+			case tar.TypeReg, tar.TypeRegA: //nolint:staticcheck // old layers use TypeRegA
+				s.files++
+				s.size += h.Size
+			default:
+				s.files++
 			}
 			continue
 		}
