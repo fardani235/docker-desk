@@ -1,0 +1,40 @@
+ Docker Desk  no daemon connected
+ Daemons none connected                                                                                                           M picker  < > focus
+┏━ ◆ No daemon ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃                                                                                                                                                    ┃
+┃No daemon is connected.                                                                                                                             ┃
+┃                                                                                                                                                    ┃
+┃Nothing here can act on a daemon until one is: there is nothing to list,                                                                            ┃
+┃and no action key does anything.                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃M open the picker: add a daemon from this machine's Docker contexts                                                                                 ┃
+┃q quit                                                                                                                                              ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ No daemon is connected: nothing to act on. M opens the picker; q quits.
+ ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell       Tab pane  ? keys  q quit

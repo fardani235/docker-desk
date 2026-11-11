@@ -1,10 +1,11 @@
-// Command docker-desk opens a full-screen terminal workspace on one Docker
-// daemon: the one the current Docker context points at, or the one named
-// with --host or --context — on this machine, or on another one over SSH or
-// TCP.
+// Command docker-desk opens a full-screen terminal workspace on Docker
+// daemons: first the one the current Docker context points at, or the one
+// named with --host or --context — on this machine, or on another one over
+// SSH or TCP — and then any others added from the picker of this machine's
+// Docker contexts while it runs. One of them is focused at a time.
 //
-// Everything that can go wrong with reaching the daemon is checked before
-// the terminal is taken over: if the daemon cannot be used, the program says
+// Everything that can go wrong with reaching the launch daemon is checked
+// before the terminal is taken over: if it cannot be used, the program says
 // why in plain words, names the endpoint and exits without drawing anything.
 package main
 
@@ -14,13 +15,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"net"
 	"os"
 	"os/signal"
 	"strings"
 	"sync/atomic"
 	"syscall"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"golang.org/x/term"
@@ -28,6 +27,7 @@ import (
 	"github.com/fardani235/docker-desk/internal/dockerctx"
 	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/jobs"
+	"github.com/fardani235/docker-desk/internal/session"
 	"github.com/fardani235/docker-desk/internal/sshtunnel"
 	"github.com/fardani235/docker-desk/internal/ui"
 )
@@ -39,8 +39,8 @@ var version = "dev"
 // one that is a network — and perhaps a TLS handshake — away. (Variables so
 // that a test of "nothing answered" need not wait this long.)
 var (
-	localTimeout  = 4 * time.Second
-	remoteTimeout = 12 * time.Second
+	localTimeout  = session.DefaultLocalTimeout
+	remoteTimeout = session.DefaultRemoteTimeout
 )
 
 func main() {
@@ -52,10 +52,13 @@ const usageHead = `docker-desk — one screen for a Docker engine, local or remo
 Usage:
   docker-desk [flags]
 
-Docker Desk talks to exactly one daemon for the whole session and has no way
-to switch while running. Which one is decided as the Docker CLI decides it:
+The daemon the desk opens on is decided as the Docker CLI decides it:
 --context, then --host, then DOCKER_HOST, then DOCKER_CONTEXT, then the
-context selected with "docker context use", then the default socket.
+context selected with "docker context use", then the default socket. It must
+answer before the workspace opens. Inside, M adds more daemons from this
+machine's Docker contexts (and removes any of them); one is focused at a time,
+> and < move the focus, and the others report exits and disconnections in the
+status line. A daemon added there never asks anything on the terminal.
 
 The daemon may be:
   unix:///path/to/docker.sock      a socket on this machine
@@ -73,7 +76,8 @@ Flags:
   -c, --context NAME  the Docker context to use (overrides everything else)
   --read-only         look, don't touch: every action that changes or deletes
                       something, and the shell, is disabled; any request other
-                      than GET/HEAD is refused before it is sent
+                      than GET/HEAD is refused before it is sent — on every
+                      daemon of the session, including ones added later
   --no-registry       never contact a registry: the Images › Upstream tab and U
                       ask nothing, by the desk or through the daemon (the
                       air-gap switch; --read-only alone still allows the
@@ -212,6 +216,17 @@ The workspace was not opened.
 	// directly, so that "nothing there" is told apart from "not Docker";
 	// an SSH endpoint gets its tunnel, whose local socket then stands in
 	// for the daemon.
+	// The ssh program, for the launch daemon and for any picked later. It
+	// is checked now either way: the picker must not quietly fall back to
+	// plain ssh when the one named cannot be used.
+	var sshCommand []string
+	if custom := strings.TrimSpace(os.Getenv("DOCKER_DESK_SSH")); custom != "" {
+		if sshCommand, err = sshtunnel.SplitCommand(custom); err != nil {
+			fmt.Fprintf(stderr, "docker-desk: DOCKER_DESK_SSH is not usable: %v\n", err)
+			return 2
+		}
+	}
+
 	dialHost := target.DialHost
 	timeout := remoteTimeout
 	var tunnel *sshtunnel.Tunnel
@@ -234,12 +249,7 @@ The workspace was not opened.
 			RemoteSocket: target.Socket,
 			Interactive:  term.IsTerminal(int(stdin.Fd())),
 			Stderr:       stderr,
-		}
-		if custom := strings.TrimSpace(os.Getenv("DOCKER_DESK_SSH")); custom != "" {
-			if opts.Command, err = sshtunnel.SplitCommand(custom); err != nil {
-				fmt.Fprintf(stderr, "docker-desk: DOCKER_DESK_SSH is not usable: %v\n", err)
-				return 2
-			}
+			Command:      sshCommand,
 		}
 		if isTerminal(stderr) {
 			fmt.Fprintf(stderr, "docker-desk: opening an SSH tunnel to %s (ssh %s) …\n", target.Socket, opts.Destination())
@@ -249,7 +259,7 @@ The workspace was not opened.
 			if launch.Err() != nil {
 				return interrupted(stderr)
 			}
-			return unreachable(stderr, ep, link, tunnelFailure(ep, err))
+			return unreachable(stderr, ep, link, session.ExplainTunnel(ep, err))
 		}
 		defer tunnel.Close()
 		// ssh has asked what it had to ask. From here on what it says is
@@ -281,7 +291,7 @@ The workspace was not opened.
 		}
 		// Explaining may itself ask the remote machine a question, so it
 		// gets its own time rather than what the ping left over.
-		return unreachable(stderr, ep, link, pingFailure(launch, ep, target, tunnel, err))
+		return unreachable(stderr, ep, link, session.ExplainPing(launch, ep, target, tunnel, err, remoteTimeout))
 	}
 	info, err := eng.Info(ctx)
 	if err != nil {
@@ -319,6 +329,20 @@ The workspace was not opened.
 		DockerConfigDir: dockerctx.ConfigDir(os.Getenv, home), Version: version, HomeDir: home})
 	if tunnel != nil {
 		uiOpts.LinkProblem = tunnel.Problem
+	}
+	// The launch daemon may be removed from the session like any other:
+	// its engine and its ssh process go with it. (The deferred closes
+	// above find them closed already; both are idempotent.)
+	uiOpts.CloseLaunch = func() {
+		_ = eng.Close()
+		if tunnel != nil {
+			tunnel.Close()
+		}
+	}
+	uiOpts.Dial = session.DialOptions{
+		UserAgent:    "docker-desk/" + version,
+		LocalTimeout: localTimeout, RemoteTimeout: remoteTimeout,
+		SSHCommand: sshCommand,
 	}
 	stopSignals()
 	model := ui.New(uiOpts)
@@ -370,46 +394,6 @@ func isTerminal(w io.Writer) bool {
 func interrupted(stderr io.Writer) int {
 	fmt.Fprintln(stderr, "\ndocker-desk: interrupted. The workspace was not opened.")
 	return 130
-}
-
-// tunnelFailure puts the tunnel's explanation — ssh's own words — into the
-// shape every other launch failure has.
-func tunnelFailure(ep dockerctx.Endpoint, err error) error {
-	var te *sshtunnel.Error
-	if errors.As(err, &te) {
-		return &dockerctx.Unreachable{Endpoint: ep, Reason: te.Reason, Hint: te.Hint, Err: err}
-	}
-	return err
-}
-
-// pingFailure explains a daemon that did not answer its first request.
-func pingFailure(ctx context.Context, ep dockerctx.Endpoint, target dockerctx.Target, tunnel *sshtunnel.Tunnel, err error) error {
-	switch target.Transport {
-	case dockerctx.TransportSSH:
-		u := &dockerctx.Unreachable{Endpoint: ep, Err: err}
-		var netErr net.Error
-		switch {
-		case !tunnel.Up():
-			u.Reason = "the SSH connection dropped: " + tunnel.Problem()
-		case errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &netErr) && netErr.Timeout()):
-			// Silence is not a refusal: the far end may well have been
-			// opened, by a daemon that is not answering.
-			u.Reason = fmt.Sprintf("the SSH connection to %s is up, but nothing answered on %s within %s", target.Hostname, target.Socket, remoteTimeout)
-			u.Hint = "The daemon there may be hung or very busy, or the link very slow. `docker ps` on that machine will tell."
-		case engine.IsUnavailable(err):
-			// ssh is connected, and the connection through it was closed
-			// at once: the far end of the forwarding could not be opened.
-			u.Reason, u.Hint = tunnel.Explain(ctx)
-		default:
-			u.Reason = fmt.Sprintf("%s on %s answered, but not as a Docker Engine API: %v", target.Socket, target.Hostname, err)
-		}
-		return u
-	case dockerctx.TransportTCP:
-		return dockerctx.Classify(ep, err)
-	}
-	u := dockerctx.Classify(ep, err)
-	u.Reason = "the socket accepted the connection but the Engine API did not answer: " + err.Error()
-	return u
 }
 
 func unreachable(stderr io.Writer, ep dockerctx.Endpoint, link dockerctx.Link, err error) int {

@@ -1,0 +1,42 @@
+ Docker Desk  ssh://127.0.0.1:36445/tmp/ddfake3737419565/d.sock  ctx far  Engine 29.0.0-fake  on far-away  ● connected  [ssh]
+ Daemons  1 /tmp/ddfake…538/d.sock ● │ [◆2 far ●]                                                                                           M picker  < > focus
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (2) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ───────────────────────────── ● live ─┐
+│▸ Containers     2│┃  NAME           IMAGE        STATE          CPU       MEM  STATUS         PORTS       ┃│Waiting for engine events…                       │
+│  Images         2│┃▸ far-db         postgres:16  ● running        …         …  Up 10 minutes              ┃│Everything the daemon does                       │
+│  Volumes        0│┃  far-web        nginx:1.27   ● running        …         …  Up 10 minutes              ┃│shows up here as it happens.                     │
+│  Networks       3│┃                                                                                       ┃│                                                 │
+│  Compose        0│┃                                                                                       ┃│                                                 │
+│                  │┃                                                                                       ┃│                                                 │
+│  ● 2 running     │┃                                                                                       ┃│                                                 │
+│  ○ 0 stopped     │┃                                                                                       ┃│                                                 │
+│                  │┃                                                                                       ┃│                                                 │
+│                  │┃                                                                                       ┃│                                                 │
+│                  │┃                                                                                       ┃│                                                 │
+│                  │┃                                                                                       ┃│                                                 │
+│                  │┃                                                                                       ┃│                                                 │
+│                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                                 │
+│                  │┌─ 3 Details: far-db ───────────────────── [Info] Changes Logs Stats Processes Inspect ─┐│                                                 │
+│                  ││Name     far-db                                                                        ││                                                 │
+│                  ││ID       a40ab382b388                                                                  ││                                                 │
+│                  ││Image    postgres:16                                                                   ││                                                 │
+│                  ││State    ● running   Up 10 minutes                                                     ││                                                 │
+│                  ││Started  2026-11-11 10:49:15                                                           ││                                                 │
+│                  ││Command  /bin/app                                                                      ││                                                 │
+│                  ││Restart  no (restarted 0×)                                                             ││                                                 │
+│                  ││Runtime  tty=false  privileged=false  env vars=1                                       ││                                                 │
+│                  ││Created  2026-11-11 10:49:15                                                           ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││Ports                                                                                  │└─────────────────────────────────────────────────┘
+│                  ││  none                                                                                 │┌─ 5 Jobs ────────────────────────────────────────┐
+│                  ││                                                                                       ││No jobs yet.                                     │
+│                  ││Networks                                                                               ││Everything that changes the daemon               │
+│                  ││  bridge  172.17.0.3  gw 172.17.0.1                                                    ││runs here, in the background.                    │
+│                  ││                                                                                       ││                                                 │
+│                  ││Mounts                                                                                 ││                                                 │
+│                  ││  none                                                                                 ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+└──────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└─────────────────────────────────────────────────┘
+ Focused far — ssh://127.0.0.1:36445/tmp/ddfake3737419565/d.sock. Loading its lists…
+ ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell                 Tab pane  ? keys  q quit

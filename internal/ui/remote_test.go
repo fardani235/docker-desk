@@ -78,7 +78,7 @@ func TestRemoteDaemonIsAnnouncedEverywhere(t *testing.T) {
 
 			// The help.
 			b.keys("?")
-			b.see("Docker Desk talks to one daemon: "+tc.ep.Host, "reached over: ", tc.words)
+			b.see("Focused daemon: "+tc.ep.Host, "reached over: ", tc.words)
 			b.keys("esc")
 
 			// Even when nothing else can be drawn.

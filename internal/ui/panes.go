@@ -241,6 +241,9 @@ func (m *Model) renderJobs(w, h int, focused bool) []string {
 		if j.Target != "" {
 			head += " " + j.Target
 		}
+		if d := m.jobDaemon(j); d != "" {
+			head += " @" + d
+		}
 		detail := j.Status
 		if j.State == jobs.Failed {
 			detail = j.Err
@@ -295,6 +298,9 @@ func jobOutput(j jobs.Job, st styles) []string {
 	lines := []string{
 		st.tone(t, glyph+" "+j.State.String()) + "   " + j.Title + " " + j.Target,
 		st.tone(toneDim, fmt.Sprintf("started %s · ran %s", j.Started.Local().Format("15:04:05"), humanDuration(j.Elapsed()))),
+	}
+	if j.Daemon != "" {
+		lines = append(lines, st.tone(toneDim, "on daemon "+j.Daemon))
 	}
 	if j.Total > 0 {
 		lines = append(lines, st.tone(toneDim, fmt.Sprintf("%d of %d objects processed", j.Done, j.Total)))

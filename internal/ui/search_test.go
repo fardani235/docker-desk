@@ -263,6 +263,11 @@ func TestSearchBarCostsNoRowWhenClosed(t *testing.T) {
 	b.m.focus = PaneList
 	b.selectRow("app")
 	b.inspectTab()
+	// The List shows live CPU figures; a sample arriving between the two
+	// screenshots would differ by it alone (B34). Hold them still.
+	b.srv.StallStats("app", true)
+	b.srv.StallStats("other", true)
+	b.settle()
 	before := b.screen()
 	b.keys("/", "esc")
 	if b.screen() != before {

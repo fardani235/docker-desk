@@ -18,7 +18,7 @@ func TestRepositoryBrowser(t *testing.T) {
 	reg := fakeregistry.New()
 	defer reg.Close()
 	srv := startFake(t, func(s *fakeengine.Server) { s.SeedRepository(reg) })
-	d := launch(t, srv, 42, 150)
+	d := launch(t, srv, 43, 150) // one row more since the daemon strip took one (M11)
 	d.see("2 Containers")
 	d.keys("1", ptyscreen.Down, "2", "/", "3", ".", "2", "8", ".", "2", ptyscreen.Enter)
 	d.see("acme/api:3.28.2")

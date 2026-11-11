@@ -52,9 +52,12 @@ const (
 
 // Job is a point-in-time copy of a job's state.
 type Job struct {
-	ID       int
-	Title    string // what it does, e.g. "stop container"
-	Target   string // what it does it to, e.g. "shop-web-1"
+	ID     int
+	Title  string // what it does, e.g. "stop container"
+	Target string // what it does it to, e.g. "shop-web-1"
+	// Daemon is the daemon the job acts on, as the operator named it
+	// ("" for a job that was not started on a daemon).
+	Daemon   string
 	State    State
 	Started  time.Time
 	Finished time.Time
@@ -148,8 +151,13 @@ func (r *Run) Fraction(f float64) {
 
 // Manager owns the jobs.
 type Manager struct {
-	mu       sync.Mutex
-	jobs     []*job // oldest first
+	mu   sync.Mutex
+	jobs []*job // oldest first
+	// closing holds the daemons being removed from the session: no job may
+	// start on one of them. It is guarded by mu, the same lock under which a
+	// job is added, so that "is anything running there?" and "start this
+	// there" cannot interleave (CloseDaemon).
+	closing  map[string]bool
 	nextID   int
 	finished []int // IDs finished since the last TakeFinished
 	wg       sync.WaitGroup
@@ -167,14 +175,37 @@ func NewManager() *Manager {
 // Version changes whenever any job's visible state changes.
 func (m *Manager) Version() uint64 { return m.version.Load() }
 
-// Start runs fn in the background and returns the job's ID immediately.
+// Start runs fn in the background and returns the job's ID immediately. The
+// job belongs to no daemon; StartOn is the same for a job that does.
 func (m *Manager) Start(title, target string, fn Func) int {
+	id, _ := m.StartOn("", title, target, fn)
+	return id
+}
+
+// ErrDaemonClosing is why a job was not started: its daemon is being removed
+// from the session.
+var ErrDaemonClosing = errors.New("the daemon is being removed from the session")
+
+// StartOn runs fn in the background on behalf of daemon and returns the
+// job's ID immediately. When the daemon is being removed (CloseDaemon), fn is
+// never called: the job is recorded as failed, with ErrDaemonClosing, so that
+// whoever started it sees it end like any other job.
+func (m *Manager) StartOn(daemon, title, target string, fn Func) (int, error) {
 	ctx, cancel := context.WithCancel(m.ctx)
 	m.mu.Lock()
 	m.nextID++
-	j := &job{Job: Job{ID: m.nextID, Title: title, Target: target, State: Running, Started: time.Now(), Fraction: -1}, cancel: cancel}
+	now := time.Now()
+	j := &job{Job: Job{ID: m.nextID, Title: title, Target: target, Daemon: daemon, State: Running, Started: now, Fraction: -1}, cancel: cancel}
 	m.jobs = append(m.jobs, j)
 	m.trimLocked()
+	if daemon != "" && m.closing[daemon] {
+		cancel()
+		j.State, j.Finished, j.Err = Failed, now, ErrDaemonClosing.Error()
+		m.finished = append(m.finished, j.ID)
+		m.mu.Unlock()
+		m.version.Add(1)
+		return j.ID, ErrDaemonClosing
+	}
 	m.mu.Unlock()
 	m.version.Add(1)
 
@@ -208,7 +239,63 @@ func (m *Manager) Start(title, target string, fn Func) int {
 		m.mu.Unlock()
 		m.version.Add(1)
 	}()
-	return j.ID
+	return j.ID, nil
+}
+
+// CloseDaemon is the job side of removing a daemon from the session. Under
+// the lock that StartOn takes, it either finds jobs still running on the
+// daemon — and returns them, changing nothing — or marks the daemon closing,
+// after which StartOn refuses it, and returns nil. Exactly one of a
+// concurrent StartOn and CloseDaemon wins: the job runs and the removal is
+// refused, or the removal goes ahead and the job never runs.
+func (m *Manager) CloseDaemon(daemon string) (running []Job) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, j := range m.jobs {
+		if j.Daemon == daemon && j.State == Running {
+			c := j.Job
+			c.Log = nil
+			running = append(running, c)
+		}
+	}
+	if len(running) > 0 {
+		return running
+	}
+	if m.closing == nil {
+		m.closing = map[string]bool{}
+	}
+	m.closing[daemon] = true
+	return nil
+}
+
+// OpenDaemon lets jobs start on daemon again: it was added back, or its
+// removal was abandoned.
+func (m *Manager) OpenDaemon(daemon string) {
+	m.mu.Lock()
+	delete(m.closing, daemon)
+	m.mu.Unlock()
+}
+
+// Closing reports whether daemon is marked as being removed.
+func (m *Manager) Closing(daemon string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.closing[daemon]
+}
+
+// RunningOn returns the jobs still running on daemon, oldest first.
+func (m *Manager) RunningOn(daemon string) []Job {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var out []Job
+	for _, j := range m.jobs {
+		if j.Daemon == daemon && j.State == Running {
+			c := j.Job
+			c.Log = nil
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 // runProtected turns a panic in a job into a failed job instead of taking

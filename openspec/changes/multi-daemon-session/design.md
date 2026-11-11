@@ -129,3 +129,7 @@ nothing it writes outside the process needs cleaning up.
   in `internal/ui/keys.go` is the place to check for conflicts when they are chosen. Neither key is a
   requirement in the specs.
 - Whether the member count needs a cap. Deferred until the cost is measured in tests.
+
+Both were decided while implementing, and are recorded in docs/DECISIONS.md: the keys are `M` for the
+picker and `>` / `<` for focus (M10); there is no cap, and the measured cost is one ssh process per
+`ssh://` member and one event stream per idle background member (M21).

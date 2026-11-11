@@ -146,7 +146,7 @@ func (m *Model) startDiskUsage() {
 	}
 	run := &spaceRun{layer: map[string]layerInfo{}}
 	eng := m.eng
-	run.jobID = m.jobs.Start("measure disk usage", "GET /system/df", func(ctx context.Context, r *jobs.Run) error {
+	run.jobID = m.startJob("measure disk usage", "GET /system/df", func(ctx context.Context, r *jobs.Run) error {
 		r.Status("the daemon is adding up what it holds (it walks container and volume filesystems)")
 		du, err := eng.DiskUsage(ctx)
 		if err != nil {
@@ -200,7 +200,7 @@ func (m *Model) startDiskUsage() {
 func (m *Model) startWritable() {
 	run := &sizeRun{}
 	eng := m.eng
-	run.jobID = m.jobs.Start("measure writable layers", "GET /containers/json?size=1", func(ctx context.Context, r *jobs.Run) error {
+	run.jobID = m.startJob("measure writable layers", "GET /containers/json?size=1", func(ctx context.Context, r *jobs.Run) error {
 		r.Status("the daemon is walking every container's filesystem")
 		cs, err := eng.ContainerSizes(ctx, nil)
 		if err != nil {

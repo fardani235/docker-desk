@@ -15,6 +15,7 @@ import (
 	"github.com/fardani235/docker-desk/internal/dockerctx"
 	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/fakeengine"
+	"github.com/fardani235/docker-desk/internal/live"
 )
 
 func TestMain(m *testing.M) {
@@ -68,6 +69,9 @@ type benchOpts struct {
 	// Declared tab's file reader.
 	noComposeFiles bool
 	composeReader  func(string) ([]byte, fs.FileInfo, error)
+	// contexts is what the daemon picker lists; nil lists nothing — a test
+	// never reads the Docker configuration of whoever runs it.
+	contexts func() []dockerctx.Context
 }
 
 func newBench(t testing.TB, o benchOpts) *bench {
@@ -102,6 +106,10 @@ func newBench(t testing.TB, o benchOpts) *bench {
 	if o.endpoint != nil {
 		ep = *o.endpoint
 	}
+	contexts := o.contexts
+	if contexts == nil {
+		contexts = func() []dockerctx.Context { return nil }
+	}
 	var theme Theme
 	if o.theme != "" {
 		if theme, err = ThemeByName(o.theme); err != nil {
@@ -126,6 +134,10 @@ func newBench(t testing.TB, o benchOpts) *bench {
 		DockerConfigDir: o.dockerConfig,
 		NoComposeFiles:  o.noComposeFiles,
 		ComposeReader:   o.composeReader,
+
+		Contexts:    contexts,
+		SetupHub:    func(h *live.Hub) { h.MinBackoff, h.MaxBackoff = 10*time.Millisecond, 40*time.Millisecond },
+		MemberRetry: [2]time.Duration{10 * time.Millisecond, 40 * time.Millisecond},
 	})
 	m.hub.MinBackoff, m.hub.MaxBackoff = 10*time.Millisecond, 40*time.Millisecond
 	b := &bench{t: t, srv: srv, eng: eng, m: m, msgs: make(chan tea.Msg, 4096)}

@@ -1,4 +1,5 @@
-// Package ui is the desk: one full-screen workspace of five panes.
+// Package ui is the desk: one full-screen workspace of five panes, on the
+// focused daemon of a session that may hold several (internal/session).
 //
 // The model is a plain state machine in the Bubble Tea style. Two rules shape
 // it (docs/DECISIONS.md, D8 and D11):
@@ -29,6 +30,7 @@ import (
 	"github.com/fardani235/docker-desk/internal/jobs"
 	"github.com/fardani235/docker-desk/internal/live"
 	"github.com/fardani235/docker-desk/internal/plan"
+	"github.com/fardani235/docker-desk/internal/session"
 )
 
 // Pane identifies one of the five panes.
@@ -79,10 +81,29 @@ const (
 
 // Options configures a Model.
 type Options struct {
+	// Engine, Endpoint and Info are the launch daemon — the session's first
+	// member — which has already answered.
 	Engine   engine.Engine
 	Endpoint dockerctx.Endpoint
 	Info     engine.Info
+	// ReadOnly is the session's one read-only flag: it holds for the launch
+	// daemon and for every daemon added from the picker.
 	ReadOnly bool
+	// CloseLaunch releases the launch daemon's engine and transport when it
+	// is removed from the session; nil when there is nothing to release.
+	CloseLaunch func()
+	// Dial is how a daemon picked while the desk is open is reached (the
+	// ssh program, the user agent, time bounds); ReadOnly is added to it.
+	Dial session.DialOptions
+	// Contexts lists the Docker contexts the picker offers; nil reads the
+	// store of the Docker configuration directory.
+	Contexts func() []dockerctx.Context
+	// SetupHub, when set, adjusts every daemon's hub before it starts
+	// (tests shorten its backoffs).
+	SetupHub func(*live.Hub)
+	// MemberRetry bounds the wait between attempts to reach a picked
+	// daemon that does not answer; zero values select 1 s and 15 s.
+	MemberRetry [2]time.Duration
 	// Theme is the palette. The zero value picks dark or light from the
 	// terminal's background.
 	Theme Theme
@@ -135,10 +156,22 @@ type Options struct {
 }
 
 // Model is the whole desk.
+//
+// eng, hub, endpoint, link and info are the focused member's; everything
+// from "data" to "events pane" below describes that daemon, and is rebuilt
+// from nothing when focus moves (switchTo), so that no object of one daemon
+// is ever shown as another's.
 type Model struct {
-	eng      engine.Engine
-	hub      *live.Hub
-	jobs     *jobs.Manager
+	eng    engine.Engine
+	hub    *live.Hub
+	jobs   *jobs.Manager
+	sess   *session.Session
+	cur    *session.Member // the focused member; nil when none is connected
+	curGen uint64          // cur's Gen when it was bound
+	// gen counts focus changes. An answer to a request made under another
+	// gen is about a daemon that is no longer focused, and is dropped.
+	gen      uint64
+	ds2      daemonsState // the strip, the picker, the notices (daemons.go)
 	endpoint dockerctx.Endpoint
 	link     dockerctx.Link
 	info     engine.Info
@@ -270,7 +303,8 @@ type drawnVersions struct {
 	connected                         bool
 }
 
-// New builds the desk. Nothing is contacted until Init runs.
+// New builds the desk on its launch daemon. Nothing is contacted until Init
+// runs.
 func New(opts Options) *Model {
 	if opts.FrameInterval <= 0 {
 		opts.FrameInterval = 50 * time.Millisecond
@@ -298,39 +332,59 @@ func New(opts Options) *Model {
 	in.Prompt = "/"
 	in.CharLimit = 80
 	m := &Model{
-		eng:          opts.Engine,
-		hub:          live.NewHub(opts.Engine),
-		jobs:         jobs.NewManager(),
-		endpoint:     opts.Endpoint,
-		link:         opts.Endpoint.Link(),
-		info:         opts.Info,
-		readOnly:     opts.ReadOnly || engine.IsReadOnly(opts.Engine),
-		st:           newStyles(theme),
-		opts:         opts,
-		focus:        PaneList,
-		kind:         KindContainers,
-		filterIn:     in,
-		logFollow:    true,
-		logWrap:      true,
-		dirty:        true,
-		wasConnected: true,
+		jobs:     jobs.NewManager(),
+		readOnly: opts.ReadOnly || engine.IsReadOnly(opts.Engine),
+		st:       newStyles(theme),
+		opts:     opts,
+		focus:    PaneList,
+		kind:     KindContainers,
+		filterIn: in,
+		logWrap:  true,
 	}
-	m.info1.wrap = true
-	m.newUpstream()
-	m.inspect.wrap = true
-	m.ds.in = textinput.New()
-	m.ds.in.CharLimit = 80
-	if m.link.Transport != dockerctx.TransportUnix {
-		// "Is it back?" is asked with a short timeout. Over a network a
-		// new connection can take longer than that to set up, and the desk
-		// would then call a slow daemon a missing one for ever.
-		m.hub.PingTimeout = 10 * time.Second
-	}
+	m.sess = session.New(session.Config{
+		ReadOnly:    m.readOnly,
+		Jobs:        m.jobs,
+		DialOptions: opts.Dial,
+		SetupHub:    m.setupHub,
+		RetryMin:    opts.MemberRetry[0],
+		RetryMax:    opts.MemberRetry[1],
+	})
+	launch := m.sess.AddLaunch(opts.Endpoint, opts.Engine, opts.Info, opts.LinkProblem, opts.CloseLaunch)
+	m.initDaemonView()
+	m.bind(launch)
 	return m
 }
 
-// Hub exposes the live-stream hub (for tests).
+// initDaemonView sets what describes the focused daemon to its starting
+// values, as New does and as a focus change does.
+func (m *Model) initDaemonView() {
+	m.logFollow = true
+	m.dirty = true
+	m.wasConnected = true
+	m.info1.wrap = true
+	m.inspect.wrap = true
+	m.ds.in = textinput.New()
+	m.ds.in.CharLimit = 80
+}
+
+// setupHub prepares every member's hub before it starts.
+func (m *Model) setupHub(h *live.Hub, link dockerctx.Link) {
+	if link.Transport != dockerctx.TransportUnix {
+		// "Is it back?" is asked with a short timeout. Over a network a
+		// new connection can take longer than that to set up, and the desk
+		// would then call a slow daemon a missing one for ever.
+		h.PingTimeout = 10 * time.Second
+	}
+	if m.opts.SetupHub != nil {
+		m.opts.SetupHub(h)
+	}
+}
+
+// Hub exposes the focused daemon's live-stream hub (for tests).
 func (m *Model) Hub() *live.Hub { return m.hub }
+
+// Session exposes the session's members (for tests and the program).
+func (m *Model) Session() *session.Session { return m.sess }
 
 // Jobs exposes the job manager (for tests).
 func (m *Model) Jobs() *jobs.Manager { return m.jobs }
@@ -338,8 +392,11 @@ func (m *Model) Jobs() *jobs.Manager { return m.jobs }
 // Close stops every stream and cancels running jobs. Requests the daemon has
 // already accepted complete or fail on the daemon's side.
 func (m *Model) Close() {
-	m.hub.Close()
 	m.jobs.Close()
+	m.sess.Close()
+	if m.ds2.idle != nil {
+		m.ds2.idle.Close()
+	}
 }
 
 // ---- messages ---------------------------------------------------------------------
@@ -365,10 +422,19 @@ type infoMsg struct {
 func (m *Model) Init() tea.Cmd {
 	if !m.started {
 		m.started = true
-		m.hub.Start()
+		m.sess.Start()
 	}
 	m.lastPoll = time.Now()
 	cmds := []tea.Cmd{m.frameTick()}
+	if m.cur != nil {
+		cmds = append(cmds, m.refreshAll())
+	}
+	return tagCmd(m.gen, tea.Batch(cmds...))
+}
+
+// refreshAll requests every list from the focused daemon.
+func (m *Model) refreshAll() tea.Cmd {
+	cmds := make([]tea.Cmd, 0, listCount)
 	for li := 0; li < listCount; li++ {
 		cmds = append(cmds, m.refreshCmd(li))
 	}
@@ -423,8 +489,22 @@ func (m *Model) setStatus(t tone, text string) {
 	m.dirty = true
 }
 
-// Update is the state machine.
+// Update is the state machine. Every answer a command brings back is tagged
+// with the focus generation it was asked under (tagCmd); one asked of a
+// daemon that has since lost focus is dropped here, before anything looks at
+// it.
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if dm, ok := msg.(daemonMsg); ok {
+		if dm.gen != m.gen {
+			return m, nil
+		}
+		msg = dm.msg
+	}
+	_, cmd := m.update(msg)
+	return m, tagCmd(m.gen, cmd)
+}
+
+func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case frameMsg:
 		return m, m.onFrame(time.Time(msg))
@@ -449,6 +529,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case infoMsg:
 		if msg.err == nil {
 			m.info = msg.info
+			if m.cur != nil {
+				m.cur.SetInfo(msg.info)
+			}
 			m.dirty = true
 		}
 		return m, nil
@@ -532,6 +615,17 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		return nil
 	}
 
+	// 0. The session: which daemon is focused, and what the others say.
+	if cmd := m.syncFocus(now); cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+	m.collectNotices(now)
+	if m.cur == nil {
+		// No daemon: nothing to refresh, stream or measure.
+		m.expireStatus(now)
+		return tea.Batch(cmds...)
+	}
+
 	// 1. Lists that engine events (or the periodic poll) made stale.
 	m.pending |= m.hub.TakeDirty()
 	if now.Sub(m.lastPoll) >= m.opts.PollInterval {
@@ -612,12 +706,12 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		m.setStatus(toneBad, "Lost the connection to the Docker daemon at "+m.endpoint.Host+" — retrying. Data on screen may be stale.")
 	}
 	m.wasConnected = connected
-	if m.opts.LinkProblem != nil {
+	{
 		// A fallen tunnel explains itself a moment after the streams it
 		// carried have failed; say so once per distinct reason.
 		problem := ""
 		if !connected {
-			problem = m.opts.LinkProblem()
+			problem = m.cur.Problem()
 		}
 		if problem != "" && problem != m.linkProblem {
 			m.setStatus(toneBad, "The "+m.link.Transport.String()+" link to "+m.endpoint.Host+" is down — retrying: "+problem)
@@ -641,10 +735,7 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		m.drawn = v
 		m.dirty = true
 	}
-	if m.status.text != "" && now.After(m.status.until) {
-		m.status = statusLine{}
-		m.dirty = true
-	}
+	m.expireStatus(now)
 	if m.jobs.RunningCount() > 0 || m.preparing || m.repoBusy() {
 		// Spinner and elapsed times move only while something runs.
 		if next := int(now.UnixMilli()/120) % len(spinnerFrames); next != m.spinner {
@@ -655,6 +746,13 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+func (m *Model) expireStatus(now time.Time) {
+	if m.status.text != "" && now.After(m.status.until) {
+		m.status = statusLine{}
+		m.dirty = true
+	}
+}
+
 func (m *Model) announce(fin []jobs.Job) {
 	var failed *jobs.Job
 	for i := range fin {
@@ -663,15 +761,15 @@ func (m *Model) announce(fin []jobs.Job) {
 		}
 	}
 	if failed != nil {
-		m.setStatus(toneBad, "✗ "+failed.Title+" "+failed.Target+": "+failed.Err)
+		m.setStatus(toneBad, "✗ "+failed.Title+" "+failed.Target+m.onDaemon(*failed)+": "+failed.Err)
 		return
 	}
 	last := fin[len(fin)-1]
 	switch last.State {
 	case jobs.Succeeded:
-		m.setStatus(toneGood, "✓ "+last.Title+" "+last.Target)
+		m.setStatus(toneGood, "✓ "+last.Title+" "+last.Target+m.onDaemon(last))
 	case jobs.Cancelled:
-		m.setStatus(toneWarn, "cancelled: "+last.Title+" "+last.Target)
+		m.setStatus(toneWarn, "cancelled: "+last.Title+" "+last.Target+m.onDaemon(last))
 	}
 }
 
@@ -713,6 +811,9 @@ func (m *Model) onList(msg listMsg) tea.Cmd {
 // afterChange reconciles derived state after anything that may have changed
 // the data, the kind, the highlight or the tab.
 func (m *Model) afterChange() {
+	if m.cur == nil {
+		return // no daemon: nothing is derived from one
+	}
 	m.ensureRows(m.kind)
 	m.retryEventJump()
 	key := m.currentDetailKey()
