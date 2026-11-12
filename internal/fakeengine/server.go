@@ -67,9 +67,10 @@ type Server struct {
 	mu         sync.Mutex
 	statsOpen  atomic.Int64          // statistics streams currently open
 	containers map[string]*Container // by ID
-	images     map[string]*Image     // by ID
-	volumes    map[string]*Volume    // by name
-	networks   map[string]*Network   // by ID
+	createReqs []CreateRequest
+	images     map[string]*Image   // by ID
+	volumes    map[string]*Volume  // by name
+	networks   map[string]*Network // by ID
 	execs      map[string]*execProc
 	seq        int
 	ipSeq      map[string]int // per network
@@ -408,6 +409,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 
 	case path == "/containers/json" && get:
 		s.handleContainerList(w, r)
+	case path == "/containers/create" && post:
+		s.handleContainerCreate(w, r)
 	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "json" && get:
 		s.handleContainerInspect(w, seg[1])
 	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "logs" && get:

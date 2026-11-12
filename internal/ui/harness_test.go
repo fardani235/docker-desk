@@ -225,7 +225,7 @@ func keyMsg(s string) tea.KeyMsg {
 		"enter": tea.KeyEnter, "esc": tea.KeyEsc, "tab": tea.KeyTab, "shift+tab": tea.KeyShiftTab,
 		"up": tea.KeyUp, "down": tea.KeyDown, "left": tea.KeyLeft, "right": tea.KeyRight,
 		"pgup": tea.KeyPgUp, "pgdown": tea.KeyPgDown, "home": tea.KeyHome, "end": tea.KeyEnd,
-		"ctrl+c": tea.KeyCtrlC, "backspace": tea.KeyBackspace, " ": tea.KeySpace,
+		"ctrl+c": tea.KeyCtrlC, "ctrl+n": tea.KeyCtrlN, "ctrl+x": tea.KeyCtrlX, "backspace": tea.KeyBackspace, " ": tea.KeySpace,
 	}
 	if t, ok := special[s]; ok {
 		if t == tea.KeySpace {

@@ -597,6 +597,14 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dirty = true
 		return m, cmd
 	}
+	if m.dlg != nil && m.dlg.kind == dlgForm {
+		var cmd tea.Cmd
+		if in := m.dlg.formInput(); in != nil {
+			*in, cmd = in.Update(msg)
+		}
+		m.dirty = true
+		return m, cmd
+	}
 	if m.dlg != nil && m.dlg.hasInput {
 		var cmd tea.Cmd
 		m.dlg.input, cmd = m.dlg.input.Update(msg)

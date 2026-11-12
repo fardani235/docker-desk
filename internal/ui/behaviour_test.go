@@ -815,15 +815,15 @@ func TestShellFormAndHandOff(t *testing.T) {
 		`sh -c 'echo "a b"; exit'`: `sh|-c|echo "a b"; exit`,
 		`  psql   -U  "my user"  `: "psql|-U|my user",
 	} {
-		got, err := splitCommand(in)
+		got, err := splitShellCommand(in)
 		if err != nil || strings.Join(got, "|") != want {
-			t.Errorf("splitCommand(%q) = %q, %v", in, got, err)
+			t.Errorf("splitShellCommand(%q) = %q, %v", in, got, err)
 		}
 	}
-	if _, err := splitCommand("sh -c 'oops"); err == nil {
+	if _, err := splitShellCommand("sh -c 'oops"); err == nil {
 		t.Error("an unterminated quote must be refused")
 	}
-	if _, err := splitCommand("   "); err == nil {
+	if _, err := splitShellCommand("   "); err == nil {
 		t.Error("an empty command must be refused")
 	}
 }

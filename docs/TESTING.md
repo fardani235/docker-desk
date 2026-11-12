@@ -1044,6 +1044,37 @@ suite can mutate a daemon; the view sends only `GET`s, and the tests say so.
 - Layouts other than the two the fixture writes (the classic archive and Docker's OCI layout) are
   not tested here, beyond what the Findings rounds already test of the same walk.
 
+## Round seventeen: creating a container
+
+The create form is a mutation that adds an object, in three dependent steps. Each layer is proven
+where it can be, and the fake daemon's request log is the witness everywhere above the planner.
+
+| What | Proven by | Command |
+| --- | --- | --- |
+| Parsing each entry: ports (tcp default, `udp`, bracketed IPv6, out of range, unbracketed IPv6), `NAME=value`, mounts (bind/volume, `ro`, relative destination), restart policies (`on-failure:3`, a retry on the wrong policy), the quote-aware command splitter | pure table tests | `go test ./internal/plan -run 'Parse\|Split'` |
+| Which field and entry is wrong | `TestParseCreateNamesTheField`, `TestContainerCreateRefuses` | `go test ./internal/plan -run Create` |
+| The plan: the pull present only when the image is missing, the dependency indices, `:latest` filled in, a name in use refused, a host port repeated on one address refused, no environment value in any description | `TestContainerCreate*`, `TestCreateNeverDescribesTheEnvironment` | `go test ./internal/plan -run Create` |
+| Execution: a failed pull skips create and start; a failed create skips start; the start names the ID the create returned even after a rename and with an impostor under the old name; a start failure leaves a `created` container and says so; a cancel between create and start; a skip that cascades | `TestCreate*` and `TestDependencyOnASkippedStepIsASkip` in `execute_test.go`, against the fake daemon | `go test ./internal/plan -run 'Create\|Dependency'` |
+| Existing plans unchanged: prunes, projects, selections, pins still process every object after a failure | the existing plan tests | `go test ./internal/plan` |
+| The request body: image, name, ports (`ExposedPorts`, `PortBindings`, a daemon-chosen port), env, typed mounts, restart policy, command — and nothing else in `HostConfig` | `TestCreateContainerRequestBody`, `TestCreateContainerRefusals` | `go test ./internal/engine -run CreateContainer` |
+| Read-only refuses it, in the wrapper and in the request hook; the tripwire counts 19 mutations | `TestReadOnlyCoversEveryMutation`, `TestReadOnlySendsNothing` | `go test ./internal/engine -run ReadOnly` |
+| The fake's `POST /containers/create`: 404 absent image, 409 name in use, 400 invalid name or relative target (before any volume is made), 201 with the ID, a `created` container, the `container`/`create` event, then start | `TestContainerCreateHTTP` | `go test ./internal/fakeengine` |
+| The fake against the real CLI: `docker create` with name, ports, env, mounts (`--mount` and `-v`), restart policy and command, `inspect` of each, a taken name, a relative target, `docker start`, a daemon-chosen name, the CLI's own pull after the 404 | 19 checks in `scripts/cli-crosscheck.sh` | `make crosscheck` |
+| The form: opens sending nothing, with or without a selection, and from the menu; Esc records nothing; `Tab`/`Shift+Tab` wrap; `Ctrl+N`/`Ctrl+X` add and remove entries and never reach a text input; the four single-field forms keep their behaviour | `TestCreateFormOpensSendingNothing`, `TestFormTabWrapsAndShiftTabGoesBack`, `TestFormRepeatableRows` | `go test ./internal/ui -run 'Create\|Form'` |
+| The summary restates every value before Enter; the job pulls, creates and starts; `TOKEN=s3cret` is in the request and the form, never in the job's title, target, status, error, output or the status line | `TestCreateSummaryThenSubmit`, `TestCreateWithPresentImageSaysSo` | `go test ./internal/ui -run Create` |
+| A refused value keeps the form open, says why, and focuses the field and entry at fault: a bad port, a taken name (from the fresh snapshot), `=value`, a relative destination, an unparsable command; an Enter typed ahead of the form sends nothing | `TestCreateRefusedValuesKeepTheFormOpen`, `TestCreateEnterTypedAheadSendsNothing` | `go test ./internal/ui -run Create` |
+| Read-only refuses `n` before a form opens | `TestCreateFormReadOnlyRefuses`, `TestReadOnlyDisablesEveryAction` | `go test ./internal/ui -run ReadOnly` |
+| 80×24 with every field and three entries per list: the focused field, its hint, `field i of n` and every key stay on screen | `TestCreateFormFitsSmallTerminal` | `go test ./internal/ui -run CreateFormFits` |
+| The real binary: a missing image is pulled, then created, then the returned ID started — exactly those three requests — and the row appears running; a present image is not pulled; a failing pull sends nothing else and the job names the skipped steps | `TestCreate`, `TestCreatePullOrNot` | `go test ./internal/e2e -run Create` |
+
+Screens: `docs/screens/54-create-form.txt` (150×42) and `docs/screens/55-create-form-80x24.txt`
+(80×24), captured by `TestCreate`.
+
+What is not proven: the create was never sent to a real daemon — the suite cannot, by design, and
+no opt-in check was added for a mutation. The request body is proven against the client library
+and the fake, and the fake against the real CLI's `docker create`; that is the same chain of
+evidence as every other mutation.
+
 ## Running everything
 
 ```sh

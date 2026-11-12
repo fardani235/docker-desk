@@ -726,7 +726,7 @@ Press `?` inside the desk for the same list.
 
 | Kind | Keys |
 | --- | --- |
-| Containers | `s` start · `t` stop · `R` restart · `p` pause · `u` unpause · `K` kill · `d` remove · `e` shell |
+| Containers | `n` new (create and start, pulling the image first if it is missing) · `s` start · `t` stop · `R` restart · `p` pause · `u` unpause · `K` kill · `d` remove · `e` shell |
 | Images | `P` pull by name (on Upstream showing *moved*: the build the tag names now, by digest) · `d` remove · `X` prune |
 | Volumes | `n` new · `d` remove · `X` prune |
 | Networks | `n` new · `d` remove · `X` prune · `c` connect a container · `D` disconnect a container |
@@ -738,9 +738,39 @@ The selection belongs to its kind and follows its objects across refreshes; an o
 disappears leaves it. While a kind has a selection, `s` `t` `R` `p` `u` `K` `d` on Containers
 and `d` on Images, Volumes and Networks apply to every selected object instead of the
 highlighted one. `e` shell, `c` connect and `D` disconnect work on one object only and refuse
-(nothing is sent); `X` prune chooses its own objects and refuses too; `P` pull and `n` new are
-unaffected. The selection is cleared when the job starts, and kept if you decline. `Space`
+(nothing is sent); `X` prune chooses its own objects and refuses too; `P` pull and `n` new
+(on Containers, Volumes and Networks) are unaffected. The selection is cleared when the job starts, and kept if you decline. `Space`
 still pages in the Details pane; in the Events pane it holds the view.
+
+**Creating a container** (`n` on Containers, also in the action menu as *new…*). One form,
+seven fields: the image (required; no tag means `:latest`), a name (empty lets the daemon choose
+one), published ports, environment variables, mounts, the restart policy and the command (empty
+keeps the image's). `Tab` / `Shift+Tab` move between fields, `↑` `↓` between a field's entries,
+`Ctrl+N` adds an entry and `Ctrl+X` removes the focused one, `←` `→` choose the restart policy
+(`on-failure` takes an optional retry limit on the row below). One syntax per entry:
+
+| Field | Entry | Examples |
+| --- | --- | --- |
+| Ports | `[host-address:][host-port:]container-port[/tcp\|udp]` | `8080:80` · `127.0.0.1:5432:5432` · `53:53/udp` · `[::1]:8080:80` · `80` (the daemon picks the host port) |
+| Environment | `NAME=value` — the value is everything after the first `=` | `LOG_LEVEL=info` |
+| Mounts | `source:destination[:ro]` — a source starting with `/` is a host path, anything else a named volume | `/srv/data:/data:ro` · `cache:/var/cache` |
+
+The form is the confirmation: under the fields it restates everything that will be sent — the
+daemon, the exact image reference and whether it is already here or *will be pulled first*, the
+name, every port, environment entry and mount, the policy and the command — and that the
+container will be created *and started*. Enter is the only key that sends anything, and not
+before the form has been on screen long enough to read; Esc sends nothing. A value that does not
+parse, a name already in use or a host port given twice is reported under the form with the
+field at fault focused, and nothing is sent. Enter builds the plan from a fresh look at the
+daemon and starts one job: pull (only if the image is missing — exactly that reference, never
+every tag), create, start. A step whose predecessor failed is not attempted and the job says so;
+a container created but not started is named as such. The new container appears in the list from
+the daemon's own events. Environment values are shown in the form and sent in the request, and
+appear nowhere else — not in the job, its output or the status line. Read-only mode refuses `n`
+before any form opens. The container joins the daemon's default network; anything the seven
+fields do not cover (networks, user, limits, a TTY, …) is not offered. The form, captured:
+[`docs/screens/54-create-form.txt`](docs/screens/54-create-form.txt) and, at 80×24,
+[`docs/screens/55-create-form-80x24.txt`](docs/screens/55-create-form-80x24.txt).
 
 **In the daemon picker** (`M`): `↑` `↓` move · `Enter` focus the daemon, or add the context ·
 `d` remove the daemon (then `y` to confirm, `n` to keep it) · `r` read the contexts again ·
@@ -837,6 +867,8 @@ being careful.
   - anything that deletes — remove, prune, remove project → type the word shown (`remove` or
     `prune`) and press Enter.
   - pull, new volume, new network, shell → you type the name yourself; Enter submits.
+  - new container → the form restates the whole configuration and any pull it needs; Enter
+    submits, never before the form has been on screen long enough to read.
   - **a selection** (`Space` / `a` in the list), whatever the action → type the verb *and the
     count* shown, e.g. `stop 3` or `remove 7`, and press Enter. One key never consents to
     many objects, and the number is what you have to have read.
@@ -942,8 +974,9 @@ No view across daemons: one is focused at a time, and nothing acts on two at onc
 images or volumes between them. No per-daemon read-only flag, and nothing about the session is
 saved for the next run. No Windows named pipes. No Swarm, no compose
 lifecycle — a compose file is read only for Declared, on request, and never run or
-interpolated (see [Compose, honestly](#compose-honestly)) — no image builds or pushes, no Kubernetes. It does not create or reconfigure containers,
-or copy files in or out. The build cache is accounted for in Space but never removed: the desk
+interpolated (see [Compose, honestly](#compose-honestly)) — no image builds or pushes, no Kubernetes. It creates containers only from its seven-field form
+(no networks, users, limits or TTY; no build, no compose `up`), never reconfigures one, and does
+not copy files in or out. The build cache is accounted for in Space but never removed: the desk
 has no builder, and calls no prune endpoint.
 
 Good to know:

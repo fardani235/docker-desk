@@ -58,6 +58,7 @@ const (
 	OpRemoveNetwork
 	OpConnect
 	OpDisconnect
+	OpCreateContainer
 )
 
 var opVerbs = map[Op]string{
@@ -65,6 +66,7 @@ var opVerbs = map[Op]string{
 	OpKill: "kill", OpRemoveContainer: "remove", OpPullImage: "pull", OpRemoveImage: "remove",
 	OpCreateVolume: "create", OpRemoveVolume: "remove", OpCreateNetwork: "create",
 	OpRemoveNetwork: "remove", OpConnect: "connect", OpDisconnect: "disconnect",
+	OpCreateContainer: "create",
 }
 
 func (o Op) String() string { return opVerbs[o] }
@@ -99,6 +101,23 @@ type Step struct {
 	// refused by the daemon when the image is in use, so Execute checks for
 	// containers using the image itself before sending it.
 	MustBeUnused bool
+
+	// Create is the configuration of an OpCreateContainer step. It is not
+	// an existing object's identifier: the container does not exist yet.
+	Create *ContainerCreateSpec
+	// DependsOn are indices of earlier steps that must have succeeded for
+	// this one to be attempted. A step whose prerequisite failed, or was
+	// itself skipped, is skipped (docs/DECISIONS.md D23). Plans of
+	// independent objects leave it empty.
+	DependsOn []int
+	// ProducesID marks a step whose request returns the identifier of the
+	// object it created (OpCreateContainer).
+	ProducesID bool
+	// IDFrom is the index of an earlier ProducesID step whose returned
+	// identifier this step sends instead of ID; -1 means none. It is only
+	// honoured when that step is earlier and declares ProducesID, so the
+	// zero value of plans that never produce an ID means nothing.
+	IDFrom int
 }
 
 // Target identifies what a plan is about.

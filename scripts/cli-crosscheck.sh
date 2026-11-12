@@ -167,6 +167,36 @@ expect_contains "other tag survives" "$(d images --format '{{.Repository}}:{{.Ta
 rm_out="$(d rmi hello-world)"
 expect_contains "rmi deletes last tag" "$rm_out" "Deleted: sha256:"
 
+echo "== create (the desk's create form sends the same request)"
+made="$(d create --name cross-made -p 127.0.0.1:18080:80 -p 53:53/udp -e LOG_LEVEL=info -e EMPTY= \
+  --mount type=volume,src=cross-cache,dst=/var/cache --mount type=bind,src=/srv/data,dst=/data,readonly \
+  -v cross-legacy:/legacy:ro --restart on-failure:3 nginx:1.27 sh -c 'sleep 1000')"
+expect_eq "create returns the full ID" "${#made}" "64"
+expect_eq "create leaves it created" "$(d inspect --format '{{.State.Status}}' cross-made)" "created"
+expect_eq "create: command" "$(d inspect --format '{{json .Config.Cmd}}' cross-made)" '["sh","-c","sleep 1000"]'
+expect_contains "create: environment" "$(d inspect --format '{{json .Config.Env}}' cross-made)" '"LOG_LEVEL=info","EMPTY="'
+expect_eq "create: restart policy" "$(d inspect --format '{{.HostConfig.RestartPolicy.Name}}:{{.HostConfig.RestartPolicy.MaximumRetryCount}}' cross-made)" "on-failure:3"
+expect_contains "create: port binding" "$(d inspect --format '{{json .HostConfig.PortBindings}}' cross-made)" '"80/tcp":[{"HostIp":"127.0.0.1","HostPort":"18080"}]'
+expect_contains "create: udp port" "$(d inspect --format '{{json .HostConfig.PortBindings}}' cross-made)" '"53/udp"'
+mounts="$(d inspect --format '{{range .Mounts}}{{.Type}}:{{.Source}}:{{.Destination}}:{{.RW}} {{end}}' cross-made)"
+expect_contains "create: named volume mount" "$mounts" "volume:/var/lib/fake-docker/volumes/cross-cache/_data:/var/cache:true"
+expect_contains "create: read-only bind mount" "$mounts" "bind:/srv/data:/data:false"
+expect_contains "create: -v volume, read-only" "$mounts" "/legacy:false"
+expect_contains "create made the named volume" "$(d volume ls --format '{{.Name}}')" "cross-cache"
+expect_fails "create: name taken" "is already in use" d create --name cross-made nginx:1.27
+expect_fails "create: relative mount target" "absolute" d create --mount type=volume,src=x1,dst=rel nginx:1.27
+d start cross-made >/dev/null
+expect_eq "start runs the created container" "$(d inspect --format '{{.State.Status}}' cross-made)" "running"
+expect_contains "ps shows the published port" "$(d ps --format '{{.Names}} {{.Ports}}' --filter name=cross-made)" "127.0.0.1:18080->80/tcp"
+auto="$(d create nginx:1.27)"
+expect_contains "create without a name: the daemon names it" "$(d inspect --format '{{.Name}}' "$auto")" "_"
+pulled="$(d create --name cross-pulled hello-world 2>&1)"
+expect_contains "create of a missing image: the CLI pulls after the 404" "$pulled" "Unable to find image 'hello-world:latest' locally"
+expect_eq "…and then creates" "$(d inspect --format '{{.State.Status}}' cross-pulled)" "created"
+expect_fails "create of an unpullable image" "pull access denied" d create nosuch/image:1
+d rm -f cross-made >/dev/null 2>&1 || { d stop cross-made >/dev/null; d rm cross-made >/dev/null; }
+d rm cross-pulled "$auto" >/dev/null
+
 echo "== volumes and networks"
 d volume create cross-vol >/dev/null
 expect_contains "volume create" "$(d volume ls --format '{{.Name}}')" "cross-vol"

@@ -518,3 +518,219 @@ func TestFailuresBeforeACancelAreNotHidden(t *testing.T) {
 		t.Fatalf("state=%v\n%s", j.State, log)
 	}
 }
+
+// ---- dependent steps (create container) ---------------------------------------------
+
+// hookEngine lets a test act between two steps of a plan.
+type hookEngine struct {
+	engine.Engine
+	afterCreate func(id string)
+	beforeStart func(id string)
+	starts      []string
+}
+
+func (h *hookEngine) CreateContainer(ctx context.Context, o engine.ContainerCreateOptions) (string, error) {
+	id, err := h.Engine.CreateContainer(ctx, o)
+	if err == nil && h.afterCreate != nil {
+		h.afterCreate(id)
+	}
+	return id, err
+}
+
+func (h *hookEngine) StartContainer(ctx context.Context, id string) error {
+	h.starts = append(h.starts, id)
+	if h.beforeStart != nil {
+		h.beforeStart(id)
+	}
+	return h.Engine.StartContainer(ctx, id)
+}
+
+func (r *rig) runOn(eng engine.Engine, p Plan) jobs.Job {
+	r.t.Helper()
+	id := r.jm.Start(p.JobTitle, p.JobTarget, func(ctx context.Context, run *jobs.Run) error {
+		return Execute(ctx, eng, p, run)
+	})
+	r.jm.Wait()
+	j, _ := r.jm.Get(id)
+	return j
+}
+
+func logHas(j jobs.Job, sub string) bool {
+	for _, l := range j.Log {
+		if strings.Contains(l, sub) {
+			return true
+		}
+	}
+	return false
+}
+
+func seedAlpine(s *fakeengine.Server) { s.AddImage(7_000_000, time.Hour, "alpine:3.20") }
+
+func TestCreateAFailedPullSkipsCreateAndStart(t *testing.T) {
+	r := newRig(t, seedAlpine)
+	p, err := ContainerCreate(r.snap(), ContainerCreateSpec{Image: "nosuch/thing", Name: "never"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Steps) != 3 {
+		t.Fatalf("a missing image is pulled first: %+v", p.Steps)
+	}
+	r.srv.ResetRequests()
+	j := r.run(p)
+	if j.State != jobs.Failed {
+		t.Fatalf("job: %+v", j)
+	}
+	if n := r.srv.CountRequests("POST", `^/containers/`); n != 0 {
+		t.Fatalf("%d container requests after a failed pull: %v", n, r.srv.Mutations())
+	}
+	for _, want := range []string{
+		"✗ pull image nosuch/thing:latest",
+		"↷ skipped create container never from nosuch/thing:latest — pull image nosuch/thing:latest did not succeed",
+		"↷ skipped start container never — create container never from nosuch/thing:latest did not succeed",
+		"0 succeeded, 1 failed, 2 skipped",
+	} {
+		if !logHas(j, want) {
+			t.Errorf("log lacks %q:\n%s", want, strings.Join(j.Log, "\n"))
+		}
+	}
+	if j.Done != 3 || j.Total != 3 || !strings.Contains(j.Err, "2 skipped") {
+		t.Errorf("skips advance the counter and are counted: %+v", j)
+	}
+	if has(r.srv.ContainerNames(), "never") {
+		t.Fatal("a container was created")
+	}
+}
+
+func TestCreateAFailedCreateSkipsTheStart(t *testing.T) {
+	r := newRig(t, seedAlpine)
+	p, err := ContainerCreate(r.snap(), ContainerCreateSpec{Image: "alpine:3.20", Name: "app"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.srv.FailNext("POST", `^/containers/create$`, 500, "driver failed programming external connectivity: port is already allocated", 1)
+	r.srv.ResetRequests()
+	j := r.run(p)
+	if j.State != jobs.Failed || !strings.Contains(j.Err, "port is already allocated") {
+		t.Fatalf("the daemon's message is the job's: %+v", j)
+	}
+	if n := r.srv.CountRequests("POST", `/start$`); n != 0 {
+		t.Fatal("start was attempted after a failed create")
+	}
+	if n := r.srv.CountRequests("POST", `^/images/create`); n != 0 {
+		t.Fatal("an image that is present was pulled")
+	}
+	if !logHas(j, "↷ skipped start container app — create container app from alpine:3.20 did not succeed") {
+		t.Errorf("log:\n%s", strings.Join(j.Log, "\n"))
+	}
+}
+
+func TestCreateStartsTheReturnedIDEvenAfterARename(t *testing.T) {
+	r := newRig(t, seedAlpine)
+	p, err := ContainerCreate(r.snap(), ContainerCreateSpec{Image: "alpine:3.20", Name: "app"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var created string
+	h := &hookEngine{Engine: r.eng}
+	h.afterCreate = func(id string) {
+		created = id
+		// Another tool renames it, and a different container takes the name.
+		r.srv.Rename(id, "app-renamed")
+		r.srv.AddContainer(fakeengine.ContainerSpec{Name: "app", Image: "alpine:3.20", State: "exited"})
+	}
+	j := r.runOn(h, p)
+	if j.State != jobs.Succeeded {
+		t.Fatalf("job: %+v\n%s", j, strings.Join(j.Log, "\n"))
+	}
+	if len(h.starts) != 1 || h.starts[0] != created {
+		t.Fatalf("start must name the ID the create returned (%s), sent %v", created, h.starts)
+	}
+	if st, _ := r.srv.ContainerState("app-renamed"); st != "running" {
+		t.Errorf("the created container, renamed, is %q", st)
+	}
+	if st, _ := r.srv.ContainerState("app"); st != "exited" {
+		t.Errorf("the impostor under the old name was touched: %q", st)
+	}
+}
+
+func TestCreateAStartFailureLeavesACreatedContainerAndSaysSo(t *testing.T) {
+	r := newRig(t, seedAlpine)
+	p, err := ContainerCreate(r.snap(), ContainerCreateSpec{Image: "alpine:3.20", Name: "half"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.srv.FailNext("POST", `/start$`, 500, "exec: \"/bin/nothing\": not found", 1)
+	j := r.run(p)
+	if j.State != jobs.Failed {
+		t.Fatalf("job: %+v", j)
+	}
+	if st, _ := r.srv.ContainerState("half"); st != "created" {
+		t.Fatalf("state %q, want created", st)
+	}
+	if !logHas(j, "half was created but not started") || !logHas(j, "1 succeeded, 1 failed, 0 skipped") {
+		t.Errorf("log:\n%s", strings.Join(j.Log, "\n"))
+	}
+}
+
+func TestCreateWithoutANameLogsTheDaemonsName(t *testing.T) {
+	r := newRig(t, seedAlpine)
+	p, err := ContainerCreate(r.snap(), ContainerCreateSpec{Image: "alpine:3.20"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := r.srv.ContainerNames()
+	j := r.run(p)
+	if j.State != jobs.Succeeded {
+		t.Fatalf("job: %+v", j)
+	}
+	var name string
+	for _, n := range r.srv.ContainerNames() {
+		if !has(before, n) {
+			name = n
+		}
+	}
+	if name == "" || !logHas(j, "✓ create container "+name+" from alpine:3.20") || !logHas(j, "✓ start container "+name) {
+		t.Errorf("the daemon's name %q is in the output:\n%s", name, strings.Join(j.Log, "\n"))
+	}
+}
+
+func TestCreateCancelBeforeTheStart(t *testing.T) {
+	r := newRig(t, seedAlpine)
+	p, err := ContainerCreate(r.snap(), ContainerCreateSpec{Image: "alpine:3.20", Name: "stopped-short"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := &hookEngine{Engine: r.eng}
+	id := r.jm.Start(p.JobTitle, p.JobTarget, func(ctx context.Context, run *jobs.Run) error {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		h.afterCreate = func(string) { cancel() }
+		return Execute(ctx, h, p, run)
+	})
+	r.jm.Wait()
+	j, _ := r.jm.Get(id)
+	if len(h.starts) != 0 {
+		t.Fatal("the start was attempted after the cancel")
+	}
+	if !logHas(j, "already done: create container stopped-short") || !logHas(j, "stopped-short was created but not started") {
+		t.Errorf("log:\n%s", strings.Join(j.Log, "\n"))
+	}
+}
+
+func TestDependencyOnASkippedStepIsASkip(t *testing.T) {
+	r := newRig(t, func(s *fakeengine.Server) { s.SeedDemo() })
+	id := r.srv.ContainerID("shop-web-1")
+	p := Plan{Title: "t", JobTitle: "t", Tier: TierConfirm, Steps: []Step{
+		{Op: OpStart, Kind: "container", ID: "does-not-exist", Name: "ghost", IDFrom: -1},
+		{Op: OpStop, Kind: "container", ID: id, Name: "a", DependsOn: []int{0}, IDFrom: -1},
+		{Op: OpStop, Kind: "container", ID: id, Name: "b", DependsOn: []int{1}, IDFrom: -1},
+	}}
+	r.srv.ResetRequests()
+	j := r.run(p)
+	if j.State != jobs.Failed || r.srv.CountRequests("POST", `/stop$`) != 0 {
+		t.Fatalf("job %+v, requests %v", j, r.srv.Mutations())
+	}
+	if !logHas(j, "↷ skipped stop container b — stop container a did not succeed") {
+		t.Errorf("log:\n%s", strings.Join(j.Log, "\n"))
+	}
+}

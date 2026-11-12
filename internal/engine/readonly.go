@@ -29,6 +29,10 @@ func (r *readOnlyEngine) UnpauseContainer(context.Context, string) error { retur
 func (r *readOnlyEngine) KillContainer(context.Context, string) error    { return ErrReadOnly }
 func (r *readOnlyEngine) RemoveContainer(context.Context, string) error  { return ErrReadOnly }
 
+func (r *readOnlyEngine) CreateContainer(context.Context, ContainerCreateOptions) (string, error) {
+	return "", ErrReadOnly
+}
+
 func (r *readOnlyEngine) PullImage(context.Context, string, func(PullProgress)) error {
 	return ErrReadOnly
 }

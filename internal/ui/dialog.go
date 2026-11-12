@@ -38,6 +38,7 @@ const (
 	formVolume
 	formNetwork
 	formShell
+	formCreate
 )
 
 type pickItem struct {
@@ -75,6 +76,9 @@ type dialog struct {
 
 	// dlgForm
 	form     formKind
+	fields   []formField // see form.go
+	focus    int         // the focused field
+	formOff  int         // first line of the create form's scrolled window
 	formErr  string
 	formBusy bool
 	target   row // shell: the container
@@ -177,7 +181,7 @@ func (m *Model) onPlan(msg planMsg) tea.Cmd {
 		}
 		m.dlg.formBusy = false
 		if msg.err != nil {
-			m.dlg.formErr = msg.err.Error()
+			m.dlg.placeFieldError(msg.err)
 			return nil
 		}
 		m.dlg = nil
@@ -296,39 +300,12 @@ func plainError(err error) string {
 	return err.Error()
 }
 
-// splitCommand turns the shell form's text into an argument vector. It
-// understands single and double quotes; nothing is expanded or interpreted.
-func splitCommand(s string) ([]string, error) {
-	var args []string
-	var cur strings.Builder
-	in := false
-	quote := rune(0)
-	for _, r := range s {
-		switch {
-		case quote != 0:
-			if r == quote {
-				quote = 0
-			} else {
-				cur.WriteRune(r)
-			}
-		case r == '\'' || r == '"':
-			quote, in = r, true
-		case r == ' ' || r == '\t':
-			if in {
-				args = append(args, cur.String())
-				cur.Reset()
-				in = false
-			}
-		default:
-			cur.WriteRune(r)
-			in = true
-		}
-	}
-	if quote != 0 {
-		return nil, errors.New("unterminated quote")
-	}
-	if in {
-		args = append(args, cur.String())
+// splitShellCommand is the shell form's reading of its text: the quote-aware
+// splitter shared with the create form, and a command is required.
+func splitShellCommand(s string) ([]string, error) {
+	args, err := plan.SplitCommand(s)
+	if err != nil {
+		return nil, err
 	}
 	if len(args) == 0 {
 		return nil, errors.New("enter the command to run, e.g. sh")
@@ -355,7 +332,7 @@ func (m *Model) renderDialog() (lines []string, w, h int) {
 	case dlgPlan:
 		title, body = m.planBody(d, inner, maxBody)
 	case dlgForm:
-		title, body = m.formBody(d, inner)
+		title, body = m.formBody(d, inner, maxBody)
 	case dlgPicker:
 		title, body = m.pickerBody(d, inner, maxBody)
 	case dlgMenu:
@@ -610,12 +587,15 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 	return p.Title, body
 }
 
-func (m *Model) formBody(d *dialog, w int) (string, []string) {
+func (m *Model) formBody(d *dialog, w, maxBody int) (string, []string) {
 	st := m.st
+	if d.form == formCreate {
+		return "Create container", m.createBody(d, w, maxBody)
+	}
 	daemon := strings.Join(m.daemonLines(w, true), "\n")
 	var title, prompt, verb string
 	var notes []string
-	text := d.input.Value()
+	text := d.formText()
 	switch d.form {
 	case formPull:
 		title, prompt, verb = "Pull image", "Image reference:", "pull"
@@ -645,7 +625,7 @@ func (m *Model) formBody(d *dialog, w int) (string, []string) {
 		)
 	}
 	body := strings.Split(daemon, "\n")
-	body = append(body, "", prompt, d.input.View(), "")
+	body = append(body, "", prompt, d.fields[0].rows[0].View(), "")
 	body = append(body, notes...)
 	if d.formErr != "" {
 		body = append(body, "")
