@@ -172,12 +172,9 @@ and remain fully usable.
 - **THEN** the error message from the daemon is shown to the operator and kept with the job that issued it, and the workspace continues to accept input
 
 ### Requirement: Connection loss is visible and recoverable
-If the connection to the focused daemon is lost while the workspace is open, the program SHALL show
-a disconnected state next to the endpoint, keep the last known data on screen marked as stale,
-keep retrying, and resume live updates when the daemon answers again. Connection loss of an
-unfocused daemon is reported as the daemon-session capability describes. When the daemon is
-reached through SSH and it is the SSH connection that failed, the program SHALL additionally say so
-and why, and SHALL re-establish the connection without asking anything on the terminal.
+If the connection to the focused daemon is lost while the workspace is open, the program SHALL
+show a disconnected state next to the endpoint, keep the last known data on screen marked as
+stale, keep retrying, and resume live updates when the daemon answers again.
 
 #### Scenario: Daemon stops while the desk is open
 - **WHEN** the event stream ends or requests start failing with connection errors
@@ -186,6 +183,12 @@ and why, and SHALL re-establish the connection without asking anything on the te
 #### Scenario: Daemon comes back
 - **WHEN** the daemon becomes reachable again
 - **THEN** the disconnected indication clears, lists are refreshed and the event stream resumes without restarting the program
+
+### Requirement: SSH connection loss says why and re-establishes itself
+When the daemon is reached through SSH and it is the SSH connection that failed, the program
+SHALL say the link is down and give ssh's reason, SHALL re-establish the connection without
+asking anything on the terminal, and SHALL stay usable when re-establishing would need an
+answer.
 
 #### Scenario: The SSH connection drops
 - **WHEN** the ssh connection carrying an `ssh://` endpoint ends while the workspace is open
