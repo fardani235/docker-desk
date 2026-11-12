@@ -10,6 +10,8 @@
 package engine
 
 import (
+	"io"
+	"io/fs"
 	"strings"
 	"time"
 )
@@ -532,6 +534,26 @@ func (k ChangeKind) String() string {
 type Change struct {
 	Path string
 	Kind ChangeKind
+}
+
+// PathStat is the daemon's stat of a path in a container, as it sends it
+// with an archive (the X-Docker-Container-Path-Stat header). Name is the
+// base name, untrusted: escape it before showing it.
+type PathStat struct {
+	Name       string
+	Size       int64
+	Mode       fs.FileMode // Go's type bits: fs.ModeDir, fs.ModeSymlink, …
+	LinkTarget string
+}
+
+// IsDir reports whether the path is a directory.
+func (s PathStat) IsDir() bool { return s.Mode.IsDir() }
+
+// Archive is a container path's tar stream and its stat. The caller reads
+// Content and must close it.
+type Archive struct {
+	Content io.ReadCloser
+	Stat    PathStat
 }
 
 // ContainerCreateOptions is a container to create, in the daemon's terms

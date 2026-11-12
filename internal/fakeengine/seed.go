@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"time"
@@ -162,6 +163,30 @@ func (s *Server) SeedDemo() {
 	// written one of every change `docker diff` can list (F, then Enter).
 	s.SetImageArchive("nginx:1.27", fixture.Legacy(fixture.DemoFiles("nginx:1.27")).Archive)
 	s.SetChanges("shop-web-1", DemoChanges()...)
+	s.SeedFiles("shop-web-1", DemoContainerFiles()...)
+}
+
+// DemoContainerFiles is what `docker cp` finds in shop-web-1: the image's
+// nginx configuration and front page, the file the container changed
+// (nginx.conf) and the ones it added (state.db, the cache entry) as its
+// change list names them, a symlink and a FIFO.
+func DemoContainerFiles() []FileSpec {
+	dir := func(p string) FileSpec { return FileSpec{Path: p, Mode: fs.ModeDir | 0o755} }
+	return []FileSpec{
+		dir("/etc/nginx"), dir("/etc/nginx/conf.d"),
+		{Path: "/etc/nginx/nginx.conf", Mode: 0o644, Content: []byte("user nginx;\nworker_processes 4;\nevents {}\nhttp { include /etc/nginx/conf.d/*.conf; }\n")},
+		{Path: "/etc/nginx/conf.d/default.conf", Mode: 0o644, Content: []byte("server { listen 80; root /usr/share/nginx/html; }\n")},
+		{Path: "/etc/nginx/current.conf", Mode: fs.ModeSymlink | 0o777, Link: "nginx.conf"},
+		dir("/usr/share/nginx/html"),
+		{Path: "/usr/share/nginx/html/index.html", Mode: 0o644, Content: []byte("<h1>shop</h1>\n<p>the sandbox's front page</p>\n")},
+		{Path: "/usr/sbin/nginx", Mode: 0o755, Content: make([]byte, 1_430)},
+		{Path: "/bin/sh", Mode: fs.ModeSymlink | 0o777, Link: "/usr/bin/bash"},
+		{Path: "/run/nginx.pid", Mode: 0o644, Content: []byte("1\n")},
+		{Path: "/run/nginx.fifo", Mode: fs.ModeNamedPipe | 0o600},
+		dir("/var/cache/nginx/client_temp"),
+		{Path: "/var/cache/nginx/client_temp/00000001", Mode: 0o600, Content: []byte("partial upload\n")},
+		{Path: "/var/lib/nginx/state.db", Mode: 0o640, Content: append([]byte("SQLite format 3\x00"), make([]byte, 4080)...)},
+	}
 }
 
 // DemoChanges is what shop-web-1 has written since its image: a file

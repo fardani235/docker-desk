@@ -568,7 +568,7 @@ back exactly as it was.
 - **A container's files** are its image's tree with the daemon's own change list laid over it
   — `GET /containers/{id}/changes`, what `docker diff` prints — read when the view opens and
   again on `r`, which reads nothing else. Paths the container **added** are marked and have no
-  size (the desk does not read a container's archive), a directory it added cannot be opened
+  size (the tree never reads a container's archive; only a copy does), a directory it added cannot be opened
   and says its contents are not read, a **changed** file keeps the image's size and says so,
   and a **deleted** path is struck through with the image's size and layer. Opened before the
   image is read, the view lists the changes alone, without sizes, and says the image's files
@@ -605,6 +605,50 @@ drawn or written — a newline as `\n`, other control characters, `DEL` and inva
 `\xNN`, a backslash doubled — so a name cannot colour the screen, move the cursor or forge a
 row of the listing. A name shaped like `../../etc/passwd` is a name in the tree; no path is
 ever opened, resolved or joined to the machine's filesystem.
+
+**Copying, out and in.** On a container, `o` and `i` copy the highlighted path between the
+container and this machine — the only time the desk reads or writes a file's contents, and only
+the path asked for, streamed and never drawn. On an image both keys say copies are between a
+container and this machine, and open nothing.
+
+- **The destination is the path named.** In both directions the copy is written *at* the path
+  you give, never inside it: `/etc/nginx` copied out to `~/nginx-copy` makes `~/nginx-copy` hold
+  `conf.d/` and `nginx.conf`; a local `a.conf` copied in to `/etc/app/a.conf` is that file, not
+  `/etc/app/a.conf/a.conf`. This is a deliberate difference from `docker cp`, which nests a
+  source inside a directory that already exists. The destination's parent must already exist —
+  no folder is created on either side — and both forms say so.
+- **`o` copy the highlighted path out to a path on this machine.** The form names the container
+  path and asks for a local one; `~` is your home folder and a relative path is taken from the
+  current folder, and the form shows the absolute path it will write before you press Enter. A
+  local path that already exists — file, folder or link — is refused, and so is one whose parent
+  does not exist or is not a folder; nothing is read from the daemon then. Enter starts one job:
+  the daemon's archive (`GET /containers/{id}/archive`, what `docker cp` reads) is streamed and
+  written there — a file, or a directory with everything beneath it. Modes are kept; symlinks are
+  recreated as links and never followed; devices, FIFOs and sockets are skipped and named in the
+  job's output. No entry of the archive can land outside the path named: an absolute name, a
+  `..` or a path beneath one of its own symlinks stops the copy. If the copy fails or is
+  cancelled (`c` in the Jobs pane), everything it wrote is removed and the job says what. It
+  only reads the daemon, so it works in read-only mode, and its job says nothing was changed.
+- **`i` copy a local path in to the highlighted path.** The form asks for the local source and
+  the container destination, filled in with the highlighted path. Enter walks the source (off
+  the screen's thread; Esc stops it) and refuses a source that does not exist, cannot be read,
+  is `/` or is itself a device or FIFO. The confirmation then names the daemon, the container,
+  the absolute source with its files, directories, links and bytes, the destination, and that
+  files already there with the same names are **replaced** (others are left alone; a directory
+  is never replaced by a file, nor a file by a directory). Only `y` copies — Enter, `n` and Esc
+  send nothing. The source is streamed as a tar (`PUT /containers/{id}/archive` at the
+  destination's parent), never held in memory; the job reports what it sent. When it ends the
+  view reads the change list again, so the copied paths appear as added or changed — with the
+  view's usual rules: no size for what the container added, the image's size for a changed
+  file. Read-only mode refuses `i` before any form opens.
+- **Ownership and times.** Contents and permission bits are copied; ownership is not. What you
+  copy out belongs to you (set-id and sticky bits are not applied, times are not restored);
+  what you copy in gets the daemon's default owner — root, as with `docker cp` without `-a` —
+  and the modification time the source had.
+
+The copy-in form and its confirmation, captured:
+[`docs/screens/56-copy-in-form.txt`](docs/screens/56-copy-in-form.txt) and
+[`docs/screens/57-copy-in-confirm.txt`](docs/screens/57-copy-in-confirm.txt).
 
 **Export.** `w` writes the listing through the evidence dialog below — text (one path per line,
 tab-separated) or JSON — with every path's type, size, mode and layer and, for a container,
@@ -867,6 +911,10 @@ being careful.
   - anything that deletes — remove, prune, remove project → type the word shown (`remove` or
     `prune`) and press Enter.
   - pull, new volume, new network, shell → you type the name yourself; Enter submits.
+  - copy into a container (`i` in Files) → the confirmation names the source, its size, the
+    destination and that same-named files there are replaced; press `y`. Copying *out* changes
+    nothing on the daemon: Enter on its form writes only the one local path it shows, never
+    one that exists, and is allowed in read-only mode.
   - new container → the form restates the whole configuration and any pull it needs; Enter
     submits, never before the form has been on screen long enough to read.
   - **a selection** (`Space` / `a` in the list), whatever the action → type the verb *and the
@@ -976,7 +1024,7 @@ saved for the next run. No Windows named pipes. No Swarm, no compose
 lifecycle — a compose file is read only for Declared, on request, and never run or
 interpolated (see [Compose, honestly](#compose-honestly)) — no image builds or pushes, no Kubernetes. It creates containers only from its seven-field form
 (no networks, users, limits or TTY; no build, no compose `up`), never reconfigures one, and does
-not copy files in or out. The build cache is accounted for in Space but never removed: the desk
+copies files in or out only from the Files view, one path at a time. The build cache is accounted for in Space but never removed: the desk
 has no builder, and calls no prune endpoint.
 
 Good to know:
@@ -1028,11 +1076,15 @@ Good to know:
   without a `Link` header shows its first page only. Build times are read only on `d`, for the
   rows on screen. A pinned pull leaves no local tag (the Engine API sends the digest in place of
   it); nothing retags, deletes or pushes a tag.
-- Files (`F`): no container archive, no file contents, no file-level difference. A container's
-  side is the daemon's change list over its image's tree: a changed file's own size and what an
-  added directory holds are not read (that needs the container's archive, a later change). No
-  file is previewed, and nothing is compared between a container and its image beyond what the
-  daemon lists. The index keeps at most 200,000 entries; zstd layers are named as unread.
+- Files (`F`): the tree never reads a container's archive or a file's contents, and there is no
+  file-level difference. A container's side is the daemon's change list over its image's tree:
+  a changed file's own size and what an added directory holds are not read. No file is
+  previewed, and nothing is compared between a container and its image beyond what the daemon
+  lists. The index keeps at most 200,000 entries; zstd layers are named as unread.
+- Copies (`o`, `i`): one path between one container and this machine — not between containers
+  or daemons, no globs, no local file browser, no copy from an image. An existing local path is
+  never replaced and there is no option to force it. Ownership, times (on copy out), extended
+  attributes and ACLs are not preserved; hard links are sent as separate files.
 - Packages: only dpkg, apk and rpm databases are read as the installed side — not npm, pip or
   Go modules, whose SBOM entries are "not checkable". rpm is read from `rpmdb.sqlite` only (rpm
   4.16 and later); an older Berkeley DB or SUSE's NDB database is reported as unknown, as is one

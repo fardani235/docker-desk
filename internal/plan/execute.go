@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/fardani235/docker-desk/internal/engine"
+	"github.com/fardani235/docker-desk/internal/escape"
 	"github.com/fardani235/docker-desk/internal/jobs"
 )
 
@@ -206,6 +207,12 @@ func describe(st Step) string {
 			s += " (" + engine.ShortID(st.ID) + ")"
 		}
 		return s
+	case OpCopyIn:
+		// Paths and the container only: never a byte of what is copied.
+		if st.Copy != nil {
+			return fmt.Sprintf("copy %s into %s:%s", escape.Name(st.Copy.Source), escape.Name(st.Name), escape.Name(st.Copy.Dest))
+		}
+		return "copy into " + st.Name
 	case OpConnect:
 		return fmt.Sprintf("connect %s to %s", st.OtherName, st.Name)
 	case OpDisconnect:
@@ -236,6 +243,9 @@ func executeStep(ctx context.Context, eng engine.Engine, st Step, run *jobs.Run)
 			return "", errors.New("internal error: a create step without its configuration")
 		}
 		return eng.CreateContainer(ctx, CreateOptions(*st.Create))
+	}
+	if st.Op == OpCopyIn {
+		return "", copyIn(ctx, eng, st, run)
 	}
 	return "", executeRequest(ctx, eng, st, run)
 }

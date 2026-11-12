@@ -683,6 +683,12 @@ func (m *Model) helpLines(w int) []string {
 	row("/", "filter by path, case ignored: matches and the directories holding them")
 	row("w", "export the listing: text or json, names escaped (asks first)")
 	row("r", "a container: read its change list again (GET /containers/{id}/changes)")
+	row("o", "a container: copy the highlighted path out to a path on this machine (a job)")
+	if m.readOnly {
+		row("i", "a container: copy a local path in — refused in read-only mode")
+	} else {
+		row("i", "a container: copy a local path in to the highlighted path (asks first)")
+	}
 	row("c", "cancel the archive read in progress: nothing is kept")
 	row("Esc", "clear the filter; again, close: the desk is as it was")
 	out = append(out,
@@ -697,6 +703,12 @@ func (m *Model) helpLines(w int) []string {
 		"  daemon's image size and the tree's total are different measurements: layers",
 		"  overlap. On a container, sizes and layers are the image's: a changed file's",
 		"  own size and an added directory's contents are not read.",
+		"  o and i are the only reads of contents, and only of the path asked for:",
+		"  the container's archive is streamed to, or from, the path named — which is",
+		"  the destination itself, never a folder to put it in; its parent must exist.",
+		"  A local path that exists is never replaced, and a copy out that fails or is",
+		"  cancelled removes what it wrote. Modes are copied, ownership is not; links",
+		"  stay links; devices, FIFOs and sockets are skipped and listed in the job.",
 	)
 
 	for k := Kind(0); k < kindCount; k++ {

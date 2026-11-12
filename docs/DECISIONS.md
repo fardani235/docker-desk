@@ -40,6 +40,12 @@ Entries marked **M** (members) belong to the sixteenth round, the OpenSpec chang
 (D1–D9 of its `design.md`); M10 onwards were decided while building it, where the plan left a
 choice open. The round supersedes the single-daemon reasoning of B20 and R7.
 
+Entries marked **W** (writing files) belong to the eighteenth round, the OpenSpec change
+[`container-file-copy`](../openspec/changes/container-file-copy/), and are collected in
+[their own section](#round-eighteen--copying-files-between-a-container-and-this-machine). W1–W10
+are the change's design; W11 onwards were decided while building it. The round relaxes V14 and
+V22: a copy is the one reader of a container's archive, never the tree.
+
 Where a decision costs something, the cost is stated. Nothing here is presented as free.
 
 ---
@@ -3233,6 +3239,10 @@ round"), with its own pre-flight (the size shown before `Enter`, as V16 does for
 an added directory's contents and a changed file's new size can be shown. Until then the view says
 an added directory's contents are not read and a changed file's size is the image's (V18).
 
+**Relaxed (W1–W7, round eighteen):** `CopyFromContainer` now exists, but only for a copy the
+operator asks for, of one path, streamed to the destination named. The tree still reads only the
+change list; the sizes this entry deferred are still not shown.
+
 ### V15 — `F` from any pane; the view is a read, and closes onto the desk as it was
 
 **Decided:** `F` opens the view when the highlighted kind is Images or Containers, from any pane,
@@ -3338,6 +3348,9 @@ Reading a container's own archive; a file's contents, a preview or a hash of one
 difference between a container and its image beyond the daemon's list; globs or regular
 expressions in the filter; a size pre-flight dialog before `Enter`; sharing the index with the
 Findings report; packing the index node (V11).
+
+**Relaxed (round eighteen):** a container's archive is now read — for a copy out (`o`), of the one
+path asked for, never for the tree. Everything else here is still left out.
 
 ## Round sixteen — several daemons in one session
 
@@ -3745,6 +3758,259 @@ container the daemon named, the name in the output is read back with one inspect
 Colour alone would not show which of the four policies is chosen on a monochrome terminal (the
 desk supports `NO_COLOR`); the chosen one is `[on-failure]`.
 
+## Round eighteen — copying files between a container and this machine
+
+The request: from the Files view on a container, copy the highlighted path out to this machine
+and a local path in to it — the round the Files view deliberately left out (V14, V22), extended
+to writing. The plan is the OpenSpec change
+[`container-file-copy`](../openspec/changes/container-file-copy/) (proposal, design W1–W10, spec
+deltas for `container-file-copy`, `files-explorer` and `mutation-safety`, tasks). Its tasks call
+it round seventeen; creating a container had already taken that number, so it is round eighteen
+here (W11). It was implemented in one pass with the instruction to decide and record rather than
+ask; W1–W10 are the design, and every choice the plan left open, or the code contradicted, is an
+entry after them, from W11.
+
+**Left out**, as the proposal says: copying between two containers or two daemons; a local file
+browser (the local side is a typed path, `~` expanded, as in the export dialog); copying an
+image's files, or any change to the image's tree view; sizes for paths a container added,
+previews, hashes, or a difference beyond the daemon's change list (V22 stays true for the tree);
+ownership, extended attributes, ACLs and sparse files; a command-line flag, globs or filters; and
+any way to replace an existing local path.
+
+### W1 — Two keys in the Files view, two forms in the existing field model
+
+**Decided:** `onFilesKey` answers `o` (out) and `i` (in) on a container only; on an image both set
+one status sentence and open nothing. In read-only mode `i` is refused there, before any form;
+`o` is not, since it only reads the daemon. Copy out is one text field, *Local destination*,
+empty, with `~/<base of the path>` as its placeholder; copy in is two, *Local source* (empty) and
+*Container destination* (the highlighted path). Each form's body names the container (and the
+daemon), the rule of W3 in one sentence, and the effects. Copy in's Enter walks the source in a
+`tea.Cmd` with `formBusy`, so a large tree does not freeze the desk; its answer opens the plan
+dialog.
+
+*Alternative:* the create form's seven-field shape, with the container path as an editable field
+on copy out. Rejected: the cursor already names it, and an editable source invites copying
+something other than what is highlighted.
+
+*Cost:* two more form kinds, drawn by their own body function (`copyBody`), and a `cp` payload on
+the dialog.
+
+### W2 — `internal/transfer` owns the host-side rules
+
+**Decided:** a new package with no UI and no engine: `Scan` (count without opening), `Tar` (write
+a local path as a tar whose single top-level entry is a given name) and `Extract` (write a tar's
+single top-level entry at a path that must not exist). Every rule is enforced and tested there:
+names cleaned and refused when empty, absolute, holding a `..` component or a NUL; directories and
+files first, symlinks and hard links last, and any entry beneath one of the archive's own
+symlinks refused; symlinks recreated and never followed; hard links recreated only to a file the
+same extraction wrote (and sent as regular files when archiving); devices, FIFOs and sockets
+never opened or recreated, counted in `Skipped` with their escaped names; the destination made by
+`O_CREAT|O_EXCL` or `Mkdir`, so "it exists" is decided atomically; everything created removed on
+an error or a cancelled context; permission bits applied with `Chmod`.
+
+*Alternative:* put it in `internal/files`. Rejected: that package is the index and its merge, and
+keeps the "no contents" rule visible by never touching the host filesystem.
+
+*Cost:* one more package and its tests — table-driven hostile archives, a cancelled context and
+an injected `ENOSPC`, each walking a temporary root before and after.
+
+### W3 — The destination is the path named, in both directions
+
+**Decided:** out, `GET /containers/{id}/archive?path=<source>` answers a tar whose top-level entry
+is the source's base name and an `X-Docker-Container-Path-Stat` header; the desk checks the stat's
+name is the base it asked for and extracts the top-level entry *as* the local destination. In,
+`PUT /containers/{id}/archive?path=<parent(destination)>` with entries rooted at
+`base(destination)`, `noOverwriteDirNonDir=true` and no `copyUIDGID`: the daemon extracts relative
+to the parent, so exactly the named path is created, or its same-named files replaced. The parent
+must exist on both sides.
+
+This differs from `docker cp`, which nests a source inside a destination directory that exists.
+The gain: a confirmation that states exactly what will be written, and a local "refuse what
+exists" rule that means something.
+
+*Alternative:* send the source's base and let the daemon apply `cp`'s nesting. Rejected: the
+confirmation could no longer name the resulting path.
+
+*Cost:* an operator used to `docker cp` must name the full path; both forms say so, and the
+README states it as a deliberate difference.
+
+### W4 — Two engine methods, one of them a mutation
+
+**Decided:** `CopyFromContainer(ctx, id, path) (Archive, error)` — a GET, listed in the read-only
+test's `readMethods` — and `CopyToContainer(ctx, id, dest, content) error`, a mutation, overridden
+in `readonly.go` (and refused by the request hook beneath it). `Archive` carries the stream and an
+engine-owned `PathStat` (name, size, mode, link target), never the client library's type. The
+read-only coverage test counts 20 mutating methods, up from 19: the tripwire did its job.
+
+*Alternative:* one method with a direction flag. Rejected: it would make a read and a mutation
+indistinguishable to the read-only wrapper and its test.
+
+*Cost:* none beyond the two methods.
+
+### W5 — Copy out is a job, not a plan
+
+**Decided:** copy out changes no daemon object, so it has no `plan.Plan` and no `y` step: its form
+names the container path and the absolute local path and refuses what exists, and Enter starts
+one job — `CopyFromContainer`, then `transfer.Extract`. Progress is bytes against the stat's size
+for a file, and entries for a directory. `c` in the Jobs pane cancels it; the cancellation reaches
+the extractor, which removes what it wrote, and the job says so.
+
+*Alternative:* a plain goroutine like export's write. Rejected: a directory can be hundreds of
+megabytes, and long work in the desk is a job with progress and a cancel.
+
+*Cost:* one job body in the UI package (`startCopyOut`).
+
+### W6 — Copy in is a plan with one streamed step
+
+**Decided:** `plan.CopyIn(ctx, container, spec)` walks the source first; a missing or unreadable
+source, the root `/`, a source that is itself a special file, and a destination that is not an
+absolute path other than `/` are returned as errors, so the form stays open with the reason. The
+plan has one `OpCopyIn` step whose `Step.Copy` carries the source, the destination and the walk;
+`TierConfirm`, so only `y` proceeds. `Execute` writes the tar into an `io.Pipe` on one goroutine
+while `CopyToContainer` reads the other end; the first error wins, a local one over the upload
+error it caused, and the job reports what it actually sent.
+
+*Alternative:* start the job from the form and let the form be the confirmation. Rejected:
+copying in can replace files, and confirmations of mutations are the plan dialog's.
+
+*Cost:* a `confirm` flag on `planMsg` (a form's plan normally runs on Enter) and a goroutine per
+copy.
+
+### W7 — The local path, and the view after a copy in
+
+**Decided:** local paths go through `report.ExpandPath`, as the export dialog's do, and are checked
+with `os.Lstat` on Enter; the form shows the absolute path as it is typed. After `y`, the view
+records the copy-in job (`filesState.copyWatch`); the frame tick sees it end, forgets it, and
+calls `readChanges()` once for that container. The image's tree and index are untouched, so an
+added file appears with no size and a changed one keeps the image's. Closing the view, or moving
+it to another object, ends the watch. Copy out starts no view work.
+
+*Alternative:* read the change list when the job starts. Rejected: the daemon would usually not
+have written anything yet.
+
+*Cost:* one field and one check per frame.
+
+### W8 — The fake daemon has a container filesystem and both archive endpoints
+
+**Decided:** `fakeengine.Container` gains a small in-memory tree, made on first use with the
+directories every root has; `SeedFiles` adds paths, and the demo seeds `shop-web-1` with nginx's
+configuration, its front page, a symlinked `current.conf`, `/bin/sh` as a link, a FIFO, and the
+files its change list names (W17). `GET` resolves symlinks in every component but the last, as
+the daemon does, answers 404 with the daemon's words, and streams the tar in 32 KiB pieces with
+`ArchiveChunkDelay` between them, so a copy can be watched and cancelled. `PUT` requires an
+existing directory, checks the whole upload with `transfer.CheckName` (so the fake cannot be more
+permissive than the desk) and the no-overwrite rule before changing anything, replaces
+same-named entries, and records each upload (`Uploads()`). `HEAD` answers the stat alone, which
+`docker cp` asks for before an upload. `make crosscheck` gained a `cp` section: a file and a
+directory each way, symlinks, a missing path, a missing parent and a file over a directory.
+
+*Alternative:* a real temporary directory per container. Rejected: the fake's state is in memory,
+deterministic and shared across goroutines.
+
+*Cost:* `archive.go` in the fake, and the fake now imports `transfer` for its name rule.
+
+### W9 — Skipped is not an error; escaping is
+
+**Decided:** a special file is not an error: the job lists `skipped <name>: not a regular file,
+directory or symlink` and the copy succeeds. An absolute name, a `..` component, a NUL, a second
+top-level entry, an entry beneath the archive's own symlink or a hard link out of the destination
+stops the copy, removes what was written, and names the entry. Data that cannot be represented is
+different from an archive trying to escape.
+
+*Cost:* none.
+
+### W10 — Modes are copied; ownership is not
+
+**Decided:** out, the extractor applies the archive's permission bits and never chowns: the files
+belong to whoever runs the desk. In, the tar's headers carry the local permission bits, the
+modification time and uid/gid 0 with no user names; the daemon's extraction policy decides
+ownership, as with `docker cp` without `-a`. Extended attributes, ACLs and sparse files are not
+represented. The forms say contents and modes, not ownership.
+
+The design said timestamps are restored on neither side. That holds out; in, the daemon applies
+the header's time, as it does for `docker cp`, and zeroing it would date every copied file 1970.
+The README says so.
+
+*Cost:* a copied-out file is dated by the copy, not by the container.
+
+### W11 — Round eighteen, not seventeen
+
+The tasks name this round seventeen. Round seventeen is creating a container, already recorded,
+so this is eighteen; the decisions keep the design's numbers, W1–W10.
+
+### W12 — The daemon does emit an event for a copy
+
+The design says Docker emits no event for a file copy. It does: a container `archive-path` event
+for a GET and `extract-to-dir` for a PUT (`events.ActionArchivePath`, `ActionExtractToDir` in the
+API types). Nothing changes in W7: the live hub marks the container list dirty on any container
+event, which never re-reads the Files view's change list, so the job watch is still what makes
+the view follow a copy. The fake now emits both events, as a daemon would.
+
+### W13 — A directory's mode is applied after its contents, deepest first
+
+The design says modes are applied "for directories before their children". A directory whose mode
+has no write bit — `0555` is common — would then refuse its own entries for anyone but root. The
+extractor makes directories `0700`, writes everything, and applies each directory's mode last,
+deepest first; a directory listed twice takes the mode given last. Clean-up opens a narrowed
+directory again before emptying it.
+
+### W14 — Only the permission bits; set-id and sticky bits are not applied
+
+Copying out applies `mode & 0777`. A set-uid binary copied out of a container would otherwise be
+set-uid to the operator on this machine — not an escalation, but not what anyone asked for. `Tar`
+likewise sends `fi.Mode().Perm()`.
+
+### W15 — `Tree` has `Links` and `Removed`, and `Bytes` is an `int64`
+
+The design's `Tree` is `{Entries, Files, Dirs, Bytes int, Skipped}`. Symlinks are counted apart
+(`Links`), because "12 files" should not include links; `Removed` is how many paths a failed
+extraction removed, which the job reports; `Bytes` is an `int64`, as every size in the desk is.
+
+### W16 — Escaping moved to a leaf package, `internal/escape`
+
+`transfer` names skipped entries with `files.Escape`, and the fake imports `transfer` for its name
+rule — which made `fakeengine → transfer → files → forensics → engine` a cycle in the engine's
+tests. The function moved, unchanged, to `escape.Name`, and `files.Escape` calls it: one mapping,
+no cycle.
+
+### W17 — The demo's `state.db` is where its change list says
+
+The design seeds `/var/lib/app/state.db`; the demo's change list (V21) adds
+`/var/lib/nginx/state.db`. The container filesystem follows the change list, so the file the view
+marks as added is the one `o` copies.
+
+### W18 — The fake's upload adds to the change list
+
+A copy-in that the change list did not show would make W7's re-read prove nothing. The fake's
+`PUT` appends what `docker diff` would then print: the path added (or changed, if it was there),
+and each directory above it changed, unless already listed.
+
+### W19 — What `o` refuses in the view, and what read-only shows
+
+`o` on the root, or on a path the container deleted (struck through, or beneath a deleted
+directory), says there is nothing to copy and opens nothing. In read-only mode the footer offers
+`o` and not `i`, as the Space view drops its keys; the help lists `i` as refused there.
+
+### W20 — The change list is read again however a copy in ends
+
+The design reads it again after a successful copy. A copy that failed or was cancelled may have
+written part of the archive before it stopped (the daemon extracts as it reads), so the list is
+read again whatever the end, and the status line says which: *Copied into …; its change list was
+read again*, or that the copy did not complete and part of it may have been written.
+
+### W21 — The walk is not "preparing", and Escape stops it
+
+`m.preparing` puts *reading the daemon's current state* in the status line, which a local walk is
+not. Copy in's walk takes the plan sequence number (so a late answer to a closed form is dropped)
+and a context of its own, which closing the form cancels.
+
+### W22 — Copy out's Enter is not delayed by the arming rule
+
+The create and shell forms ignore an Enter typed within the arming delay (C5, B35). Copy out's
+local path starts empty and must be typed, as pull's name is, and an empty one is refused; it
+writes only a path that did not exist. Copy in's Enter only walks the source; consent is the
+plan dialog's `y`, which is armed.
+
 ## Process
 
 ### B12 — No commits were made
@@ -3874,4 +4140,29 @@ whole e2e package passed twice on this tree and twice on the unchanged `HEAD`, r
   forms are typed into and submitted at once. The rule was narrowed to the create and shell forms
   (C5).
 - The create was never sent to a real daemon (docs/TESTING.md, round seventeen).
+- No commits were made.
+
+### B36 — Round eighteen: what was run, and what was found that is not this round's
+
+`make build` and `make vet` pass; `gofmt -l` is empty; `go test ./...` passes in full, and the
+new and changed packages pass under `-race`. `make e2e` was not run (it rewrites every screen);
+`go test ./internal/e2e -run 'TestCopyIn$' -update-screens` wrote only this round's two,
+`56-copy-in-form` and `57-copy-in-confirm`. `openspec validate container-file-copy` passes.
+
+- **`make crosscheck` is the same three red as before** — `dangling images`, `system df images`,
+  `system df containers` — on the unchanged `HEAD` in a clean worktree too (89 passed, 3 failed
+  there; B34, B35). This round's `cp` section passes all 10 of its checks with the real
+  `docker cp` 29.9.3 (99 of 102 in all).
+- **Task 6.3 is half done, on purpose.** It asks for a real-daemon test that copies a file out
+  *and back in*, "guarded like the other real-daemon tests". Those are read-only, and the test
+  guard refuses any test a read-write connection to a real daemon (B3). The way out was written
+  and run (`TestRealDaemonCopyReadOnly`: a symlink and a directory of a running container, the
+  desk's copy identical to `docker cp`'s); the way in was not, and the guard was not loosened to
+  allow it. The task is left open in `tasks.md` for the owner to decide.
+- The design's premises that did not hold are entries of their own: Docker does emit events for
+  a copy (W12), a directory's mode cannot be applied before its contents (W13), and this is round
+  eighteen (W11).
+- Nothing was found broken outside this round. Two test expectations of this round's own were
+  wrong and corrected: entries beneath a directory the container added are not drawn (V22 holds),
+  and a fast copy's "started" status is replaced by its end before a screen can show it.
 - No commits were made.

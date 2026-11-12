@@ -583,6 +583,9 @@ func (m *Model) onDialogKey(k tea.KeyMsg) tea.Cmd {
 // closeDialog dismisses the open dialog and abandons any plan still being
 // prepared for it, so that its answer cannot open or submit anything later.
 func (m *Model) closeDialog() {
+	if m.dlg != nil && m.dlg.cp != nil && m.dlg.cp.cancel != nil {
+		m.dlg.cp.cancel() // copy-in's walk of the source
+	}
 	if m.dlg != nil && (m.dlg.recomputing || m.dlg.formBusy) {
 		m.planSeq++
 		m.preparing = false
@@ -675,7 +678,7 @@ func (m *Model) onPlanKey(k tea.KeyMsg) tea.Cmd {
 // starts, so that the next action key means the highlighted row again.
 func (m *Model) confirmed(d *dialog) {
 	m.dlg = nil
-	m.runPlan(d.plan)
+	m.watchCopyIn(m.runPlan(d.plan), d.plan)
 	if d.fromSet {
 		m.clearMarks(d.setKind)
 	}

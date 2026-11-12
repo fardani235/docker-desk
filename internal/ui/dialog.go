@@ -39,6 +39,8 @@ const (
 	formNetwork
 	formShell
 	formCreate
+	formCopyOut // the Files view's o (copy.go)
+	formCopyIn  // the Files view's i
 )
 
 type pickItem struct {
@@ -81,7 +83,8 @@ type dialog struct {
 	formOff  int         // first line of the create form's scrolled window
 	formErr  string
 	formBusy bool
-	target   row // shell: the container
+	target   row       // shell: the container
+	cp       *copyForm // the copy forms: the container and its path
 
 	// dlgPicker
 	pickTitle string
@@ -120,6 +123,9 @@ type planMsg struct {
 	plan     plan.Plan
 	err      error
 	fromForm bool
+	// confirm, with fromForm, opens the plan dialog instead of running
+	// the plan: the form named the copy, the dialog asks for y (W6).
+	confirm  bool
 	scope    func(plan.Snapshot, bool) plan.Plan
 	scopeAll bool
 	fromSet  bool
@@ -182,6 +188,10 @@ func (m *Model) onPlan(msg planMsg) tea.Cmd {
 		m.dlg.formBusy = false
 		if msg.err != nil {
 			m.dlg.placeFieldError(msg.err)
+			return nil
+		}
+		if msg.confirm {
+			m.dlg = &dialog{kind: dlgPlan, plan: msg.plan, openedAt: time.Now()}
 			return nil
 		}
 		m.dlg = nil
@@ -254,9 +264,9 @@ func (m *Model) onPick(msg pickMsg) {
 
 // runPlan starts the job that executes exactly this plan. It is reached only
 // from a completed confirmation or form.
-func (m *Model) runPlan(p plan.Plan) {
+func (m *Model) runPlan(p plan.Plan) int {
 	if !p.Runnable() {
-		return
+		return 0
 	}
 	eng := m.eng
 	id := m.startJob(p.JobTitle, p.JobTarget, func(ctx context.Context, run *jobs.Run) error {
@@ -264,6 +274,7 @@ func (m *Model) runPlan(p plan.Plan) {
 	})
 	m.jobSel = id
 	m.setStatus(toneAccent, "started: "+p.JobTitle+" "+p.JobTarget)
+	return id
 }
 
 func (m *Model) onShellDone(msg shellDoneMsg) tea.Cmd {
@@ -591,6 +602,9 @@ func (m *Model) formBody(d *dialog, w, maxBody int) (string, []string) {
 	st := m.st
 	if d.form == formCreate {
 		return "Create container", m.createBody(d, w, maxBody)
+	}
+	if d.form == formCopyOut || d.form == formCopyIn {
+		return m.copyBody(d, w)
 	}
 	daemon := strings.Join(m.daemonLines(w, true), "\n")
 	var title, prompt, verb string

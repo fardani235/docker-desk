@@ -286,8 +286,13 @@ func (m *Model) submitForm() tea.Cmd {
 		return nil
 	}
 	d.formErr = ""
-	if d.form == formCreate {
+	switch d.form {
+	case formCreate:
 		return m.submitCreate()
+	case formCopyOut:
+		return m.submitCopyOut()
+	case formCopyIn:
+		return m.submitCopyIn()
 	}
 	text := d.formText()
 	switch d.form {

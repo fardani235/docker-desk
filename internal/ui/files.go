@@ -127,6 +127,12 @@ type filesState struct {
 	top      bool
 	curShown bool
 
+	// copyWatch is a copy-in job whose end makes the view read the change
+	// list again; copyReread marks that read, copyOK how the job ended.
+	copyWatch  *copyWatch
+	copyReread bool
+	copyOK     bool
+
 	memo struct {
 		ix     *files.Index
 		expVer int
@@ -203,6 +209,7 @@ func (m *Model) openFiles() tea.Cmd {
 func (m *Model) closeFiles() {
 	fs := &m.fs
 	fs.open, fs.typing = false, false
+	fs.copyWatch, fs.copyReread = nil, false // a copy-in still running keeps going; the view no longer waits for it
 	if fs.run != nil {
 		m.jobs.Cancel(fs.run.jobID)
 	}
@@ -392,6 +399,7 @@ func (m *Model) onFilesChanges(msg filesChangesMsg) {
 	}
 	fs.changes, fs.chgRead, fs.chgErr, fs.chgAt, fs.chgOf = cs, true, "", msg.at, msg.containerID
 	fs.chgVer++
+	m.copyRereadStatus()
 }
 
 // filesTree is the tree the view draws: the image's, or, on a container,
@@ -493,6 +501,8 @@ func (m *Model) onFilesKey(k tea.KeyMsg) tea.Cmd {
 		fs.order = fs.order.Next()
 	case "w":
 		m.exportFiles()
+	case "o", "i":
+		m.onFilesCopyKey(key, here)
 	case "r":
 		if fs.kind == KindContainers && !fs.chgBusy {
 			return m.readChanges() // the change list only; the image's tree is not read again
@@ -605,7 +615,10 @@ func (m *Model) filesHints() []string {
 	}
 	pairs = append(pairs, "↑↓", "move", "→←", "open", "s", "order", "/", "filter", "w", "export")
 	if fs.kind == KindContainers {
-		pairs = append(pairs, "r", "changes")
+		pairs = append(pairs, "r", "changes", "o", "copy out")
+		if !m.readOnly {
+			pairs = append(pairs, "i", "copy in")
+		}
 	}
 	if fs.filter != "" {
 		pairs = append(pairs, "Esc", "clear filter")
@@ -1029,7 +1042,7 @@ func (m *Model) filesDetail(r files.Row, ix *files.Index, w int) []string {
 	}
 	switch {
 	case n.FromChanges && n.Change == files.Added:
-		kv("size", "not read: the container added this path after its image, and the desk does not read a container's archive", toneDim)
+		kv("size", "not read: the container added this path after its image, and the view does not read a container's archive (o copies it out)", toneDim)
 	case n.FromChanges && n.Implicit:
 		kv("size", "not known: a directory the container's change list implies", toneDim)
 	case n.FromChanges:

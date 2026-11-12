@@ -63,6 +63,10 @@ type Container struct {
 	// Changes is what GET /containers/{id}/changes returns (SetChanges).
 	Changes []Change
 
+	// files is the container's filesystem as the archive endpoints see
+	// it (archive.go); made on first use.
+	files map[string]*fileNode
+
 	logs         *logBuffer
 	runDone      chan struct{} // closed when the current run ends
 	statsStalled bool
