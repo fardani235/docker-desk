@@ -33,10 +33,15 @@ type Container struct {
 	Networks      map[string]*Endpoint // by network name
 	Ports         []PortSpec
 	RestartPolicy string
-	Health        string
-	Privileged    bool
-	NetworkMode   string // "" means bridge
-	User          string
+	// RestartRetries is the on-failure retry limit (0: none).
+	RestartRetries int
+	// Env is the environment it was created with (POST /containers/create);
+	// seeded containers have only PATH.
+	Env         []string
+	Health      string
+	Privileged  bool
+	NetworkMode string // "" means bridge
+	User        string
 
 	// LogRate is the number of log lines per second the container writes
 	// while running. Zero means it only has its seeded lines.
@@ -83,6 +88,7 @@ type MountSpec struct {
 
 // PortSpec is a port mapping of a fake container.
 type PortSpec struct {
+	HostIP  string // "" means every address
 	Private uint16
 	Public  uint16 // 0 = exposed only
 	Proto   string
@@ -364,6 +370,13 @@ func (c *Container) status() string {
 	}
 }
 
+func (p PortSpec) hostIP() string {
+	if p.HostIP == "" {
+		return "0.0.0.0"
+	}
+	return p.HostIP
+}
+
 func parseAddr(s string) netip.Addr {
 	a, _ := netip.ParseAddr(s)
 	return a
@@ -430,7 +443,7 @@ func (c *Container) summary() container.Summary {
 		for _, p := range c.Ports {
 			ps := container.PortSummary{PrivatePort: p.Private, PublicPort: p.Public, Type: p.Proto}
 			if p.Public != 0 {
-				ps.IP = parseAddr("0.0.0.0")
+				ps.IP = parseAddr(p.hostIP())
 			}
 			sum.Ports = append(sum.Ports, ps)
 		}
@@ -546,9 +559,24 @@ func (s *Server) handleContainerInspect(w http.ResponseWriter, ref string) {
 				ports[port] = nil
 				continue
 			}
-			ports[port] = append(ports[port], network.PortBinding{HostIP: parseAddr("0.0.0.0"), HostPort: strconv.Itoa(int(p.Public))})
+			ports[port] = append(ports[port], network.PortBinding{HostIP: parseAddr(p.hostIP()), HostPort: strconv.Itoa(int(p.Public))})
 		}
 	}
+	// What was asked for at create, whatever the state.
+	bindings := network.PortMap{}
+	for _, p := range c.Ports {
+		port, ok := network.PortFrom(p.Private, network.IPProtocol(p.Proto))
+		if !ok || p.Public == 0 {
+			continue
+		}
+		b := network.PortBinding{HostPort: strconv.Itoa(int(p.Public))}
+		if p.HostIP != "" {
+			b.HostIP = parseAddr(p.HostIP)
+		}
+		bindings[port] = append(bindings[port], b)
+	}
+	env := []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+	env = append(env, c.Env...)
 	resp := container.InspectResponse{
 		ID:           c.ID,
 		Created:      c.Created.UTC().Format(time.RFC3339Nano),
@@ -568,12 +596,13 @@ func (s *Server) handleContainerInspect(w http.ResponseWriter, ref string) {
 			Labels:   c.Labels,
 			Tty:      c.Tty,
 			User:     c.User,
-			Env:      []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"},
+			Env:      env,
 		},
 		HostConfig: &container.HostConfig{
 			NetworkMode:   container.NetworkMode(c.networkMode()),
 			Privileged:    c.Privileged,
-			RestartPolicy: container.RestartPolicy{Name: container.RestartPolicyMode(c.RestartPolicy)},
+			RestartPolicy: container.RestartPolicy{Name: container.RestartPolicyMode(c.RestartPolicy), MaximumRetryCount: c.RestartRetries},
+			PortBindings:  bindings,
 		},
 		NetworkSettings: &container.NetworkSettings{
 			Ports:    ports,

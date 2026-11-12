@@ -226,6 +226,7 @@ func TestEveryActionKeyIsCovered(t *testing.T) {
 	forms := map[string]bool{
 		fmt.Sprintf("%d/P", KindImages): true, fmt.Sprintf("%d/n", KindVolumes): true,
 		fmt.Sprintf("%d/n", KindNetworks): true, fmt.Sprintf("%d/e", KindContainers): true,
+		fmt.Sprintf("%d/n", KindContainers): true, // TestCreate* in create_test.go
 	}
 	for k := Kind(0); k < kindCount; k++ {
 		for _, a := range kindActions[k] {

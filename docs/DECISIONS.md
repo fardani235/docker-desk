@@ -2040,13 +2040,15 @@ values (labels are not secrets in Docker's model, and the brief limits the no-va
 the environment). A variable whose value changed under the same name cannot be seen — the tab
 says so on every draw rather than hint at it.
 
-### C5 — Content comparison: the Findings analysis, twice, as one job
+### C5 — The create form ignores an Enter typed ahead of it; pull, volume and network do not
 
-**Decided:** `Enter` starts *compare images*, which streams the archive of each image that
-Findings has not already analysed for that platform, through the same `forensics.Analyse`
-with the same limits, one after the other. The reports go into Findings' cache, so either
-tab then opens instantly. Only counts, short IDs and the desk's own words are logged.
-**Alternative:** a separate cache — two copies of the same report.
+The shell form (pre-filled) already ignored Enter until armed; the create form now does too, as
+the `mutation-safety` delta requires: its Enter confirms a whole configuration. Applying the rule
+to every form was tried first and reverted: the existing end-to-end sessions type a reference
+into the pull form and press Enter within the arming delay, which is the operator typing into the
+form, not ahead of it — in pull, volume and network every character of the value is typed into
+the form itself, so nothing typed before the form appeared can make up an acceptable submission.
+`TestCreateEnterTypedAheadSendsNothing` runs armed; the other UI tests run unarmed, as before.
 
 ### C6 — Packages by ecosystem, name and architecture
 
@@ -3561,6 +3563,188 @@ the strip, which widens the window in which a statistics sample can land between
 screenshots. The test now holds the fake's statistics still before it takes them, and passed 20 of
 20 under `-race`. Nothing else about it changed.
 
+## Round seventeen — creating a container
+
+The request: create a container from the Containers kind — image, name, ports, environment,
+mounts, restart policy and command — as one form that is its own confirmation, and one job that
+pulls the image when it is missing, creates the container and starts it. The plan is the OpenSpec
+change [`create-container`](../openspec/changes/create-container/) (proposal, design D23–D30,
+spec deltas for `container-creation`, `mutation-safety` and `background-jobs`, tasks). It was
+implemented in one pass with the instruction to decide and record rather than ask; the design's
+decisions are D23–D30 below, and every choice the plan left open is an entry after them, from C1.
+
+### D23 — The create plan is a chain of three steps with declared dependencies
+
+**Decided:** a create plan is `pull (only when needed) → create → start`. `plan.Step` gained
+`DependsOn []int` (indices of earlier steps that must have succeeded), `ProducesID bool` (the
+create returns the daemon's ID) and `IDFrom int` (a later step sends that ID instead of its own;
+`-1` means none). `Execute` keeps an outcome per step; a step whose prerequisite did not succeed —
+failed, or was itself skipped — is not attempted, is logged as `↷ skipped <step> — <prerequisite>
+did not succeed`, advances the progress counter, and is counted apart: a chained plan's output
+ends with `N succeeded, M failed, K skipped`, and a job with any failure still ends failed. Plans
+without dependencies — prunes, projects, selections, pins — keep "one failure does not stop the
+rest" (their tests are unchanged and pass).
+
+*Alternatives:* one engine call that pulls, creates and starts (hides three requests, loses the
+pull's progress and the created-but-not-started state); a builder closure that keeps the ID to
+itself (not a pure, inspectable plan). Rejected.
+
+*Cost:* `Step` grows by four fields, `Execute` by a dependency check and an ID hand-off, the
+summary by a skipped count. The rule is stated in the `background-jobs` spec, not only in code.
+
+### D24 — The spec is a plan-level value; the engine takes its own options type
+
+**Decided:** `plan.ContainerCreateSpec` (image, name, ports, env, mounts, restart, command) is what
+the form parses to and what `Step.Create` carries. The engine has its own
+`engine.ContainerCreateOptions`, mapped in `moby.go` to `container.Config` and
+`container.HostConfig`: `ExposedPorts`/`PortBindings`, `Mounts` with an explicit `volume`/`bind`
+type, `RestartPolicy`, `Env`, `Cmd`, `Image`, `Name`. Nothing else in `HostConfig` is set — no
+privilege, no auto-remove, no publish-all, no `Binds`. `plan.CreateOptions` is the one mapping
+between the two.
+
+*Alternative:* `container.HostConfig` in the plan. Rejected: the client library's types would
+reach the pure planning layer and the UI (D6).
+
+*Cost:* two near-identical types and one mapping function, with a test.
+
+### D25 — Validation and parsing are plan functions, used by the form
+
+**Decided:** `internal/plan` holds `ParsePort`, `ParseEnv`, `ParseMount`, `ParseRestart`,
+`SplitCommand` (moved from the UI, where the shell form used it) and `ContainerCreate(snap, spec)`.
+Input problems come back as a `*plan.FieldError` naming the field and the entry, never as
+`Plan.Blockers`: a form's plan with blockers would be dropped silently. The builder checks what
+needs the daemon's state, against the fresh snapshot: a name already in use, a host port repeated
+on the same address and protocol (`0.0.0.0` and "every address" are the same). Anything else is
+the daemon's to refuse, and its message is the job's.
+
+*Alternative:* validate in the UI. Rejected: the rules would be untested outside a terminal, and
+the builder must check them again anyway.
+
+*Cost:* the parsers' syntax is the desk's, a subset of `docker run`'s (C3).
+
+### D26 — One form model, and the create form is a list of fields
+
+**Decided:** `dlgForm` holds `fields []formField` (text, list or choice) and a focused field. Pull,
+volume, network and shell are one text field each; create has seven. Keys are taken before the
+text input sees them: `Tab`/`Shift+Tab` between fields, wrapping; `↑`/`↓` between rows;
+`←`/`→` cycle the restart policy; `Ctrl+N` appends an entry; `Ctrl+X` removes the focused one
+(clears it when it is the last); `Enter` submits; `Esc` closes. `Ctrl+D` is not used: the text
+input binds it to delete-forward. The restart policy is a choice row; `on-failure` shows a second
+row for the retry limit (empty means none).
+
+*Alternative:* a separate `dlgCreate`. Rejected: two key handlers, two renderers.
+
+*Cost:* the four existing forms moved onto the field model; their behaviour, screens and tests
+are unchanged (C5 is the one exception).
+
+### D27 — The form body scrolls; the summary is part of it
+
+**Decided:** `formBody` takes `maxBody` like the plan and picker bodies. The create form pins the
+daemon at the top and, at the bottom, the focused field's syntax hint, any error, `field i of n`
+and the keys (packed onto as many lines as the width needs, never cut). Between them the fields and
+the summary scroll as one window that always contains the focused field (or, for a list longer
+than the window, its focused entry). The summary restates every value as it will be sent — the
+normalized image and whether the last image list has it ("present on this daemon" / "it will be
+pulled first"), the name or that the daemon assigns one, each port `host → container/proto`,
+each environment entry, each mount `source → destination (type, ro)`, the restart policy and the
+command — and a value that does not parse is shown there, marked, as it is typed.
+
+*Cost:* the summary may be a refresh behind; on Enter the plan is built from a fresh snapshot,
+which decides the pull.
+
+### D28 — The engine method, the read-only tripwire and the fake daemon
+
+**Decided:** `Engine.CreateContainer(ctx, ContainerCreateOptions) (string, error)`, overridden in
+`readonly.go`; `TestReadOnlyCoversEveryMutation` now counts 19 and `TestReadOnlySendsNothing`
+calls it through both layers. The fake daemon serves `POST /containers/create`: it decodes the
+request (`Config`, `HostConfig.PortBindings`, `Mounts`, `Binds`, `RestartPolicy`), answers 404
+`No such image: <ref>` for an absent image, 409 for a name in use, 400 for an invalid name, a
+relative mount target or a retry limit on a policy that takes none — checked before any volume is
+created — and otherwise records a `created` container, creates a named volume the way the daemon
+does, emits `container`/`create` and answers 201 `{"Id", "Warnings"}`. The existing start
+handler runs it. `scripts/cli-crosscheck.sh` drives the endpoint with the real `docker create`
+(19 checks, including the CLI's own pull after the 404).
+
+*Cost:* the fake records the decoded create requests (`CreateRequests`) so engine and UI tests can
+assert the body.
+
+### D29 — Only the form and the job see the environment values
+
+**Decided:** the heading is the design's; what it means is that the job's *record* carries the
+container and its image, never an environment value — the values travel only in the form and in
+the request. The create step is described as `create container <name> from <image>` (and its short
+ID once it has one); the job is titled `create container` and labelled by the name, or by the
+image when the daemon names it. The plan's effects give the number of environment variables, not
+them. A malformed entry is quoted in its error by its first twelve characters only. A UI test
+creates with `TOKEN=s3cret` and asserts the job's title, target, status, error, output and the
+status line never contain it, while the form showed it.
+
+### D30 — After a successful start, nothing special is needed
+
+**Decided:** the daemon's `container` create and start events mark the list dirty through the live
+hub; the debounced refresh shows the new row. No post-job refresh was added. The UI test and the
+end-to-end test wait for the row to appear running.
+
+### C1 — `IDFrom` is honoured only for an earlier step that declares `ProducesID`
+
+Design D23 says `IDFrom: -1` means none. Every existing step literal leaves the field at its zero
+value, 0, which would read as "take step 0's ID". Rather than touching every literal, `Execute`
+uses `IDFrom` only when it names an earlier step with `ProducesID` set; no existing plan sets
+that, so 0 means nothing for them. The create builder still sets `-1` explicitly. A `DependsOn`
+index that is not earlier than the step blocks it (it is skipped) rather than being ignored.
+
+### C2 — `SplitCommand` understands the backslash, and an empty command is the caller's call
+
+The splitter moved to `plan` and gained backslash escapes — outside quotes `\x` is `x` (so
+`a\ b` is one argument); inside double quotes only `\"` and `\\`; inside single quotes nothing —
+because the task asked for escapes to be tested and a create command is likelier to need one. A
+lone trailing backslash is refused. Empty input yields no arguments and no error: for create it
+means the image's own command. The shell form keeps "enter the command to run, e.g. sh" through
+its own wrapper, `splitShellCommand`.
+
+### C3 — The parsers' syntax, where `docker run` allows more
+
+- A port with no host port (`80`, `0.0.0.0::80`, `[::1]::80`) publishes on a port the daemon
+  picks, as `-p 80` does; `8080:` and `:80` are refused. Port ranges (`8000-8010:80`) and `sctp`
+  are not offered.
+- An unbracketed IPv6 host address is refused with the bracket hint rather than mis-split.
+- A bare `NAME` environment entry (Docker's "take it from my environment") is refused: the desk
+  never passes its own environment to a container.
+- A mount's mode is `ro` or `rw`; Docker's other options (`z`, `Z`, propagation) are not offered.
+  A volume source must be a valid volume name (two or more characters); anything starting with `/`
+  is a host path.
+- A container name follows the daemon's rule (two or more of letters, digits, `_ . -`, starting
+  with a letter or digit); the fake daemon applies the same rule.
+- Blank entries in a list field are ignored, so an entry added and left empty sends nothing.
+
+### C4 — The form's raw text is parsed by a pure function, `plan.ParseCreate`
+
+Task 4.4 says the form parses its values into a spec. That parsing is `plan.ParseCreate(CreateInput)`,
+so the rule "which field and which entry is wrong" is tested in `plan` and the UI only moves the
+focus to `FieldError.Field`/`Entry`. A refusal from the fresh-snapshot check (a name taken
+meanwhile) comes back through the same `FieldError` and lands the focus the same way.
+
+### C5 — Every form now ignores an Enter typed ahead of it
+
+Before this change only the shell form (pre-filled) ignored Enter until armed. The
+`mutation-safety` delta says a creation is sent only on Enter on a form that has been on screen
+long enough to read; pull, volume and network are creations too, so the arming rule now applies to
+every form. With the default arming delay it is invisible to an operator who reads the form; the
+UI tests run unarmed, as before, and `TestCreateEnterTypedAheadSendsNothing` runs armed.
+
+### C6 — The created-but-not-started case says so, and so does a cancel
+
+When a create succeeded and its start did not run or did not succeed — refused, skipped, or the
+job cancelled between them — the job's output adds `<name> was created but not started: it exists
+in the created state`. A cancel in a chained plan also lists each step already done. For a
+container the daemon named, the name in the output is read back with one inspect after the create
+(a read; it is not shown before the create, since it does not exist).
+
+### C7 — The chosen restart policy is drawn in brackets
+
+Colour alone would not show which of the four policies is chosen on a monochrome terminal (the
+desk supports `NO_COLOR`); the chosen one is `[on-failure]`.
+
 ## Process
 
 ### B12 — No commits were made
@@ -3669,3 +3853,25 @@ added, passed against this machine's daemon, its objects unchanged (verification
 - One shell redirection overwrote an existing file (`internal/fakeengine/changes.go`) while
   creating a new one; it was restored from git at once and the new code put in `diff.go`. The
   build broke and was fixed in the same minute; nothing else was touched.
+
+### B35 — Round seventeen: what was run, and what was found that is not this round's
+
+`make build` and `make vet` pass; `gofmt -l` is empty; `go test ./...` passes in full. `make e2e`
+was not run (it rewrites every screen); `go test ./internal/e2e -run 'TestCreate$'
+-update-screens` wrote only this round's two, `54-create-form` and `55-create-form-80x24`. The
+whole e2e package passed twice on this tree and twice on the unchanged `HEAD`, run back to back.
+
+- **`make crosscheck` is the same three red as before** — `dangling images`, `system df images`,
+  `system df containers`, on the unchanged `HEAD` in a clean worktree too (B34). This round's
+  create section passes all 19 of its checks with the real `docker create` 29.9.3 (89 of 92 in
+  all).
+- **`e2e.TestProcessesView` failed once**, under a full `go test ./...`, waiting for
+  `3 Details: redis-cache`; it passed three of three alone on this tree and on `HEAD`, and in both
+  full e2e runs on each. It is the load sensitivity B33 and B34 found in other e2e tests, not a
+  change of this round; not changed here.
+- **One regression of this round's own was found and fixed**: making every form ignore an Enter
+  typed within the arming delay broke `TestSession` and `TestTwoDaemonsOneOverSSH`, whose pull
+  forms are typed into and submitted at once. The rule was narrowed to the create and shell forms
+  (C5).
+- The create was never sent to a real daemon (docs/TESTING.md, round seventeen).
+- No commits were made.

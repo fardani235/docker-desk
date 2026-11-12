@@ -533,3 +533,39 @@ type Change struct {
 	Path string
 	Kind ChangeKind
 }
+
+// ContainerCreateOptions is a container to create, in the daemon's terms
+// (docs/DECISIONS.md D24). The planning layer has its own specification
+// type; the UI and the fake daemon never see the client library's.
+type ContainerCreateOptions struct {
+	Image   string
+	Name    string // "" lets the daemon choose
+	Ports   []PortBinding
+	Env     []string // NAME=value
+	Mounts  []MountOption
+	Restart RestartPolicy
+	Cmd     []string // nil keeps the image's command
+}
+
+// PortBinding publishes one container port.
+type PortBinding struct {
+	HostIP        string // "" means every address
+	HostPort      uint16 // 0 lets the daemon choose
+	ContainerPort uint16
+	Proto         string // tcp or udp
+}
+
+// MountOption is one mount with an explicit type, so a named volume and a
+// host path cannot be confused.
+type MountOption struct {
+	Type     string // volume or bind
+	Source   string
+	Target   string
+	ReadOnly bool
+}
+
+// RestartPolicy is the daemon's restart policy.
+type RestartPolicy struct {
+	Name              string // no, always, unless-stopped, on-failure
+	MaximumRetryCount int
+}

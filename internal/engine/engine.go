@@ -73,6 +73,11 @@ type Engine interface {
 	// RemoveContainer removes a container that is not running. Its anonymous
 	// volumes are kept. A running container is refused by the daemon.
 	RemoveContainer(ctx context.Context, id string) error
+	// CreateContainer creates a container from a resolved configuration and
+	// returns the ID the daemon assigned. It never starts it, never pulls,
+	// and sets nothing the options do not name: no privilege, no
+	// auto-remove, the daemon's default network.
+	CreateContainer(ctx context.Context, opts ContainerCreateOptions) (string, error)
 
 	// PullImage pulls exactly one reference (":latest" when no tag or digest
 	// is given, never all tags) and reports aggregated progress.

@@ -461,7 +461,7 @@ func TestReadOnlyFlag(t *testing.T) {
 	srv := startFake(t, func(s *fakeengine.Server) { s.SeedDemo() })
 	d := launch(t, srv, 40, 140, "--read-only")
 	d.see("[READ-ONLY]", "2 Containers (13)")
-	for _, k := range []string{"s", "t", "R", "p", "u", "K", "d", "e"} {
+	for _, k := range []string{"s", "t", "R", "p", "u", "K", "d", "e", "n"} {
 		d.keys(k)
 		d.see("Read-only mode")
 		d.keys(ptyscreen.Esc)

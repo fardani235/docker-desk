@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1024601468/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…468/d.sock ●]                                                                                            M picker  < > focus
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│Waiting for engine events…                    │
+│  Images        16│┃▸ distroless-svc   gcr.io/distr…  ● running     8.7%   50.4MiB  Up 5 hours      ┃│Everything the daemon does                    │
+│  Volumes        7│┃  noisy-logger     alpine:3.20    ● running    38.0%    329MiB  Up 12 minutes   ┃│shows up here as it happens.                  │
+│  Networks       7│┃  paused-ba┏━ ◆ Create container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
+│  Compose        2│┃  redis-cac┃                                                                                    ┃                               │
+│                  │┃  shop-api-┃ daemon     unix:///tmp/ddfake1024601468/d.sock  (context default)                  ┃                               │
+│  ● 7 running     │┃  shop-db-1┃                                                                                    ┃                               │
+│  ‖ 1 paused      │┃  shop-web-┃   Image       > hello-world                                                        ┃                               │
+│  ○ 5 stopped     │┃  slow-stop┃   Name        > made-by-e2e                                                        ┃                               │
+│                  │┃  blog-app-┃   Ports       > 127.0.0.1:18080:80                                                 ┃                               │
+│                  │┃  blog-db-1┃               > 53:53/udp                                                          ┃                               │
+│                  │┃  old-migra┃   Environment > LOG_LEVEL=info                                                     ┃                               │
+│                  │┃  report-jo┃ ▸ Mounts      > cache:/var/cache                                                   ┃                               │
+│                  │┗━━━━━━━━━━━┃               entry 1 of 1 · Ctrl+N add · Ctrl+X remove                            ┃                               │
+│                  │┌─ 3 Details┃   Restart       [no] always  unless-stopped  on-failure                            ┃                               │
+│                  ││Name     di┃   Command     > the image's own command                                            ┃                               │
+│                  ││ID       86┃                                                                                    ┃                               │
+│                  ││Image    gc┃ Will create and start, on this daemon:                                             ┃                               │
+│                  ││State    ● ┃   image      hello-world:latest                                                    ┃                               │
+│                  ││Started  20┃              not in the last image list: it will be pulled first                   ┃                               │
+│                  ││Command  /s┃   name       made-by-e2e                                                           ┃                               │
+│                  ││Restart  no┃   ports      127.0.0.1:18080 → 80/tcp                                              ┃                               │
+│                  ││Runtime  tt┃              53 → 53/udp                                                           ┃                               │
+│                  ││Created  20┃   env        LOG_LEVEL=info                                                        ┃                               │
+│                  ││           ┃   mounts     cache → /var/cache (volume)                                           ┃                               │
+│                  ││Ports      ┃   restart    no                                                                    ┃───────────────────────────────┘
+│                  ││  none     ┃   command    the image's own                                                       ┃───────────────────────────────┐
+│                  ││           ┃                                                                                    ┃                               │
+│                  ││Networks   ┃ source:destination[:ro] — a source starting with / is a host path, else a volume   ┃ changes the daemon            │
+│                  ││  bridge  1┃ name                                                                               ┃he background.                 │
+│                  ││           ┃ field 5 of 7  Tab ⇧Tab field  ↑↓ row  Ctrl+N add  Ctrl+X remove                    ┃                               │
+│                  ││Mounts     ┃ Enter create and start  Esc cancel                                                 ┃                               │
+│                  ││  none     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                               │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+
+ ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  n new  e she… Tab pane  ? keys  q quit

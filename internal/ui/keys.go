@@ -495,23 +495,7 @@ func (m *Model) onDialogKey(k tea.KeyMsg) tea.Cmd {
 		return m.onDaemonsKey(key)
 
 	case dlgForm:
-		switch key {
-		case "esc":
-			m.closeDialog()
-			return nil
-		case "enter":
-			if d.form == formShell && !m.armed() {
-				return nil // the command is pre-filled: Enter typed ahead must not run it
-			}
-			return m.submitForm()
-		}
-		if d.formBusy {
-			return nil
-		}
-		d.formErr = ""
-		var cmd tea.Cmd
-		d.input, cmd = d.input.Update(k)
-		return cmd
+		return m.onFormKey(k)
 
 	case dlgPicker:
 		switch key {

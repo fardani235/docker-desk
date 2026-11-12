@@ -706,6 +706,23 @@ func (m *Model) helpLines(w int) []string {
 		}
 	}
 
+	if !m.readOnly {
+		sect("Create container form (n on Containers)")
+		row("Tab / Shift+Tab", "next / previous field, wrapping")
+		row("↑ ↓", "previous / next entry of the field (or the retry limit)")
+		row("Ctrl+N  Ctrl+X", "add an entry / remove the focused one (ports, environment, mounts)")
+		row("← →", "choose the restart policy")
+		row("Enter", "create and start; Esc closes and sends nothing")
+		out = append(out,
+			"  Ports [host-address:][host-port:]container-port[/tcp|udp]; environment",
+			"  NAME=value; mounts source:destination[:ro], a source starting with / being a",
+			"  host path. The form restates all of it, and says whether the image will be",
+			"  pulled first. One job pulls (only if missing), creates, then starts; a step",
+			"  whose predecessor failed is skipped and named. Environment values are shown",
+			"  in the form only.",
+		)
+	}
+
 	sect("Events pane")
 	row("Space or f", "hold the view: a still copy of the history, with a cursor")
 	row("↑ ↓ PgUp PgDn", "move the cursor; ↑ PgUp g also hold a live view")

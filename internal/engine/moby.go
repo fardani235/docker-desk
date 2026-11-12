@@ -24,6 +24,8 @@ import (
 	cerrdefs "github.com/containerd/errdefs"
 	"github.com/moby/moby/api/pkg/stdcopy"
 	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/mount"
+	"github.com/moby/moby/api/types/network"
 	"github.com/moby/moby/client"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -824,6 +826,69 @@ func (m *mobyEngine) InspectNetwork(ctx context.Context, id string) (NetworkDeta
 //
 // Every Force / RemoveVolumes / All option of the client library is left at
 // its zero value, on purpose and everywhere.
+
+// CreateContainer maps the desk's options onto container.Config and
+// container.HostConfig. Everything else in HostConfig stays zero: no force,
+// no privilege, no auto-remove.
+func (m *mobyEngine) CreateContainer(ctx context.Context, o ContainerCreateOptions) (string, error) {
+	cfg, host, err := createConfig(o)
+	if err != nil {
+		return "", &Error{Kind: KindOther, Op: "create container", Msg: err.Error(), Err: err}
+	}
+	res, err := m.cli.ContainerCreate(ctx, client.ContainerCreateOptions{Config: cfg, HostConfig: host, Name: o.Name})
+	if err != nil {
+		return "", m.wrap("create container", err)
+	}
+	return res.ID, nil
+}
+
+func createConfig(o ContainerCreateOptions) (*container.Config, *container.HostConfig, error) {
+	cfg := &container.Config{Image: o.Image, Env: o.Env, Cmd: o.Cmd}
+	host := &container.HostConfig{
+		RestartPolicy: container.RestartPolicy{
+			Name:              container.RestartPolicyMode(o.Restart.Name),
+			MaximumRetryCount: o.Restart.MaximumRetryCount,
+		},
+	}
+	if host.RestartPolicy.Name == "" {
+		host.RestartPolicy.Name = container.RestartPolicyDisabled
+	}
+	for _, p := range o.Ports {
+		proto := p.Proto
+		if proto == "" {
+			proto = "tcp"
+		}
+		port, ok := network.PortFrom(p.ContainerPort, network.IPProtocol(proto))
+		if !ok {
+			return nil, nil, fmt.Errorf("not a port: %d/%s", p.ContainerPort, proto)
+		}
+		if cfg.ExposedPorts == nil {
+			cfg.ExposedPorts = network.PortSet{}
+			host.PortBindings = network.PortMap{}
+		}
+		cfg.ExposedPorts[port] = struct{}{}
+		b := network.PortBinding{}
+		if p.HostIP != "" {
+			addr, err := netip.ParseAddr(p.HostIP)
+			if err != nil {
+				return nil, nil, fmt.Errorf("not an IP address: %s", p.HostIP)
+			}
+			b.HostIP = addr
+		}
+		if p.HostPort != 0 {
+			b.HostPort = strconv.Itoa(int(p.HostPort))
+		}
+		host.PortBindings[port] = append(host.PortBindings[port], b)
+	}
+	for _, mt := range o.Mounts {
+		t := mount.TypeVolume
+		if mt.Type == "bind" {
+			t = mount.TypeBind
+		}
+		host.Mounts = append(host.Mounts, mount.Mount{Type: t, Source: mt.Source, Target: mt.Target, ReadOnly: mt.ReadOnly})
+	}
+	return cfg, host, nil
+}
 
 func (m *mobyEngine) StartContainer(ctx context.Context, id string) error {
 	_, err := m.cli.ContainerStart(ctx, id, client.ContainerStartOptions{})

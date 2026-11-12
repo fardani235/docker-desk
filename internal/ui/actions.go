@@ -62,6 +62,8 @@ var kindActions = [kindCount][]action{
 		action{key: "u", label: "unpause", desc: "resume its processes", needsRow: true, mutating: true, setOp: plan.OpUnpause},
 		action{key: "K", label: "kill", desc: "send SIGKILL now", needsRow: true, mutating: true, setOp: plan.OpKill},
 		action{key: "d", label: "remove…", desc: "delete the container (never forced)", needsRow: true, mutating: true, setOp: plan.OpRemoveContainer},
+		action{key: "n", label: "new…", desc: "create a container from an image, and start it (pulls the image first if it is missing)", mutating: true, ignoresSet: true,
+			run: func(m *Model, _ row) tea.Cmd { return m.openForm(formCreate) }},
 		action{key: "e", label: "shell", desc: "open an interactive shell inside it (one container only)", needsRow: true, mutating: true, run: (*Model).openShellForm},
 	),
 	KindImages: {
@@ -249,12 +251,15 @@ func (m *Model) openForm(kind formKind) tea.Cmd {
 	d := &dialog{kind: dlgForm, form: kind, hasInput: true, openedAt: time.Now()}
 	switch kind {
 	case formPull:
-		d.input = newInput("alpine:3.20", 200)
+		d.fields = []formField{textField("Image", "alpine:3.20", 200)}
 	case formVolume:
-		d.input = newInput("my-volume", 100)
+		d.fields = []formField{textField("Name", "my-volume", 100)}
 	case formNetwork:
-		d.input = newInput("my-network", 100)
+		d.fields = []formField{textField("Name", "my-network", 100)}
+	case formCreate:
+		return m.openCreateForm()
 	}
+	d.refocus()
 	m.dlg = d
 	return nil
 }
@@ -264,10 +269,12 @@ func (m *Model) openShellForm(r row) tea.Cmd {
 		m.setStatus(toneWarn, fmt.Sprintf("%s is not running (%s): there is nothing to open a shell in.", r.name, r.state))
 		return nil
 	}
-	d := &dialog{kind: dlgForm, form: formShell, hasInput: true, target: r, openedAt: time.Now()}
-	d.input = newInput("sh", 300)
-	d.input.SetValue(shell.DefaultCommandText)
-	d.input.CursorEnd()
+	d := &dialog{kind: dlgForm, form: formShell, hasInput: true, target: r, openedAt: time.Now(),
+		fields: []formField{textField("Command", "sh", 300)}}
+	in := &d.fields[0].rows[0]
+	in.SetValue(shell.DefaultCommandText)
+	in.CursorEnd()
+	d.refocus()
 	m.dlg = d
 	return nil
 }
@@ -278,11 +285,14 @@ func (m *Model) submitForm() tea.Cmd {
 	if d.formBusy {
 		return nil
 	}
-	text := d.input.Value()
 	d.formErr = ""
+	if d.form == formCreate {
+		return m.submitCreate()
+	}
+	text := d.formText()
 	switch d.form {
 	case formShell:
-		argv, err := splitCommand(text)
+		argv, err := splitShellCommand(text)
 		if err != nil {
 			d.formErr = err.Error()
 			return nil
@@ -309,4 +319,20 @@ func (m *Model) submitForm() tea.Cmd {
 		return m.prepare(func(s plan.Snapshot) (plan.Plan, error) { return plan.NetworkCreate(s, text) }, planMsg{fromForm: true})
 	}
 	return nil
+}
+
+// submitCreate handles Enter in the create form. The text is parsed here,
+// cheaply, so a value with a syntax error sends nothing and asks nothing;
+// the plan is then built from a fresh snapshot, which decides the pull and
+// catches a name taken meanwhile. A refused value keeps the form open with
+// the field at fault focused.
+func (m *Model) submitCreate() tea.Cmd {
+	d := m.dlg
+	spec, err := plan.ParseCreate(d.createInput())
+	if err != nil {
+		d.placeFieldError(err)
+		return nil
+	}
+	d.formBusy = true
+	return m.prepare(func(s plan.Snapshot) (plan.Plan, error) { return plan.ContainerCreate(s, spec) }, planMsg{fromForm: true})
 }
