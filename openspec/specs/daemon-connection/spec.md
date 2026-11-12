@@ -6,11 +6,12 @@ how the desk behaves when that daemon is unreachable, remote, or returns errors.
 
 ## Requirements
 
-### Requirement: Single daemon from the current Docker context
-The program SHALL talk to exactly one daemon for its whole lifetime, chosen with the Docker
-CLI's precedence: `--context`, `--host`, `DOCKER_HOST`, `DOCKER_CONTEXT`, `currentContext` in
-the configuration file, then the default context. Giving both `--host` and `--context` SHALL be
-refused, and the program SHALL NOT offer any way to switch daemon while running.
+### Requirement: Launch daemon from the current Docker context
+The program SHALL choose the launch daemon with the Docker CLI's precedence: `--context`,
+`--host`, `DOCKER_HOST`, `DOCKER_CONTEXT`, `currentContext` in the configuration file, then the
+default context. Giving both `--host` and `--context` SHALL be refused. The launch daemon SHALL
+be the first member of the session; daemons added and removed while running are governed by the
+daemon-session capability.
 
 #### Scenario: DOCKER_HOST is set
 - **WHEN** `DOCKER_HOST` is set and no flag is given
@@ -54,9 +55,8 @@ the local socket `unix:///var/run/docker.sock` — or `tcp://localhost:2376` whe
 - **THEN** it uses `tcp://localhost:2376` with TLS, as the Docker CLI does, and says why
 
 ### Requirement: Unreachable daemon is reported before the workspace opens
-The program SHALL verify that the daemon answers before taking over the terminal. If it does
-not answer within a bounded time, the program SHALL print a plain message that names the
-endpoint, how it was chosen, how it is reached and the reason, exit with a non-zero status, and
+The program SHALL verify that the launch daemon answers before taking over the terminal. If it does
+not answer within a bounded time, the program SHALL print a plain message that names the endpoint, how it was chosen, how it is reached and the reason, exit with a non-zero status, and
 SHALL NOT open the workspace. The reason SHALL identify the actual failure where it can be
 known, and SHALL list the possibilities rather than name one when it cannot.
 
@@ -113,14 +113,18 @@ known, and SHALL list the possibilities rather than name one when it cannot.
 - **THEN** the program refuses it without writing those characters to the terminal
 
 ### Requirement: Daemon identity is always visible
-While the workspace is open the desk SHALL permanently display the daemon endpoint as the
-operator named it, the context name, and the engine's name and version, in every layout and
-behind no keystroke. Neither the connection state nor any of these SHALL be dropped at any
-supported terminal size.
+While the workspace is open the desk SHALL permanently display the focused daemon's endpoint as the
+operator named it, its context name, and its engine's name and version, together with the
+session's daemon strip, in every layout and behind no keystroke. Neither the connection state nor
+any of these SHALL be dropped at any supported terminal size.
 
 #### Scenario: Normal operation
 - **WHEN** the workspace is open
-- **THEN** the endpoint, context name and engine version are visible on screen
+- **THEN** the endpoint, context name and engine version of the focused daemon are visible on screen
+
+#### Scenario: Focus moves to another daemon
+- **WHEN** the operator moves focus to another member
+- **THEN** the identity shown changes to that member's endpoint, context name and engine version
 
 #### Scenario: A dialog is open
 - **WHEN** a confirmation or any other overlay is displayed
@@ -168,11 +172,12 @@ and remain fully usable.
 - **THEN** the error message from the daemon is shown to the operator and kept with the job that issued it, and the workspace continues to accept input
 
 ### Requirement: Connection loss is visible and recoverable
-If the connection to the daemon is lost while the workspace is open, the program SHALL show a
-disconnected state next to the endpoint, keep the last known data on screen marked as stale,
-keep retrying, and resume live updates when the daemon answers again. When the daemon is
-reached through SSH and it is the SSH connection that failed, the program SHALL additionally
-say so and why, and SHALL re-establish the connection without asking anything on the terminal.
+If the connection to the focused daemon is lost while the workspace is open, the program SHALL show
+a disconnected state next to the endpoint, keep the last known data on screen marked as stale,
+keep retrying, and resume live updates when the daemon answers again. Connection loss of an
+unfocused daemon is reported as the daemon-session capability describes. When the daemon is
+reached through SSH and it is the SSH connection that failed, the program SHALL additionally say so
+and why, and SHALL re-establish the connection without asking anything on the terminal.
 
 #### Scenario: Daemon stops while the desk is open
 - **WHEN** the event stream ends or requests start failing with connection errors
@@ -195,12 +200,17 @@ say so and why, and SHALL re-establish the connection without asking anything on
 - **THEN** nothing is asked on the terminal; the desk stays disconnected, says why, and remains usable for looking at the last known data and for quitting
 
 ### Requirement: Read-only mode
-When started in read-only mode the program SHALL refuse every mutating action before any
-request for it is sent to the daemon, and SHALL show that it is in read-only mode at all times.
+When started in read-only mode the whole session SHALL be read-only: the program SHALL refuse every
+mutating action on every member, including daemons added later, before any request for it is sent
+to the daemon, and SHALL show that it is in read-only mode at all times.
 
 #### Scenario: Mutation attempted in read-only mode
 - **WHEN** the operator triggers any action that would change or delete something, or open a shell
 - **THEN** the program states that the desk is read-only and sends nothing to the daemon
+
+#### Scenario: Daemon added in read-only mode
+- **WHEN** the operator adds a daemon from the picker during a read-only session
+- **THEN** the new daemon is read-only too, and the picker says so before the daemon is added
 
 #### Scenario: Observation in read-only mode
 - **WHEN** the operator browses lists, details, logs, stats and events
