@@ -111,7 +111,7 @@ func TestChangesMovedTag(t *testing.T) {
 				"user", "+ report", "port", "+ 8000/tcp", "healthcheck", "label", "org.opencontainers.image.version 1.4.0 → 1.4.2",
 				"env", "− DEBUG", "+ FONT_DIR",
 				"values are never read",
-				"Restarting report-job keeps the image it runs", "which this desk does not do",
+				"Restarting report-job keeps the image it runs", "A re-creates report-job on that build",
 				"Enter compares packages and findings",
 			} {
 				if !strings.Contains(all, want) {

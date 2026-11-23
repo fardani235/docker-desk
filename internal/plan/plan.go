@@ -60,6 +60,7 @@ const (
 	OpDisconnect
 	OpCreateContainer
 	OpCopyIn
+	OpRename
 )
 
 var opVerbs = map[Op]string{
@@ -67,7 +68,7 @@ var opVerbs = map[Op]string{
 	OpKill: "kill", OpRemoveContainer: "remove", OpPullImage: "pull", OpRemoveImage: "remove",
 	OpCreateVolume: "create", OpRemoveVolume: "remove", OpCreateNetwork: "create",
 	OpRemoveNetwork: "remove", OpConnect: "connect", OpDisconnect: "disconnect",
-	OpCreateContainer: "create", OpCopyIn: "copy",
+	OpCreateContainer: "create", OpCopyIn: "copy", OpRename: "rename",
 }
 
 func (o Op) String() string { return opVerbs[o] }
@@ -106,6 +107,15 @@ type Step struct {
 	// Create is the configuration of an OpCreateContainer step. It is not
 	// an existing object's identifier: the container does not exist yet.
 	Create *ContainerCreateSpec
+	// Clone is the configuration of a re-create's OpCreateContainer step,
+	// in place of Create. It holds environment values: never displayed.
+	Clone *CloneSpec
+	// Rename is the new name of an OpRename step; ID and Name are the
+	// container's and its current name.
+	Rename string
+	// FailNote, when set, is logged after the step fails: what the failure
+	// leaves behind, in the operator's terms.
+	FailNote string
 	// Copy is an OpCopyIn step's source, destination and the walk the
 	// confirmation showed; ID and Name are the container's.
 	Copy *CopyStep
@@ -162,6 +172,14 @@ type Plan struct {
 	TotalSize int64
 	// Scope describes a switchable scope (prunes), for display.
 	Scope string
+
+	// PinRef and PinID tie the whole plan to the image a reference named
+	// when it was built. Execute checks them before the first step and sends
+	// nothing at all if the reference now names another image.
+	PinRef string
+	PinID  string
+	// SuccessNote, when set, is logged when every step succeeded.
+	SuccessNote string
 }
 
 // Runnable reports whether the plan may be confirmed.

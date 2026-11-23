@@ -403,6 +403,9 @@ func (m *Model) renderHints() string {
 						add("⏎", "compare contents")
 					}
 				}
+				if t, ok := m.changesTarget(); ok && !m.readOnly && m.recreateGate(t).ok {
+					add("A", "re-create")
+				}
 			default:
 				add("w", "wrap")
 			}
@@ -554,13 +557,18 @@ func (m *Model) helpLines(w int) []string {
 	sect("Containers › Changes tab")
 	row("Enter", "compare contents: packages and findings of both images (a job)")
 	row("c", "cancel the comparison in progress")
+	row("A", "re-create the container on the build the tag names now (type recreate)")
 	out = append(out,
 		"  What differs between the image the container runs and the image its",
 		"  reference names now. Identities, layers and config are read at once",
 		"  (inspect and history of each image); no archive is read before Enter.",
 		"  Environment variables are compared by name; values are never read.",
 		"  Restarting keeps the image a container runs; only re-creating it takes",
-		"  the new one, which this desk does not do. Nothing to compare is said, why.",
+		"  the new one. When the tag names a newer build of the same platform and",
+		"  the configuration is one a re-create reproduces, A stops the container,",
+		"  renames it aside, creates the new one under its name and starts it.",
+		"  Nothing is deleted. Otherwise the tab says why not; nothing to compare",
+		"  is said, why.",
 	)
 
 	sect("Compose › Declared tab (Details pane focused)")

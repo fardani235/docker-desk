@@ -333,8 +333,67 @@ When there is nothing to compare, the tab says why: the container was created fr
 or an image ID (nothing can move); its tag no longer resolves here (the desk does not pull to
 find out); the tag still names the image it runs; the two images are for different platforms;
 or — once the archives are read — a layer of either could not be read. It also says, always:
-**restarting a container keeps the image it runs; only re-creating it takes the new one —
-which this desk does not do.** There is no update button, and no score.
+**restarting a container keeps the image it runs; only re-creating it takes the new one** —
+and whether this tab re-creates it, with which key, or why not. There is no score.
+
+#### Re-creating it on the new build
+
+**`A` re-create the container on the build the tag names now (type recreate).** The tab offers
+it (the Details pane focused, as for `Enter`) only when the tag names a newer build for the same
+platform that is already on this daemon, the container still holds its own name, and its
+configuration is one a re-create reproduces. Nothing is sent on open; the reads happen when you
+press `A`, and nothing is pulled. Read-only mode refuses it, and so does a selection: it acts on
+one container. The confirmation is typed — `recreate`, then Enter — and names the container and
+its short ID, the daemon, the tag with the build it names now and the one the container runs,
+the name the old container will take, and a summary of what is carried.
+
+One job, four steps, each skipped if the one before it failed:
+
+1. **stop** the container, only if it runs;
+2. **rename** it `<name>-previous-<first 12 hex digits of its ID>` (shortened to stay within
+   128 characters, `-2`, `-3`… if that name is taken);
+3. **create** the new container under the original name, from the tag — checked again first;
+4. **start** it.
+
+**Nothing is deleted.** The old container stays, stopped, under its new name, with its
+writable layer and configuration: yours to start again, rename back (`docker rename`) or
+remove deliberately. A failure says what it leaves: after a refused stop, the container as it
+was; after a refused rename, stopped under its own name; after a refused create, stopped under
+the derived name, and how to give it its name back; after a refused start, the new container
+in the created state. Cancelling between steps reports what was done.
+
+**The tag is pinned.** Immediately before the first step the job checks that the tag still
+names the build the dialog showed. If it has moved, nothing at all is sent — not even the stop.
+
+**The configuration is the container's own, from its inspect, or the action refuses.** Carried:
+the reference and name; entrypoint and command; every environment entry; working directory,
+user, hostname, TTY and open stdin, init; labels (compose labels included); the health check;
+stop signal and grace period; published ports with their host address, host port and protocol,
+and ports exposed without being published; bind and volume mounts with their read-only flag,
+an anonymous volume by the name the daemon gave it; the network mode and every network with
+its aliases; the restart policy and retry limit; memory, swap and reservation, CPUs, CPU
+shares, quota, period and cpuset, the process limit and shared memory size. What the *old
+image* supplied — its environment entries, command, entrypoint, labels, working directory,
+user, stop signal, health check and exposed ports, wherever the container's value is the
+image's — is left to the new image, and the dialog lists it: a re-create takes the new build's
+`PATH` or version labels rather than freezing the old ones. Anything else refuses, and the
+dialog names every such setting: privilege, capabilities, devices and device requests, security
+options, a runtime other than the daemon's, sysctls, ulimits and other kernel settings, block-I/O
+and real-time limits, tmpfs, extra hosts, DNS and domain name, extra groups, legacy links, a
+log driver other than the daemon's, a read-only root filesystem, auto-remove, shared or host
+namespaces and a cgroup parent, a fixed address or other endpoint settings, publish-all and
+host port ranges, umask, a mount type other than bind or volume, and mount options the desk
+does not reproduce (propagation, SELinux relabelling, subpaths, volumes-from).
+
+**Environment values are carried and never shown**: the dialog, the job, its log and the status
+line name variables and counts only; a daemon message that quotes a value has it hidden.
+
+A compose-managed container keeps its labels, so it stays in its project group; the dialog says
+that compose tools may list the old container under the same service until you remove it. The
+compose file is not read. Screens: [`docs/screens/58-recreate-confirm.txt`](docs/screens/58-recreate-confirm.txt)
+and, at 80×24, [`docs/screens/59-recreate-confirm-80x24.txt`](docs/screens/59-recreate-confirm-80x24.txt);
+a refusal: [`docs/screens/60-recreate-refused.txt`](docs/screens/60-recreate-refused.txt) and
+[`docs/screens/61-recreate-refused-80x24.txt`](docs/screens/61-recreate-refused-80x24.txt).
 
 ### Image packages — the declared list against the installed one
 
@@ -775,6 +834,7 @@ Press `?` inside the desk for the same list.
 | Volumes | `n` new · `d` remove · `X` prune |
 | Networks | `n` new · `d` remove · `X` prune · `c` connect a container · `D` disconnect a container |
 | Compose | `t` stop the whole project · `d` remove the whole project · (menu) compare with the compose file — a read, allowed in read-only mode |
+| Containers › Changes tab (Details pane focused) | `Enter` compare contents · `c` cancel · `A` re-create on the build the tag names now (typed `recreate`; see [Changes](#re-creating-it-on-the-new-build)) |
 
 **Acting on a selection.** Mark rows with `Space` (or `a` for everything the filter shows):
 they get a `✓` in the gutter and the title says how many, e.g. `2 Containers (12) - 3 selected`.
@@ -917,6 +977,9 @@ being careful.
     one that exists, and is allowed in read-only mode.
   - new container → the form restates the whole configuration and any pull it needs; Enter
     submits, never before the form has been on screen long enough to read.
+  - re-create (`A` on Containers › Changes) → type `recreate` and press Enter. It stops a
+    running container and changes its identity before creating another, so it is typed like a
+    deletion — though nothing is deleted: the old container stays, stopped, renamed.
   - **a selection** (`Space` / `a` in the list), whatever the action → type the verb *and the
     count* shown, e.g. `stop 3` or `remove 7`, and press Enter. One key never consents to
     many objects, and the number is what you have to have read.
@@ -936,7 +999,8 @@ being careful.
   dialog opens. If the list reshuffles underneath, the dialog still means the same object.
   Things addressed by a *name* — an image tag, a volume — are re-checked just before the
   request: if the tag has moved to another image or the volume was recreated, nothing is
-  removed.
+  removed. A re-create checks its tag before its first step: if the tag has moved, nothing at
+  all is sent.
 - **Nothing is ever forced.** If the thing is in use, the dialog says by what and offers no way
   to proceed: a running container must be stopped first; an image, volume or network that any
   container references — *running or stopped* — is in use. If something becomes in use after
@@ -1022,9 +1086,16 @@ No view across daemons: one is focused at a time, and nothing acts on two at onc
 images or volumes between them. No per-daemon read-only flag, and nothing about the session is
 saved for the next run. No Windows named pipes. No Swarm, no compose
 lifecycle — a compose file is read only for Declared, on request, and never run or
-interpolated (see [Compose, honestly](#compose-honestly)) — no image builds or pushes, no Kubernetes. It creates containers only from its seven-field form
-(no networks, users, limits or TTY; no build, no compose `up`), never reconfigures one, and does
-copies files in or out only from the Files view, one path at a time. The build cache is accounted for in Space but never removed: the desk
+interpolated (see [Compose, honestly](#compose-honestly)) — no image builds or pushes, no Kubernetes. It creates containers from its seven-field form
+(no networks, users, limits or TTY; no build, no compose `up`), and re-creates one only on the
+newer build its own tag names, with the configuration it already has (Changes, `A`). It never
+edits a container's configuration, never pulls for a re-create, never rolls one back and never
+removes the old container: it is left stopped under `<name>-previous-<id>`. A container with a
+setting a re-create does not reproduce — privilege, capabilities, devices, security options, a
+custom runtime, kernel settings, tmpfs, DNS and host overrides, links, a non-default log driver,
+a read-only root filesystem, auto-remove, shared namespaces, a fixed address, and the rest named
+in [Changes](#re-creating-it-on-the-new-build) — is refused, each setting named. It copies files
+in or out only from the Files view, one path at a time. The build cache is accounted for in Space but never removed: the desk
 has no builder, and calls no prune endpoint.
 
 Good to know:
@@ -1064,6 +1135,12 @@ Good to know:
   "together" and a prune's "frees" are then "at least" the members' unique sizes, and say
   why. In the classic store, removing an image can also delete untagged parent images; their
   layers are part of its shared size and are not claimed as freed.
+- Re-create (`A`): the refusal list covers the fields of the Docker API the desk is built
+  against (1.56); a setting a newer daemon adds is not detected, and would not be carried. The
+  daemon's own defaults that inspect reports as the container's (the runtime, private IPC and
+  cgroup namespaces, masked paths, 64 MiB of shared memory, the default log driver and its
+  options) are not refusals. A MAC address cannot be told apart from a generated one and is not
+  carried. An environment variable set to exactly the old image's value is left to the new image.
 - Changes compares the image a container runs with the image its reference names *here*: it
   never asks a registry. No file-level difference is made — a layer's build instruction says
   what it changed. Environment variables are compared by name only.

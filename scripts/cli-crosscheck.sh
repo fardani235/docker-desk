@@ -222,6 +222,49 @@ expect_fails "create of an unpullable image" "pull access denied" d create nosuc
 d rm -f cross-made >/dev/null 2>&1 || { d stop cross-made >/dev/null; d rm cross-made >/dev/null; }
 d rm cross-pulled "$auto" >/dev/null
 
+echo "== re-create: docker create with the clone fields, docker rename"
+# What a re-create sends and what the clone reads back: the real CLI creates
+# a container with every carried field, and inspect must report each one.
+d network create cross-front >/dev/null
+d network create cross-back >/dev/null
+d create --name cross-clone \
+  --entrypoint /bin/sh -e LOG_LEVEL=info -e TOKEN=crosscheck-sentinel \
+  --label com.docker.compose.project=cross --label tier=web \
+  -p 127.0.0.1:18081:80 --expose 9000 \
+  --mount type=bind,src=/srv/conf,dst=/etc/web,readonly --mount type=volume,src=cross-data,dst=/data \
+  --network name=cross-front,alias=web --network cross-back \
+  --health-cmd probe --health-interval 30s --health-retries 3 \
+  --restart on-failure:3 --memory 512m --cpu-quota 50000 --pids-limit 200 --shm-size 128m \
+  --stop-signal SIGQUIT --stop-timeout 30 --workdir /srv --user 1000 --hostname cross-host --init -t -i \
+  nginx:1.27 -c serve >/dev/null
+ins() { d inspect --format "$1" cross-clone; }
+expect_eq "clone: entrypoint" "$(ins '{{json .Config.Entrypoint}}')" '["/bin/sh"]'
+expect_eq "clone: command" "$(ins '{{json .Config.Cmd}}')" '["-c","serve"]'
+expect_contains "clone: environment, values included" "$(ins '{{json .Config.Env}}')" '"LOG_LEVEL=info","TOKEN=crosscheck-sentinel"'
+expect_eq "clone: labels" "$(ins '{{index .Config.Labels "com.docker.compose.project"}} {{index .Config.Labels "tier"}}')" "cross web"
+expect_eq "clone: working dir, user, hostname" "$(ins '{{.Config.WorkingDir}} {{.Config.User}} {{.Config.Hostname}}')" "/srv 1000 cross-host"
+expect_eq "clone: tty, open stdin, init" "$(ins '{{.Config.Tty}} {{.Config.OpenStdin}} {{.HostConfig.Init}}')" "true true true"
+expect_eq "clone: health check" "$(ins '{{json .Config.Healthcheck.Test}} {{.Config.Healthcheck.Interval}} {{.Config.Healthcheck.Retries}}')" '["CMD-SHELL","probe"] 30s 3'
+expect_eq "clone: stop signal and timeout" "$(ins '{{.Config.StopSignal}} {{.Config.StopTimeout}}')" "SIGQUIT 30"
+expect_contains "clone: fixed host port" "$(ins '{{json .HostConfig.PortBindings}}')" '"80/tcp":[{"HostIp":"127.0.0.1","HostPort":"18081"}]'
+expect_contains "clone: exposed-only port is exposed" "$(ins '{{json .Config.ExposedPorts}}')" '"9000/tcp"'
+if ins '{{json .HostConfig.PortBindings}}' | grep -q 9000; then bad "clone: exposed-only port is not published"; else ok "clone: exposed-only port is not published"; fi
+mounts="$(ins '{{range .Mounts}}{{.Type}}:{{.Name}}:{{.Source}}:{{.Destination}}:{{.RW}} {{end}}')"
+expect_contains "clone: read-only bind" "$mounts" "bind::/srv/conf:/etc/web:false"
+expect_contains "clone: named volume" "$mounts" "volume:cross-data:"
+expect_eq "clone: network mode" "$(ins '{{.HostConfig.NetworkMode}}')" "cross-front"
+expect_eq "clone: networks with aliases" "$(ins '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}={{join $v.Aliases ","}} {{end}}')" "cross-back= cross-front=web "
+expect_eq "clone: restart" "$(ins '{{.HostConfig.RestartPolicy.Name}}:{{.HostConfig.RestartPolicy.MaximumRetryCount}}')" "on-failure:3"
+expect_eq "clone: limits" "$(ins '{{.HostConfig.Memory}} {{.HostConfig.CpuQuota}} {{.HostConfig.PidsLimit}} {{.HostConfig.ShmSize}}')" "536870912 50000 200 134217728"
+expect_eq "clone: daemon defaults reported" "$(ins '{{.HostConfig.Runtime}} {{.HostConfig.LogConfig.Type}}')" "runc json-file"
+d rename cross-clone cross-clone-previous-1
+expect_eq "rename: the name changes" "$(d inspect --format '{{.Name}}' cross-clone-previous-1)" "/cross-clone-previous-1"
+expect_fails "rename: the old name is free" "no such object" d inspect cross-clone
+expect_fails "rename: a name in use" "is already in use" d rename cross-clone-previous-1 shop-web-1
+expect_fails "rename: an invalid name" "Invalid container name" d rename cross-clone-previous-1 'bad/name'
+d rm cross-clone-previous-1 >/dev/null
+d network rm cross-front cross-back >/dev/null
+
 echo "== volumes and networks"
 d volume create cross-vol >/dev/null
 expect_contains "volume create" "$(d volume ls --format '{{.Name}}')" "cross-vol"

@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake2222952366/d.sock  ctx default  ● connected
+ Daemons [◆1 /tmp/ddfake…366/d.sock ●]                      M picker  < > focus
+┌─┏━ ◆ Re-create container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓─┐
+│▸┃                                                                          ┃M│
+│ ┃ container  priv-svc  (5c4d08e66de9)                                      ┃ │
+│ ┃ daemon     unix:///tmp/ddfake2222952366/d.sock  (context default)        ┃ │
+│ ┃                                                                          ┃─┘
+│ ┃ • priv-svc is renamed priv-svc-previous-5c4d08e66de9 and kept, stopped,  ┃━┓
+│ ┃   with its data and configuration.                                       ┃ ┃
+│ ┃ • A new priv-svc is created from acme/priv:1 — the build 76116cacbd49,   ┃ ┃
+│ ┃   replacing 0510423c5d02 — and started.                                  ┃ ┃
+│ ┃ • Carried: 1 environment variable (PATH) · command · 1 network (bridge)  ┃ ┃
+│ ┃   · restart no.                                                          ┃ ┃
+│ ┃ • Nothing is deleted; the old container stays stopped under priv-svc-    ┃ ┃
+│ ┃   previous-5c4d08e66de9.                                                 ┃ ┃
+└─┃                                                                          ┃━┛
+┌─┃ ✗ REFUSED — nothing will be sent to the daemon                           ┃─┐
+│W┃   Privilege: runs privileged                                             ┃ │
+│E┃                                                                          ┃…│
+│s┃ Esc close                                                                ┃ │
+│ ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛ │
+└────────────────────────────────────────────┘└────────────────────────────────┘
+
+ / find  ↑↓ scroll  [ ] tab  ⏎ compare contents  s st… Tab pane  ? keys  q quit

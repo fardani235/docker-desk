@@ -59,6 +59,11 @@ type Info struct {
 	MemTotal        int64
 	StorageDriver   string
 	RootDir         string
+	// LoggingDriver, DefaultRuntime and CgroupVersion are the daemon's
+	// defaults, which a container's inspect reports as its own settings.
+	LoggingDriver  string
+	DefaultRuntime string
+	CgroupVersion  string
 }
 
 // Port is one published or exposed port of a container.
@@ -567,6 +572,74 @@ type ContainerCreateOptions struct {
 	Mounts  []MountOption
 	Restart RestartPolicy
 	Cmd     []string // nil keeps the image's command
+
+	// The fields below are set only by a re-create (docs/DECISIONS.md,
+	// round nineteen). Their zero values add nothing to the request, so the
+	// create form's request is unchanged.
+
+	// Entrypoint nil keeps the image's; []string{""} clears it.
+	Entrypoint []string
+	Labels     map[string]string
+	Tty        bool
+	// OpenStdin keeps stdin open (docker run -i), which a detached shell
+	// container needs to stay up.
+	OpenStdin  bool
+	WorkingDir string
+	User       string
+	Hostname   string
+	// Init nil leaves the daemon's default.
+	Init        *bool
+	Healthcheck *HealthConfig
+	StopSignal  string
+	// StopTimeout nil leaves the daemon's default grace period (seconds).
+	StopTimeout *int
+	// NetworkMode "" is the daemon's default network; otherwise "bridge",
+	// "host", "none" or a user-defined network's name.
+	NetworkMode string
+	// Networks are the endpoints to attach at create, with their aliases.
+	Networks []NetworkAttachment
+	// ExposedOnly are ports exposed without being published, "80/tcp".
+	ExposedOnly []string
+	Resources   ResourceLimits
+	// ShmSize is /dev/shm in bytes; 0 leaves the daemon's default.
+	ShmSize int64
+	// LogDriver and LogOptions, when LogDriver is set, are sent as the
+	// container's log configuration. Options may hold credentials: they
+	// are never displayed.
+	LogDriver  string
+	LogOptions map[string]string
+}
+
+// HealthConfig is a container's health check. Zero durations and retries
+// inherit the image's or the daemon's.
+type HealthConfig struct {
+	// Test is {"CMD", args…}, {"CMD-SHELL", command} or {"NONE"}.
+	Test          []string
+	Interval      time.Duration
+	Timeout       time.Duration
+	StartPeriod   time.Duration
+	StartInterval time.Duration
+	Retries       int
+}
+
+// NetworkAttachment is one network a new container is attached to.
+type NetworkAttachment struct {
+	Network string // name
+	Aliases []string
+}
+
+// ResourceLimits are the limits a re-create carries. Zero means unset.
+type ResourceLimits struct {
+	Memory            int64 // bytes
+	MemorySwap        int64 // bytes, memory plus swap; -1 unlimited
+	MemoryReservation int64 // bytes
+	NanoCPUs          int64
+	CPUShares         int64
+	CPUQuota          int64
+	CPUPeriod         int64
+	CpusetCpus        string
+	// PidsLimit nil leaves the daemon's default.
+	PidsLimit *int64
 }
 
 // PortBinding publishes one container port.

@@ -26,6 +26,9 @@ func Execute(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run) erro
 	if !p.Runnable() {
 		return errors.New("internal error: tried to execute a plan that is not runnable")
 	}
+	if err := checkPlanPin(ctx, eng, p, run); err != nil {
+		return err
+	}
 	total := len(p.Steps)
 	multi := total > 1
 	if multi {
@@ -105,6 +108,9 @@ func Execute(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run) erro
 			failed++
 			lastErr = err
 			run.Logf("✗ %s — %s", describe(shown[i]), daemonMessage(err))
+			if st.FailNote != "" {
+				run.Logf("  %s", st.FailNote)
+			}
 		}
 		if multi {
 			run.Steps(i+1, total)
@@ -119,6 +125,9 @@ func Execute(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run) erro
 	}
 	switch {
 	case failed == 0:
+		if p.SuccessNote != "" && skipped == 0 {
+			run.Logf("%s", p.SuccessNote)
+		}
 		if multi {
 			run.Status(fmt.Sprintf("%d done", total))
 		}
@@ -157,6 +166,10 @@ func createdStep(ctx context.Context, eng engine.Engine, st Step, id string) Ste
 	st.Detail = strings.TrimSpace(st.Detail + " " + engine.ShortID(id))
 	if st.Create != nil && st.Create.Name != "" {
 		st.Name = st.Create.Name
+		return st
+	}
+	if st.Clone != nil && st.Clone.Name != "" {
+		st.Name = st.Clone.Name
 		return st
 	}
 	if d, err := eng.InspectContainer(ctx, id); err == nil && d.Name != "" {
@@ -202,6 +215,8 @@ func describe(st Step) string {
 		s := "create container " + st.Name
 		if st.Create != nil {
 			s += " from " + st.Create.Image
+		} else if st.Clone != nil {
+			s += " from " + escape.Name(st.Clone.Image)
 		}
 		if st.ID != "" {
 			s += " (" + engine.ShortID(st.ID) + ")"
@@ -213,6 +228,8 @@ func describe(st Step) string {
 			return fmt.Sprintf("copy %s into %s:%s", escape.Name(st.Copy.Source), escape.Name(st.Name), escape.Name(st.Copy.Dest))
 		}
 		return "copy into " + st.Name
+	case OpRename:
+		return fmt.Sprintf("rename container %s to %s", escape.Name(st.Name), escape.Name(st.Rename))
 	case OpConnect:
 		return fmt.Sprintf("connect %s to %s", st.OtherName, st.Name)
 	case OpDisconnect:
@@ -239,6 +256,9 @@ func daemonMessage(err error) string {
 // step that creates an object addressed by a later step (ProducesID).
 func executeStep(ctx context.Context, eng engine.Engine, st Step, run *jobs.Run) (string, error) {
 	if st.Op == OpCreateContainer {
+		if st.Clone != nil {
+			return createClone(ctx, eng, st)
+		}
 		if st.Create == nil {
 			return "", errors.New("internal error: a create step without its configuration")
 		}
@@ -274,8 +294,69 @@ func CreateOptions(sp ContainerCreateSpec) engine.ContainerCreateOptions {
 	return o
 }
 
+// createClone sends a re-create's create, by reference, once the reference
+// has been checked again to name the build that was shown: the stop and the
+// rename before it took time. A daemon's refusal is passed on without any
+// environment value it might quote.
+func createClone(ctx context.Context, eng engine.Engine, st Step) (string, error) {
+	if st.Pin != "" {
+		d, err := eng.InspectImage(ctx, st.Clone.Image)
+		if err != nil {
+			return "", fmt.Errorf("%s could not be checked before the create: %s", escape.Name(st.Clone.Image), redactEnvValues(daemonMessage(err), st.Clone))
+		}
+		if trimSHA(d.ID) != trimSHA(st.Pin) {
+			return "", fmt.Errorf("%s now names %s, not the build %s that was shown; nothing was created",
+				escape.Name(st.Clone.Image), engine.ShortID(d.ID), engine.ShortID(st.Pin))
+		}
+	}
+	id, err := eng.CreateContainer(ctx, CloneOptions(*st.Clone))
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return "", err
+		}
+		return "", &engine.Error{Kind: engine.KindOf(err), Op: "create container", Msg: redactEnvValues(daemonMessage(err), st.Clone)}
+	}
+	return id, nil
+}
+
+// checkPlanPin is the plan-level pin: before the first step, the reference
+// must still name the image the plan was built for. Otherwise nothing at
+// all is sent — not the stop that would precede a create from a build
+// nobody was shown.
+func checkPlanPin(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run) error {
+	if p.PinRef == "" {
+		return nil
+	}
+	ref := escape.Name(p.PinRef)
+	d, err := eng.InspectImage(ctx, p.PinRef)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return err
+		}
+		msg := daemonMessage(err)
+		if engine.IsNotFound(err) {
+			msg = ref + " no longer names an image on this daemon"
+		}
+		run.Logf("✗ before the first step: %s; nothing was sent", msg)
+		run.Status("not started: the image could not be checked")
+		return fmt.Errorf("%s; nothing was stopped, renamed or created", msg)
+	}
+	if trimSHA(d.ID) != trimSHA(p.PinID) {
+		msg := fmt.Sprintf("the tag moved: %s now names %s, not the build %s that was shown", ref, engine.ShortID(d.ID), engine.ShortID(p.PinID))
+		run.Logf("✗ before the first step: %s; nothing was sent", msg)
+		run.Status("not started: the tag moved")
+		return fmt.Errorf("%s; nothing was stopped, renamed or created", msg)
+	}
+	return nil
+}
+
 func executeRequest(ctx context.Context, eng engine.Engine, st Step, run *jobs.Run) error {
 	switch st.Op {
+	case OpRename:
+		if st.Rename == "" {
+			return errors.New("internal error: a rename step without its new name")
+		}
+		return eng.RenameContainer(ctx, st.ID, st.Rename)
 	case OpStart:
 		return eng.StartContainer(ctx, st.ID)
 	case OpStop:
