@@ -59,6 +59,7 @@ const (
 	OpConnect
 	OpDisconnect
 	OpCreateContainer
+	OpCopyIn
 )
 
 var opVerbs = map[Op]string{
@@ -66,7 +67,7 @@ var opVerbs = map[Op]string{
 	OpKill: "kill", OpRemoveContainer: "remove", OpPullImage: "pull", OpRemoveImage: "remove",
 	OpCreateVolume: "create", OpRemoveVolume: "remove", OpCreateNetwork: "create",
 	OpRemoveNetwork: "remove", OpConnect: "connect", OpDisconnect: "disconnect",
-	OpCreateContainer: "create",
+	OpCreateContainer: "create", OpCopyIn: "copy",
 }
 
 func (o Op) String() string { return opVerbs[o] }
@@ -105,6 +106,9 @@ type Step struct {
 	// Create is the configuration of an OpCreateContainer step. It is not
 	// an existing object's identifier: the container does not exist yet.
 	Create *ContainerCreateSpec
+	// Copy is an OpCopyIn step's source, destination and the walk the
+	// confirmation showed; ID and Name are the container's.
+	Copy *CopyStep
 	// DependsOn are indices of earlier steps that must have succeeded for
 	// this one to be attempted. A step whose prerequisite failed, or was
 	// itself skipped, is skipped (docs/DECISIONS.md D23). Plans of

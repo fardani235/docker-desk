@@ -60,7 +60,21 @@ type Engine interface {
 	// registry that has no such manifest (KindNotFound).
 	DistributionInspect(ctx context.Context, ref, registryAuth string) (Distribution, error)
 
+	// CopyFromContainer streams a tar of path in the container — its single
+	// top-level entry is the path's base name — with the daemon's stat of
+	// it (GET /containers/{id}/archive, what `docker cp` reads). It is a
+	// GET: nothing in the container changes. The caller reads the stream
+	// and must close it. A path that does not exist is KindNotFound.
+	CopyFromContainer(ctx context.Context, id, path string) (Archive, error)
+
 	// ---- mutations ------------------------------------------------------
+	// CopyToContainer extracts content, a tar whose entries are rooted at
+	// base(dest), into the container at parent(dest) (PUT
+	// /containers/{id}/archive): dest is created, or its same-named files
+	// replaced. A directory is never replaced by a file or a file by a
+	// directory, and ownership is the daemon's default. dest must be an
+	// absolute path other than "/", and its parent must exist.
+	CopyToContainer(ctx context.Context, id, dest string, content io.Reader) error
 	StartContainer(ctx context.Context, id string) error
 	// StopContainer asks the container to stop with its configured signal and
 	// grace period; the daemon kills it when the grace period expires.

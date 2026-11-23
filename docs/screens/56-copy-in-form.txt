@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake996123854/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…854/d.sock ●]                                                                                            M picker  < > focus
+┏━ ◆ Files — the image's tree with the container's changes over it ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ shop-web-1 ━┓
+┃ by name · 3 rows · filter: nginx.conf · 1 match of 13 searched                                                                                     ┃
+┃   container  shop-web-1 · f948ec4de9e4 · from nginx:1.27 (f673addec473)                                                                            ┃
+┃   changes    15 listed by the daemon, read 0s ago · r reads them again                                                                             ┃
+┃   overlay    3 added; sizes and layers are the image's                                                                                             ┃
+┃   not read   1 change beneath a directory the container added: not drawn, its contents are not read                                                ┃
+┃   deleted    1 deleted paths are not drawn until the image's files are read                                                                        ┃
+┃   image      nginx:1.27 · f673addec473 · platform: the daemon's default · 188MB (the daemon's size)                                                ┃
+┃   image      The image's files┏━ ◆ Copy into the container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ then the rows are the         ┃
+┃              container's chang┃                                                                                    ┃                               ┃
+┃                               ┃ container  shop-web-1  (f948ec4de9e4)                                              ┃                               ┃
+┃   NAME                        ┃ daemon     unix:///tmp/ddfake996123854/d.sock  (context default)                   ┃ZE  TYPE      LAYER  CHANGE    ┃
+┃   - etc/                      ┃                                                                                    ┃ —  dir       —      changed   ┃
+┃     - nginx/                  ┃   Local source                                                                     ┃ —  dir       —      changed   ┃
+┃ ▸       nginx.conf            ┃ > ~/assets                                                                         ┃ —  ?         —      changed   ┃
+┃                               ┃   will read /tmp/TestCopyIn4273587424/001/assets                                   ┃                               ┃
+┃                               ┃                                                                                    ┃                               ┃
+┃                               ┃ ▸ Container destination                                                            ┃                               ┃
+┃                               ┃ > /srv/assets                                                                      ┃                               ┃
+┃                               ┃                                                                                    ┃                               ┃
+┃                               ┃ • The path is the destination itself — the copy is written there, not inside it —  ┃                               ┃
+┃                               ┃   and its parent must already exist.                                               ┃                               ┃
+┃                               ┃ • Files already at the destination with the same names are replaced; other files   ┃                               ┃
+┃                               ┃   there are left alone. The next step shows what will be sent and asks for y.      ┃                               ┃
+┃                               ┃ • Contents and modes are sent, not ownership: the daemon's default applies.        ┃                               ┃
+┃                               ┃   Symlinks are sent as links; devices, FIFOs and sockets are skipped.              ┃                               ┃
+┃                               ┃                                                                                    ┃                               ┃
+┃                               ┃ Tab field  Enter walk the source, then confirm  Esc cancel                         ┃                               ┃
+┃ ──────────────────────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───────────────────── 3 of 3 ─ ┃
+┃ path       /etc/nginx/nginx.conf                                                                                                                   ┃
+┃ type       not known: the daemon's change list does not say                                                                                        ┃
+┃ size       not known: the image's index does not hold this path                                                                                    ┃
+┃ layer      none: not in the image's tree                                                                                                           ┃
+┃ change     changed by the container since its image                                                                                                ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┃                                                                                                                                                    ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+ ⏎ read the archive  ↑↓ move  →← open  s order  / filter  w export  r changes  o copy out  i copy in  Esc clear filter            F Esc close  ? keys

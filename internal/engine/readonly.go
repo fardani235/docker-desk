@@ -1,6 +1,9 @@
 package engine
 
-import "context"
+import (
+	"context"
+	"io"
+)
 
 // ReadOnly wraps an Engine so that every mutating method — and exec, which
 // runs a process inside a container — returns ErrReadOnly without calling the
@@ -19,6 +22,12 @@ func IsReadOnly(e Engine) bool {
 
 type readOnlyEngine struct {
 	Engine
+}
+
+// CopyToContainer writes into a container: refused. CopyFromContainer only
+// reads, and passes through.
+func (r *readOnlyEngine) CopyToContainer(context.Context, string, string, io.Reader) error {
+	return ErrReadOnly
 }
 
 func (r *readOnlyEngine) StartContainer(context.Context, string) error   { return ErrReadOnly }

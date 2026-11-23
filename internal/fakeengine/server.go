@@ -99,7 +99,12 @@ type Server struct {
 	// the labels name paths on no machine at all.
 	ComposeDir string
 
+	// ArchiveChunkDelay is the pause after each 32 KiB of a container
+	// archive (GET /containers/{id}/archive).
+	ArchiveChunkDelay time.Duration
+
 	buildCache []BuildRecord
+	uploads    []Upload
 
 	distOnce     sync.Once
 	distribution *distState
@@ -421,6 +426,12 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 		s.handleTop(w, r, seg[1])
 	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "changes" && get:
 		s.handleChanges(w, seg[1])
+	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "archive" && get:
+		s.handleArchiveGet(w, r, seg[1])
+	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "archive" && m == http.MethodHead:
+		s.handleArchiveStat(w, r, seg[1])
+	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "archive" && m == http.MethodPut:
+		s.handleArchivePut(w, r, seg[1])
 	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "exec" && post:
 		s.handleExecCreate(w, r, seg[1])
 	case len(seg) == 3 && seg[0] == "containers" && post:

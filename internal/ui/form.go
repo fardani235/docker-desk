@@ -278,6 +278,10 @@ func (m *Model) openCreateForm() tea.Cmd {
 // placeFieldError puts focus on the field, and entry, a refused value is in.
 func (d *dialog) placeFieldError(err error) {
 	d.formErr = err.Error()
+	if d.form == formCopyIn {
+		d.formErr = capitalise(err.Error()) + "."
+		return
+	}
 	var fe *plan.FieldError
 	if !errors.As(err, &fe) {
 		return

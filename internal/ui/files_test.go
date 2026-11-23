@@ -523,7 +523,7 @@ func TestFilesHelpAndFooter(t *testing.T) {
 	b := newBench(t, benchOpts{width: 140, height: 50})
 	b.openFilesOn(KindContainers, "shop-web-1")
 	foot := b.screenLines()[len(b.screenLines())-1]
-	for _, k := range []string{"⏎ read the archive", "↑↓ move", "→← open", "s order", "/ filter", "w export", "r changes", "F Esc close"} {
+	for _, k := range []string{"⏎ read the archive", "↑↓ move", "→← open", "s order", "/ filter", "w export", "r changes", "o copy out", "i copy in", "F Esc close"} {
 		if !strings.Contains(foot, k) {
 			t.Errorf("footer lacks %q: %q", k, foot)
 		}
@@ -539,7 +539,7 @@ func TestFilesHelpAndFooter(t *testing.T) {
 	if j := strings.Index(sect[1:], "\n\n"); j > 0 {
 		sect = sect[:j+1]
 	}
-	for _, k := range []string{"F ", "↑ ↓", "PgUp PgDn", "g  G", "→  Enter", "←", "s ", "/ ", "w ", "r ", "c ", "Esc"} {
+	for _, k := range []string{"F ", "↑ ↓", "PgUp PgDn", "g  G", "→  Enter", "←", "s ", "/ ", "w ", "r ", "o ", "i ", "c ", "Esc", "copy the highlighted path out", "copy a local path in"} {
 		if !strings.Contains(sect, k) {
 			t.Errorf("the Files help lacks %q:\n%s", k, sect)
 		}

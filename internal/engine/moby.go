@@ -15,6 +15,7 @@ import (
 	"net/netip"
 	"net/url"
 	"os"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -1127,6 +1128,33 @@ func (m *mobyEngine) Processes(ctx context.Context, id string) (ProcessList, err
 		return ProcessList{}, m.wrap("list processes", err)
 	}
 	return ProcessList{Titles: res.Titles, Rows: res.Processes}, nil
+}
+
+func (m *mobyEngine) CopyFromContainer(ctx context.Context, id, p string) (Archive, error) {
+	res, err := m.cli.CopyFromContainer(ctx, id, client.CopyFromContainerOptions{SourcePath: p})
+	if err != nil {
+		return Archive{}, m.wrap("copy from container", err)
+	}
+	st := res.Stat
+	return Archive{Content: res.Content, Stat: PathStat{Name: st.Name, Size: st.Size, Mode: st.Mode, LinkTarget: st.LinkTarget}}, nil
+}
+
+// CopyToContainer sends path=parent(dest): the daemon extracts the tar
+// relative to it, so entries rooted at base(dest) create or replace exactly
+// dest (docs/DECISIONS.md W3). A directory is not replaced by a file nor a
+// file by a directory, and the daemon's ownership applies (W10).
+func (m *mobyEngine) CopyToContainer(ctx context.Context, id, dest string, content io.Reader) error {
+	clean := path.Clean(dest)
+	if !path.IsAbs(clean) || clean == "/" {
+		return &Error{Kind: KindOther, Op: "copy to container", Msg: fmt.Sprintf("the destination must be an absolute path inside the container, not %q", dest)}
+	}
+	_, err := m.cli.CopyToContainer(ctx, id, client.CopyToContainerOptions{
+		DestinationPath:           path.Dir(clean),
+		Content:                   content,
+		AllowOverwriteDirWithFile: false,
+		CopyUIDGID:                false,
+	})
+	return m.wrap("copy to container", err)
 }
 
 func (m *mobyEngine) ContainerChanges(ctx context.Context, id string) ([]Change, error) {

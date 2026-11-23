@@ -1075,6 +1075,39 @@ no opt-in check was added for a mutation. The request body is proven against the
 and the fake, and the fake against the real CLI's `docker create`; that is the same chain of
 evidence as every other mutation.
 
+## Round eighteen: copying files between a container and this machine
+
+A copy is the one place the desk reads or writes a file's contents, and copy in is a mutation.
+The host-side rules live in one package and are proven there with hostile archives; above it, the
+fake daemon's request log and its upload record are the witness, and the fake is held to the real
+`docker cp`.
+
+| What | Proven by | Command |
+| --- | --- | --- |
+| The walk: files, directories, links, bytes and skipped special files counted; a missing source, `/`, a FIFO root and an unreadable directory refused | `TestScanCountsTheTree`, `TestScanRefuses` | `go test ./internal/transfer -run Scan` |
+| The tar: entries rooted at the name given, PAX long names, modes, no owners, a symlink as a link, a hard link as a file, a round trip to the same tree, a cancel mid-file | `TestTarRoundTrip`, `TestTarOneFileIsOneEntry`, `TestTarSendsAHardLinkAsAFile`, `TestTarStopsWhenCancelled` | `go test ./internal/transfer -run Tar` |
+| The extraction: a file and a directory land at exactly the destination; an existing file, folder or link is refused and untouched; a missing parent is not created; links made last; an entry beneath the archive's own symlink refused whichever comes first | `TestExtract*` | `go test ./internal/transfer -run Extract` |
+| Hostile archives: absolute names, `..` (also one that cleans inside), two top-level entries, a name twice, a file then a directory, hard links out of the destination, to another top, to a link; an empty archive; devices and FIFOs skipped and named, escaped — each asserting nothing changed in a temporary root | `TestExtractHostileNames`, `TestExtractSkipsSpecialFilesAndNamesThem`, `TestCheckName` | `go test ./internal/transfer` |
+| Clean-up: a cancelled context and an injected `ENOSPC` remove everything written, a read-only directory included, walking the parent before and after | `TestExtractCleansUpWhenCancelled`, `TestExtractCleansUpAfterAWriteError` | `go test ./internal/transfer -run CleansUp` |
+| The engine: the stream and the stat (name, size, mode, link target); a missing path is `KindNotFound`; the upload's query is `path=<parent>`, `noOverwriteDirNonDir=true`, no `copyUIDGID`; the tar the fake received; a missing parent is the daemon's 404; `/` and relative destinations refused before a request | `TestCopyFromContainer`, `TestCopyToContainer` | `go test ./internal/engine -run Copy` |
+| Read-only: copy out streams; copy in is refused by the wrapper and by the request hook; the tripwire counts 20 mutations | `TestReadOnlyCopy`, `TestReadOnlyCoversEveryMutation` | `go test ./internal/engine -run ReadOnly` |
+| The fake's `GET`/`HEAD`/`PUT /containers/{id}/archive`: a file, a directory, a symlink, a FIFO, a path through a symlinked directory, a missing path, an unknown container; uploads that replace, merge and record themselves and the change list; refusals (missing parent, not a directory, file over directory and the reverse, traversal, absolute) that change nothing | `TestArchiveGet`, `TestArchiveStatHEAD`, `TestArchivePut`, `TestArchivePutRefuses` | `go test ./internal/fakeengine -run Archive` |
+| The fake against the real CLI: `docker cp` of a file, a directory (with a link) and a symlink out, modes kept, a missing path; a file and a directory (with a link) in, a missing parent, a file over a directory | 10 checks in `scripts/cli-crosscheck.sh` | `make crosscheck` |
+| The plan: the walk's counts and words; `TierConfirm`; refusals with no steps built; the job copies a tree into the fake exactly; a file to another name is not nested; the daemon's refusals are the job's error; a source gone since the confirmation is the local error; no file's contents in the title, target, effects, description, status or output (a sentinel file) | `TestCopyIn*` | `go test ./internal/plan -run CopyIn` |
+| The view: `o` and `i` on a container, the image sentence, a deleted path, read-only refusing `i` and offering `o`; the forms' prefilled destination, rule sentence, container and daemon; the local refusals (exists, missing parent, parent a file, `~user`) before any archive request; the absolute path shown for `~/x` and a relative path; copy out of a file, a directory with its link, a FIFO skipped and named, a daemon refusal leaving nothing; a cancel mid-stream leaving nothing; copy in confirmed only by `y`; the change list read once after the job, and not at all once the view is closed; the footer, the help and the README agreeing | `TestFilesCopy*`, `TestFilesHelpAndFooter`, `TestCopyKeysAreDocumented` | `go test ./internal/ui -run 'FilesCopy\|FilesHelp\|CopyKeys'` |
+| The real binary: a file copied out of `shop-web-1` in read-only mode has the container's bytes and mode, with one archive `GET` and no mutation; a local directory copied in, captured form and confirmation, exactly one `PUT`, the fake's tree, the change list read again; an existing local destination refused before any archive request | `TestCopyOut`, `TestCopyIn` | `go test ./internal/e2e -run Copy` |
+| A real daemon, read-only: one path of a named container copied out by the desk and by the real `docker cp`, the two trees identical (names, types, permission bits, link targets, bytes); copy in refused before the wire | `TestRealDaemonCopyReadOnly` (opt-in) | `DOCKER_DESK_REAL_HOST=… DOCKER_DESK_REAL_COPY_CONTAINER=<name> go test ./internal/engine -run TestRealDaemonCopyReadOnly` |
+
+Screens: `docs/screens/56-copy-in-form.txt` and `docs/screens/57-copy-in-confirm.txt` (150×42),
+captured by `TestCopyIn`.
+
+What is not proven: a copy **in** was never sent to a real daemon. The test guard refuses, for
+every test, to open a real daemon read-write (B3), and this round did not change that. The upload's
+shape is proven against the client library and the fake, and the fake against the real CLI's
+`docker cp`, which sends the same request (`PUT` at the destination's parent with the entry
+renamed); that is the same chain of evidence as every other mutation. The way out was checked
+against a real daemon (`TestRealDaemonCopyReadOnly`, on a symlink and a directory).
+
 ## Running everything
 
 ```sh

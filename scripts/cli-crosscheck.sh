@@ -106,6 +106,31 @@ expect_eq "diff shop-web-1: every kind, in the daemon's order" "$(d diff shop-we
 expect_eq "diff of a container that wrote nothing" "$(d diff redis-cache)" ""
 expect_fails "diff of an unknown container" "No such container" d diff ghost
 
+echo "== cp (the Files view's copy out and copy in)"
+# The real CLI against the fake's archive endpoints: GET for out, HEAD and
+# PUT for in. The desk names exact destinations (W3); the CLI nests into an
+# existing directory, so every destination here is a path that does not
+# exist yet, which is where the two agree.
+CP="$DIR/cp"; mkdir -p "$CP"
+d cp shop-web-1:/etc/nginx/nginx.conf "$CP/nginx.conf" 2>/dev/null
+expect_contains "cp out: a file" "$(cat "$CP/nginx.conf")" "worker_processes 4;"
+d cp shop-web-1:/etc/nginx "$CP/nginx-out" 2>/dev/null
+expect_eq "cp out: a directory, to exactly the path named" "$(cd "$CP/nginx-out" && find . | sort | tr '\n' ' ')" ". ./conf.d ./conf.d/default.conf ./current.conf ./nginx.conf "
+expect_eq "cp out: a symlink inside is a link" "$(readlink "$CP/nginx-out/current.conf")" "nginx.conf"
+d cp shop-web-1:/bin/sh "$CP/sh-link" 2>/dev/null
+expect_eq "cp out: a symlink is copied as the link" "$(readlink "$CP/sh-link")" "/usr/bin/bash"
+expect_eq "cp out: the mode is kept" "$(stat -c %a "$CP/nginx-out/nginx.conf")" "644"
+expect_fails "cp out: a missing path" "Could not find the file /nope in container shop-web-1" d cp shop-web-1:/nope "$CP/nope"
+printf 'listen 8081;\n' > "$CP/app.conf"; chmod 600 "$CP/app.conf"
+d cp "$CP/app.conf" shop-web-1:/etc/nginx/app.conf 2>/dev/null
+expect_eq "cp in: a file, at the path named" "$(d cp shop-web-1:/etc/nginx/app.conf - 2>/dev/null | tar -xO)" "listen 8081;"
+mkdir -p "$CP/assets/js"; printf 'x' > "$CP/assets/js/app.js"; ln -s js/app.js "$CP/assets/main.js"
+d cp "$CP/assets" shop-web-1:/srv/assets 2>/dev/null
+expect_eq "cp in: a directory, with a link as a link" "$(d cp shop-web-1:/srv/assets - 2>/dev/null | tar -t | sort | tr '\n' ' ')" "assets/ assets/js/ assets/js/app.js assets/main.js "
+expect_fails "cp in: a missing parent" "Could not find the file /srv/none" d cp "$CP/app.conf" shop-web-1:/srv/none/app.conf
+mkdir -p "$CP/f"; printf 'x' > "$CP/f/nginx"
+expect_fails "cp in: a file over a directory is refused" "cannot overwrite directory" d cp "$CP/f/nginx" shop-web-1:/etc/
+
 echo "== lifecycle"
 d stop redis-cache >/dev/null
 expect_eq "stop -> exited" "$(d inspect --format '{{.State.Status}}' redis-cache)" "exited"

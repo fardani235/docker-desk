@@ -15,7 +15,7 @@ var readMethods = map[string]bool{
 	"Ping": true, "Info": true, "Close": true,
 	"Containers": true, "Images": true, "Volumes": true, "Networks": true,
 	"InspectContainer": true, "InspectImage": true, "InspectVolume": true, "InspectNetwork": true,
-	"SaveImage": true, "DiskUsage": true, "ImageSizes": true, "ImageLayers": true, "ImageFacts": true, "ContainerSizes": true,
+	"SaveImage": true, "CopyFromContainer": true, "DiskUsage": true, "ImageSizes": true, "ImageLayers": true, "ImageFacts": true, "ContainerSizes": true,
 	"DistributionInspect": true, "Events": true, "Logs": true, "Stats": true, "Processes": true, "ContainerChanges": true,
 	"ExecInspect": true,
 }
@@ -53,8 +53,8 @@ func TestReadOnlyCoversEveryMutation(t *testing.T) {
 			}
 		}()
 	}
-	if checked != 19 {
-		t.Errorf("checked %d mutating methods, expected 19 — update readMethods if the interface changed", checked)
+	if checked != 20 {
+		t.Errorf("checked %d mutating methods, expected 20 — update readMethods if the interface changed", checked)
 	}
 }
 
