@@ -264,18 +264,22 @@ func (s *Server) handleContainerCreate(w http.ResponseWriter, r *http.Request) {
 	for _, m := range host.Mounts {
 		switch m.Type {
 		case mount.TypeVolume:
-			c.Mounts = append(c.Mounts, s.volumeMountLocked(m.Source, m.Target, !m.ReadOnly))
+			c.Mounts = append(c.Mounts, s.volumeMountLocked(m.Source, m.Target, "", !m.ReadOnly))
 		case mount.TypeBind:
 			c.Mounts = append(c.Mounts, MountSpec{Type: "bind", Source: m.Source, Destination: m.Target, RW: !m.ReadOnly})
 		}
 	}
 	for _, b := range host.Binds {
 		parts := strings.Split(b, ":")
-		rw := !(len(parts) > 2 && strings.Contains(parts[2], "ro"))
+		mode := ""
+		if len(parts) > 2 {
+			mode = parts[2]
+		}
+		rw := !strings.Contains(mode, "ro")
 		if strings.HasPrefix(parts[0], "/") {
-			c.Mounts = append(c.Mounts, MountSpec{Type: "bind", Source: parts[0], Destination: parts[1], RW: rw})
+			c.Mounts = append(c.Mounts, MountSpec{Type: "bind", Source: parts[0], Destination: parts[1], Mode: mode, RW: rw})
 		} else {
-			c.Mounts = append(c.Mounts, s.volumeMountLocked(parts[0], parts[1], rw))
+			c.Mounts = append(c.Mounts, s.volumeMountLocked(parts[0], parts[1], mode, rw))
 		}
 	}
 
@@ -292,12 +296,12 @@ func (s *Server) handleContainerCreate(w http.ResponseWriter, r *http.Request) {
 
 // volumeMountLocked mounts a named volume, creating it the way the daemon
 // does when the name is new.
-func (s *Server) volumeMountLocked(name, target string, rw bool) MountSpec {
+func (s *Server) volumeMountLocked(name, target, mode string, rw bool) MountSpec {
 	if _, ok := s.volumes[name]; !ok {
 		s.ensureVolumeLocked(name, nil)
 		s.emit("volume", "create", name, map[string]string{"driver": "local"})
 	}
-	return MountSpec{Type: "volume", Name: name, Source: "/var/lib/fake-docker/volumes/" + name + "/_data", Destination: target, RW: rw}
+	return MountSpec{Type: "volume", Name: name, Source: "/var/lib/fake-docker/volumes/" + name + "/_data", Destination: target, Mode: mode, RW: rw}
 }
 
 // assignNameLocked picks an unused adjective_surname, as the daemon does.

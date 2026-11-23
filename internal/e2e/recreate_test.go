@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -128,4 +129,45 @@ func TestRecreateRefused(t *testing.T) {
 			d.quit()
 		})
 	}
+}
+
+// A moved tag on a container with a named volume: the mode the daemon
+// reports for it is its default, so A is offered and the re-create carries
+// the volume (docs/DECISIONS.md, round twenty).
+func TestRecreateCarriesADefaultVolume(t *testing.T) {
+	srv := startFake(t, func(s *fakeengine.Server) {
+		s.SeedDemo()
+		day := 24 * time.Hour
+		s.SeedMovedTag(fakeengine.ContainerSpec{
+			Name: "db-svc", Image: "acme/db:1", Cmd: []string{"db"},
+			Volumes: []string{"db-data"}, State: "running", Age: day,
+		}, fixture.ChangesReport("acme/db:1", false), fixture.ChangesReport("acme/db:1", true), nil, nil, 2*day)
+	})
+	oldID := srv.ContainerID("db-svc")
+	d := launch(t, srv, 40, 100)
+	d.openChangesOf("db-svc", "db-svc")
+	d.see("A re-create")
+	d.keys("A")
+	d.see("Re-create container", "Type recreate and press Enter")
+	d.consent("recreate", ptyscreen.Enter)
+	d.see("re-create container db-svc")
+	waitFor(t, "the new container", func() bool {
+		st, _ := srv.ContainerState("db-svc")
+		return st == "running" && srv.ContainerID("db-svc") != oldID
+	})
+	eng, err := engine.New(engine.Options{Host: srv.Host()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer eng.Close()
+	detail, err := eng.InspectContainer(context.Background(), srv.ContainerID("db-svc"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range detail.Mounts {
+		if m.Type == "volume" && m.Destination == "/data/db-data" {
+			return
+		}
+	}
+	t.Errorf("the new container does not mount the volume: %+v", detail.Mounts)
 }

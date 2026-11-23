@@ -189,7 +189,11 @@ func checkAgainstSource(t *testing.T, name string, raw, imageRaw []byte, spec Cl
 			fail("published ports", len(spec.Ports), n)
 		}
 	}
-	if !strings.Contains(refusedText, FamStorage+":") {
+	if line, ok := refusalLine(refused, FamStorage); ok {
+		// A mount this round cannot reproduce was refused: say so rather
+		// than passing as if every mount had been compared.
+		t.Logf("%s: storage not compared: %s", name, line)
+	} else {
 		for _, m := range src.Mounts {
 			found := false
 			for _, ms := range spec.Mounts {
@@ -237,4 +241,15 @@ func hasStr(list []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// refusalLine returns the line a refused family produced, so a skipped
+// comparison can name it instead of passing silently.
+func refusalLine(refused []string, family string) (string, bool) {
+	for _, line := range refused {
+		if strings.HasPrefix(line, family+": ") {
+			return line, true
+		}
+	}
+	return "", false
 }

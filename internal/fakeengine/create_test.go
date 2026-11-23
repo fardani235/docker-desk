@@ -233,3 +233,57 @@ func TestContainerCreateThenInspectReportsTheCloneFields(t *testing.T) {
 		t.Error("a refused create created a container")
 	}
 }
+
+// The daemon records the mode each mount spelling carried, and applies the
+// shared label to a named volume that carried none; the fake reports both,
+// because a clone reads this answer (docs/DECISIONS.md, round twenty).
+func TestContainerCreateReportsMountModes(t *testing.T) {
+	s := New()
+	s.AddImage(7_000_000, time.Hour, "shop/web:2")
+	body := `{"Image":"shop/web:2","HostConfig":{
+	  "Mounts":[{"Type":"volume","Source":"web-data","Target":"/data"},
+	            {"Type":"bind","Source":"/srv/data","Target":"/data-host","ReadOnly":true}],
+	  "Binds":["web-data:/from-ro:ro","web-data:/from-z:Z","web-data:/from-rw:rw","/srv/data:/from-bind"]}}`
+	if rec := post(s, "/containers/create?name=web", body); rec.Code != 201 {
+		t.Fatalf("create: %d %s", rec.Code, rec.Body)
+	}
+	get := httptest.NewRecorder()
+	s.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/v1.47/containers/web/json", nil))
+	if get.Code != 200 {
+		t.Fatalf("inspect: %d %s", get.Code, get.Body)
+	}
+	var in struct {
+		Mounts []struct {
+			Destination, Type, Mode string
+			RW                      bool
+		}
+	}
+	if err := json.Unmarshal(get.Body.Bytes(), &in); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]struct {
+		mode string
+		rw   bool
+	}{
+		"/data":      {"z", true}, // Mounts, volume: the daemon's default
+		"/data-host": {"", false}, // Mounts, bind: no mode at all
+		"/from-ro":   {"ro", false},
+		"/from-z":    {"Z", true},
+		"/from-rw":   {"rw", true},
+		"/from-bind": {"", true},
+	}
+	for _, m := range in.Mounts {
+		w, ok := want[m.Destination]
+		if !ok {
+			t.Errorf("unexpected mount %s", m.Destination)
+			continue
+		}
+		if m.Mode != w.mode || m.RW != w.rw {
+			t.Errorf("%s: mode %q rw %v; want %q %v", m.Destination, m.Mode, m.RW, w.mode, w.rw)
+		}
+		delete(want, m.Destination)
+	}
+	for d := range want {
+		t.Errorf("mount %s missing", d)
+	}
+}

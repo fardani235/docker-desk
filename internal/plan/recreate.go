@@ -758,7 +758,7 @@ func cloneStorage(spec *CloneSpec, mounts []rawMountPt, host *rawHost, ref refus
 			ref.add(FamStorage, "mount destination %s", shown(m.Destination))
 			continue
 		}
-		if bad := mountModeExtras(m.Mode); len(bad) > 0 {
+		if bad := mountModeExtras(m.Type, m.Mode); len(bad) > 0 {
 			ref.add(FamStorage, "mount option %s at %s", shownList(bad), shown(m.Destination))
 			continue
 		}
@@ -818,13 +818,20 @@ func cloneStorage(spec *CloneSpec, mounts []rawMountPt, host *rawHost, ref refus
 }
 
 // mountModeExtras returns the parts of a mount's mode other than read-only,
-// read-write and the default propagation. An SELinux relabel (z, Z) is one:
-// a private label is tied to the container it was made for.
-func mountModeExtras(mode string) []string {
+// read-write and the default propagation, for a mount of this type. A volume
+// the daemon mounted with no explicit mode reports z: that is the daemon's
+// own default, which it applies again to the new container, so it is not an
+// extra. A private label (Z) on any mount, and any label on a bind, stay
+// extras: a private label is tied to the container it was made for.
+func mountModeExtras(typ, mode string) []string {
 	var out []string
 	for _, t := range strings.Split(mode, ",") {
 		switch t {
 		case "", "ro", "rw", "rprivate":
+		case "z":
+			if typ != "volume" {
+				out = append(out, t)
+			}
 		default:
 			out = append(out, t)
 		}

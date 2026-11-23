@@ -1154,6 +1154,34 @@ not be carried.
 `make crosscheck` has the same three red checks as rounds fifteen to eighteen — `dangling
 images`, `system df images`, `system df containers` — which were recorded, not fixed, here.
 
+## Round twenty: the daemon's default mode on a named volume
+
+A named volume the daemon mounted without a mode reports `Mode: "z"`; that is the daemon's
+default, not an SELinux relabel the operator chose. The clone accepts it for a volume and still
+refuses `Z` on a volume and any label on a bind. The evidence is the clone tables, a fake that
+reports the daemon's default, the real CLI's inspect, and the read-only derivation.
+
+| What | Proven by | Command |
+| --- | --- | --- |
+| A default named volume is carried, alone and combined with `ro`; `Z` on a volume and `z` on a bind still refuse | `TestClonePortsAndStorage`, `TestCloneRefusesTheReviewedFamilies` | `go test ./internal/plan -run Clone` |
+| The re-create path against the daemon's real shape: a container created with a named volume through the fake's create is inspected and derived without a refusal; the test fails if the volume exception is removed | `TestCloneCarriesADefaultVolumeFromTheFake` | `go test ./internal/plan -run DefaultVolumeFromTheFake` |
+| The fake records the mode each spelling carried and reports the daemon's default for a volume with none (`Mounts` volume `z`, `Mounts` bind empty, `-v …:ro` `ro`, `-v …:Z` `Z`, empty bind mode empty) | `TestContainerCreateReportsMountModes` | `go test ./internal/fakeengine -run MountModes` |
+| The desk re-creates a moved-tag container that has a named volume, at 100 columns, and the new container still mounts it | `TestRecreateCarriesADefaultVolume` | `go test ./internal/e2e -run DefaultVolume` |
+| The real CLI records the mode and the fake matches it | the create and re-create sections of `scripts/cli-crosscheck.sh` compare `{{.Mode}}` | `make crosscheck` |
+| The derivation against a real daemon: every container decoded, with a refused storage family logged rather than skipped | `TestRealDaemonRecreateReadOnly` | `make real-readonly-check` |
+
+The rule is proven at the clone, the fake, the re-create plan, the real CLI and the read-only
+derivation. **No re-create was sent to a real daemon:** the test guard forbids it (B3), and the
+read-only check sends GET/HEAD only. The rule covers the mode strings the pinned API's daemon
+records; a mode a future daemon invents is not classified, and one that newly becomes a default
+would be visible in the read-only check's logged refusal.
+
+`make crosscheck` has the same three red checks as rounds fifteen to nineteen — `dangling
+images`, `system df images`, `system df containers` — which were recorded, not fixed, here.
+`TestRealDaemonReadOnly` keeps its pre-existing failure on this machine (a container whose log
+driver is `none`, B37).
+
+
 ## Running everything
 
 ```sh

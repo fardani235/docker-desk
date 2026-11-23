@@ -249,8 +249,9 @@ func TestClonePortsAndStorage(t *testing.T) {
 	}
 	d.mounts = []any{
 		map[string]any{"Type": "bind", "Source": "/srv/conf", "Destination": "/etc/web", "Mode": "ro", "RW": false, "Propagation": "rprivate"},
-		map[string]any{"Type": "volume", "Name": "web-data", "Source": "/var/lib/docker/volumes/web-data/_data", "Destination": "/data", "Driver": "local", "Mode": "rw", "RW": true},
+		map[string]any{"Type": "volume", "Name": "web-data", "Source": "/var/lib/docker/volumes/web-data/_data", "Destination": "/data", "Driver": "local", "Mode": "z", "RW": true},
 		map[string]any{"Type": "volume", "Name": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "Source": "/var/lib/docker/volumes/0123/_data", "Destination": "/cache", "Driver": "local", "Mode": "", "RW": true},
+		map[string]any{"Type": "volume", "Name": "cache-data", "Source": "/var/lib/docker/volumes/cache-data/_data", "Destination": "/cache-ro", "Driver": "local", "Mode": "ro,z", "RW": false},
 	}
 	spec, refused := clone(t, d)
 	if len(refused) != 0 {
@@ -279,6 +280,7 @@ func TestClonePortsAndStorage(t *testing.T) {
 		{Type: "volume", Source: "web-data", Destination: "/data"},
 		// The anonymous volume keeps the daemon's name: its data stays.
 		{Type: "volume", Source: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", Destination: "/cache"},
+		{Type: "volume", Source: "cache-data", Destination: "/cache-ro", ReadOnly: true},
 	}
 	if !reflect.DeepEqual(spec.Mounts, wantMounts) {
 		t.Errorf("mounts %+v", spec.Mounts)
@@ -490,6 +492,12 @@ func TestCloneRefusesTheReviewedFamilies(t *testing.T) {
 		{FamStorage, "volume driver nfs", func(d *inspectDoc) { d.host["VolumeDriver"] = "nfs" }},
 		{FamStorage, "mount option Z at /data", func(d *inspectDoc) {
 			d.mounts = []any{map[string]any{"Type": "bind", "Source": "/srv", "Destination": "/data", "Mode": "Z", "RW": true}}
+		}},
+		{FamStorage, "mount option z at /data", func(d *inspectDoc) {
+			d.mounts = []any{map[string]any{"Type": "bind", "Source": "/srv", "Destination": "/data", "Mode": "z", "RW": true}}
+		}},
+		{FamStorage, "mount option Z at /var/data", func(d *inspectDoc) {
+			d.mounts = []any{map[string]any{"Type": "volume", "Name": "v", "Source": "/var/lib/docker/volumes/v/_data", "Destination": "/var/data", "Mode": "Z", "RW": true}}
 		}},
 		{FamStorage, "rshared propagation at /data", func(d *inspectDoc) {
 			d.mounts = []any{map[string]any{"Type": "bind", "Source": "/srv", "Destination": "/data", "RW": true, "Propagation": "rshared"}}

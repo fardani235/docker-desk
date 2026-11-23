@@ -4423,3 +4423,70 @@ See docs/TESTING.md, round nineteen, for the commands and their results.
 - The design's premises that did not hold are entries of their own: inspect repeats the image's
   configuration (G15); a real daemon's defaults would have been refusals (G16, G17).
 - No commits were made.
+
+## Round twenty — the daemon's default mode on a named volume
+
+The request: a review found that the re-create refused every container whose named volume was
+mounted without an explicit mode. The change is the OpenSpec change
+`fix-recreate-default-volume-mode`: a proposal, a delta to `container-recreation`, a design (H1–H4)
+and tasks. It amends round nineteen's closed model; nothing else in that round changes.
+
+**Found:** this machine's Docker 29.10.0 (API 1.57) reports `Mode: "z"` for a named volume
+created with `--mount type=volume` and with `-v name:/path`, `"rw"` when the spelling adds
+`:rw`, and `""` for an anonymous volume. The daemon sets it in `setBindModeIfNull`
+(`daemon/volumes_unix.go:128`) when a named volume has no mode of its own, and the pinned
+`moby/api` v1.56.1 documents the same default. `mountModeExtras` read every such `z` as an
+SELinux relabel the desk cannot reproduce, so the gate withdrew `A` and the dialog would have
+refused with "mount option z". The fake never reported a mode, the unit fixture used `"rw"`,
+the cross-check compared no mode, and the read-only check skipped storage once refused, so no
+proof could see it.
+
+### H1 — `z` is the daemon's default on a volume; `Z` and bind labels stay refusals
+
+`mountModeExtras` takes the mount type. For a volume it accepts a bare `z` and keeps every other
+token's verdict; for a bind both `z` and `Z` stay refusals, and `Z` stays a refusal on a volume.
+**Why per type:** the daemon applies `z` only to volumes; on a bind the token is the operator's
+choice, and `MountOption` cannot express a relabel. `Z` marks a private label tied to the old
+container's MCS label. **Alternatives:** ignore `Mode` for volumes (silently accepts `Z`); read
+`HostConfig.Binds` for an explicit mode (the default and an explicit `z` are indistinguishable,
+and an API `Mounts` entry carries no mode); treat every `z` as the default (wrong for binds).
+
+### H2 — No mode is carried; no engine change
+
+The clone still produces type, source, destination and read-only. The create sends no mode and
+the daemon applies its default again. **Why:** leaving the field unset is the only faithful
+representation of "the daemon's default", and a widened field whose only legal value is that
+default would add API for no behaviour. **Alternative:** add `Mode` to `engine.MountOption` and
+thread it through `createConfig` — still unable to express `Z`, and wider for nothing.
+
+### H3 — The fake reproduces the daemon's default
+
+`fakeengine.MountSpec` gains `Mode`: the create handler records the third part of a `-v`
+spelling and leaves a typed `Mounts` entry empty, and `mountPoints` reports `z` for a volume
+with no recorded mode, as the daemon does. **Why:** the fake was kinder than the daemon, which
+is how the defect survived every fake-based test. **Alternative:** leave the fake alone and prove
+the rule from raw fixtures only — cheaper, but the re-create path and the dialog stay blind.
+
+### H4 — The proofs, extended
+
+The clone tables carry a `z` volume and a `ro,z` volume and refuse `Z` on a volume and `z` on a
+bind; a plan test creates a container with a named volume through the fake's HTTP create,
+inspects it, and runs `Clone`, so it fails if H1 is reverted; the cross-check prints `{{.Mode}}`
+for the create and re-create cases; the read-only check logs a refused storage family instead of
+passing silently; an end-to-end test re-creates a moved-tag container with a named volume. A
+per-mount comparison in the read-only check is not used, because a mount refused for another
+reason (propagation, subpath, a driver) would be reported as dropped.
+
+### H5 — Round twenty: what was run, and what was found that is not this round's
+
+See docs/TESTING.md, round twenty, for the commands and their results.
+
+- **`make crosscheck` is the same three red as rounds fifteen to nineteen** — `dangling images`,
+  `system df images`, `system df containers` — and they were not touched here. The create and
+  re-create sections pass with the new mode columns (121 checks passed).
+- **`make real-readonly-check`**: the re-create derivation passes on this machine's eight
+  containers; `TestRealDaemonReadOnly` still fails on the unchanged container whose log driver is
+  `none` (B37), and was not changed here.
+- No re-create was sent to a real daemon. The default mode was read with scratch containers and
+  removed again; no volume or container was left behind.
+- No commits were made.

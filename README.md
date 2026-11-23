@@ -370,7 +370,8 @@ the reference and name; entrypoint and command; every environment entry; working
 user, hostname, TTY and open stdin, init; labels (compose labels included); the health check;
 stop signal and grace period; published ports with their host address, host port and protocol,
 and ports exposed without being published; bind and volume mounts with their read-only flag,
-an anonymous volume by the name the daemon gave it; the network mode and every network with
+an anonymous volume by the name the daemon gave it, a named volume by its name (the daemon
+applies its own default mode again); the network mode and every network with
 its aliases; the restart policy and retry limit; memory, swap and reservation, CPUs, CPU
 shares, quota, period and cpuset, the process limit and shared memory size. What the *old
 image* supplied — its environment entries, command, entrypoint, labels, working directory,
@@ -383,7 +384,10 @@ and real-time limits, tmpfs, extra hosts, DNS and domain name, extra groups, leg
 log driver other than the daemon's, a read-only root filesystem, auto-remove, shared or host
 namespaces and a cgroup parent, a fixed address or other endpoint settings, publish-all and
 host port ranges, umask, a mount type other than bind or volume, and mount options the desk
-does not reproduce (propagation, SELinux relabelling, subpaths, volumes-from).
+does not reproduce (propagation, subpaths, volumes-from). A private SELinux label (`Z`) on any
+mount, and a shared one (`z`) on a bind, are refused; the `z` a daemon reports on a named volume
+mounted without a mode is that volume's default, which the daemon applies again, so it is not a
+refusal.
 
 **Environment values are carried and never shown**: the dialog, the job, its log and the status
 line name variables and counts only; a daemon message that quotes a value has it hidden.

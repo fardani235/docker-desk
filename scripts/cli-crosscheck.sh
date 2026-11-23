@@ -203,10 +203,10 @@ expect_contains "create: environment" "$(d inspect --format '{{json .Config.Env}
 expect_eq "create: restart policy" "$(d inspect --format '{{.HostConfig.RestartPolicy.Name}}:{{.HostConfig.RestartPolicy.MaximumRetryCount}}' cross-made)" "on-failure:3"
 expect_contains "create: port binding" "$(d inspect --format '{{json .HostConfig.PortBindings}}' cross-made)" '"80/tcp":[{"HostIp":"127.0.0.1","HostPort":"18080"}]'
 expect_contains "create: udp port" "$(d inspect --format '{{json .HostConfig.PortBindings}}' cross-made)" '"53/udp"'
-mounts="$(d inspect --format '{{range .Mounts}}{{.Type}}:{{.Source}}:{{.Destination}}:{{.RW}} {{end}}' cross-made)"
-expect_contains "create: named volume mount" "$mounts" "volume:/var/lib/fake-docker/volumes/cross-cache/_data:/var/cache:true"
-expect_contains "create: read-only bind mount" "$mounts" "bind:/srv/data:/data:false"
-expect_contains "create: -v volume, read-only" "$mounts" "/legacy:false"
+mounts="$(d inspect --format '{{range .Mounts}}{{.Type}}:{{.Source}}:{{.Destination}}:{{.RW}}:{{.Mode}} {{end}}' cross-made)"
+expect_contains "create: named volume mount" "$mounts" "volume:/var/lib/fake-docker/volumes/cross-cache/_data:/var/cache:true:z"
+expect_contains "create: read-only bind mount" "$mounts" "bind:/srv/data:/data:false:"
+expect_contains "create: -v volume, read-only" "$mounts" "/legacy:false:ro"
 expect_contains "create made the named volume" "$(d volume ls --format '{{.Name}}')" "cross-cache"
 expect_fails "create: name taken" "is already in use" d create --name cross-made nginx:1.27
 expect_fails "create: relative mount target" "absolute" d create --mount type=volume,src=x1,dst=rel nginx:1.27
@@ -249,9 +249,9 @@ expect_eq "clone: stop signal and timeout" "$(ins '{{.Config.StopSignal}} {{.Con
 expect_contains "clone: fixed host port" "$(ins '{{json .HostConfig.PortBindings}}')" '"80/tcp":[{"HostIp":"127.0.0.1","HostPort":"18081"}]'
 expect_contains "clone: exposed-only port is exposed" "$(ins '{{json .Config.ExposedPorts}}')" '"9000/tcp"'
 if ins '{{json .HostConfig.PortBindings}}' | grep -q 9000; then bad "clone: exposed-only port is not published"; else ok "clone: exposed-only port is not published"; fi
-mounts="$(ins '{{range .Mounts}}{{.Type}}:{{.Name}}:{{.Source}}:{{.Destination}}:{{.RW}} {{end}}')"
-expect_contains "clone: read-only bind" "$mounts" "bind::/srv/conf:/etc/web:false"
-expect_contains "clone: named volume" "$mounts" "volume:cross-data:"
+mounts="$(ins '{{range .Mounts}}{{.Type}}:{{.Name}}:{{.Source}}:{{.Destination}}:{{.RW}}:{{.Mode}} {{end}}')"
+expect_contains "clone: read-only bind" "$mounts" "bind::/srv/conf:/etc/web:false:"
+expect_contains "clone: named volume" "$mounts" "volume:cross-data:/var/lib/fake-docker/volumes/cross-data/_data:/data:true:z"
 expect_eq "clone: network mode" "$(ins '{{.HostConfig.NetworkMode}}')" "cross-front"
 expect_eq "clone: networks with aliases" "$(ins '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}={{join $v.Aliases ","}} {{end}}')" "cross-back= cross-front=web "
 expect_eq "clone: restart" "$(ins '{{.HostConfig.RestartPolicy.Name}}:{{.HostConfig.RestartPolicy.MaximumRetryCount}}')" "on-failure:3"

@@ -103,6 +103,7 @@ type MountSpec struct {
 	Name        string // volume name
 	Source      string
 	Destination string
+	Mode        string // as the daemon records it; empty means it applied its default
 	RW          bool
 }
 
@@ -438,10 +439,16 @@ func (c *Container) mountPoints() []container.MountPoint {
 			Name:        m.Name,
 			Source:      m.Source,
 			Destination: m.Destination,
+			Mode:        m.Mode,
 			RW:          m.RW,
 		}
 		if m.Type == "volume" {
 			mp.Driver = "local"
+			// The daemon sets the shared label on a named volume that
+			// carried no mode of its own (daemon/volumes_unix.go).
+			if mp.Mode == "" {
+				mp.Mode = "z"
+			}
 		}
 		out = append(out, mp)
 	}
