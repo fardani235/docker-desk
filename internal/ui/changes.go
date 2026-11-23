@@ -12,8 +12,10 @@ import (
 
 	"github.com/fardani235/docker-desk/internal/changes"
 	"github.com/fardani235/docker-desk/internal/engine"
+	"github.com/fardani235/docker-desk/internal/escape"
 	"github.com/fardani235/docker-desk/internal/forensics"
 	"github.com/fardani235/docker-desk/internal/jobs"
+	"github.com/fardani235/docker-desk/internal/plan"
 )
 
 // The Changes tab of a container: what differs between the image it runs
@@ -45,6 +47,12 @@ type changesState struct {
 	shownFor string // container the scroll offset belongs to
 	view     textView
 	visible  bool
+
+	// The re-create gate's clone check, kept for one container and one
+	// inspect of it: parsing the document on every frame would be waste.
+	cloneKey     string
+	cloneRefused []string
+	cloneErr     string
 }
 
 type changesFactsMsg struct {
@@ -318,32 +326,199 @@ func (m *Model) startChanges(t changesTarget) {
 
 // ---- keys -------------------------------------------------------------------
 
-// onChangesKey handles Enter and c on the tab; it reports whether key was one.
-func (m *Model) onChangesKey(key string) bool {
+// onChangesKey handles Enter, c and A on the tab; it reports whether key
+// was one, and the command A starts.
+func (m *Model) onChangesKey(key string) (bool, tea.Cmd) {
 	switch key {
 	case "enter":
 		t, ok := m.changesTarget()
 		if !ok || !t.refusal.None() || t.old == nil || t.new == nil {
-			return true
+			return true, nil
 		}
 		if run := m.chg.run; run != nil {
 			if run.key != t.key {
 				m.setStatus(toneDim, "Another comparison is still ending.")
 			}
-			return true
+			return true, nil
 		}
 		if _, _, done := m.contentFor(t); !done {
 			m.startChanges(t)
 		}
-		return true
+		return true, nil
 	case "c":
 		if run := m.chg.run; run != nil {
 			m.jobs.Cancel(run.jobID)
 			m.setStatus(toneWarn, "Cancelling: compare images "+run.ref)
 		}
-		return true
+		return true, nil
+	case "A":
+		return true, m.recreateKey()
 	}
-	return false
+	return false, nil
+}
+
+// ---- re-create (docs/DECISIONS.md, round nineteen) -----------------------------
+
+// recreateGate is whether the tab offers A for its container and, either
+// way, the sentence that says so.
+type recreateGate struct {
+	ok   bool
+	note string
+}
+
+// recreateGate decides the offer from what the tab already holds: the
+// verdict and both images' facts, the container's own inspect and the
+// clone's refusals. It sends nothing.
+func (m *Model) recreateGate(t changesTarget) recreateGate {
+	name := escape.Name(t.name)
+	switch t.refusal.Code {
+	case "":
+	case "same":
+		return recreateGate{note: "The tag names the image " + name + " runs: there is nothing to re-create."}
+	case "pinned", "from-id":
+		return recreateGate{note: "This reference names no other build, so there is nothing to re-create " + name + " onto."}
+	case "unresolved":
+		return recreateGate{note: "The tag names no image here, so there is nothing to re-create " + name + " onto; this desk does not pull."}
+	case "platform":
+		return recreateGate{note: "The tag names a build for another platform, so this tab does not re-create " + name + "."}
+	default:
+		return recreateGate{note: "This tab does not re-create " + name + "."}
+	}
+	if t.old == nil || t.new == nil {
+		return recreateGate{}
+	}
+	if orig, aside := plan.SetAsideName(t.container.Name, t.container.ID); aside {
+		for _, c := range m.snap.Containers {
+			if c.Name == orig && c.ID != t.container.ID {
+				return recreateGate{note: fmt.Sprintf("%s was set aside by a re-create: its name %s now belongs to another container (%s), so this tab offers nothing.", name, escape.Name(orig), engine.ShortID(c.ID))}
+			}
+		}
+		return recreateGate{note: fmt.Sprintf("%s was set aside by a re-create; its name was %s. Rename it back before re-creating it.", name, escape.Name(orig))}
+	}
+	refused, errText := m.cloneRefusals()
+	switch {
+	case errText != "":
+		return recreateGate{note: name + " cannot be re-created here: its configuration could not be read (" + errText + ")."}
+	case len(refused) > 0:
+		return recreateGate{note: name + " cannot be re-created here: it carries settings a re-create does not reproduce — " + strings.Join(refused, "; ") + "."}
+	}
+	return recreateGate{ok: true, note: fmt.Sprintf("A re-creates %s on that build (%s): it is stopped and renamed aside, and a new %s is created from %s with its configuration and started. Nothing is deleted.",
+		name, engine.ShortID(t.pair.NewID), name, escape.Name(oneLine(t.pair.Ref)))}
+}
+
+// cloneRefusals is the clone check for the inspect the tab is drawn from.
+func (m *Model) cloneRefusals() ([]string, string) {
+	d := m.detail.container
+	if d == nil {
+		return nil, "not inspected yet"
+	}
+	def := plan.DefaultsFrom(m.info)
+	key := fmt.Sprintf("%s|%d|%+v", d.ID, m.detail.seq, def)
+	if m.chg.cloneKey != key {
+		m.chg.cloneKey, m.chg.cloneRefused, m.chg.cloneErr = key, nil, ""
+		refused, err := plan.CloneRefusals(*d, def)
+		m.chg.cloneRefused = refused
+		if err != nil {
+			m.chg.cloneErr = err.Error()
+		}
+	}
+	return m.chg.cloneRefused, m.chg.cloneErr
+}
+
+// recreateKey is A on the tab. Read-only mode and a selection refuse it
+// before anything is read; a pair that cannot move is refused from what
+// the tab knows. Otherwise the plan is built from fresh reads.
+func (m *Model) recreateKey() tea.Cmd {
+	if m.readOnly {
+		m.setStatus(toneWarn, "Read-only mode: re-create is disabled. Nothing was sent to the daemon.")
+		return nil
+	}
+	if n := len(m.markedRows(KindContainers)); n > 0 {
+		m.setStatus(toneWarn, fmt.Sprintf("A re-create acts on one container at a time and %d are selected: Esc clears the selection. Nothing was sent.", n))
+		return nil
+	}
+	if m.preparing {
+		return nil
+	}
+	t, ok := m.changesTarget()
+	if !ok {
+		m.setStatus(toneDim, "The container's reference is still being read.")
+		return nil
+	}
+	if !t.refusal.None() {
+		m.setStatus(toneWarn, "Nothing to re-create: "+m.recreateGate(t).note)
+		return nil
+	}
+	if t.old == nil || t.new == nil {
+		m.setStatus(toneDim, "Both images are still being read.")
+		return nil
+	}
+	return m.prepareRecreate(t.container.ID)
+}
+
+// prepareRecreate reads, as one command, every fact the confirmation
+// states, rather than trusting what the tab cached minutes ago: the four
+// lists, the container's inspect, the pair its reference makes now, both
+// images and their platforms, and the running image's configuration (what
+// the clone leaves to the new image). A pair that cannot move is
+// NotApplicable; settings the clone refuses become the plan's blockers, so
+// the dialog opens and names them. Nothing is sent that changes the daemon.
+func (m *Model) prepareRecreate(containerID string) tea.Cmd {
+	m.preparing = true
+	m.planSeq++
+	seq := m.planSeq
+	eng, def := m.eng, plan.DefaultsFrom(m.info)
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		msg := planMsg{seq: seq}
+		msg.plan, msg.err = buildRecreate(ctx, eng, def, containerID)
+		return msg
+	}
+}
+
+func buildRecreate(ctx context.Context, eng engine.Engine, def plan.CloneDefaults, containerID string) (plan.Plan, error) {
+	snap, err := plan.Take(ctx, eng)
+	if err != nil {
+		return plan.Plan{}, fmt.Errorf("could not read the daemon's current state: %w", err)
+	}
+	d, err := eng.InspectContainer(ctx, containerID)
+	if engine.IsNotFound(err) {
+		return plan.Plan{}, &plan.NotApplicable{Reason: "That container no longer exists."}
+	}
+	if err != nil {
+		return plan.Plan{}, fmt.Errorf("could not inspect the container: %s", plainError(err))
+	}
+	pair := changes.FindPair(d.Image, d.ImageID, snap.Images)
+	if !pair.Refusal.None() {
+		return plan.Plan{}, &plan.NotApplicable{Reason: "Nothing to re-create: " + pair.Text}
+	}
+	read := func(id string) (engine.ImageDetail, error) {
+		img, err := eng.InspectImage(ctx, id)
+		if err != nil {
+			return img, fmt.Errorf("could not inspect image %s: %s", engine.ShortID(id), plainError(err))
+		}
+		return img, nil
+	}
+	old, err := read(pair.OldID)
+	if err != nil {
+		return plan.Plan{}, err
+	}
+	now, err := read(pair.NewID)
+	if err != nil {
+		return plan.Plan{}, err
+	}
+	facts := func(i engine.ImageDetail) engine.ImageFacts {
+		return engine.ImageFacts{OS: i.OS, Architecture: i.Architecture, Variant: i.Variant}
+	}
+	if r := changes.SamePlatform(facts(old), facts(now)); !r.None() {
+		return plan.Plan{}, &plan.NotApplicable{Reason: "Nothing to re-create: " + r.Text}
+	}
+	spec, refused, err := plan.Clone(d, old, def)
+	if err != nil {
+		return plan.Plan{}, err
+	}
+	return plan.ContainerRecreate(snap, d, spec, refused, plan.ImagePin{Ref: pair.Ref, ID: now.ID})
 }
 
 // ---- drawing ---------------------------------------------------------------------
@@ -584,9 +759,22 @@ func (m *Model) contentLines(t changesTarget, hang func(string, int, tone, strin
 	}
 }
 
-// redeployNote says what restarting and re-creating do, once per view.
+// redeployNote says what restarting and re-creating do, and whether this
+// tab re-creates the container — with which key, or why not.
 func (m *Model) redeployNote(prose func(tone, string), t changesTarget) {
-	prose(toneDim, "Restarting "+t.name+" keeps the image it runs; only re-creating it takes the image the tag names now — which this desk does not do.")
+	g := m.recreateGate(t)
+	text := "Restarting " + escape.Name(t.name) + " keeps the image it runs; only re-creating it takes the image the tag names now."
+	if g.note != "" {
+		text += " " + g.note
+	}
+	if g.ok && m.readOnly {
+		text += " In read-only mode A sends nothing."
+	}
+	tn := toneDim
+	if g.ok && !m.readOnly {
+		tn = toneAccent
+	}
+	prose(tn, text)
 }
 
 func signedBytes(n int64) string {

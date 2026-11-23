@@ -43,6 +43,21 @@ type Container struct {
 	NetworkMode string // "" means bridge
 	User        string
 
+	// Set by POST /containers/create and reported by inspect, so that a
+	// container created by a re-create can be re-created again.
+	Entrypoint  []string
+	WorkingDir  string
+	Hostname    string // "" reports the short ID, as the daemon does
+	OpenStdin   bool
+	Init        *bool
+	Healthcheck *container.HealthConfig
+	StopSignal  string
+	StopTimeout *int
+	Resources   container.Resources
+	ShmSize     int64 // 0 reports the daemon's 64 MiB default
+	LogDriver   string
+	LogOptions  map[string]string
+
 	// LogRate is the number of log lines per second the container writes
 	// while running. Zero means it only has its seeded lines.
 	LogRate int
@@ -79,6 +94,7 @@ type Endpoint struct {
 	IP         string
 	Gateway    string
 	Mac        string
+	Aliases    []string // user-specified, as the create request named them
 }
 
 // MountSpec is a mount of a fake container.
@@ -96,6 +112,9 @@ type PortSpec struct {
 	Private uint16
 	Public  uint16 // 0 = exposed only
 	Proto   string
+	// Random marks a binding whose host port the daemon chose: the
+	// container's configuration asks for none (HostPort "").
+	Random bool
 }
 
 // ContainerSpec describes a container to seed.
@@ -128,6 +147,9 @@ type ContainerSpec struct {
 	Privileged  bool
 	NetworkMode string
 	User        string
+	// Env is the container's own environment, NAME=value, reported by
+	// inspect after the image's PATH.
+	Env []string
 	// Age is how long ago the container was created and started.
 	Age time.Duration
 	// WritableSize is the writable layer size=1 reports (0: derived from
@@ -169,6 +191,7 @@ func (s *Server) AddContainer(spec ContainerSpec) string {
 		Privileged:    spec.Privileged,
 		NetworkMode:   spec.NetworkMode,
 		User:          spec.User,
+		Env:           append([]string(nil), spec.Env...),
 		LogRate:       spec.LogRate,
 		LogLine:       spec.LogLine,
 		StopDelay:     spec.StopDelay,
@@ -394,6 +417,7 @@ func (c *Container) endpointSettings() map[string]*network.EndpointSettings {
 			EndpointID: ep.EndpointID,
 			IPAddress:  parseAddr(ep.IP),
 			Gateway:    parseAddr(ep.Gateway),
+			Aliases:    append([]string(nil), ep.Aliases...),
 		}
 		if ep.IP != "" {
 			es.IPPrefixLen = 16
@@ -568,19 +592,46 @@ func (s *Server) handleContainerInspect(w http.ResponseWriter, ref string) {
 	}
 	// What was asked for at create, whatever the state.
 	bindings := network.PortMap{}
+	exposed := network.PortSet{}
 	for _, p := range c.Ports {
 		port, ok := network.PortFrom(p.Private, network.IPProtocol(p.Proto))
-		if !ok || p.Public == 0 {
+		if !ok {
+			continue
+		}
+		exposed[port] = struct{}{}
+		if p.Public == 0 {
 			continue
 		}
 		b := network.PortBinding{HostPort: strconv.Itoa(int(p.Public))}
+		if p.Random {
+			b.HostPort = ""
+		}
 		if p.HostIP != "" {
 			b.HostIP = parseAddr(p.HostIP)
 		}
 		bindings[port] = append(bindings[port], b)
 	}
-	env := []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
-	env = append(env, c.Env...)
+	if len(exposed) == 0 {
+		exposed = nil
+	}
+	// A seeded container has only its image's PATH; a created one has
+	// the image's environment merged in already, as the daemon stores it.
+	env := c.Env
+	if !hasEnv(env, "PATH") {
+		env = append([]string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}, env...)
+	}
+	hostname := c.Hostname
+	if hostname == "" {
+		hostname = short(c.ID)
+	}
+	shm := c.ShmSize
+	if shm == 0 {
+		shm = 64 << 20
+	}
+	logCfg := container.LogConfig{Type: "json-file", Config: map[string]string{}}
+	if c.LogDriver != "" {
+		logCfg = container.LogConfig{Type: c.LogDriver, Config: cloneMap(c.LogOptions)}
+	}
 	resp := container.InspectResponse{
 		ID:           c.ID,
 		Created:      c.Created.UTC().Format(time.RFC3339Nano),
@@ -594,19 +645,35 @@ func (s *Server) handleContainerInspect(w http.ResponseWriter, ref string) {
 		Platform:     "linux",
 		Mounts:       c.mountPoints(),
 		Config: &container.Config{
-			Hostname: short(c.ID),
-			Image:    c.Image,
-			Cmd:      c.Cmd,
-			Labels:   c.Labels,
-			Tty:      c.Tty,
-			User:     c.User,
-			Env:      env,
+			Hostname:     hostname,
+			Image:        c.Image,
+			Cmd:          c.Cmd,
+			Entrypoint:   c.Entrypoint,
+			Labels:       c.Labels,
+			Tty:          c.Tty,
+			OpenStdin:    c.OpenStdin,
+			User:         c.User,
+			WorkingDir:   c.WorkingDir,
+			Env:          env,
+			ExposedPorts: exposed,
+			Healthcheck:  c.Healthcheck,
+			StopSignal:   c.StopSignal,
+			StopTimeout:  c.StopTimeout,
 		},
 		HostConfig: &container.HostConfig{
 			NetworkMode:   container.NetworkMode(c.networkMode()),
 			Privileged:    c.Privileged,
 			RestartPolicy: container.RestartPolicy{Name: container.RestartPolicyMode(c.RestartPolicy), MaximumRetryCount: c.RestartRetries},
 			PortBindings:  bindings,
+			Init:          c.Init,
+			ShmSize:       shm,
+			Resources:     c.Resources,
+			LogConfig:     logCfg,
+			// The daemon's defaults, which inspect reports as the
+			// container's own (docs/DECISIONS.md, round nineteen).
+			Runtime:      "runc",
+			IpcMode:      "private",
+			CgroupnsMode: "private",
 		},
 		NetworkSettings: &container.NetworkSettings{
 			Ports:    ports,
@@ -615,6 +682,15 @@ func (s *Server) handleContainerInspect(w http.ResponseWriter, ref string) {
 	}
 	s.mu.Unlock()
 	writeJSON(w, http.StatusOK, resp)
+}
+
+func hasEnv(env []string, name string) bool {
+	for _, e := range env {
+		if n, _, _ := strings.Cut(e, "="); n == name {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Container) networkMode() string {

@@ -53,8 +53,8 @@ func TestReadOnlyCoversEveryMutation(t *testing.T) {
 			}
 		}()
 	}
-	if checked != 20 {
-		t.Errorf("checked %d mutating methods, expected 20 — update readMethods if the interface changed", checked)
+	if checked != 21 {
+		t.Errorf("checked %d mutating methods, expected 21 — update readMethods if the interface changed", checked)
 	}
 }
 
@@ -93,6 +93,7 @@ func TestReadOnlySendsNothing(t *testing.T) {
 		add(e.UnpauseContainer(ctx, id))
 		add(e.KillContainer(ctx, id))
 		add(e.RemoveContainer(ctx, id))
+		add(e.RenameContainer(ctx, id, "ro-renamed"))
 		_, err0 := e.CreateContainer(ctx, ContainerCreateOptions{Image: "alpine:latest", Name: "ro-probe"})
 		add(err0)
 		add(e.PullImage(ctx, "alpine", nil))
@@ -128,6 +129,9 @@ func TestReadOnlySendsNothing(t *testing.T) {
 	}
 	if st, _ := srv.ContainerState("shop-web-1"); st != "running" {
 		t.Fatalf("container state changed to %q", st)
+	}
+	if srv.ContainerID("shop-web-1") != id || srv.ContainerID("ro-renamed") != "" {
+		t.Fatal("read-only mode let a rename change the name")
 	}
 }
 

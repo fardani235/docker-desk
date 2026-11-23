@@ -91,3 +91,145 @@ func TestContainerCreateHTTP(t *testing.T) {
 		t.Errorf("%d create requests recorded", got)
 	}
 }
+
+func TestContainerRenameHTTP(t *testing.T) {
+	s := New()
+	s.AddContainer(ContainerSpec{Name: "web", Image: "alpine:3.20"})
+	s.AddContainer(ContainerSpec{Name: "db", Image: "alpine:3.20"})
+	id := s.ContainerID("web")
+	for _, tc := range []struct {
+		path string
+		code int
+		says string
+	}{
+		{"/containers/" + strings.Repeat("f", 64) + "/rename?name=x1", 404, "No such container"},
+		{"/containers/" + id + "/rename?name=bad/name", 400, "Invalid container name"},
+		{"/containers/" + id + "/rename?name=", 400, "Invalid container name"},
+		{"/containers/" + id + "/rename?name=web", 400, "same name"},
+		{"/containers/" + id + "/rename?name=db", 409, "already in use"},
+	} {
+		if rec := post(s, tc.path, ""); rec.Code != tc.code || !strings.Contains(rec.Body.String(), tc.says) {
+			t.Errorf("%s: %d %s", tc.path, rec.Code, rec.Body)
+		}
+	}
+	if s.ContainerID("web") != id {
+		t.Fatal("a refused rename changed the name")
+	}
+	if rec := post(s, "/containers/"+id+"/rename?name=web-previous-1", ""); rec.Code != 204 {
+		t.Fatalf("rename: %d %s", rec.Code, rec.Body)
+	}
+	if s.ContainerID("web-previous-1") != id || s.ContainerID("web") != "" {
+		t.Error("the name did not change")
+	}
+	var ev bool
+	for _, e := range s.evHistory {
+		ev = ev || (e.Type == "container" && e.Action == "rename" && e.Actor.ID == id && e.Actor.Attributes["name"] == "web-previous-1" && e.Actor.Attributes["oldName"] == "/web")
+	}
+	if !ev {
+		t.Error("no container/rename event")
+	}
+	var recorded int
+	for _, r := range s.Requests() {
+		if r.Method == "POST" && strings.HasSuffix(r.Path, "/rename") {
+			recorded++
+		}
+	}
+	if recorded != 6 {
+		t.Errorf("%d rename requests recorded", recorded)
+	}
+}
+
+// A container created with a re-create's fields is reported back with them,
+// merged over its image's configuration as the daemon stores it.
+func TestContainerCreateThenInspectReportsTheCloneFields(t *testing.T) {
+	s := New()
+	s.AddImage(7_000_000, time.Hour, "shop/web:2")
+	s.AddNetwork("shop_default", nil)
+	body := `{"Image":"shop/web:2","Entrypoint":["/bin/sh","-c"],"Cmd":["serve"],"Env":["TOKEN=x"],
+	  "Labels":{"com.docker.compose.project":"shop"},"Tty":true,"OpenStdin":true,"WorkingDir":"/srv","User":"1000","Hostname":"web-host",
+	  "Healthcheck":{"Test":["CMD","probe"],"Interval":30000000000,"Retries":3},"StopSignal":"SIGQUIT","StopTimeout":30,
+	  "ExposedPorts":{"9000/tcp":{},"80/tcp":{}},
+	  "HostConfig":{"NetworkMode":"shop_default","Init":true,"ShmSize":134217728,"Memory":536870912,"NanoCpus":1000000000,"PidsLimit":200,
+	    "PortBindings":{"80/tcp":[{"HostPort":""}]},"LogConfig":{"Type":"json-file","Config":{"max-size":"10m"}}},
+	  "NetworkingConfig":{"EndpointsConfig":{"shop_default":{"Aliases":["web"]}}}}`
+	rec := post(s, "/containers/create?name=web", body)
+	if rec.Code != 201 {
+		t.Fatalf("create: %d %s", rec.Code, rec.Body)
+	}
+	get := httptest.NewRecorder()
+	s.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/v1.47/containers/web/json", nil))
+	var in struct {
+		Config struct {
+			Hostname, User, WorkingDir, StopSignal string
+			Entrypoint, Cmd, Env                   []string
+			Labels                                 map[string]string
+			Tty, OpenStdin                         bool
+			StopTimeout                            int
+			Healthcheck                            struct {
+				Test     []string
+				Interval int64
+				Retries  int
+			}
+			ExposedPorts map[string]any
+		}
+		HostConfig struct {
+			NetworkMode  string
+			Init         bool
+			ShmSize      int64
+			Memory       int64
+			NanoCpus     int64
+			PidsLimit    int64
+			PortBindings map[string][]struct{ HostIp, HostPort string }
+			LogConfig    struct {
+				Type   string
+				Config map[string]string
+			}
+		}
+		NetworkSettings struct {
+			Networks map[string]struct{ Aliases []string }
+		}
+	}
+	if err := json.Unmarshal(get.Body.Bytes(), &in); err != nil {
+		t.Fatal(err)
+	}
+	c, h := in.Config, in.HostConfig
+	if c.Hostname != "web-host" || c.User != "1000" || c.WorkingDir != "/srv" || c.StopSignal != "SIGQUIT" || c.StopTimeout != 30 ||
+		strings.Join(c.Entrypoint, " ") != "/bin/sh -c" || strings.Join(c.Cmd, " ") != "serve" || !c.Tty || !c.OpenStdin ||
+		c.Labels["com.docker.compose.project"] != "shop" || c.Healthcheck.Interval != 30e9 || c.Healthcheck.Retries != 3 {
+		t.Errorf("config: %+v", c)
+	}
+	// The image's PATH is merged in after the request's own entries.
+	if len(c.Env) != 2 || c.Env[0] != "TOKEN=x" || !strings.HasPrefix(c.Env[1], "PATH=") {
+		t.Errorf("env %v", c.Env)
+	}
+	if _, ok := c.ExposedPorts["9000/tcp"]; !ok {
+		t.Errorf("exposed %v", c.ExposedPorts)
+	}
+	if h.NetworkMode != "shop_default" || !h.Init || h.ShmSize != 128<<20 || h.Memory != 512<<20 || h.NanoCpus != 1e9 || h.PidsLimit != 200 ||
+		h.LogConfig.Config["max-size"] != "10m" {
+		t.Errorf("host config: %+v", h)
+	}
+	if b := h.PortBindings["80/tcp"]; len(b) != 1 || b[0].HostPort != "" {
+		t.Errorf("a port the daemon picked is reported as asked for: %+v", b)
+	}
+	if _, bound := h.PortBindings["9000/tcp"]; bound {
+		t.Error("exposed-only port reported as bound")
+	}
+	if a := in.NetworkSettings.Networks["shop_default"].Aliases; len(a) != 1 || a[0] != "web" {
+		t.Errorf("networks %+v", in.NetworkSettings.Networks)
+	}
+	if _, ok := in.NetworkSettings.Networks["bridge"]; ok {
+		t.Error("attached to the default bridge as well")
+	}
+
+	// Refusals before anything is created.
+	if rec := post(s, "/containers/create?name=x2", `{"Image":"shop/web:2","NetworkingConfig":{"EndpointsConfig":{"nope":{}}}}`); rec.Code != 404 {
+		t.Errorf("missing network: %d %s", rec.Code, rec.Body)
+	}
+	if rec := post(s, "/containers/create?name=x3", `{"Image":"shop/web:2","NetworkingConfig":{"EndpointsConfig":{"bridge":{"Aliases":["a"]}}}}`); rec.Code != 400 {
+		t.Errorf("alias on the default bridge: %d %s", rec.Code, rec.Body)
+	}
+	if s.ContainerID("x2") != "" || s.ContainerID("x3") != "" {
+		t.Error("a refused create created a container")
+	}
+}

@@ -1,0 +1,40 @@
+ Docker Desk  unix:///tmp/ddfake2778845815/d.sock  ctx default  Engine 29.0.0-fake  ● connected
+ Daemons [◆1 /tmp/ddfake…815/d.sock ●]                                          M picker  < > focus
+┌─ 1 Kinds ──────┐┌─ 2 Containers (1 of 14) ──────────────────────────────────── filter: priv-svc ─┐
+│▸ Containers  14││  NAME             IMAGE          STATE          CPU       MEM  STATUS          │
+│  Images      18││▸ priv-svc         acme/priv:1    ○ exited                      Exited (0) 12…  │
+│  Volumes      7││                                                                                │
+│  Networks     7││                                                                                │
+│  Compose      2││                                                                                │
+│                ││                                                                                │
+│  ● 7 running   ││                                                                                │
+│  ‖ 1 ┏━ ◆ Re-create container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓      │
+│  ○ 6 ┃                                                                                    ┃──────┘
+│      ┃ container  priv-svc  (5c4d08e66de9)                                                ┃pect ━┓
+│      ┃ daemon     unix:///tmp/ddfake2778845815/d.sock  (context default)                  ┃      ┃
+│      ┃                                                                                    ┃      ┃
+│      ┃ • priv-svc is renamed priv-svc-previous-5c4d08e66de9 and kept, stopped, with its   ┃      ┃
+│      ┃   data and configuration.                                                          ┃      ┃
+│      ┃ • A new priv-svc is created from acme/priv:1 — the build 76116cacbd49, replacing   ┃-core ┃
+│      ┃   0510423c5d02 — and started.                                                      ┃&& rm ┃
+│      ┃ • Carried: 1 environment variable (PATH) · command · 1 network (bridge) · restart  ┃      ┃
+│      ┃   no.                                                                              ┃      ┃
+│      ┃ • Nothing is deleted; the old container stays stopped under priv-svc-previous-     ┃      ┃
+│      ┃   5c4d08e66de9.                                                                    ┃      ┃
+│      ┃                                                                                    ┃      ┃
+│      ┃ ✗ REFUSED — nothing will be sent to the daemon                                     ┃      ┃
+│      ┃   Privilege: runs privileged                                                       ┃      ┃
+│      ┃                                                                                    ┃      ┃
+└──────┃ Esc close                                                                          ┃━━━━━━┛
+┌─ 4 Ev┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛──────┐
+│Waiting for engine events…                              ││No jobs yet.                            │
+│Everything the daemon does                              ││Everything that changes the daemon      │
+│shows up here as it happens.                            ││runs here, in the background.           │
+│                                                        ││                                        │
+│                                                        ││                                        │
+│                                                        ││                                        │
+│                                                        ││                                        │
+│                                                        ││                                        │
+└────────────────────────────────────────────────────────┘└────────────────────────────────────────┘
+
+ / find  ↑↓ scroll  [ ] tab  ⏎ compare contents  s start  t stop  R resta… Tab pane  ? keys  q quit

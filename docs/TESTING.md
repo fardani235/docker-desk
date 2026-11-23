@@ -1108,6 +1108,52 @@ shape is proven against the client library and the fake, and the fake against th
 renamed); that is the same chain of evidence as every other mutation. The way out was checked
 against a real daemon (`TestRealDaemonCopyReadOnly`, on a symlink and a directory).
 
+## Round nineteen: re-creating a container
+
+A re-create stops a container, renames it and creates another from a configuration the desk
+derived; the risk is a setting lost on the way. The derivation is pure and proven field by field
+and family by family; the plan runs against the fake with every failure injected; the fake is
+held to the real `docker create` and `docker rename`; and the derivation is checked, read-only,
+against every container of a real daemon.
+
+| What | Proven by | Command |
+| --- | --- | --- |
+| The derivation: identity, process, environment (every `NAME=value`), labels, health check, stop signal and timeout; what the old image supplied left to the new image (environment entries, command, entrypoint, labels, working directory, stop signal, each part of the health check, exposed ports); the entrypoint and command rules | `TestCloneLeavesTheOldImagesDefaultsToTheNewImage`, `TestCloneCarriesTheContainersOwnSettings`, `TestCloneEntrypointAndCommandRules`, `TestCloneHealthCheckKeepsOnlyWhatDiffers` | `go test ./internal/plan -run Clone` |
+| Ports, storage, networks, restart and limits: a binding with address and port, one the daemon picks, exposed-only ports not published, a read-only bind, a named and an anonymous volume by its name; two networks with aliases (not the old short ID), host and none; the restart policy and every limit, unset staying unset | `TestClonePortsAndStorage`, `TestCloneNetworks`, `TestCloneRestartAndLimits`, `TestCloneOptionsMapsEveryField` | `go test ./internal/plan -run Clone` |
+| Refusals: one container per family (29 cases) and per family the field review added (20 cases), three families named at once, the daemon's own defaults not refused | `TestCloneRefusesEachFamily`, `TestCloneRefusesTheReviewedFamilies`, `TestCloneNamesEverySetting`, `TestCloneDaemonDefaultsAreNotRefused` | `go test ./internal/plan -run Clone` |
+| No environment value in a refusal, the image summary or an error, a broken document included | `TestCloneNeverQuotesAnEnvironmentValue` | `go test ./internal/plan -run NeverQuotes` |
+| The previous name: free, taken, a third choice, shortened to 128, exhausted; a set-aside name recognised | `TestPreviousName` | `go test ./internal/plan -run PreviousName` |
+| The engine: the create form's body byte for byte as the previous engine sent it; every clone field on the wire (config, host config, networking config, exposed-only ports unbound); an unparseable port refused before the wire; rename, a taken name (409), an unknown container (404), the request recorded | `TestCreateFormRequestIsUnchanged`, `TestCreateCloneRequestBody`, `TestCreateCloneRefusesAnUnparseablePort`, `TestRenameContainer` | `go test ./internal/engine -run 'CreateForm\|CreateClone\|Rename'` |
+| Read-only: rename refused by the wrapper and the request hook; the tripwire counts 21 mutations | `TestReadOnlyCoversEveryMutation`, `TestReadOnlySendsNothing` | `go test ./internal/engine -run ReadOnly` |
+| The fake: rename's 204, 400 (invalid, unchanged), 404, 409 and its event; create then inspect reports every clone field, merged over the image as the daemon stores it; a missing network and an alias on the default bridge refused before anything is created | `TestContainerRenameHTTP`, `TestContainerCreateThenInspectReportsTheCloneFields` | `go test ./internal/fakeengine -run 'Rename\|CreateThenInspect'` |
+| The fake against the real CLI: `docker create` with every carried field, compared with `docker inspect` field by field; `docker rename`, a taken name, an invalid name | 22 checks in `scripts/cli-crosscheck.sh` | `make crosscheck` |
+| The plan: four steps (three for a stopped container) with their dependencies and no removal; the original name held by another container, a missing network, a taken derived name, a set-aside container; the reading with a sentinel value across title, target, effects, warnings, blockers, step descriptions and notes | `TestRecreatePlanSteps`, `TestRecreatePlanChecks`, `TestRecreatePlanReading` | `go test ./internal/plan -run RecreatePlan` |
+| Execution: success, the request log in order, the job naming both containers, the new container derived again to the same configuration and re-created again; a stopped container gets no stop; the tag moved before the first step (nothing sent) or gone; the tag moved between the rename and the create (nothing created); stop, rename, create and start each refused, with what remains and no deletion; cancelled after the rename | `TestRecreateSucceeds`, `TestRecreateOfAStoppedContainerSendsNoStop`, `TestRecreatePinnedTagMovedSendsNothing`, `TestRecreateTagMovedBeforeTheCreateCreatesNothing`, `TestRecreateFailures`, `TestRecreateCancelledAfterTheRename` | `go test ./internal/plan -run Recreate` |
+| The tab and the key: the offer and its note; no offer, and the reason, for refused settings, a digest, an ID, the same image, another platform, an unresolved tag; `A` refused with no request in read-only mode and with a selection; the reads behind the key and their outcomes; the dialog's content, Enter, `y` and a wrong word sending nothing, Escape; the word typed ahead; a sentinel value nowhere — tab, dialog, job, status, a refused create's message — while the create carried it; after the job, the new row and the old row; help and README agreeing | `TestRecreate*` | `go test ./internal/ui -run Recreate` |
+| The real binary: report-job's tab, `A`, `recreate`, the three requests in order, the old container stopped under its derived name, the new one running; a privileged container refused with nothing sent; captured at 100 and 80 columns | `TestRecreate`, `TestRecreateRefused` | `go test ./internal/e2e -run TestRecreate` |
+| A real daemon, read-only: a clone derived from every container, each carried field equal to the daemon's document decoded independently, the old image's defaults accounted for, no environment value in a shown line, the containers unchanged | `TestRealDaemonRecreateReadOnly` (opt-in) | `make real-readonly-check` |
+
+Screens: `docs/screens/58-recreate-confirm.txt` (100×40), `docs/screens/59-recreate-confirm-80x24.txt`,
+`docs/screens/60-recreate-refused.txt` (100×40) and `docs/screens/61-recreate-refused-80x24.txt`,
+captured by `TestRecreate` and `TestRecreateRefused`.
+
+On this machine `make real-readonly-check` derived a clone from all eight containers of Docker
+29.10.0 with no field differing; two were refused, rightly (`extra_hosts`, and the `none` log
+driver). `TestRealDaemonReadOnly` fails there, before and after this round, on the unchanged
+`HEAD` too: it reads every container's logs, and the daemon refuses for the container whose log
+driver is `none`. That is the machine, not the desk, and it was not changed here.
+
+What is not proven: **no re-create has been sent to a real daemon.** The test guard refuses, for
+every test, to open a real daemon read-write (B3), and this round did not change that. The
+create's and the rename's shapes are proven against the client library and the fake, and the
+fake against the real CLI's `docker create` and `docker rename`; the derivation is proven against
+real inspect documents. The closed model covers the fields of the pinned API (moby `api`
+v1.56.1, docs/DECISIONS.md G18): **a setting a newer daemon adds is not detected**, and would
+not be carried.
+
+`make crosscheck` has the same three red checks as rounds fifteen to eighteen — `dangling
+images`, `system df images`, `system df containers` — which were recorded, not fixed, here.
+
 ## Running everything
 
 ```sh

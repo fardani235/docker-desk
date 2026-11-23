@@ -4011,6 +4011,247 @@ local path starts empty and must be typed, as pull's name is, and an empty one i
 writes only a path that did not exist. Copy in's Enter only walks the source; consent is the
 plan dialog's `y`, which is armed.
 
+## Round nineteen — re-creating a container on the build its tag names now
+
+The request: when Containers › Changes finds that a container's tag names a newer build of the
+same platform, let the operator re-create the container on it from the tab, instead of leaving
+the desk to rebuild a `docker run` from `docker inspect` by hand. The plan is the OpenSpec change
+[`recreate-container`](../openspec/changes/recreate-container/) (proposal, design 1–14, spec
+deltas for `container-recreation`, `image-changes` and `mutation-safety`, tasks). It was
+implemented in one pass with the instruction to decide and record rather than ask; G1–G14 are
+the design's decisions, and every choice the plan left open, or the code or a real daemon
+contradicted, is an entry after them, from G15.
+
+**Left out**, as the proposal says: cloning a setting outside the reproducible set (the refusal is
+the answer); a pull, a retag, an automatic rollback, or removing the old container; a second entry
+point (no list key, no menu entry, no CLI flag); reading, interpolating or running a compose file;
+copying a container to another daemon; re-creating from an image ID or a digest reference; and
+editing the configuration in the dialog. No re-create has been sent to a real daemon (G13).
+
+### G1 — The entry point is `A` on Containers › Changes only
+
+The verdict, both image identities and the cached facts live on that tab, so the action is next
+to the finding. `A` is handled by `onChangesKey`, like the tab's `Enter`, so it works with the
+Details pane focused. It is not in `kindActions`: it has no `setOp` and cannot run on a
+selection, and it refuses with a status sentence while Containers has one. Read-only mode
+refuses it at the key, before any request. *Alternatives:* a list key that reads the pair first
+(a second path to maintain); a menu entry that only opens the tab (noise).
+
+### G2 — Stop, rename, create, start; the old container is kept
+
+The plan is exactly those four steps — the stop only when the container is active — each
+depending on the one before (D23's chain). The old container is renamed
+`<name>-previous-<first 12 hex of its ID>`, the base shortened to keep the whole within 128
+characters, then `-2` … `-9` while the snapshot has that name; past that the plan is blocked. The
+name is validated with the form's own `validName`. *Why keep it:* removing it destroys its
+writable layer and the only way back; a rename is reversible. *Alternatives:* remove before
+create (unrecoverable on a create failure); create under another name and swap (two renames, and
+a window with no container under the name). Compose tools may list the old container under the
+same service, because its labels are carried: the dialog says so.
+
+### G3 — The clone is a closed model derived from the inspect document
+
+`plan.Clone` decodes the container's raw inspect into a narrow struct of the fields it carries
+and the families it refuses; every field is one or the other (G18 is the field-by-field review).
+An unmodelled field would otherwise be dropped silently — the mistake the feature exists to
+prevent. *Alternatives:* post the inspect back as the create body (runtime fields the create API
+rejects, and the engine's narrow types bypassed); model every Docker field (the desk becomes
+`docker run`). **Limitation:** the review covers the pinned API (moby `api` v1.56.1). A field a
+newer daemon adds is not detected and would not be carried. TESTING says so too.
+
+### G4 — Environment values are read in the plan and rendered nowhere
+
+The engine's typed detail keeps its `EnvCount` contract (D29); `Clone` reads the values from
+`Raw`, because the daemon needs them, and `CloneSpec.Env` holds them. Everything that renders the
+spec uses `EnvNames`. The dialog, effects, warnings, job title, target, log, status line and
+errors are tested with a sentinel value, in the plan, the UI and end to end. A daemon's refusal
+of the create is passed on with every carried value of four characters or more replaced by
+`‹value hidden›`; shorter values are not hidden, because replacing every `1` or `on` would make the
+daemon's message unreadable and a value that short is not a secret. `Clone`'s own errors never
+quote the decoder's message, which can include bytes of the document.
+
+### G5 — One new mutation and a wider create
+
+`RenameContainer` joins `Engine`, is refused by `readonly.go` and counted (20 → 21).
+`ContainerCreateOptions` gains the clone's fields, all of them zero for the form. Unlike the
+design, `Info` gains three fields from the same `/info` answer — the daemon's default log
+driver, default runtime and cgroup version (G16). No request was added.
+
+### G6 — The derivation and the plan live in `internal/plan`
+
+`recreate.go` holds `Clone`, `CloneRefusals`, `PreviousName`, `SetAsideName` and
+`ContainerRecreate`. `plan` owns what a mutation will do. A package of its own would be a
+boundary with one consumer.
+
+### G7 — The key re-reads what the dialog claims
+
+`A` runs one command with a 10-second budget: the four lists, the container's inspect, the pair
+(`changes.FindPair`), both images, the platform check, the clone and the plan. Unlike the design,
+the images are read with `InspectImage`, not `ImageFacts`: it gives the same identity and
+platform without the two history reads, and the clone needs the running image's raw
+configuration anyway (G15). A pair that cannot move is `NotApplicable` — and is refused at the
+key from what the tab already knows, with no request. Refused settings become blockers, so the
+dialog opens and names them.
+
+### G8 — The pin is checked before the first step, and again before the create
+
+`Plan` gains `PinRef` and `PinID`; `Execute` inspects `PinRef` before the loop and sends nothing
+if it names another image or none. The create step also carries the pin and checks it
+immediately before the create, as `checkImagePin` does for an untag: the stop and the rename take
+time, and the design's preflight alone would leave a window of that length. The create is sent
+by reference, not by ID, so that the new container's `Config.Image` is the tag and its own
+Changes tab can compare again; the window between that last check and the create is one request.
+
+### G9 — The confirmation is typed: `recreate`
+
+`TierTyped` with its own word, armed like every confirmation. It stops a running container and
+changes its identity before creating another — more than any `y` action — and typing a short
+word binds the dialog to the object. *Alternatives:* `y` (too light); the container's name
+(compose names are long).
+
+### G10 — The tab offers `A` only when it can be true
+
+The moved verdict, both images' facts, the same platform, the container's inspect, the
+container still holding its own name, and no clone refusal. The clone check is cached per
+container ID, inspect sequence and daemon defaults. The tab's closing note names the reason when
+there is no offer: nothing to change, no other build, no image here, another platform, the
+settings it carries, or a set-aside container (G22).
+
+### G11 — Failure is reported, never repaired
+
+`Step.FailNote` is logged after a failed step: what it leaves, in the operator's terms — the
+container as it was; stopped under its own name; stopped under the derived name, with the
+`docker rename` that gives it back; created but not started. `Plan.SuccessNote` names both
+containers. There is no rollback: it would be a second mutation on a daemon that just refused one.
+
+### G12 — The fake and the cross-check carry the wire shape
+
+The fake has `POST /containers/{id}/rename` (204 and the event; 400, 404, 409 as the daemon),
+records every new create field, and reports them in inspect, so a re-created container is
+re-created again in the plan tests. `scripts/cli-crosscheck.sh` has a re-create section: the
+real `docker create` with every carried field and `docker rename`, compared field by field (22
+checks). It found a real difference at once: the CLI sends the network `default`, which the fake
+did not know (G27).
+
+### G13 — One job; the list updates from events
+
+`re-create container <name>`, one job. Create, rename and start emit events, and the desk's
+event-driven refresh updates the list; nothing bespoke was added. The read-only real-daemon check
+derives a clone from every container of the machine's daemon and compares the carried fields
+with the source document; it sends no create. That is the only real-daemon evidence.
+
+### G14 — Documentation and screens
+
+README's Changes section, Keys table, safety model and "What it does not do" changed; four
+screens were captured (`58`–`61`, the dialog and a refusal at 100 and 80 columns).
+
+### G15 — What the old image supplied is left to the new image
+
+Not in the design, and the most important decision of the round. A container's inspect
+`Config` is the daemon's *merge* of what the operator asked for and the image's configuration:
+on this machine's compose containers it repeats the image's `PATH`, version variables,
+`Entrypoint`, `Cmd`, `WorkingDir`, `StopSignal` and labels. Carried verbatim, they would freeze
+the old image onto the new one — a new `PATH`, a changed command or version label would never
+take effect, which defeats the update. `Clone` therefore also takes the running image's inspect,
+and leaves out every environment entry and label whose value is the image's, the command and
+entrypoint when they are the image's (following the daemon's rule that the command is inherited
+only when no entrypoint was given; an entrypoint cleared by the operator is sent as `[""]`), the
+working directory, user and stop signal when they are the image's, each part of the health check
+that is the image's, and the image's exposed ports. The dialog lists what is left to the new
+image. *Alternatives:* carry verbatim (wrong, as above); compare with the image's variable names
+only, as `ImageFacts` holds them (cannot tell an override from the inherited value).
+*Consequence:* an operator who set a variable to exactly the image's value gets the new image's
+value; README says so.
+
+### G16 — The daemon's defaults are not refusals
+
+A real daemon's inspect reports, for every container, `Runtime: runc`, `IpcMode: private`,
+`CgroupnsMode: private`, `ShmSize` 64 MiB, `LogConfig` of its default driver, the default
+`MaskedPaths` and `ReadonlyPaths`, and the short ID as `Hostname`. The design's table, read
+literally, would refuse every container on this machine. A runtime equal to the daemon's default
+(from `/info`), `private` or `shareable` IPC, `private` cgroup namespace (or `host` on cgroup
+v1), the default log driver, and a hostname equal to the short ID (or any hostname in the host's
+network, where the daemon uses the host's) are therefore not the container's settings. Masked and
+read-only paths are ignored: the API is the only way to set them other than
+`--security-opt systempaths=unconfined`, which is refused as a security option. Shared memory
+is carried as reported, which repeats the default when it is one.
+
+### G17 — Options of the default log driver are carried, never shown
+
+The design refused any non-empty `LogConfig.Config`. The daemon merges its own default log
+options into every container's configuration, so on a daemon with `log-opts` every container
+would be refused, and the container's options cannot be told apart from the daemon's. They are
+carried verbatim with the default driver, and never displayed (they can hold a token). A driver
+other than the daemon's default is still refused, naming the driver only.
+
+### G18 — The pinned `HostConfig` and `Config`, field by field
+
+Task 1.8. Every field of moby `api` v1.56.1's `container.Config` and `container.HostConfig`
+(with `Resources` embedded), and of an endpoint's `EndpointSettings`:
+
+| Outcome | Fields |
+| --- | --- |
+| Carried | `Image`, `Entrypoint`, `Cmd`, `Env`, `WorkingDir`, `User`, `Hostname`, `Tty`, `OpenStdin`, `Labels`, `Healthcheck` (with `StartInterval`), `StopSignal`, `StopTimeout`, `ExposedPorts`; `PortBindings`, `RestartPolicy`, `NetworkMode`, `Init`, `ShmSize`, `Memory`, `MemorySwap`, `MemoryReservation`, `NanoCpus`, `CpuShares`, `CpuQuota`, `CpuPeriod`, `CpusetCpus`, `PidsLimit`, `LogConfig` (default driver, G17); inspect's `Mounts` (bind and volume); `Aliases` |
+| Refused (design) | `Privileged`; `CapAdd`, `CapDrop`; `Devices`, `DeviceRequests`; `SecurityOpt`; `Runtime`; `Sysctls`, `Ulimits`, `OomKillDisable`, `MemorySwappiness`; `Tmpfs`; `ExtraHosts`, `Dns`, `DnsSearch`, `DnsOptions`, `GroupAdd`, `Links`; `LogConfig.Type`; `ReadonlyRootfs`, `AutoRemove`; `PidMode`, `IpcMode`, `UTSMode`, `UsernsMode`, `CgroupnsMode`, `CgroupParent`; `container:` network mode, `IPAMConfig`; mount types other than bind and volume |
+| Refused (added by this review) | **Ports:** `PublishAllPorts`, a host port range. **Process:** `Umask`, `StdinOnce`. **Host overrides:** `Domainname`. **Kernel settings:** `OomScoreAdj`. **Resource limits:** `BlkioWeight` and the four block-I/O device lists, `CpuRealtimePeriod`/`Runtime`, `CpusetMems`, the Windows `CpuCount`, `CpuPercent`, `IOMaximumIOps`, `IOMaximumBandwidth`. **Devices:** `DeviceCgroupRules`. **Runtime:** `Annotations`, `Isolation`, `StorageOpt`. **Namespaces:** `Cgroup`. **Network identity:** `NetworkDisabled`, an endpoint's `Links`, `DriverOpts`, `GwPriority`, a network mode with any other `:` form. **Storage:** `VolumesFrom`, `VolumeDriver`, a mount mode other than `ro`/`rw`/`rprivate` (an SELinux `z`/`Z` relabel among them: a private label belongs to the container it was made for), propagation other than `rprivate`, bind options (non-recursive, create mountpoint, read-only recursion), volume options (no-copy, subpath, driver options) |
+| Ignored, with the reason | `AttachStdin`/`Stdout`/`Stderr` (how a client attached, not the container); `ArgsEscaped`, `Shell`, `OnBuild` (image build metadata); `Config.Volumes` (the image's declared volumes; the anonymous volumes they made are carried as mounts); `Binds` (read through inspect's `Mounts`, which includes them); `ContainerIDFile`, `ConsoleSize` (client-side); `MaskedPaths`, `ReadonlyPaths` (G16); `Consistency` (macOS only); an endpoint's `MacAddress` (a set one cannot be told apart from a generated one — README says it is not carried) and its operational fields (`NetworkID`, `EndpointID`, addresses, `DNSNames`) |
+
+Each added family has a test (`TestCloneRefusesTheReviewedFamilies`).
+
+### G19 — Open stdin is carried
+
+Not in the design's list. `docker run -dit image sh` keeps a shell container up only because
+stdin stays open; dropped, the re-created container would exit at once. One boolean.
+
+### G20 — An alias that is the old short ID is dropped
+
+Daemons before API 1.45 listed the short ID they add themselves among an endpoint's aliases.
+Carried, the new container would answer to the old one's ID.
+
+### G21 — Several networks are attached at create
+
+Every attachment is sent in the create's `NetworkingConfig`, which needs API 1.44. An older
+daemon refuses the create, after the rename: the job then says the old container stays stopped
+under the derived name and how to rename it back. This is recorded rather than worked around
+with connects after the create, which would add steps the dialog would have to list.
+
+### G22 — A container set aside by a re-create is not offered one
+
+After a re-create the old row is still highlighted, under its derived name, and its tab still
+compares its image with the tag. `SetAsideName` recognises a name `PreviousName` gave that very
+container (by its own short ID), and the tab then says its name belongs to another container
+(or, when that name is free, to rename it back first). The plan blocks it too.
+
+### G23 — Daemon strings are escaped in the plan's text
+
+Names, paths, capabilities, runtimes and every other string the dialog draws from the inspect
+document go through `escape.Name` and are bounded, as everywhere else the desk draws a daemon's
+string.
+
+### G24 — The create form's request is unchanged, byte for byte
+
+`TestCreateFormRequestIsUnchanged` compares the form's request body with the one the previous
+engine sent, captured from `HEAD` in a scratch worktree before this round's change. The existing
+create tests also pass unchanged.
+
+### G25 — The fake daemon behaves more like the daemon at create
+
+A container created over HTTP now has the image's configuration merged in as the daemon stores it
+(request entries first, then the image's), is attached to the networks named (aliases refused on
+the default bridge, as the daemon refuses them), and its inspect reports the daemon's defaults
+(G16). A port the daemon chose is reported as asked for (`HostPort ""`). Seeded containers are
+unchanged, except that `ContainerSpec` gained `Env` so a test can seed a value.
+
+### G26 — `A` is a Details-pane key
+
+As the tab's `Enter` and `c` are. The footer lists `A` only when it is offered and the desk is
+not read-only; the help and README name it with the same words, which a test compares.
+
+### G27 — The CLI's `default` network
+
+The real CLI sends `NetworkMode: "default"` and an endpoint named `default`, which the daemon
+reads as its bridge. The fake now does too; the cross-check caught it.
+
 ## Process
 
 ### B12 — No commits were made
@@ -4165,4 +4406,20 @@ new and changed packages pass under `-race`. `make e2e` was not run (it rewrites
 - Nothing was found broken outside this round. Two test expectations of this round's own were
   wrong and corrected: entries beneath a directory the container added are not drawn (V22 holds),
   and a fast copy's "started" status is replaced by its end before a screen can show it.
+- No commits were made.
+
+### B37 — Round nineteen: what was run, and what was found that is not this round's
+
+See docs/TESTING.md, round nineteen, for the commands and their results.
+
+- **`make crosscheck` is the same three red as before** — `dangling images`, `system df images`,
+  `system df containers` (B34–B36) — and they were not fixed here. The new re-create section
+  passes all 22 of its checks with the real `docker` CLI 29.10.0.
+- No re-create was sent to a real daemon: the test guard forbids it (B3). The read-only check
+  derives a clone from each of this machine's containers (eight, none differing).
+- **`TestRealDaemonReadOnly` fails on this machine, on the unchanged `HEAD` too**: it reads every
+  container's logs, and the daemon refuses for a container whose log driver is `none`. Not this
+  round's; not changed.
+- The design's premises that did not hold are entries of their own: inspect repeats the image's
+  configuration (G15); a real daemon's defaults would have been refusals (G16, G17).
 - No commits were made.

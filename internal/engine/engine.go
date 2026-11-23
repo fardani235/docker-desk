@@ -84,6 +84,10 @@ type Engine interface {
 	UnpauseContainer(ctx context.Context, id string) error
 	// KillContainer sends SIGKILL.
 	KillContainer(ctx context.Context, id string) error
+	// RenameContainer gives a container a new name (POST
+	// /containers/{id}/rename). The daemon refuses a name another container
+	// holds.
+	RenameContainer(ctx context.Context, id, newName string) error
 	// RemoveContainer removes a container that is not running. Its anonymous
 	// volumes are kept. A running container is refused by the daemon.
 	RemoveContainer(ctx context.Context, id string) error

@@ -319,8 +319,10 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 	if m.tabName() == tabFindings && m.onFindingsKey(key) {
 		return nil
 	}
-	if m.tabName() == tabChanges && m.onChangesKey(key) {
-		return nil
+	if m.tabName() == tabChanges {
+		if handled, cmd := m.onChangesKey(key); handled {
+			return cmd
+		}
 	}
 	if m.tabName() == tabDeclared && m.onDeclaredKey(key) {
 		return nil

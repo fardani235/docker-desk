@@ -244,6 +244,9 @@ func (m *mobyEngine) Info(ctx context.Context) (Info, error) {
 		MemTotal:        i.MemTotal,
 		StorageDriver:   i.Driver,
 		RootDir:         i.DockerRootDir,
+		LoggingDriver:   i.LoggingDriver,
+		DefaultRuntime:  i.DefaultRuntime,
+		CgroupVersion:   i.CgroupVersion,
 	}, nil
 }
 
@@ -832,24 +835,51 @@ func (m *mobyEngine) InspectNetwork(ctx context.Context, id string) (NetworkDeta
 // container.HostConfig. Everything else in HostConfig stays zero: no force,
 // no privilege, no auto-remove.
 func (m *mobyEngine) CreateContainer(ctx context.Context, o ContainerCreateOptions) (string, error) {
-	cfg, host, err := createConfig(o)
+	cfg, host, nets, err := createConfig(o)
 	if err != nil {
 		return "", &Error{Kind: KindOther, Op: "create container", Msg: err.Error(), Err: err}
 	}
-	res, err := m.cli.ContainerCreate(ctx, client.ContainerCreateOptions{Config: cfg, HostConfig: host, Name: o.Name})
+	res, err := m.cli.ContainerCreate(ctx, client.ContainerCreateOptions{Config: cfg, HostConfig: host, NetworkingConfig: nets, Name: o.Name})
 	if err != nil {
 		return "", m.wrap("create container", err)
 	}
 	return res.ID, nil
 }
 
-func createConfig(o ContainerCreateOptions) (*container.Config, *container.HostConfig, error) {
-	cfg := &container.Config{Image: o.Image, Env: o.Env, Cmd: o.Cmd}
-	host := &container.HostConfig{
+// createConfig maps the options onto the request. Every field a re-create
+// adds is copied only when set, so the create form's options produce the
+// same request as before; nets is nil unless networks are named.
+func createConfig(o ContainerCreateOptions) (cfg *container.Config, host *container.HostConfig, nets *network.NetworkingConfig, err error) {
+	cfg = &container.Config{
+		Image: o.Image, Env: o.Env, Cmd: o.Cmd,
+		Entrypoint: o.Entrypoint, Labels: o.Labels, Tty: o.Tty, OpenStdin: o.OpenStdin,
+		WorkingDir: o.WorkingDir, User: o.User, Hostname: o.Hostname,
+		StopSignal: o.StopSignal, StopTimeout: o.StopTimeout,
+	}
+	if h := o.Healthcheck; h != nil {
+		cfg.Healthcheck = &container.HealthConfig{
+			Test: h.Test, Interval: h.Interval, Timeout: h.Timeout,
+			StartPeriod: h.StartPeriod, StartInterval: h.StartInterval, Retries: h.Retries,
+		}
+	}
+	host = &container.HostConfig{
 		RestartPolicy: container.RestartPolicy{
 			Name:              container.RestartPolicyMode(o.Restart.Name),
 			MaximumRetryCount: o.Restart.MaximumRetryCount,
 		},
+		NetworkMode: container.NetworkMode(o.NetworkMode),
+		Init:        o.Init,
+		ShmSize:     o.ShmSize,
+		Resources: container.Resources{
+			Memory: o.Resources.Memory, MemorySwap: o.Resources.MemorySwap,
+			MemoryReservation: o.Resources.MemoryReservation, NanoCPUs: o.Resources.NanoCPUs,
+			CPUShares: o.Resources.CPUShares, CPUQuota: o.Resources.CPUQuota,
+			CPUPeriod: o.Resources.CPUPeriod, CpusetCpus: o.Resources.CpusetCpus,
+			PidsLimit: o.Resources.PidsLimit,
+		},
+	}
+	if o.LogDriver != "" {
+		host.LogConfig = container.LogConfig{Type: o.LogDriver, Config: o.LogOptions}
 	}
 	if host.RestartPolicy.Name == "" {
 		host.RestartPolicy.Name = container.RestartPolicyDisabled
@@ -861,7 +891,7 @@ func createConfig(o ContainerCreateOptions) (*container.Config, *container.HostC
 		}
 		port, ok := network.PortFrom(p.ContainerPort, network.IPProtocol(proto))
 		if !ok {
-			return nil, nil, fmt.Errorf("not a port: %d/%s", p.ContainerPort, proto)
+			return nil, nil, nil, fmt.Errorf("not a port: %d/%s", p.ContainerPort, proto)
 		}
 		if cfg.ExposedPorts == nil {
 			cfg.ExposedPorts = network.PortSet{}
@@ -872,7 +902,7 @@ func createConfig(o ContainerCreateOptions) (*container.Config, *container.HostC
 		if p.HostIP != "" {
 			addr, err := netip.ParseAddr(p.HostIP)
 			if err != nil {
-				return nil, nil, fmt.Errorf("not an IP address: %s", p.HostIP)
+				return nil, nil, nil, fmt.Errorf("not an IP address: %s", p.HostIP)
 			}
 			b.HostIP = addr
 		}
@@ -888,7 +918,30 @@ func createConfig(o ContainerCreateOptions) (*container.Config, *container.HostC
 		}
 		host.Mounts = append(host.Mounts, mount.Mount{Type: t, Source: mt.Source, Target: mt.Target, ReadOnly: mt.ReadOnly})
 	}
-	return cfg, host, nil
+	for _, e := range o.ExposedOnly {
+		port, perr := network.ParsePort(e)
+		if perr != nil {
+			return nil, nil, nil, fmt.Errorf("not a port: %s", e)
+		}
+		if cfg.ExposedPorts == nil {
+			cfg.ExposedPorts = network.PortSet{}
+		}
+		cfg.ExposedPorts[port] = struct{}{} // exposed, with no binding
+	}
+	for _, a := range o.Networks {
+		if a.Network == "" {
+			return nil, nil, nil, errors.New("a network attachment without a network name")
+		}
+		if nets == nil {
+			nets = &network.NetworkingConfig{EndpointsConfig: map[string]*network.EndpointSettings{}}
+		}
+		ep := &network.EndpointSettings{}
+		if len(a.Aliases) > 0 {
+			ep.Aliases = append([]string(nil), a.Aliases...)
+		}
+		nets.EndpointsConfig[a.Network] = ep
+	}
+	return cfg, host, nets, nil
 }
 
 func (m *mobyEngine) StartContainer(ctx context.Context, id string) error {
@@ -919,6 +972,11 @@ func (m *mobyEngine) UnpauseContainer(ctx context.Context, id string) error {
 func (m *mobyEngine) KillContainer(ctx context.Context, id string) error {
 	_, err := m.cli.ContainerKill(ctx, id, client.ContainerKillOptions{Signal: "SIGKILL"})
 	return m.wrap("kill container", err)
+}
+
+func (m *mobyEngine) RenameContainer(ctx context.Context, id, newName string) error {
+	_, err := m.cli.ContainerRename(ctx, id, client.ContainerRenameOptions{NewName: newName})
+	return m.wrap("rename container", err)
 }
 
 func (m *mobyEngine) RemoveContainer(ctx context.Context, id string) error {

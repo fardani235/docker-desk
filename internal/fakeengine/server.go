@@ -432,6 +432,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 		s.handleArchiveStat(w, r, seg[1])
 	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "archive" && m == http.MethodPut:
 		s.handleArchivePut(w, r, seg[1])
+	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "rename" && post:
+		s.handleContainerRename(w, r, seg[1])
 	case len(seg) == 3 && seg[0] == "containers" && seg[2] == "exec" && post:
 		s.handleExecCreate(w, r, seg[1])
 	case len(seg) == 3 && seg[0] == "containers" && post:
@@ -557,6 +559,7 @@ func (s *Server) handleInfo(w http.ResponseWriter) {
 		"CgroupDriver":       "systemd",
 		"CgroupVersion":      "2",
 		"LoggingDriver":      "json-file",
+		"DefaultRuntime":     "runc",
 		"SystemTime":         time.Now().Format(time.RFC3339Nano),
 		"IndexServerAddress": "https://index.docker.io/v1/",
 		"Labels":             []string{},
