@@ -44,7 +44,7 @@
 
 - [x] 6.1 Add an end-to-end test that opens a container's Files view, copies a seeded file out, and asserts the local file's bytes and mode; verify `go test ./internal/e2e -run Copy`.
 - [x] 6.2 Add an end-to-end test that copies a local directory in, asserts the fake's tree and that the change list is read again, and a case where an existing local destination is refused before any archive request; verify the fake's request log.
-- [ ] 6.3 Add the opt-in real-daemon test for the wire semantics (copy a file out and back in, assert the exact paths and modes), guarded like the other real-daemon tests; verify it skips without a daemon and passes with one.
+- Deferred from 6.3: the opt-in real-daemon test that copies a file out and back in. It cannot pass under the current test guard, which refuses any test a read-write connection to a real daemon (B3 in `docs/DECISIONS.md`); it needs the disposable real-daemon mutation harness, tracked separately. The copy wire shape is proven against the fake and the real `docker cp` (B36, `docs/TESTING.md`).
 - [x] 6.4 Run `make build`, `make vet`, `make crosscheck` and `go test ./...`, and resolve every regression; record anything the suite reports that predates this change instead of silently accepting it.
 
 ## Workflow follow-up

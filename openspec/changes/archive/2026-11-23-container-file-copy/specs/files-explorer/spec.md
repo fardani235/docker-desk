@@ -24,10 +24,9 @@ and this machine. Opening a copy form SHALL send nothing and SHALL leave the tre
 ### Requirement: No file contents, ever
 The desk SHALL NOT read, show, search or write any file's contents from the index: nothing a
 file holds is drawn, searched, exported, logged or kept, and an export holds names and metadata
-only. A copy the operator asks for is the only thing that reads contents, and it streams a
-container's archive to the destination they named without keeping or drawing it. A name SHALL
-be shown and exported with control characters, newlines and invalid UTF-8 escaped, and SHALL
-never be treated as a path to open or resolve.
+only. A copy the operator asks for is the only request that reads contents, and it neither keeps
+nor draws them. A name SHALL be shown and exported with control characters, newlines and invalid
+UTF-8 escaped, and SHALL never be treated as a path to open or resolve.
 
 #### Scenario: A hostile name
 - **WHEN** an entry's name contains an ANSI escape sequence, a newline and invalid UTF-8

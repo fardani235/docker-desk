@@ -174,9 +174,11 @@ them. The changes SHALL be read when the view opens, without reading the archive
 - **THEN** the view says this container has written nothing since its image, once the image's tree is shown
 
 ### Requirement: No file contents, ever
-The desk SHALL NOT read, show, search or write any file's contents from the index. A name SHALL
-be shown and exported with control characters, newlines and invalid UTF-8 escaped, and SHALL
-never be treated as a path to open or resolve.
+The desk SHALL NOT read, show, search or write any file's contents from the index: nothing a
+file holds is drawn, searched, exported, logged or kept, and an export holds names and metadata
+only. A copy the operator asks for is the only request that reads contents, and it neither keeps
+nor draws them. A name SHALL be shown and exported with control characters, newlines and invalid
+UTF-8 escaped, and SHALL never be treated as a path to open or resolve.
 
 #### Scenario: A hostile name
 - **WHEN** an entry's name contains an ANSI escape sequence, a newline and invalid UTF-8
@@ -185,6 +187,10 @@ never be treated as a path to open or resolve.
 #### Scenario: A traversal-shaped name
 - **WHEN** a name is `../../etc/passwd`
 - **THEN** it is drawn as a name under the directory the archive places it in, and nothing outside the index is read
+
+#### Scenario: A copy is asked for
+- **WHEN** the operator copies a path out
+- **THEN** the container's archive is read, the index and the tree are unchanged, and no contents are drawn or written to the job's output
 
 ### Requirement: The listing leaves through the evidence dialog
 `w` SHALL write the listing to one file through the existing evidence dialog, as text or as
@@ -198,3 +204,20 @@ path, type, size, mode and layer, and no file's contents.
 #### Scenario: Exporting before reading
 - **WHEN** `w` is pressed before the archive has been read
 - **THEN** nothing is written and the view says there is no index to write
+
+### Requirement: The view offers a copy on a container
+On a container the Files view SHALL offer copy out and copy in for the highlighted path, and its
+footer and help SHALL list both. On an image the keys SHALL say copies are between a container
+and this machine. Opening a copy form SHALL send nothing and SHALL leave the tree as it is.
+
+#### Scenario: The keys are offered
+- **WHEN** the Files view is on a container
+- **THEN** the footer and the help list copy out and copy in for the highlighted path
+
+#### Scenario: An image
+- **WHEN** the view is on an image and one of the keys is pressed
+- **THEN** the desk says copies are between a container and this machine, and no form opens
+
+#### Scenario: Opening a form changes nothing
+- **WHEN** a copy form is opened
+- **THEN** no request has been sent, the tree is unchanged and no size appears for a path the view did not have one for
