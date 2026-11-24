@@ -71,11 +71,15 @@ type repoState struct {
 	batch   *repoBatch
 	timeErr map[string]string
 
-	cursorKey string
-	off       int
-	listH     int
-	settledAt time.Time
-	drawnSec  int64
+	// pointerQuiet: the pointer placed the highlight, and a highlight
+	// placed by the pointer is not described until a key moves it (a click
+	// sends nothing to the registry).
+	pointerQuiet bool
+	cursorKey    string
+	off          int
+	listH        int
+	settledAt    time.Time
+	drawnSec     int64
 }
 
 type repoBatch struct {
@@ -388,7 +392,7 @@ func (m *Model) syncRepository(now time.Time) tea.Cmd {
 		m.rb.drawnSec = sec // the ages move
 		m.dirty = true
 	}
-	if m.rb.editing || m.rb.listing == nil || now.Sub(m.rb.settledAt) < m.opts.SelectDelay {
+	if m.rb.editing || m.rb.pointerQuiet || m.rb.listing == nil || now.Sub(m.rb.settledAt) < m.opts.SelectDelay {
 		return nil
 	}
 	tag, ok := m.repoHighlighted()
@@ -565,6 +569,7 @@ func pinnedPullAction(p plan.Pinned) action {
 
 func (m *Model) onRepoKey(k tea.KeyMsg) tea.Cmd {
 	key := k.String()
+	m.rb.pointerQuiet = false // a key: the highlight is the keyboard's again
 	if m.rb.editing {
 		switch k.Type {
 		case tea.KeyEnter:
@@ -715,6 +720,10 @@ func (m *Model) repoBox(w, h int) []string {
 	detail := m.repoDetail(inner, now)
 	var body []string
 	body = append(body, head...)
+	m.recordRow(0, hitText, paneNone, int(textRepoName), 0, "")
+	if m.rb.filtering || m.rb.query != "" && m.rb.listing != nil {
+		m.recordRow(len(head)-1, hitText, paneNone, int(textRepoFilter), 0, "")
+	}
 
 	rows := m.repoRows()
 	listH := max(bodyH-len(head)-len(detail)-2, 3)
@@ -755,6 +764,7 @@ func (m *Model) repoBox(w, h int) []string {
 				parts[j] = fit(cells[ci], widths[j])
 			}
 			line := strings.Join(parts, "  ")
+			m.recordRow(len(body), hitRepoRow, paneNone, i, 0, rows[i])
 			if i == cur {
 				body = append(body, st.selected.Render("▸ "+fit(line, inner-2)))
 			} else {
@@ -999,7 +1009,11 @@ func (m *Model) repoDetail(w int, now time.Time) []string {
 		kv("digest", "unknown: "+m.rb.descErr[tag], toneWarn)
 	default:
 		out = append(out, st.dialogTitle.Render(ref))
-		kv("digest", "asked when the highlight rests on the row", toneDim)
+		if m.rb.pointerQuiet {
+			kv("digest", "not asked: the pointer placed the highlight — a key that moves it asks", toneDim)
+		} else {
+			kv("digest", "asked when the highlight rests on the row", toneDim)
+		}
 	}
 	if bt, ok := m.rb.browser.TimeOf(m.rb.repo, tag); ok {
 		kv("built", buildWords(bt)+" — the producer's claim, read "+humanAge(bt.At, now)+" ago", toneNormal)

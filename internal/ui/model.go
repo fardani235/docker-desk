@@ -153,6 +153,11 @@ type Options struct {
 	// Now is the clock that dates an export's prefilled file name; nil is
 	// time.Now.
 	Now func() time.Time
+
+	// NoMouse is --no-mouse: the program asks the terminal for no mouse
+	// reporting, and any mouse event that arrives anyway is ignored. The
+	// zero value — mouse on — is what every other caller gets.
+	NoMouse bool
 }
 
 // Model is the whole desk.
@@ -276,6 +281,15 @@ type Model struct {
 	linkProblem  string // the transport problem last reported in the status line
 	quitting     bool
 	started      bool
+
+	// ---- pointer (mouse.go) ----
+	// hits is what the last complete frame drew where: built while drawing
+	// (building) and only then made current, so that a half-drawn frame is
+	// never clicked.
+	hits     []hit
+	building []hit
+	org      rect     // where the content being drawn now starts
+	dlgHits  []dlgHit // the open dialog's rows, by body line
 }
 
 type selection struct {
@@ -512,7 +526,15 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 		m.dirty = true
+		m.hits = nil // until the next frame, no cell means anything
 		return m, nil
+
+	case tea.MouseMsg:
+		cmd := m.onMouse(msg)
+		if m.cur != nil {
+			m.afterChange()
+		}
+		return m, cmd
 
 	case tea.KeyMsg:
 		m.dirty = true
@@ -588,6 +610,11 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case shellDoneMsg:
 		m.dirty = true
 		cmd := m.onShellDone(msg)
+		if !m.opts.NoMouse {
+			// tea.Exec's hand-back restores the alternate screen but not
+			// mouse reporting: ask for it again.
+			cmd = tea.Batch(cmd, tea.EnableMouseCellMotion)
+		}
 		return m, cmd
 	}
 	// Anything else belongs to the focused text input (cursor blink).

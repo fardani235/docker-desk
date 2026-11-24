@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/fakeengine"
 	"github.com/fardani235/docker-desk/internal/sshtest"
@@ -434,8 +436,48 @@ func TestHelp(t *testing.T) {
 	}
 	wantAll(t, "help", out, "-H, --host URL", "-c, --context NAME", "--theme NAME", "ssh://[user@]host[:port][/path]", "tcp://host[:port]",
 		"DOCKER_TLS_VERIFY", "DOCKER_DESK_SSH", "Themes:", "auto", "dracula", "solarized-light", "mono",
-		"--no-registry", "--no-compose-files", "Compose › Declared")
+		"--no-registry", "--no-compose-files", "Compose › Declared", "--no-mouse", "selecting text works", "natively")
 }
+
+// --no-mouse reaches the options, and the program asks for mouse reporting
+// only without it.
+func TestNoMouseFlag(t *testing.T) {
+	for _, tc := range []struct {
+		args []string
+		want bool
+	}{{nil, false}, {[]string{"--no-mouse"}, true}, {[]string{"--read-only", "--no-mouse"}, true}} {
+		fs := flag.NewFlagSet("t", flag.ContinueOnError)
+		var acc access
+		acc.register(fs)
+		if err := fs.Parse(tc.args); err != nil {
+			t.Fatal(err)
+		}
+		if got := acc.apply(ui.Options{}).NoMouse; got != tc.want {
+			t.Errorf("%v: NoMouse = %v, want %v", tc.args, got, tc.want)
+		}
+	}
+	// What the terminal is actually sent: a program built from the options,
+	// run against a buffer, quitting at once.
+	for _, noMouse := range []bool{false, true} {
+		var out bytes.Buffer
+		p := tea.NewProgram(quitAtOnce{}, append(programOptions(noMouse, nil, &out), tea.WithoutSignalHandler())...)
+		if _, err := p.Run(); err != nil {
+			t.Fatal(err)
+		}
+		got := out.String()
+		for _, seq := range []string{"\x1b[?1002h", "\x1b[?1006h"} {
+			if has := strings.Contains(got, seq); has == noMouse {
+				t.Errorf("noMouse=%v: %q written = %v", noMouse, seq, has)
+			}
+		}
+	}
+}
+
+type quitAtOnce struct{}
+
+func (quitAtOnce) Init() tea.Cmd                       { return tea.Quit }
+func (quitAtOnce) Update(tea.Msg) (tea.Model, tea.Cmd) { return quitAtOnce{}, nil }
+func (quitAtOnce) View() string                        { return "" }
 
 // The access flags reach the workspace's options, each on its own.
 func TestAccessFlagsReachOptions(t *testing.T) {

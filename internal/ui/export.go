@@ -305,7 +305,9 @@ func (m *Model) exportBody(d *dialog, w int) (string, []string) {
 		body = append(body, mark+st.tone(t, fit(string(f), 10)+" "+f.DescribeFor(x.doc)))
 	}
 	x.input.Width = max(w-4, 10) // a long path scrolls; the cursor stays in view
-	body = append(body, "", "Path", x.input.View(), "")
+	body = append(body, "", "Path")
+	m.recordDialogRow(len(body), hitText, int(textExportPath), 0, "")
+	body = append(body, x.input.View(), "")
 	body = append(body, bullets(st, "•", toneDim, []string{
 		"~ is your home folder. The folder must exist; a file already there is never replaced.",
 	}, w)...)

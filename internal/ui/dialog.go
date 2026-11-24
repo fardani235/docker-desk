@@ -331,6 +331,7 @@ const dialogMaxWidth = 86
 // renderDialog returns the dialog as a box and its size.
 func (m *Model) renderDialog() (lines []string, w, h int) {
 	d := m.dlg
+	m.dlgHits = nil // the body functions record this drawing's rows
 	w = clamp(m.width-4, 40, dialogMaxWidth)
 	inner := w - 4
 	maxBody := m.height - 6
@@ -639,7 +640,9 @@ func (m *Model) formBody(d *dialog, w, maxBody int) (string, []string) {
 		)
 	}
 	body := strings.Split(daemon, "\n")
-	body = append(body, "", prompt, d.fields[0].rows[0].View(), "")
+	body = append(body, "", prompt)
+	m.recordDialogRow(len(body), hitFormRow, 0, 0, "")
+	body = append(body, d.fields[0].rows[0].View(), "")
 	body = append(body, notes...)
 	if d.formErr != "" {
 		body = append(body, "")
@@ -668,6 +671,7 @@ func (m *Model) pickerBody(d *dialog, w, maxBody int) (string, []string) {
 	for i := off; i < len(d.items) && i < off+room; i++ {
 		it := d.items[i]
 		line := fit(it.label, w-22) + "  " + fit(it.detail, 18)
+		m.recordDialogRow(len(body), hitPickerRow, i, 0, it.id)
 		if i == d.pickSel {
 			body = append(body, st.selected.Render("▸ "+line))
 		} else {
@@ -691,6 +695,7 @@ func (m *Model) menuBody(d *dialog, w int) (string, []string) {
 	for i, a := range d.menu {
 		line := fit(a.key, 3) + " " + fit(a.label, lw) + " " + a.desc
 		line = fit(line, w-2)
+		m.recordDialogRow(len(body), hitMenuRow, i, 0, "")
 		if i == d.menuSel {
 			body = append(body, st.selected.Render("▸ "+line))
 		} else {
