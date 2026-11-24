@@ -81,6 +81,8 @@ type Server struct {
 	StatsInterval time.Duration
 	// PullStepDelay is the pause between pull progress messages.
 	PullStepDelay time.Duration
+	// PushStepDelay is the pause between push progress messages.
+	PushStepDelay time.Duration
 	// Unpullable lists repository names the fake registry refuses.
 	Unpullable map[string]bool
 	// ExportChunkDelay is the pause after each 32 KiB of an image export.
@@ -108,6 +110,9 @@ type Server struct {
 
 	distOnce     sync.Once
 	distribution *distState
+
+	pushOnce sync.Once
+	push     *pushState
 
 	reqMu    sync.Mutex
 	requests []Request
@@ -458,6 +463,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 		s.handleImageExport(w, r, r.URL.Query()["names"])
 	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "get" && get:
 		s.handleImageExport(w, r, []string{strings.Join(seg[1:len(seg)-1], "/")})
+	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "push" && post:
+		s.handleImagePush(w, r, strings.Join(seg[1:len(seg)-1], "/"))
 	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "history" && get:
 		s.handleImageHistory(w, strings.Join(seg[1:len(seg)-1], "/"))
 	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "json" && get:

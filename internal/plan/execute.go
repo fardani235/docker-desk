@@ -29,6 +29,13 @@ func Execute(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run) erro
 	if err := checkPlanPin(ctx, eng, p, run); err != nil {
 		return err
 	}
+	// A push is one request with its own pin, credential and reporting.
+	if push, err := isPushPlan(p); push {
+		if err != nil {
+			return err
+		}
+		return executePush(ctx, eng, p, run)
+	}
 	total := len(p.Steps)
 	multi := total > 1
 	if multi {

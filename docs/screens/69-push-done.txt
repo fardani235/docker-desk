@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake3943339999/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…999/d.sock ●]                                                                                            M picker  < > focus
+┌─ 1 Kinds ────────┐┌─ 2 Images (2 of 17) ──────────────────────────────────────── filter: acme/api ─┐┌─ 4 Events ────────────────────────── ● live ─┐
+│  Containers    13││  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ││  05:47:36 img push       registry.sandbox.in…│
+│▸ Images        17││▸ registry.sandbox.inva…  3.28.3        9ffe8111ff43    48.0MB     2d         - ││                                              │
+│  Volumes        7││  registry.sandbox.inva…  latest        9ffe8111ff43    48.0MB     2d         - ││                                              │
+│  Networks       7││                                                                                ││                                              │
+│  Compose        2││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│  ● 7 running     ││                                                                                ││                                              │
+│  ‖ 1 paused      ││                                                                                ││                                              │
+│  ○ 5 stopped     ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││           ┏━ ◆ Job #1 output ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
+│                  ││           ┃                                                                                    ┃                               │
+│                  ││           ┃ ✓ succeeded   push image registry.sandbox.invalid/acme/api:3.28.3                  ┃                               │
+│                  │└───────────┃ started 05:47:33 · ran 3.4s                                                        ┃                               │
+│                  │┌─ 3 Details┃ on daemon unix:///tmp/ddfake3943339999/d.sock                                      ┃                               │
+│                  ││Reference  ┃                                                                                    ┃                               │
+│                  ││ID         ┃ pushing registry.sandbox.invalid/acme/api:3.28.3 (image 9ffe8111ff43) to registry. ┃                               │
+│                  ││Size       ┃ sandbox.invalid, credential: auths                                                 ┃                               │
+│                  ││Created    ┃ ✓ push image registry.sandbox.invalid/acme/api:3.28.3 done                         ┃                               │
+│                  ││Platform   ┃   digest sha256:d9c292227bb4caf25b4556767d82fc83429ced2e417187a087e5a776f438a79e   ┃                               │
+│                  ││Layers     ┃   2 layers uploaded, 0 layers already in the registry                              ┃                               │
+│                  ││Command    ┃   the daemon reports that 3.28.3 now names this digest in registry.sandbox.invalid ┃                               │
+│                  ││Workdir    ┃ the local image and tag are unchanged                                              ┃                               │
+│                  ││           ┃                                                                                    ┃                               │
+│                  ││References ┃ ↑↓ PgUp PgDn scroll  Esc close                                                     ┃                               │
+│                  ││  registry.┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───────────────────────────────┘
+│                  ││  registry.sandbox.invalid/acme/api:latest                                      │┏━ ◆ 5 Jobs ━━━━━━━━━━━━━━━━━━━━━━━━━━ 1 done ━┓
+│                  ││                                                                                │┃▸ ✓ push image registry.sandbox.invalid/… 3.4s┃
+│                  ││Used by                                                                         │┃                                              ┃
+│                  ││  no container                                                                  │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ push image registry.sandbox.invalid/acme/api:3.28.3
+ ↑↓ move  Enter output  c cancel  x clear finished                                                                           Tab pane  ? keys  q quit

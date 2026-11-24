@@ -28,6 +28,14 @@ trap cleanup EXIT
 # Never inherit a daemon selection from the caller's environment.
 unset DOCKER_HOST DOCKER_CONTEXT
 
+# Never read the caller's Docker configuration either: a pull or a push would
+# otherwise run their credential helper and send their credentials to the
+# fake. The private configuration holds one auths entry, for the sandbox
+# registry, so the CLI never falls back to a system keychain helper.
+export DOCKER_CONFIG="$DIR/docker-config"
+mkdir -p "$DOCKER_CONFIG"
+printf '{"auths":{"registry.sandbox.invalid":{"auth":"%s"}}}\n' "$(printf 'ci:crosscheck-only' | base64)" >"$DOCKER_CONFIG/config.json"
+
 d() { docker -H "$HOST" "$@"; }
 
 pass=0
@@ -39,7 +47,7 @@ expect_contains() { if printf '%s' "$2" | grep -qF -- "$3"; then ok "$1"; else b
 expect_fails()    { local name="$1" want="$2"; shift 2; local out; if out="$("$@" 2>&1)"; then bad "$name" "command succeeded: $out"; else expect_contains "$name" "$out" "$want"; fi; }
 
 (cd "$ROOT" && go build -o "$DIR/fake-dockerd" ./cmd/fake-dockerd)
-"$DIR/fake-dockerd" -socket "$SOCK" >"$DIR/fake.log" 2>&1 &
+"$DIR/fake-dockerd" -socket "$SOCK" -refuse-push registry.sandbox.invalid/acme/legacy >"$DIR/fake.log" 2>&1 &
 FAKE_PID=$!
 for _ in $(seq 1 50); do [ -S "$SOCK" ] && break; sleep 0.1; done
 
@@ -193,6 +201,20 @@ expect_contains "rmi one of two tags only untags" "$(d rmi node:lts-alpine)" "Un
 expect_contains "other tag survives" "$(d images --format '{{.Repository}}:{{.Tag}}')" "node:22-alpine"
 rm_out="$(d rmi hello-world)"
 expect_contains "rmi deletes last tag" "$rm_out" "Deleted: sha256:"
+
+echo "== push (the desk's Images p sends the same request)"
+# The script's private configuration (above) holds the sandbox registry's
+# credential; the fake registry checks nothing and keeps nothing.
+dp() { d "$@"; }
+push="$(dp push registry.sandbox.invalid/acme/cron:1 2>&1)"
+expect_contains "push names the repository" "$push" "The push refers to repository [registry.sandbox.invalid/acme/cron]"
+expect_contains "push uploads layers" "$push" "Pushed"
+expect_contains "push reports the daemon's digest" "$push" "1: digest: sha256:"
+expect_contains "push leaves the local tag" "$(d images --format '{{.Repository}}:{{.Tag}}')" "registry.sandbox.invalid/acme/cron:1"
+expect_contains "a second push finds the layers there" "$(dp push registry.sandbox.invalid/acme/cron:1 2>&1)" "Layer already exists"
+expect_fails "push of a tag the daemon lacks" "No such image" dp push registry.sandbox.invalid/acme/cron:2
+expect_fails "push the registry refuses" "denied: requested access to the resource is denied" dp push registry.sandbox.invalid/acme/legacy:0.9
+expect_contains "a refused push leaves the local tag" "$(d images --format '{{.Repository}}:{{.Tag}}')" "registry.sandbox.invalid/acme/legacy:0.9"
 
 echo "== create (the desk's create form sends the same request)"
 made="$(d create --name cross-made -p 127.0.0.1:18080:80 -p 53:53/udp -e LOG_LEVEL=info -e EMPTY= \

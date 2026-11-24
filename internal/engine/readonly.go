@@ -50,6 +50,12 @@ func (r *readOnlyEngine) PullImage(context.Context, string, func(PullProgress)) 
 	return ErrReadOnly
 }
 
+// PushImage is a POST that publishes to a registry: refused before anything
+// is sent, the credential included.
+func (r *readOnlyEngine) PushImage(context.Context, string, string, func(PushProgress)) (PushResult, error) {
+	return PushResult{}, ErrReadOnly
+}
+
 func (r *readOnlyEngine) RemoveImage(context.Context, string) ([]ImageDelete, error) {
 	return nil, ErrReadOnly
 }

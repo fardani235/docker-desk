@@ -102,6 +102,17 @@ type Engine interface {
 	// PullImage pulls exactly one reference (":latest" when no tag or digest
 	// is given, never all tags) and reports aggregated progress.
 	PullImage(ctx context.Context, ref string, progress func(PullProgress)) error
+	// PushImage asks the daemon to upload exactly one tagged reference to the
+	// registry it names (POST /images/{name}/push?tag=…): never all tags, no
+	// platform, no retag. ref must carry an explicit tag and no digest;
+	// anything else is refused before a request is sent. registryAuth is
+	// the credential as authconfig.Encode writes it, sent as
+	// X-Registry-Auth, or "" for none. It never appears in an error or a
+	// progress report: every string the daemon sends back is scrubbed of
+	// it. The result is the daemon's own final report; a stream that ends
+	// without one is an error, because only the daemon can say the push
+	// completed. The local image and tag are not changed.
+	PushImage(ctx context.Context, ref, registryAuth string, progress func(PushProgress)) (PushResult, error)
 	// RemoveImage removes a reference (untagging) or an image ID. An image in
 	// use is refused by the daemon.
 	RemoveImage(ctx context.Context, ref string) ([]ImageDelete, error)

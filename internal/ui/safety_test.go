@@ -50,6 +50,8 @@ func mutations(srv *fakeengine.Server) []mutation {
 		{name: "prune images", kind: KindImages, key: "X", tier: plan.TierTyped, word: "prune", title: "Prune images", wantReq: "DELETE 2×/images/"},
 		{name: "prune volumes", kind: KindVolumes, key: "X", tier: plan.TierTyped, word: "prune", title: "Prune volumes", wantReq: "DELETE 2×/volumes/"},
 		{name: "prune networks", kind: KindNetworks, key: "X", tier: plan.TierTyped, word: "prune", title: "Prune networks", wantReq: "DELETE 1×/networks/"},
+		// Appended, not inserted: other tests pick entries by index.
+		{name: "push image", kind: KindImages, row: "nginx:1.27", key: "p", tier: plan.TierTyped, word: "1.27", title: "Push image", wantReq: "POST /images/docker.io/library/nginx/push"},
 	}
 }
 

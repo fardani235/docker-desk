@@ -82,6 +82,8 @@ var kindActions = [kindCount][]action{
 				}
 				return m.openForm(formPull)
 			}},
+		// Push publishes the highlighted row's existing tag (push.go).
+		pushAction,
 		{key: "d", label: "remove…", desc: "remove this reference / image (never forced)", needsRow: true, mutating: true,
 			setOp: plan.OpRemoveImage, setCapable: true,
 			run: func(m *Model, r row) tea.Cmd {

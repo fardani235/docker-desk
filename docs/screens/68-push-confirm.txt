@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake3943339999/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…999/d.sock ●]                                                                                            M picker  < > focus
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (2 of 17) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: acme/api ━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│Waiting for engine events…                    │
+│▸ Images        17│┃▸ registry.sandbox.inva…  3.28.3        9ffe8111ff43    48.0MB     2d         - ┃│Everything the daemon does                    │
+│  Volumes        7│┃  registry.sandbox.inva…  latest        9ffe8111ff43    48.0MB     2d         - ┃│shows up here as it happens.                  │
+│  Networks       7│┃                                                                                ┃│                                              │
+│  Compose        2│┃                                                                                ┃│                                              │
+│                  │┃           ┏━ ◆ Push image ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
+│  ● 7 running     │┃           ┃                                                                                    ┃                               │
+│  ‖ 1 paused      │┃           ┃ image      registry.sandbox.invalid/acme/api:3.28.3  (9ffe8111ff43)                ┃                               │
+│  ○ 5 stopped     │┃           ┃ daemon     unix:///tmp/ddfake3943339999/d.sock  (context default)                  ┃                               │
+│                  │┃           ┃ registry   registry.sandbox.invalid                                                ┃                               │
+│                  │┃           ┃ login      auths                                                                   ┃                               │
+│                  │┃           ┃                                                                                    ┃                               │
+│                  │┃           ┃ • Uploads registry.sandbox.invalid/acme/api:3.28.3 to registry.sandbox.invalid:    ┃                               │
+│                  │┗━━━━━━━━━━━┃   the layers of image 9ffe8111ff43 (48.0 MB on this daemon) that the registry does ┃                               │
+│                  │┌─ 3 Details┃   not already hold, then the manifest.                                             ┃                               │
+│                  ││Reference  ┃ • The remote tag 3.28.3 is created, or moved to this build if it names another     ┃                               │
+│                  ││ID         ┃   one. This cannot be undone from this desk.                                       ┃                               │
+│                  ││Size       ┃ • The local image and its tags are not changed. Nothing is built, nothing is       ┃                               │
+│                  ││Created    ┃   retagged, and no other tag is pushed.                                            ┃                               │
+│                  ││Platform   ┃ • Immediately before the upload, registry.sandbox.invalid/acme/api:3.28.3 is       ┃                               │
+│                  ││Layers     ┃   checked to still name image 9ffe8111ff43; if it does not, nothing is sent.       ┃                               │
+│                  ││Command    ┃ • It runs as a background job. Cancelling closes the stream: layers already        ┃                               │
+│                  ││Workdir    ┃   uploaded may remain in the registry, and the tag may not have moved.             ┃                               │
+│                  ││           ┃ • The image's 1 other tag stays local: only                                        ┃                               │
+│                  ││References ┃   registry.sandbox.invalid/acme/api:3.28.3 is pushed.                              ┃                               │
+│                  ││  registry.┃                                                                                    ┃───────────────────────────────┘
+│                  ││  registry.┃ Type 3.28.3 and press Enter to proceed:                                            ┃───────────────────────────────┐
+│                  ││           ┃ >                                                                                  ┃                               │
+│                  ││Used by    ┃                                                                                    ┃ changes the daemon            │
+│                  ││  no contai┃ Enter proceed  Esc cancel                                                          ┃he background.                 │
+│                  ││           ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                               │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+
+ ↑↓ move  Space select  / filter  ⏎ actions  P pull  p push  d remove  X prune  w save archive  U upstream                   Tab pane  ? keys  q quit

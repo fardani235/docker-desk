@@ -1,5 +1,5 @@
- Docker Desk  ssh://127.0.0.1:43213/tmp/ddfake3038627780/d.sock  ctx far  Engine 29.0.0-fake  on far-away  ● connected  [ssh]
- Daemons  1 /tmp/ddfake…645/d.sock ● │ [◆2 far ●]                                                                                           M picker  < > focus
+ Docker Desk  ssh://127.0.0.1:34365/tmp/ddfake630994437/d.sock  ctx far  Engine 29.0.0-fake  on far-away  ● connected  [ssh]
+ Daemons  1 /tmp/ddfake…687/d.sock ● │ [◆2 far ●]                                                                                           M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (2) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ───────────────────────────── ● live ─┐
 │  Containers     2│┃  REPOSITORY                   TAG             IMAGE ID          SIZE    AGE   USED BY ┃│Waiting for engine events…                       │
 │▸ Images         2│┃▸ nginx                        1.27            f673addec473    51.4MB    24h     1 ctr ┃│Everything the daemon does                       │
@@ -12,23 +12,23 @@
 │                  │┃                ┏━ ◆ Daemons ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                    │
 │                  │┃                ┃                                                                                    ┃                                    │
 │                  │┃                ┃ In this session                                                                    ┃                                    │
-│                  │┃                ┃     /tmp/ddfake1762387645/d.sock  ● connected                                      ┃                                    │
-│                  │┃                ┃       unix:///tmp/ddfake1762387645/d.sock                                          ┃                                    │
+│                  │┃                ┃     /tmp/ddfake4223777687/d.sock  ● connected                                      ┃                                    │
+│                  │┃                ┃       unix:///tmp/ddfake4223777687/d.sock                                          ┃                                    │
 │                  │┗━━━━━━━━━━━━━━━━┃ ▸ ◆ far  ● connected  [ssh]                                                        ┃                                    │
-│                  │┌─ 3 Details: ngi┃       ssh://127.0.0.1:43213/tmp/ddfake3038627780/d.sock                            ┃                                    │
+│                  │┌─ 3 Details: ngi┃       ssh://127.0.0.1:34365/tmp/ddfake630994437/d.sock                             ┃                                    │
 │                  ││Reference  nginx┃       1 job is running on it — pull image hello-world:latest                       ┃                                    │
 │                  ││ID         f673a┃                                                                                    ┃                                    │
-│                  ││Size       51.4M┃ Contexts on /tmp/TestTwoDaemonsOneOverSSH1258083878/001                            ┃                                    │
+│                  ││Size       51.4M┃ Contexts on /tmp/TestTwoDaemonsOneOverSSH405217532/001                             ┃                                    │
 │                  ││Created    2026-┃     default *  in the session                                                      ┃                                    │
-│                  ││Platform   linux┃       unix:///tmp/ddfake1762387645/d.sock                                          ┃                                    │
+│                  ││Platform   linux┃       unix:///tmp/ddfake4223777687/d.sock                                          ┃                                    │
 │                  ││Layers     2    ┃     far  in the session  [ssh]                                                     ┃                                    │
-│                  ││Command    /bin/┃       ssh://127.0.0.1:43213/tmp/ddfake3038627780/d.sock                            ┃                                    │
+│                  ││Command    /bin/┃       ssh://127.0.0.1:34365/tmp/ddfake630994437/d.sock                             ┃                                    │
 │                  ││Workdir    /    ┃                                                                                    ┃                                    │
 │                  ││                ┃ Cannot remove far: 1 job is running on it — pull image hello-world:latest. Let     ┃                                    │
 │                  ││References      ┃ them finish, or cancel them in the Jobs pane (c), then remove it.                  ┃                                    │
 │                  ││  nginx:1.27    ┃                                                                                    ┃────────────────────────────────────┘
-│                  ││                ┃ ↑↓ move  ⏎ focus / add  d remove  r re-read  Esc close                             ┃────────────────────── ⠧ 1 running ─┐
-│                  ││Used by         ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛e hello-world:latest @far — l… 162ms│
+│                  ││                ┃ ↑↓ move  ⏎ focus / add  d remove  r re-read  Esc close                             ┃────────────────────── ⠸ 1 running ─┐
+│                  ││Used by         ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛e hello-world:latest @far — la… 75ms│
 │                  ││  ● far-web  running                                                                   ││                                                 │
 │                  ││                                                                                       ││                                                 │
 │                  ││                                                                                       ││                                                 │
@@ -39,4 +39,4 @@
 │                  ││                                                                                       ││                                                 │
 └──────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└─────────────────────────────────────────────────┘
  started: pull image hello-world:latest
- ↑↓ move  Space select  / filter  ⏎ actions  P pull  d remove  X prune  w save archive  U upstream                                     Tab pane  ? keys  q quit
+ ↑↓ move  Space select  / filter  ⏎ actions  P pull  p push  d remove  X prune  w save archive  U upstream                             Tab pane  ? keys  q quit

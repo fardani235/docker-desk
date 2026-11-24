@@ -1207,6 +1207,67 @@ Screens: `docs/screens/65-save-image-form.txt` (150×42),
 `docs/screens/66-save-image-form-80x24-read-only.txt` and
 `docs/screens/67-save-image-cancelled.txt`.
 
+## Round twenty-three: pushing one tag to its registry
+
+A push is the first request whose effect lands outside every daemon the desk watches, and the
+first that carries a credential *to* the daemon. It is proven from four directions: Docker's
+client library against the fake (the request, the header, the stream), the real `docker` CLI
+against the fake (the endpoint's shape), the UI model key by key (consent, credential sources,
+refusals), and the real binary on a pseudo-terminal. The fake's push log is the witness: it
+records every push request with its tag and its `X-Registry-Auth` exactly as received, so
+"nothing was sent" and "this credential was sent" are both assertions, not claims.
+
+| Property | Tests | Run |
+| --- | --- | --- |
+| The request: one `POST /images/{name}/push?tag=<tag>`, the credential as `X-Registry-Auth` (none when there is none), aggregated layer progress that never moves backwards, the daemon's digest and size, a second push reporting the layers already present, nothing local changed | `TestPushImage` | `go test ./internal/engine -run Push` |
+| Refused before sending: no tag (no `:latest` fallback), a digest, a tag with a digest, surrounding spaces, an empty or invalid reference | `TestPushImageRefusesBeforeSending` | `go test ./internal/engine -run Push` |
+| Read-only: refused by the wrapper and by the HTTP hook beneath it, no progress callback, no mutation | `TestPushImageReadOnly`, `TestReadOnlySendsNothing`, `TestReadOnlyCoversEveryMutation` (23 mutating methods) | `go test ./internal/engine -run 'Push\|ReadOnly'` |
+| Failures in the daemon's words, classified: a tag the daemon lacks (`KindNotFound`), a registry refusal in the stream and a 401 (`KindDenied`); a daemon that quotes the credential back — in the stream and in an HTTP error — has it scrubbed from the message and every wrapped error | `TestPushImageFailures`, `TestScrubber` (a two-character secret too), `TestPushDigestParsing`, `TestPushImageIgnoresAnotherTagsDigest` (a canned daemon reporting a digest for another tag: "not known", never claimed) | `go test ./internal/engine -run 'Push\|Scrubber'` |
+| Cancel closes the stream and the registry holds no manifest | `TestPushImageCancel` | `go test ./internal/engine -run PushImageCancel` |
+| The plan: typed with the tag, one step pinned to the image ID, the registry, every effect (created or moved, cannot be undone, local unchanged, nothing built, other tags stay); untagged, not-its-tag and gone refused; a push mixed with another step refused | `TestPushPlan`, `TestIsPushPlan` | `go test ./internal/plan -run Push` |
+| Execution: the credential read first, then the pin, which is the last request before the push; the credential resolved once and sent, the digest and the unchanged line logged, no credential in the log or status; a moved tag, a gone image and a failing helper send nothing (and a moved tag reads no credential); no credential still pushes; a refusal claims nothing and its escape sequence is neutralised; a cancel says layers may remain and never "not attempted"; a daemon that goes away mid-stream says whether the tag moved is not known; read-only reads no credential | `TestExecutePush*` | `go test ./internal/plan -run ExecutePush` |
+| The action: `p` and the menu open the typed confirmation with nothing sent; `y`, a bare Enter and the wrong word send nothing; untagged, a selection, read-only and `--no-registry` refused with nothing sent (read-only and `--no-registry` with a counting credential helper that must not run); the dialog names the reference, short ID, registry and login source and no credential value | `TestPushKeyConfirmAndPush`, `TestPushFromTheMenu`, `TestPushRefusals` | `go test ./internal/ui -run Push` |
+| Credential sources: `auths`, a `credHelpers` helper that answers, none (warned, still pushable), a registry that then refuses, a helper that fails (refused, its output never shown), a helper that answers for the dialog and fails — printing a secret — when the job reads it again (nothing sent, nothing shown), a helper not installed, a source that changed after the dialog (nothing sent), a re-login from the same source (honoured) | `TestPushCredentialSources` | `go test ./internal/ui -run PushCredential` |
+| The link: unencrypted `tcp://` and unverified TLS warned (not blocked); verified TLS and a unix socket not | `TestPushLinkWarning` | `go test ./internal/ui -run PushLink` |
+| Arming: the tag typed and Enter in the dialog's first moments are ignored | `TestPushConfirmationMustBeArmed` | `go test ./internal/ui -run PushConfirmation` |
+| The job: layer progress and the fraction while it runs, the digest at the end; cancel; a registry refusal with the local tags unchanged | `TestPushJob` | `go test ./internal/ui -run PushJob` |
+| The safety tables: push is in `TestNoSingleKeystrokeMutates` (key alone, decline, Enter, mistyped word, then exactly one `POST …/push`) and `TestEveryActionKeyIsCovered` | `TestNoSingleKeystrokeMutates/push_image` | `go test ./internal/ui -run 'NoSingleKeystroke\|EveryActionKey'` |
+| The fake against Docker's own CLI, with a private `DOCKER_CONFIG`: the repository line, layers pushed, the digest line, the local tag kept, `Layer already exists` on a second push, `No such image`, a registry refusal leaving the tag | the push section of `scripts/cli-crosscheck.sh` (8 assertions) | `make crosscheck` |
+| End to end: the real binary at 150×42 opens the confirmation (registry, `login auths`), refuses `y`, pushes on the typed tag; exactly one push request with the tag and a decodable `X-Registry-Auth`; progress, the digest on screen, no credential on screen; read-only and `--no-registry` at 80×24 send nothing | `TestPushImage`, `TestPushImageRefused` | `go test ./internal/e2e -run PushImage` |
+
+Screens: `docs/screens/68-push-confirm.txt` (150×42), `docs/screens/69-push-done.txt` and
+`docs/screens/70-push-80x24-read-only.txt`. The Images hints now list `p push`, so the eight
+captures that show them were regenerated with `make e2e`.
+
+**No push was sent to a real daemon or a real registry.** The test guard forbids a read-write
+connection to any daemon but the fake, the fake asks no registry, and the cross-check's push
+names `registry.sandbox.invalid`, which never resolves. What is not proven: a real registry's
+behaviour behind a real daemon (blob mounts across repositories, a manifest list, a quota
+refusal's exact words), which the desk passes through as the daemon reports them.
+
+**What was run, on this machine, and what it showed.**
+
+- `go vet ./...` and `gofmt -l` — clean.
+- `go test ./...` — every package passes except `internal/e2e`, which failed once in two full
+  runs, each time in a different test unrelated to push (`TestMouseWheelConfirmation` in the
+  first run was this round's fault — a test picks the safety table by index and push had been
+  inserted mid-table; it is now appended — and `TestRecreateCarriesADefaultVolume` in the
+  second). Run alone on an idle machine, `go test ./internal/e2e` passed twice in a row (87 s,
+  91 s), as it did twice on an untouched export of `HEAD`.
+- `go test -race ./...` — green on the final code. An earlier race run, under load, failed
+  `TestReadOnlyFlag`, `TestHubLogBufferIsBounded` and `TestSaveArchiveImageGone`, none of them
+  in code this round touched; they did not recur.
+- `make crosscheck` — 141 passed, 0 failed (8 of them the new push section), with a private
+  `DOCKER_CONFIG` for the whole script.
+- `make e2e` — **not green, and not because of push.** `TestRecreateCarriesADefaultVolume`
+  fails under `-update-screens` on this branch *and* on an untouched export of `HEAD` (two runs
+  each); other timing-sensitive tests (`TestComposeDeclared`, `TestProcessesView`,
+  `TestRemoteOverTCP`, `TestSpace`) fail in some runs under load, on both. The push tests
+  (`TestPushImage`, `TestPushImageRefused`) passed in every run. Only the captures this round
+  changes were kept — the three new ones and the eight existing ones whose Images hint line now
+  lists `p push`; every other rewritten capture differed only in socket paths, clock times and
+  CPU figures and was restored, so no capture from a failed run is committed.
+
 ## Running everything
 
 ```sh

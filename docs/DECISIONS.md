@@ -4628,3 +4628,121 @@ claims no size.
   CLI keeps `-e` order, which this CLI does not; it now checks each entry.
 - **A plan with nothing in the default scope** says how many internal/frontend records Tab
   would include; Tab works from it.
+
+## Round twenty-three — pushing one tag to its registry
+
+The request: complete the registry round — send a build that is on the focused daemon back to
+the registry its tag names. The change is the OpenSpec change `push-image`: a proposal, deltas
+to a new `image-push` capability and to `mutation-safety`, a design (its D1–D7) and tasks. It is
+the desk's first request whose effect is outside every daemon it watches, and the first that
+carries a credential *to* the daemon; most of what follows is about those two facts.
+
+### P1 — The engine sends one explicit tag, and repeats only what the daemon said
+
+`Engine.PushImage(ctx, ref, registryAuth, progress)` is moby's `ImagePush` with `All: false`, no
+platform and **no `PrivilegeFunc`**: a refused credential is reported, never retried with
+another. `engine.PushableRef` refuses, before anything is sent, a reference without an explicit
+tag (the client library would quietly push `:latest`), one with a digest, and one with spaces
+around it. The progress is aggregated like a pull's (`Preparing`/`Waiting`/`Pushing`/`Pushed`/
+`Layer already exists`/`Mounted from`), with a per-layer counter that never moves backwards.
+The result is the daemon's `aux` record (`Tag`, `Digest`, `Size`), or its final status line
+`<tag>: digest: sha256:… size: N`, accepted only when the digest is `sha256:` and 64 lowercase
+hex **and the tag is the one sent** — a digest reported for another tag is not this push's.
+At most 4096 layers are tracked; a daemon that names more is not believed. **A stream that ends without a digest is an error** ("whether the remote tag moved is not
+known"): only the daemon's success report means the tag was written. A cancelled context that
+surfaces as a clean EOF is still a cancellation.
+
+`readOnlyEngine.PushImage` returns `ErrReadOnly`; the HTTP hook beneath it refuses the `POST`
+too (`TestReadOnlySendsNothing` calls both layers; it caught the first draft, whose error
+scrubbing wrapped `ErrReadOnly` into an anonymous error).
+
+### P2 — No credential leaves the engine in a string
+
+Every string the daemon sends back — HTTP error, stream error, status, layer ID, the `aux` tag —
+passes through a scrubber holding the encoded `X-Registry-Auth` and every secret field it
+decodes to (password, identity token, registry token, `auth`), longest first and whatever
+their length, each replaced by `[credential]` (a one-character secret mangles the text; that is
+the lesser harm). The returned error's wrapped cause is rebuilt from the scrubbed text, so
+`errors.Unwrap` cannot reach the client library's original. This guards against a daemon or a
+proxy in front of it that quotes what it was sent (`TestPushImageFailures` makes the fake do
+exactly that, in the stream and in an HTTP 401).
+
+### P3 — A push plan is one step with its own executor
+
+`plan.Push(snap, imageID, ref)` refuses, as `NotApplicable`, a missing image, an untagged row
+and a reference the image does not carry. The plan is `TierTyped` with the tag as its word, one
+`OpPushImage` step pinned to the image ID, `Registry` for display, and the effects of D2.
+`Execute` hands a push plan to `executePush` — a plan with a push step and anything else is
+refused as an internal error — so its log can say exactly what is known: the generic loop's
+"interrupted … the daemon may still complete it" and "the remaining 1 were not attempted" are
+wrong for a stream that was attempted and closed. `executePush` refuses read-only **before
+the credential is resolved** (no helper runs for a request that will not be sent), then
+resolves the credential, then inspects the pin, then sends the request. D2 put the pin first;
+the order was swapped after review because a helper can take seconds (its 5 s timeout, a
+keychain prompt), and that time must not sit between the pin and the push. Reading a credential
+sends nothing; the pin is now the last request before the push
+(`TestExecutePushCredentialBeforePin`). Cancel logs the D6 line; a refusal logs the daemon's
+words and "the local image and tag are unchanged" — and, when the connection broke rather than
+the daemon refusing, that whether the remote tag moved is not known; success
+logs the digest, the layers uploaded and already present, and the same unchanged line. Every
+daemon-supplied string in the log and the status is passed through `escape.Name`
+(`TestExecutePushRefused` sends an ANSI sequence in the registry's refusal).
+
+### P4 — Decisions taken where the plan left room
+
+- **A changed credential source is not sent.** D3 resolves the credential again when the job
+  starts, so a `docker login` between the dialog and Enter is honoured — and it still is, from
+  the same source. If the configuration now names a *different* source than the one the
+  dialog showed (none → `auths`, `auths` → a helper), the job stops before the request: the
+  operator confirmed a source, not whatever replaced it. This is stricter than the design and
+  consistent with the pin.
+- **TLS that does not verify the daemon is warned about too.** D5 names unencrypted `tcp://`;
+  the dialog also warns when the daemon's certificate is not verified, because the credential
+  could then reach an impostor. A verified TLS link, a unix socket and an SSH tunnel get no
+  warning. Neither warning blocks.
+- **The registry and the login are identity lines.** They sit with the image and the daemon at
+  the top of the dialog, which never scrolls, rather than among the effects. The login line is
+  `none found` when there is no credential, and a warning then says the registry may refuse.
+- **The untagged refusal happens at the key.** `p` on an untagged row says so in the status
+  line without reading a snapshot; `plan.Push` refuses it again for any other caller.
+- **`--no-registry` is checked at the action**, after read-only (whose message wins when both
+  apply) and before any request; the push plan itself knows nothing of the flag.
+- **The fake's push** (`POST /images/{name}/push`) refuses a missing tag query as "all tags"
+  with 400, answers a tag it does not have with the daemon's 404 `No such image: <ref>`, streams
+  `The push refers to repository […]`, per-layer progress and the final digest and `aux`, keeps
+  uploaded layers per repository (a second push says `Layer already exists`), and never changes
+  the image store. `RefusePush` and `RequirePushAuth` stand in for a denied namespace and a
+  registry that wants a credential; `fake-dockerd -refuse-push` exposes the first to the
+  cross-check.
+- **The cross-check never reads the operator's Docker configuration.** The whole script now
+  exports a private `DOCKER_CONFIG` holding one `auths` entry. Before this round its `pull` and
+  `create` steps used the caller's configuration, so a configured keychain helper could send the
+  operator's Docker Hub credential to the fake (in memory only, but sent all the same); review
+  found it, and it is fixed here. Because an `auths` entry is present, the CLI never falls back to
+  a system keychain helper.
+- **The helper runs when the dialog opens.** D3 resolves the credential once to name its
+  source, which runs a configured helper (and may show a keychain prompt) on `p`, even if the
+  dialog is then dismissed. `registry.CredentialSource` could name the source without running
+  it, but a broken helper would then surface only after the operator typed the tag. The design's
+  choice is kept: a failing helper is a refusal in the dialog, before any consent. The secret is
+  discarded at once; only the source is kept.
+
+### P5 — Independent review
+
+An independent security review of the diff (a separate agent given the code and the
+requirements, not these conclusions) found nothing critical or high. Its five confirmed
+low/info findings were all acted on: the credential/pin order (P3), short secrets (P2), the
+cross-check's use of the caller's configuration (P4), the broken-connection line (P3), and
+tests that claimed more than they showed — read-only and `--no-registry` now use a counting
+credential helper and assert it never ran, and a helper that fails only when the job reads the
+credential again is driven for real (`TestPushRefusals`, `TestPushCredentialSources`). Also
+acted on from its notes: the layer cap and the tag check on the reported digest (P1). Not
+acted on: a daemon that quotes a *transformed* credential (a Basic header, a truncated or
+JSON-escaped copy) is not caught by exact-match scrubbing; no daemon is known to do so.
+
+### P6 — Round twenty-three: what was run
+
+See docs/TESTING.md, round twenty-three, for the commands and their results.
+
+`make e2e` was not green on this machine, before or after this round: see TESTING.md. Task 5.3
+of the change is therefore left open rather than ticked.

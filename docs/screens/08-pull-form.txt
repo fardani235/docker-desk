@@ -1,12 +1,12 @@
- Docker Desk  unix:///tmp/ddfake1808126275/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…275/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake482836637/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…637/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (16, 17 refs) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│  21:32:49 ctr kill sig 15 shop-web-1         │
-│▸ Images        16│┃▸ acme/report             1.4           efc03945f57b     114MB     2s         - ┃│  21:32:49 ctr die exit 0 shop-web-1          │
-│  Volumes        7│┃  alpine                  3.20          bbfb6bb5502a     7.8MB    24h     2 ctr ┃│  21:32:49 net disconnect shop_default  ← sho…│
-│  Networks       7│┃  busybox                 1.36          b227a1c6d0d2     4.3MB    24h     1 ctr ┃│  21:32:49 ctr stop       shop-web-1          │
-│  Compose        2│┃  gcr.io/distroless/sta…  nonroot       37588eec338e     2.0MB    24h     1 ctr ┃│  21:32:50 net connect    shop_default  ← sho…│
-│                  │┃  ghost                   5             da2f78b4d6ff     494MB    24h     1 ctr ┃│  21:32:50 ctr start      shop-web-1          │
+│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│  05:46:59 ctr kill sig 15 shop-web-1         │
+│▸ Images        16│┃▸ acme/report             1.4           efc03945f57b     114MB     2s         - ┃│  05:46:59 ctr die exit 0 shop-web-1          │
+│  Volumes        7│┃  alpine                  3.20          bbfb6bb5502a     7.8MB    24h     2 ctr ┃│  05:46:59 net disconnect shop_default  ← sho…│
+│  Networks       7│┃  busybox                 1.36          b227a1c6d0d2     4.3MB    24h     1 ctr ┃│  05:46:59 ctr stop       shop-web-1          │
+│  Compose        2│┃  gcr.io/distroless/sta…  nonroot       37588eec338e     2.0MB    24h     1 ctr ┃│  05:47:00 net connect    shop_default  ← sho…│
+│                  │┃  ghost                   5             da2f78b4d6ff     494MB    24h     1 ctr ┃│  05:47:00 ctr start      shop-web-1          │
 │  ● 7 running     │┃  mysql                   8             11a7b13fbf86     584MB    24h     1 ctr ┃│                                              │
 │  ‖ 1 paused      │┃  nginx                   1.27          f673addec473     188MB    24h     1 ctr ┃│                                              │
 │  ○ 5 stopped     │┃  node                    22-alpine     3b9daf1cabe0     154MB    40d         - ┃│                                              │
@@ -15,7 +15,7 @@
 │                  │┃  python                  3.12-slim     90db23bd5600     131MB    14d         - ┃│                                              │
 │                  │┃  redis    ┏━ ◆ Pull image ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
 │                  │┗━━━━━━━━━━━┃                                                                                    ┃                               │
-│                  │┌─ 3 Details┃ daemon     unix:///tmp/ddfake1808126275/d.sock  (context default)                  ┃                               │
+│                  │┌─ 3 Details┃ daemon     unix:///tmp/ddfake482836637/d.sock  (context default)                   ┃                               │
 │                  ││Reference  ┃                                                                                    ┃                               │
 │                  ││ID         ┃ Image reference:                                                                   ┃                               │
 │                  ││Size       ┃ > hello-world                                                                      ┃                               │
@@ -28,8 +28,8 @@
 │                  ││Exposes    8000/tcp                                                             ││                                              │
 │                  ││                                                                                │└──────────────────────────────────────────────┘
 │                  ││References                                                                      │┌─ 5 Jobs ──────────────────────────── 2 done ─┐
-│                  ││  acme/report:1.4                                                               ││▸ ✓ start container shop-web-1             3ms│
-│                  ││                                                                                ││  ✓ stop container shop-web-1              0ms│
+│                  ││  acme/report:1.4                                                               ││▸ ✓ start container shop-web-1             0ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              2ms│
 │                  ││Used by                                                                         ││                                              │
 │                  ││  no container                                                                  ││                                              │
 │                  ││                                                                                ││                                              │
@@ -39,4 +39,4 @@
 │                  ││                                                                                ││                                              │
 └──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
  ✓ start container shop-web-1
- ↑↓ move  Space select  / filter  ⏎ actions  P pull  d remove  X prune  w save archive  U upstream                           Tab pane  ? keys  q quit
+ ↑↓ move  Space select  / filter  ⏎ actions  P pull  p push  d remove  X prune  w save archive  U upstream                   Tab pane  ? keys  q quit

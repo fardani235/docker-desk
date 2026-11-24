@@ -535,6 +535,53 @@ both cases the same way. Credentials are the Upstream tab's, from your Docker co
 `--no-registry`: the view does not open, and says why. `--read-only`: it browses; the pull is
 refused like every other change.
 
+### Push — one tag back to its registry
+
+The registry round's other half: `p` on an Images row uploads **that row's existing tag** to the
+registry it names — `host:5000/acme/api:3.28.3` goes to `host:5000`, `nginx:1.27` to Docker Hub
+— through the focused daemon (`POST /images/{name}/push?tag=…`, exactly what `docker push`
+sends for one tag). It is in the action menu (`Enter`) as *push…* too. `P` is pull, `p` is push.
+
+- **Only a tag the image already carries.** An untagged row is refused (*this image has no tag
+  to push*), a selection is refused as one image at a time, and nothing is sent. The desk never
+  retags, never pushes another or every tag (`--all-tags`), never chooses a platform, and never
+  builds.
+- **Typed with the tag.** The confirmation names the full reference, the image's short ID, the
+  daemon, the **registry** and the **login** — the credential's *source* (`auths`,
+  `credsStore desktop`, `credHelpers ecr-login`, or `none found`), never a value — and says what
+  happens: the layers the registry does not already hold are uploaded, the remote tag is
+  **created or moved and this cannot be undone from the desk**, the local image and its tags are
+  not changed. You type the tag (`3.28.3`) and press Enter; `y`, a bare Enter or any other word
+  send nothing, and the dialog ignores input for its first quarter of a second like every other.
+- **The credential is the Docker CLI's.** It is resolved from `$DOCKER_CONFIG` (or
+  `~/.docker`) as the CLI does — `credHelpers`, `credsStore`, `auths` — once to name its source
+  in the dialog, and again when the job starts, then sent to the daemon as `X-Registry-Auth`. A
+  `docker login` in between is honoured; a credential from a *different* source than the one
+  you confirmed is not sent (the job stops and says so). A credential helper that fails refuses
+  the push in the dialog, saying how it failed — never its output. With no credential the dialog
+  says so; the push may still be attempted, and the registry may refuse it.
+- **An unprotected link is named.** When the focused daemon is reached over `tcp://` without
+  TLS, the confirmation warns that the credential travels to it over that unencrypted
+  connection; with TLS that does not verify the daemon, that it could reach an impostor. This is
+  the path the Docker CLI uses too — the desk says it out loud.
+- **The tag is pinned.** Immediately before the request the reference is inspected again; if it
+  now names another image, or is gone, nothing is sent and the job says *the tag moved*.
+- **The daemon's words, and only those.** The job shows layer progress, then the digest the
+  daemon reports — never one the desk computed — and that the local image and tag are
+  unchanged. A registry refusal (credential, namespace, quota) fails the job in the daemon's
+  words. `c` in the Jobs pane closes the stream; the job then says that layers already uploaded
+  may remain in the registry and that the tag may not have moved — it never claims a push it
+  did not see finish. Every string the daemon sends back is scrubbed of the credential before it
+  is shown.
+- **Refused where it must be.** `--read-only` refuses `p` at the key and again in the engine (a
+  push is a `POST`), before any credential is read. `--no-registry` refuses it too: a push is a
+  registry request by definition.
+
+The confirmation, captured: [`docs/screens/68-push-confirm.txt`](docs/screens/68-push-confirm.txt),
+the finished job [`docs/screens/69-push-done.txt`](docs/screens/69-push-done.txt), and the
+refusal at 80×24 in read-only mode
+[`docs/screens/70-push-80x24-read-only.txt`](docs/screens/70-push-80x24-read-only.txt).
+
 ### Space — where the bytes went, and what removing something frees
 
 `S`, from any pane, covers the desk with an account of what this engine holds on disk; `S`
@@ -891,7 +938,7 @@ Press `?` inside the desk for the same list.
 | Kind | Keys |
 | --- | --- |
 | Containers | `n` new (create and start, pulling the image first if it is missing) · `s` start · `t` stop · `R` restart · `p` pause · `u` unpause · `K` kill · `d` remove · `e` shell |
-| Images | `P` pull by name (on Upstream showing *moved*: the build the tag names now, by digest) · `d` remove · `X` prune · `w` save archive… (List pane; a read, allowed in read-only mode; see [Save](#save--an-images-archive-to-a-file)) |
+| Images | `P` pull by name (on Upstream showing *moved*: the build the tag names now, by digest) · `p` push this tag to its registry… (typed with the tag; see [Push](#push--one-tag-back-to-its-registry)) · `d` remove · `X` prune · `w` save archive… (List pane; a read, allowed in read-only mode; see [Save](#save--an-images-archive-to-a-file)) |
 | Volumes | `n` new · `d` remove · `X` prune |
 | Networks | `n` new · `d` remove · `X` prune · `c` connect a container · `D` disconnect a container |
 | Compose | `t` stop the whole project · `d` remove the whole project · (menu) compare with the compose file — a read, allowed in read-only mode |
@@ -902,7 +949,7 @@ they get a `✓` in the gutter and the title says how many, e.g. `2 Containers (
 The selection belongs to its kind and follows its objects across refreshes; an object that
 disappears leaves it. While a kind has a selection, `s` `t` `R` `p` `u` `K` `d` on Containers
 and `d` on Images, Volumes and Networks apply to every selected object instead of the
-highlighted one. `e` shell, `c` connect, `D` disconnect and `w` save archive work on one object
+highlighted one. `e` shell, `c` connect, `D` disconnect, `p` push and `w` save archive work on one object
 only and refuse (nothing is sent); `X` prune chooses its own objects and refuses too; `P` pull and `n` new
 (on Containers, Volumes and Networks) are unaffected. The selection is cleared when the job starts, and kept if you decline. `Space`
 still pages in the Details pane; in the Events pane it holds the view.
@@ -1062,6 +1109,9 @@ being careful.
     ID, the platform and the one local path; Enter sends only the archive `GET` (after
     re-checking the tag), never replaces a file, removes a partial one on cancel or failure,
     and is allowed in read-only mode.
+  - push (`p` on Images) → type the tag being published (`3.28.3`) and press Enter. The dialog
+    names the registry and the credential's source; the remote tag is created or moved and the
+    desk cannot undo it. Nothing local changes. `--read-only` and `--no-registry` refuse it.
   - new container → the form restates the whole configuration and any pull it needs; Enter
     submits, never before the form has been on screen long enough to read.
   - re-create (`A` on Containers › Changes) → type `recreate` and press Enter. It stops a
@@ -1086,8 +1136,8 @@ being careful.
   dialog opens. If the list reshuffles underneath, the dialog still means the same object.
   Things addressed by a *name* — an image tag, a volume — are re-checked just before the
   request: if the tag has moved to another image or the volume was recreated, nothing is
-  removed. A re-create checks its tag before its first step: if the tag has moved, nothing at
-  all is sent.
+  removed. A re-create checks its tag before its first step, and a push immediately before its
+  request: if the tag has moved, nothing at all is sent.
 - **Nothing is ever forced.** If the thing is in use, the dialog says by what and offers no way
   to proceed: a running container must be stopped first; an image, volume or network that any
   container references — *running or stopped* — is in use. If something becomes in use after
@@ -1173,7 +1223,10 @@ No view across daemons: one is focused at a time, and nothing acts on two at onc
 images or volumes between them. No per-daemon read-only flag, and nothing about the session is
 saved for the next run. No Windows named pipes. No Swarm, no compose
 lifecycle — a compose file is read only for Declared, on request, and never run or
-interpolated (see [Compose, honestly](#compose-honestly)) — no image builds or pushes, no Kubernetes. It creates containers from its seven-field form
+interpolated (see [Compose, honestly](#compose-honestly)) — no image builds, no Kubernetes. It pushes
+only one existing tag of one image to the registry that tag names (Images, `p`): no retag, no
+`--all-tags`, no platform choice, no push from the Repository view, and no push under
+`--no-registry`. It creates containers from its seven-field form
 (no networks, users, limits or TTY; no build, no compose `up`), and re-creates one only on the
 newer build its own tag names, with the configuration it already has (Changes, `A`). It never
 edits a container's configuration, never pulls for a re-create, never rolls one back and never
@@ -1242,7 +1295,8 @@ Good to know:
   in the registry's own order; the order shown is text order, never date. A registry that pages
   without a `Link` header shows its first page only. Build times are read only on `d`, for the
   rows on screen. A pinned pull leaves no local tag (the Engine API sends the digest in place of
-  it); nothing retags, deletes or pushes a tag.
+  it); nothing there retags, deletes or pushes a tag — a push is Images' `p`, of a tag you already
+  have.
 - Files (`F`): the tree never reads a container's archive or a file's contents, and there is no
   file-level difference. A container's side is the daemon's change list over its image's tree:
   a changed file's own size and what an added directory holds are not read. No file is

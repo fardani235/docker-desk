@@ -32,6 +32,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/fardani235/docker-desk/internal/fakeengine"
@@ -45,6 +46,7 @@ func main() {
 	changes := flag.Bool("changes", false, "also seed a container for every case the Changes tab has nothing to compare")
 	regAddr := flag.String("registry", "", "also serve a registry on this loopback address (127.0.0.1:0 picks a port), with a repository to browse")
 	buildScopes := flag.Bool("build-cache-scopes", false, "also seed an in-use, an internal and a frontend build-cache record")
+	refusePush := flag.String("refuse-push", "", "comma-separated repositories whose pushes the fake registry refuses (denied)")
 	composeDir := flag.String("compose-dir", "", "write the demo's compose files into this directory and point the seeded labels at them")
 	flag.Parse()
 
@@ -58,6 +60,11 @@ func main() {
 	}
 	if *changes {
 		srv.SeedChanges()
+	}
+	for _, repo := range strings.Split(*refusePush, ",") {
+		if repo = strings.TrimSpace(repo); repo != "" {
+			srv.RefusePush(repo, "denied: requested access to the resource is denied")
+		}
 	}
 	if *buildScopes {
 		srv.SeedBuildCacheScopes()

@@ -53,8 +53,8 @@ func TestReadOnlyCoversEveryMutation(t *testing.T) {
 			}
 		}()
 	}
-	if checked != 22 {
-		t.Errorf("checked %d mutating methods, expected 22 — update readMethods if the interface changed", checked)
+	if checked != 23 {
+		t.Errorf("checked %d mutating methods, expected 23 — update readMethods if the interface changed", checked)
 	}
 }
 
@@ -97,6 +97,8 @@ func TestReadOnlySendsNothing(t *testing.T) {
 		_, err0 := e.CreateContainer(ctx, ContainerCreateOptions{Image: "alpine:latest", Name: "ro-probe"})
 		add(err0)
 		add(e.PullImage(ctx, "alpine", nil))
+		_, err1 := e.PushImage(ctx, "nginx:1.27", "e30=", nil)
+		add(err1)
 		_, err := e.RemoveImage(ctx, "python:3.12-slim")
 		add(err)
 		_, err = e.CreateVolume(ctx, "x")

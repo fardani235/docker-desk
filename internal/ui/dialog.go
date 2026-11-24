@@ -431,6 +431,13 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 		ident = append(ident, line)
 	}
 	ident = append(ident, m.daemonLines(w, true)...)
+	if p.Registry != "" {
+		// A push: where it goes and with which credential — its source,
+		// never a value.
+		ident = append(ident,
+			st.tone(toneDim, fit("registry", 10))+" "+escape.Name(p.Registry),
+			st.tone(toneDim, fit("login", 10))+" "+plan.CredLabel(p.CredSource))
+	}
 	if p.Scope != "" {
 		line := st.tone(toneDim, fit("scope", 10)) + " " + p.Scope
 		ident = append(ident, line)

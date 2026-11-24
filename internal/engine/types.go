@@ -326,6 +326,29 @@ type PullProgress struct {
 	Total   int64  // bytes expected across those layers
 }
 
+// PushProgress is the aggregated state of an image push. Every string is
+// the daemon's, scrubbed of the credential the push was sent with.
+type PushProgress struct {
+	Status  string // latest status line from the daemon
+	Layer   string // layer the status line refers to, if any
+	Current int64  // bytes uploaded across all layers that report totals
+	Total   int64  // bytes to upload across those layers
+	Layers  int    // layers the daemon has named
+	Done    int    // of those, pushed or already present in the registry
+}
+
+// PushResult is what the daemon reported at the end of a push that it
+// completed: the tag it pushed and the manifest digest the registry now
+// holds under it, as the daemon stated them — never computed by the desk.
+type PushResult struct {
+	Tag    string
+	Digest string // sha256:<64 hex>
+	Size   int64  // the manifest's size in bytes, when reported
+	Layers int    // layers the daemon named
+	Pushed int    // of those, uploaded by this push
+	Exists int    // of those, already present in the registry
+}
+
 // RawStats is one raw statistics sample for a container. Rates and
 // percentages are derived from pairs of samples by package live.
 type RawStats struct {

@@ -9,6 +9,7 @@
 package plan
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sort"
@@ -62,6 +63,7 @@ const (
 	OpCopyIn
 	OpRename
 	OpPruneBuildCache
+	OpPushImage
 )
 
 var opVerbs = map[Op]string{
@@ -70,6 +72,7 @@ var opVerbs = map[Op]string{
 	OpCreateVolume: "create", OpRemoveVolume: "remove", OpCreateNetwork: "create",
 	OpRemoveNetwork: "remove", OpConnect: "connect", OpDisconnect: "disconnect",
 	OpCreateContainer: "create", OpCopyIn: "copy", OpRename: "rename", OpPruneBuildCache: "prune",
+	OpPushImage: "push",
 }
 
 func (o Op) String() string { return opVerbs[o] }
@@ -181,6 +184,17 @@ type Plan struct {
 	PinID  string
 	// SuccessNote, when set, is logged when every step succeeded.
 	SuccessNote string
+	// Registry is the registry a push uploads to (docker.io, host:5000),
+	// for display; empty for every other plan.
+	Registry string
+	// CredSource names where a push's credential came from, e.g. "auths" or
+	// "credHelpers ecr-login"; "" means none was found. Never a value.
+	CredSource string
+	// RegistryAuth resolves and encodes a push's credential when the job
+	// starts, so a `docker login` between the dialog and the confirmation
+	// is honoured and no secret lives in the plan. It is never displayed
+	// and its result is never logged.
+	RegistryAuth func(context.Context) (string, error)
 	// BuildCache is the build-cache prune's preview: display-only, and the
 	// list Execute compares the daemon's report with. Listed stays false —
 	// the one step does not map to the records (docs/DECISIONS.md).
