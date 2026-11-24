@@ -1187,6 +1187,26 @@ images`, `system df images`, `system df containers` — which were recorded, not
 driver is `none`, B37).
 
 
+## Round twenty-one: saving an image's archive
+
+Saving is a read that writes one local file, so it is proven on both sides: the fake daemon's
+request log says only the pin and the archive `GET` were sent, and the folder written to is
+listed after every outcome — nothing may be left in it but the archive, and after a cancel or
+a failure nothing at all.
+
+| Property | Tests | Run |
+| --- | --- | --- |
+| One writer: `WriteStream` shares `WriteFile`'s rules — 0600, no replacement, folder must exist, hidden temporary file, hard-link publication; a source error comes back as itself and leaves nothing; a local write error is a `WriteError`; a refused path never calls the source; a file that appears meanwhile is not replaced | `TestWriteStream*`, `TestWriteFile*` | `go test ./internal/report` |
+| The action: `w` sends nothing with the details loaded, one inspect without them (a second `w` adds none), a failed inspect opens nothing, a stale answer is dropped; the menu offers it from List and Details, `w` in Details wraps | `TestSaveArchiveKey*`, `TestSaveArchiveInspect*`, `TestSaveArchiveFailedInspect*`, `TestSaveArchiveMenuAndDetailsKey` | `go test ./internal/ui -run SaveArchive` |
+| The job: one pin by the reference, one `GET /images/get` with the reference and the inspected platform (`linux/arm64/v8` too), the file is the fixture byte for byte at 0600; untagged is saved by ID; the tag moved, the image gone, a daemon error, a write failure, a destination taken meanwhile and a cancel mid-stream each leave nothing and say why | `TestSaveArchiveWritesTheFixture`, `…Untagged…`, `…Platform`, `…TagMoved`, `…ImageGone`, `…DaemonError`, `…WriteFailure`, `…DestinationTaken…`, `…CancelMidStream` | `go test ./internal/ui -run SaveArchive` |
+| The form: the prefilled path for a tagged and an untagged row, the platform, the whole resolved path (wrapped, never cut), no size quoted; `~`, a missing folder, a folder, a file, a symlink, `~user` refused with nothing sent; bound to its image when the highlight moves; a selection refused; read-only saves with GETs only | `TestSaveArchiveForm*`, `TestSaveArchivePathRefusals`, `…TildeExpansion`, `…HighlightMoves`, `…RefusesASelection`, `…ReadOnly` | `go test ./internal/ui -run SaveArchive` |
+| The safety tables: every action is mutating unless it is listed as a read (only Images' `w`), and read-only refuses every other | `TestEveryActionKeyIsCovered`, `TestReadOnlyDisablesEveryAction` | `go test ./internal/ui -run 'EveryActionKey\|ReadOnlyDisables'` |
+| End to end: the real binary saves nginx:1.27, wide and at 80×24 read-only; the tar is the fixture, names the tag, mode 0600, one archive GET with the platform; a cancel from the Jobs pane leaves the folder empty | `TestSaveImageArchive`, `TestSaveImageArchiveCancel` | `go test ./internal/e2e -run SaveImageArchive` |
+
+Screens: `docs/screens/65-save-image-form.txt` (150×42),
+`docs/screens/66-save-image-form-80x24-read-only.txt` and
+`docs/screens/67-save-image-cancelled.txt`.
+
 ## Running everything
 
 ```sh

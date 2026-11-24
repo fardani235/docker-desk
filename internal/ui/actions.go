@@ -17,7 +17,9 @@ import (
 // actions without needsRow, to the kind as a whole).
 //
 // No action sends a mutation. Each one ends in a dialog: a confirmation, a
-// typed confirmation or a form. See invoke.
+// typed confirmation or a form. See invoke. Those that are not mutating
+// (Images' save archive, a read that writes one local file) are allowed in
+// read-only mode.
 type action struct {
 	key      string
 	label    string
@@ -32,6 +34,10 @@ type action struct {
 	setOp      plan.Op
 	setCapable bool
 	ignoresSet bool
+	// listOnly: the direct key is the List pane's alone, because the
+	// Details pane gives it another meaning (w wraps the text tabs); the
+	// action menu reaches it from either pane.
+	listOnly bool
 }
 
 func containerAction(op plan.Op) func(*Model, row) tea.Cmd {
@@ -84,6 +90,10 @@ var kindActions = [kindCount][]action{
 			}},
 		{key: "X", label: "prune…", desc: "remove unused images, after showing exactly which", mutating: true,
 			run: func(m *Model, _ row) tea.Cmd { return m.preparePrune(plan.ImagePrune, false) }},
+		// Saving is a read (GET /images/get) that writes one local file:
+		// not mutating, so read-only mode allows it (saveimage.go).
+		{key: "w", label: "save archive…", desc: "write this image's archive (docker save) to one local file; the tag is kept", needsRow: true,
+			listOnly: true, run: (*Model).openSaveArchive},
 	},
 	KindVolumes: {
 		{key: "n", label: "new…", desc: "create a volume", mutating: true, ignoresSet: true, run: func(m *Model, _ row) tea.Cmd { return m.openForm(formVolume) }},
@@ -293,6 +303,8 @@ func (m *Model) submitForm() tea.Cmd {
 		return m.submitCopyOut()
 	case formCopyIn:
 		return m.submitCopyIn()
+	case formSaveImage:
+		return m.submitSaveImage()
 	}
 	text := d.formText()
 	switch d.form {

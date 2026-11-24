@@ -2,6 +2,7 @@ package report
 
 import (
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -65,6 +66,44 @@ func ExpandPath(p, home, cwd string) (string, error) {
 
 // WriteFile writes data to path under the rules above.
 func WriteFile(path string, data []byte, force bool) error {
+	return writeFile(path, force, func(w io.Writer) error {
+		_, err := w.Write(data)
+		return err
+	})
+}
+
+// WriteStream writes what write puts into its writer to path under the same
+// rules WriteFile follows: 0600, no replacement (there is no force), the
+// folder must exist, a hidden temporary file beside the target, published
+// only when write has returned nil and every byte is synced, and removed on
+// any failure. Nothing is buffered in memory: write is handed the temporary
+// file (as a plain io.Writer) and may copy a stream of any size into it.
+//
+// A failure to write the temporary file comes back as a *WriteError
+// ("writing failed: …"). Any other error write returns — the source failing,
+// a cancelled context — comes back as it is, after the temporary file has
+// been removed: it is the source's reason, not the destination's.
+func WriteStream(path string, write func(io.Writer) error) error {
+	return writeFile(path, false, write)
+}
+
+// fileWriter is the temporary file as write sees it: only Write, and the
+// first error it returned, so that a failure of the file can be told from a
+// failure of whatever write was copying from.
+type fileWriter struct {
+	f   *os.File
+	err error
+}
+
+func (w *fileWriter) Write(p []byte) (int, error) {
+	n, err := w.f.Write(p)
+	if err != nil && w.err == nil {
+		w.err = err
+	}
+	return n, err
+}
+
+func writeFile(path string, force bool, write func(io.Writer) error) error {
 	if path == "" {
 		return werr(path, "no path was given", nil)
 	}
@@ -114,8 +153,16 @@ func WriteFile(path string, data []byte, force bool) error {
 	if err := tmp.Chmod(0o600); err != nil {
 		return werr(abs, plain(err), err)
 	}
-	if _, err := tmp.Write(data); err != nil {
-		return werr(abs, "writing failed: "+plain(err), err)
+	fw := &fileWriter{f: tmp}
+	if err := write(fw); err != nil {
+		if fw.err != nil && errors.Is(err, fw.err) {
+			return werr(abs, "writing failed: "+plain(err), err)
+		}
+		return err
+	}
+	if fw.err != nil {
+		// write swallowed the file's error: the bytes are not all there.
+		return werr(abs, "writing failed: "+plain(fw.err), fw.err)
 	}
 	if err := tmp.Sync(); err != nil {
 		return werr(abs, "writing failed: "+plain(err), err)
@@ -141,7 +188,8 @@ func WriteFile(path string, data []byte, force bool) error {
 		return &WriteError{Path: abs, Reason: "a file appeared there while writing; nothing was overwritten", Exists: true, Err: err}
 	}
 	// A filesystem without hard links: create the name exclusively and
-	// write it again, removing it if that fails part-way.
+	// copy the temporary file into it, removing it if that fails part-way.
+	// (The temporary file, not the source: a stream cannot be read twice.)
 	f, err := os.OpenFile(abs, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		if errors.Is(err, fs.ErrExist) {
@@ -149,10 +197,17 @@ func WriteFile(path string, data []byte, force bool) error {
 		}
 		return werr(abs, plain(err), err)
 	}
-	_, werr1 := f.Write(data)
+	src, err := os.Open(tmpName)
+	if err != nil {
+		f.Close()
+		os.Remove(abs)
+		return werr(abs, "writing failed: "+plain(err), err)
+	}
+	_, cperr := io.Copy(f, src)
+	src.Close()
 	serr := f.Sync()
 	cerr := f.Close()
-	if e := errors.Join(werr1, serr, cerr); e != nil {
+	if e := errors.Join(cperr, serr, cerr); e != nil {
 		os.Remove(abs)
 		return werr(abs, "writing failed: "+plain(e), e)
 	}

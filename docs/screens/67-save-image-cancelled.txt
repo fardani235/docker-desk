@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1846519447/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…447/d.sock ●]                                                                                            M picker  < > focus
+┌─ 1 Kinds ────────┐┌─ 2 Images (1 of 16) ─────────────────────────────────────────── filter: nginx ─┐┌─ 4 Events ────────────────────────── ● live ─┐
+│  Containers    13││  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ││Waiting for engine events…                    │
+│▸ Images        16││▸ nginx                   1.27          f673addec473     188MB    24h     1 ctr ││Everything the daemon does                    │
+│  Volumes        7││                                                                                ││shows up here as it happens.                  │
+│  Networks       7││                                                                                ││                                              │
+│  Compose        2││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│  ● 7 running     ││                                                                                ││                                              │
+│  ‖ 1 paused      ││                                                                                ││                                              │
+│  ○ 5 stopped     ││                                                                                ││                                              │
+│                  ││           ┏━ ◆ Job #1 output ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
+│                  ││           ┃                                                                                    ┃                               │
+│                  ││           ┃ ⊘ cancelled   save image archive nginx:1.27                                        ┃                               │
+│                  ││           ┃ started 21:33:50 · ran 31ms                                                        ┃                               │
+│                  │└───────────┃ on daemon unix:///tmp/ddfake1846519447/d.sock                                      ┃                               │
+│                  │┌─ 3 Details┃                                                                                    ┃                               │
+│                  ││Reference  ┃ image nginx:1.27, by its reference, pinned to f673addec473                         ┃                               │
+│                  ││ID         ┃ platform linux/amd64                                                               ┃                               │
+│                  ││Size       ┃ to /tmp/TestSaveImageArchiveCancel2386752855/001/docker-desk-image-nginx-1.27-2026 ┃                               │
+│                  ││Created    ┃ 1124.tar                                                                           ┃                               │
+│                  ││Platform   ┃ the partial archive (32.8kB) was removed; nothing remains at /tmp/TestSaveImageArc ┃                               │
+│                  ││Layers     ┃ hiveCancel2386752855/001/docker-desk-image-nginx-1.27-20261124.tar                 ┃                               │
+│                  ││Command    ┃ cancelled: the daemon's stream was closed                                          ┃                               │
+│                  ││Workdir    ┃                                                                                    ┃                               │
+│                  ││           ┃ Error: cancelled                                                                   ┃                               │
+│                  ││References ┃                                                                                    ┃                               │
+│                  ││  nginx:1.2┃ ↑↓ PgUp PgDn scroll  Esc close                                                     ┃───────────────────────────────┘
+│                  ││           ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛━━━━━━━━━━━━━━━━━━━━━━ 1 done ━┓
+│                  ││Used by                                                                         │┃▸ ⊘ save image archive nginx:1.27 — wrot… 31ms┃
+│                  ││  ● shop-web-1  running                                                         │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+│                  ││                                                                                │┃                                              ┃
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ cancelled: save image archive nginx:1.27
+ ↑↓ move  Enter output  c cancel  x clear finished                                                                           Tab pane  ? keys  q quit

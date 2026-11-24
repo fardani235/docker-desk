@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake2062145477/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…477/d.sock ● ro]                   M picker  < > focus
+┌─┏━ ◆ Save the image archive ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓━┓
+│ ┃                                                                          ┃E┃
+│▸┃ image      nginx:1.27  (f673addec473)                                    ┃h┃
+│ ┃ daemon     unix:///tmp/ddfake2062145477/d.sock  (context default)        ┃ ┃
+│ ┃ saves      the reference nginx:1.27: the archive keeps the tag           ┃━┛
+│ ┃ platform   linux/amd64                                                   ┃─┐
+│ ┃                                                                          ┃ │
+│ ┃ Local file                                                               ┃ │
+│ ┃ > ~/docker-desk-image-nginx-1.27-20261124.tar                            ┃ │
+│ ┃   will write /tmp/TestSaveImageArchive66-save-image-form-80x24-read-only ┃ │
+│ ┃              932796850/001/docker-desk-image-nginx-1.27-20261124.tar     ┃ │
+│ ┃                                                                          ┃ │
+│ ┃ • The archive is a tar, as `docker save` writes it, for this one         ┃ │
+└─┃   platform.                                                              ┃─┘
+┌─┃ • The file is written mode 0600. A file already there is never replaced; ┃─┐
+│W┃   the folder must exist and none is created.                             ┃ │
+│E┃ • Nothing on the daemon changes: the image is only read (GET             ┃…│
+│s┃   /images/get). If the save fails or is cancelled, the partial file is   ┃ │
+│ ┃   removed.                                                               ┃ │
+└─┃                                                                          ┃─┘
+  ┃ Enter save  Esc cancel                                                   ┃
+ ↑┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛t

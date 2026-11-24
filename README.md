@@ -687,7 +687,7 @@ row of the listing. A name shaped like `../../etc/passwd` is a name in the tree;
 ever opened, resolved or joined to the machine's filesystem.
 
 **Copying, out and in.** On a container, `o` and `i` copy the highlighted path between the
-container and this machine — the only time the desk reads or writes a file's contents, and only
+container and this machine — the only time the desk reads or writes a container file's contents, and only
 the path asked for, streamed and never drawn. On an image both keys say copies are between a
 container and this machine, and open nothing.
 
@@ -735,11 +735,51 @@ tab-separated) or JSON — with every path's type, size, mode and layer and, for
 what it did to it; names escaped as on screen. Before the archive is read there is no index,
 and nothing is written.
 
+### Save — an image's archive to a file
+
+`w` in the Images list saves the highlighted image as **one tar on this machine** — the archive
+`docker save` writes, read from whichever daemon the desk is focused on, with the desk's path
+rules. Saving is a read (`GET /images/get`): nothing on the daemon changes, so it works in
+`--read-only` mode. It is in the action menu (`Enter`) too, from the List or the Details pane;
+the direct key is the List's, because `w` wraps text in the Details pane.
+
+- **One image, the one you saw.** The image is captured — ID, reference, name — when `w` is
+  pressed, and the form stays bound to it if the highlight moves. With a selection, `w` refuses
+  (it works on one image at a time) and nothing is sent.
+- **The platform is stated, never guessed.** It is the one the image is inspected as — the same
+  as Files and Findings. If the Details pane has not inspected the image yet, `w` asks once
+  (`reading the image's platform…`); a failed inspect opens nothing and says why.
+- **The tag is kept, and pinned.** A tagged row is saved by its reference, so the archive loads
+  under that tag; an untagged row is saved by its ID, and the form says the archive will be
+  untagged. Just before streaming, the reference is inspected again: if it names another image
+  now, nothing is written and the job says *the tag moved*. (The daemon has no atomic
+  save-this-ID-under-this-tag; the window left is the one removals accept.)
+- **The form is the confirmation.** It names the image, its short ID, what will be saved, the
+  platform, the daemon and the path, prefilled as
+  `~/docker-desk-image-<object>-<YYYYMMDD>.tar` — `~/docker-desk-image-nginx-1.27-20261124.tar`
+  — and shows the absolute path before you press Enter. It quotes no size: the daemon's listed
+  size is not the tar's. A path that is taken — a file, a folder, a symbolic link — or whose
+  folder does not exist is refused in the form, and nothing is read; no folder is created.
+- **Written like an export.** The archive streams (never held in memory) to a hidden temporary
+  file beside the path, mode `0600`, and takes the path's name only when complete — by a hard
+  link, so a file that appears there meanwhile is never replaced. The job reports the bytes
+  written as it goes, then the bytes, path, platform and whether the archive is tagged.
+- **Cancel or failure leaves nothing.** `c` in the Jobs pane closes the daemon's stream and
+  removes the partial file; so does a daemon error, a full disk, a moved tag or a refused path.
+  The job says why, and that nothing remains at the path.
+
+The form, captured: [`docs/screens/65-save-image-form.txt`](docs/screens/65-save-image-form.txt),
+at 80×24 in read-only mode
+[`docs/screens/66-save-image-form-80x24-read-only.txt`](docs/screens/66-save-image-form-80x24-read-only.txt),
+and a cancelled save's job
+[`docs/screens/67-save-image-cancelled.txt`](docs/screens/67-save-image-cancelled.txt).
+
 ### Export — evidence to a file
 
 `w` writes what the desk has already worked out to **one file on this machine**: in Images ›
-Findings (Details pane focused), in the Packages view, and in the Space view. It is the only
-thing in the program that writes a file, and it asks first.
+Findings (Details pane focused), in the Packages view, and in the Space view. It asks first. It
+shares the one file writer with [saving an image's archive](#save--an-images-archive-to-a-file):
+the same `0600`, no-replace, temporary-file rules below apply to both.
 
 The dialog offers a format and a path, prefilled as
 `~/docker-desk-<kind>-<object>-<YYYYMMDD>.<ext>` — `~/docker-desk-findings-python-3.12-slim-20261109.json`.
@@ -851,7 +891,7 @@ Press `?` inside the desk for the same list.
 | Kind | Keys |
 | --- | --- |
 | Containers | `n` new (create and start, pulling the image first if it is missing) · `s` start · `t` stop · `R` restart · `p` pause · `u` unpause · `K` kill · `d` remove · `e` shell |
-| Images | `P` pull by name (on Upstream showing *moved*: the build the tag names now, by digest) · `d` remove · `X` prune |
+| Images | `P` pull by name (on Upstream showing *moved*: the build the tag names now, by digest) · `d` remove · `X` prune · `w` save archive… (List pane; a read, allowed in read-only mode; see [Save](#save--an-images-archive-to-a-file)) |
 | Volumes | `n` new · `d` remove · `X` prune |
 | Networks | `n` new · `d` remove · `X` prune · `c` connect a container · `D` disconnect a container |
 | Compose | `t` stop the whole project · `d` remove the whole project · (menu) compare with the compose file — a read, allowed in read-only mode |
@@ -862,8 +902,8 @@ they get a `✓` in the gutter and the title says how many, e.g. `2 Containers (
 The selection belongs to its kind and follows its objects across refreshes; an object that
 disappears leaves it. While a kind has a selection, `s` `t` `R` `p` `u` `K` `d` on Containers
 and `d` on Images, Volumes and Networks apply to every selected object instead of the
-highlighted one. `e` shell, `c` connect and `D` disconnect work on one object only and refuse
-(nothing is sent); `X` prune chooses its own objects and refuses too; `P` pull and `n` new
+highlighted one. `e` shell, `c` connect, `D` disconnect and `w` save archive work on one object
+only and refuse (nothing is sent); `X` prune chooses its own objects and refuses too; `P` pull and `n` new
 (on Containers, Volumes and Networks) are unaffected. The selection is cleared when the job starts, and kept if you decline. `Space`
 still pages in the Details pane; in the Events pane it holds the view.
 
@@ -901,7 +941,7 @@ fields do not cover (networks, user, limits, a TTY, …) is not offered. The for
 `d` remove the daemon (then `y` to confirm, `n` to keep it) · `r` read the contexts again ·
 `Esc`, `q` or `M` close.
 
-**Details**: `←` `→` switch tab · `f` pause/resume following (Logs) · `w` toggle wrapping (not Processes).
+**Details**: `←` `→` switch tab · `f` pause/resume following (Logs) · `w` toggle wrapping (not Processes; on Images, `w` in the List saves the archive).
 
 **Search in the Details pane** (`/`, on any tab). The bar opens in the pane's last row (on Logs,
 in its status row) and takes no row once closed. Each tab keeps its own query until another
@@ -1018,6 +1058,10 @@ being careful.
     destination and that same-named files there are replaced; press `y`. Copying *out* changes
     nothing on the daemon: Enter on its form writes only the one local path it shows, never
     one that exists, and is allowed in read-only mode.
+  - save an image's archive (`w` on Images) → the same: the form names the image, the tag or
+    ID, the platform and the one local path; Enter sends only the archive `GET` (after
+    re-checking the tag), never replaces a file, removes a partial one on cancel or failure,
+    and is allowed in read-only mode.
   - new container → the form restates the whole configuration and any pull it needs; Enter
     submits, never before the form has been on screen long enough to read.
   - re-create (`A` on Containers › Changes) → type `recreate` and press Enter. It stops a
@@ -1298,7 +1342,7 @@ internal/repository    the repository browser's tags, join, session cache and bu
 internal/forensics     what an image's own archive holds, read as one stream: findings, the SBOM's
                        packages, the installed dpkg/apk/rpm databases (with its own SQLite reader)
 internal/report        evidence files: pure serializers (json, SPDX 2.3, CycloneDX 1.5, text) of plain
-                       structs, and the one function that writes a file (0600, never a partial one)
+                       structs, and the one writer of files, whole or streamed (0600, never a partial one)
 internal/report/collect  what a view or --report has computed, as report's structs: the one conversion
 internal/jobs          background jobs and their ledger
 internal/live          bounded buffers and stream supervision for logs, stats and events

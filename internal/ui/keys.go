@@ -373,8 +373,9 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 		m.focus = PaneList
 	default:
 		// The Details pane describes the highlighted object, so that
-		// object's actions work from here too.
-		if a, ok := m.actionFor(key); ok {
+		// object's actions work from here too — except those whose key
+		// is the List pane's alone.
+		if a, ok := m.actionFor(key); ok && !a.listOnly {
 			return m.invoke(a)
 		}
 	}
