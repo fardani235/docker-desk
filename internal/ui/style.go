@@ -180,6 +180,26 @@ func (s styles) box(title, right string, lines []string, w, h int, focused bool)
 	return out
 }
 
+// boxRightAt is where box draws right in its top border: the column, from
+// the box's left edge, of right's first cell. ok is false when right is not
+// drawn at all (the title took the room). It mirrors box exactly.
+func boxRightAt(title, right string, w int, focused bool) (col int, ok bool) {
+	if w < 4 || right == "" {
+		return 0, false
+	}
+	if focused {
+		title = "◆ " + title
+	}
+	inner := w - 2
+	label := ansi.Truncate(title, max(inner-3, 0), "…")
+	fill := inner - 1 - (ansi.StringWidth(label) + 2)
+	rw := ansi.StringWidth(right)
+	if fill < rw+4 {
+		return 0, false
+	}
+	return w - rw - 3, true
+}
+
 func blank(w, h int) []string {
 	out := make([]string, max(h, 0))
 	for i := range out {

@@ -5,7 +5,7 @@ one at a time in front of you, the rest watched in the background.
 Not a table you scroll — a desk: the kinds of things
 Docker has on the left, the objects of the kind you picked in the middle with their details
 underneath, the engine's own event stream ticking by on the right, and the slow work you sent
-off in the corner. All alive at once, all from the keyboard.
+off in the corner. All alive at once, keyboard or mouse.
 
 ```
  Docker Desk  unix:///var/run/docker.sock  ctx default  Engine 29.8.2  on myhost  ● connected
@@ -49,6 +49,7 @@ the remote one. The one exception: an `ssh://` daemon is reached through your `s
 | `docker-desk -c staging` | open it on the daemon of that Docker context (`--context`) |
 | `docker-desk --read-only` | look, don't touch: every action that changes something, and the shell, is disabled; anything but `GET`/`HEAD` is refused before it is sent — on every daemon of the session, including those added later |
 | `docker-desk --no-compose-files` | never read a compose file: Compose › Declared compares nothing and says which flag forbade it (`--read-only` alone still allows the comparison, which only reads) |
+| `docker-desk --no-mouse` | leave the mouse to the terminal: clicks and the wheel are not reported to the desk, and text selects natively (see [Mouse](#mouse)) |
 | `docker-desk --check` | say which daemon would be used, how it is reached and whether it answers, then exit |
 | `docker-desk --report ~/py.spdx.json --report-format spdx --report-object python:3.12-slim` | analyse one image as Images › Findings does, write the report, exit — no terminal needed (see [Export](#export--evidence-to-a-file)) |
 | `docker-desk --theme nord` | pick a colour theme (see [Themes](#themes)) |
@@ -946,6 +947,28 @@ that hides it; an object not listed yet is waited for two seconds, and a marker 
 plugin or swarm event says there is nothing to go to. Going there changes nothing and works
 read-only. **Jobs**: `Enter` read a job's full output · `c` cancel a running job · `x` clear
 finished ones.
+
+### Mouse
+
+Clicking and the wheel are on by default (`--no-mouse` turns them off):
+
+- **Click** focuses the pane it lands in and picks what is drawn there: a kind, a list row (the
+  Details pane follows), a Details tab in the pane's title, a daemon on the strip, a job, an
+  event (the Events pane holds, its cursor on that event), a row in Files, Space or Repository.
+- **Click a text line** — the list filter, the Details search, a form field, the repository name,
+  an export path — to type there, caret at the end. Clicking anywhere else ends the edit and
+  keeps its text, as Enter does for a filter; it never submits a form or asks a registry.
+- **In a dialog**, a menu entry runs as Enter would (it can open a confirmation, never pass one);
+  a picker row is chosen by clicking it a second time.
+- **The wheel** moves what is under the pointer, three rows a notch (Kinds: one kind), without
+  moving focus: scroll the logs while the List keeps the keys. Upward over Events holds the view;
+  downward from the newest event resumes it.
+
+A click never opens a menu, never selects a row for an action and never confirms anything:
+confirmations take the keyboard only, and in read-only mode a clicked action is refused
+exactly as its key is. While the desk has the mouse, most terminals still select text with
+**Shift** held; `--no-mouse` gives the terminal the mouse back entirely. After a container shell
+the desk takes the mouse again by itself.
 
 ### The shell
 

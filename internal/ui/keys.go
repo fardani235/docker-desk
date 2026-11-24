@@ -331,22 +331,7 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 		return nil
 	}
 	page := max(m.detailHeight-2, 1)
-	scroll := func(delta int) {
-		switch m.tabName() {
-		case tabLogs:
-			m.scrollLogs(delta)
-		case tabInspect:
-			m.inspect.scroll(delta)
-		case tabProcesses:
-			m.proc.view.scroll(delta)
-		case tabChanges:
-			m.chg.view.scroll(delta)
-		case tabDeclared:
-			m.dc.view.scroll(delta)
-		case tabInfo:
-			m.info1.scroll(delta)
-		}
-	}
+	scroll := m.scrollTab
 	switch key {
 	case "down", "j":
 		scroll(1)
@@ -394,6 +379,38 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 		}
 	}
 	return nil
+}
+
+// scrollTab scrolls the current Details tab's text by delta rows: the keys'
+// mover and the wheel's.
+func (m *Model) scrollTab(delta int) {
+	switch m.tabName() {
+	case tabLogs:
+		m.scrollLogs(delta)
+	case tabInspect:
+		m.inspect.scroll(delta)
+	case tabProcesses:
+		m.proc.view.scroll(delta)
+	case tabChanges:
+		m.chg.view.scroll(delta)
+	case tabDeclared:
+		m.dc.view.scroll(delta)
+	case tabInfo:
+		m.info1.scroll(delta)
+	}
+}
+
+// scrollDetails is the wheel over the Details pane: the findings move on
+// Findings, the text scrolls elsewhere.
+func (m *Model) scrollDetails(delta int) {
+	if _, ok := m.currentRow(); !ok {
+		return
+	}
+	if m.tabName() == tabFindings {
+		m.moveFindingsCursor(delta)
+		return
+	}
+	m.scrollTab(delta)
 }
 
 // onEventsKey: live, the pane follows; any key that reads back holds it

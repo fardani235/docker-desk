@@ -4490,3 +4490,74 @@ See docs/TESTING.md, round twenty, for the commands and their results.
 - No re-create was sent to a real daemon. The default mode was read with scratch containers and
   removed again; no volume or container was left behind.
 - No commits were made.
+
+## Round twenty-one — the mouse
+
+The request: clicks and the wheel, everywhere the keyboard navigates. The change is the
+OpenSpec change `add-mouse-support`: a proposal, a new capability `mouse-support`, a delta to
+`mutation-safety`, a design (its D1–D8) and tasks. Nothing it adds can change a daemon.
+
+### N1 — The frame records its own hit map
+
+Every draw site records what it draws, in absolute cells, while drawing it: the pane (first,
+so that what is inside wins), the rows of Kinds, List, Events and Jobs, the Details tabs in the
+border, the members of the daemon strip, the rows of the Files, Space and Repository views, and
+a dialog's box and its menu, picker, daemon, form and path rows. Renderers record relative to
+an origin the frame sets before calling them (`Model.org`), and dialog bodies by body line,
+placed once the dialog's position is known. The list is built aside and made current only when
+the frame is complete; a cached frame keeps it; a resize and quitting drop it. Every hit is
+checked against the state when applied (the row key still listed, the tab still the kind's,
+the job still there, the event still in the held copy). Recomputing geometry at event time was
+rejected: it would duplicate eight renderers' scrolling and drift from the screen. The
+Events tail is read with its ring position (`Read` rather than `Tail`) so that a click names
+exactly the entry drawn.
+
+### N2 — The pointer navigates; only the keyboard consents
+
+`onMouse` is the one entry point, gated first (`--no-mouse`, too small, no daemon, no frame,
+anything but a left press or a vertical wheel notch). It never builds a key message. A click
+on a menu entry calls `invokeOn` as Enter does — at most a confirmation or a form opens; a
+picker row is chosen on a second click as Enter chooses it, and still meets `armed()`. A
+confirmation records no row at all, so no cell of it — prompt, `y` hint, typed word — is a
+target, and a daemon-removal question ignores the pointer. There is no path from a mouse event
+to `confirmed` or `submitForm`; `TestMouseNeverConfirms` clicks every cell of a `y` and of a
+typed confirmation. The wheel calls the movers the keys call (`moveSelection`, `scrollTab`,
+`readBack`, `moveJob`, the view cursors), so it never trips the "a key means take over" rules:
+it does not drop a plan being prepared nor end a filter. Focus never follows the wheel.
+
+### N3 — `--no-mouse`, and the shell hand-off
+
+`Options.NoMouse` (zero value: on) and `--no-mouse`; `tea.WithMouseCellMotion` (1002 + SGR
+1006) is asked for only without it — cell motion, not all motion, since motion is ignored.
+Bubble Tea's `RestoreTerminal` after `tea.Exec` re-enables the alternate screen but not the
+mouse, so the end of a shell batches `tea.EnableMouseCellMotion`; under `--no-mouse` nothing.
+Quitting turns reporting off with the rest of the terminal (Bubble Tea's shutdown).
+
+### N4 — Decisions taken where the plan left room
+
+- **"No request is sent" on a row click** is read as no *mutating* request: highlighting a row
+  loads its details (inspect, logs, stats), exactly as moving there with ↓ does, and the spec's
+  own scenario says the Details pane follows.
+- **Repository**: the view describes the tag the highlight rests on (a manifest request to the
+  registry). A highlight placed by the pointer is *not* described (`rb.pointerQuiet`) until a
+  key is pressed in the view; the detail says so. This keeps the spec's "a click sends no
+  manifest request" literally, and keeps clicking free of third-party traffic.
+- **Job viewer**: its text has no rows to select; it scrolls with the wheel and ignores
+  clicks, like help.
+- **Packages view**: not named by the spec; it takes the pointer as nothing (its routing
+  position still stops events reaching the panes under it). Keys remain complete there.
+- **Menus, pickers, the daemons dialog**: the wheel moves their selection one row, like
+  Kinds; choosing still needs Enter or a second click.
+- **The Logs filter** is clickable in its status row, other tabs' search bar in the last row.
+- **Compact Details title** (`[Logs] 3/6`): no per-tab targets; a click there focuses the pane.
+- **Caret**: always at the end of the text (design D5); no per-character placement.
+
+### N5 — Round twenty-one: what was run
+
+`go test ./...` and `go test -race ./...`; the new tests are `internal/ui/mouse_test.go`
+(model messages: map, clicks, gate, dialogs, wheel, views, never-confirms) and
+`internal/e2e/mouse_test.go` (SGR on a pty: click, wheel, `--no-mouse`, after a shell), plus
+`TestNoMouseFlag` (the sequences a real program writes, with and without the flag). The e2e
+tests `TestProcessesView`, `TestRecreateCarriesADefaultVolume` and `TestFilesInTheSandbox`
+fail intermittently under the full package run on this machine **on the base commit as well**
+(each passes alone); they are timing-sensitive pty waits, not this round's.

@@ -709,6 +709,9 @@ func (m *Model) renderLogs(w, h int) []string {
 	if !m.logWrap {
 		status += " · wrap off"
 	}
+	if q != "" || m.ds.typing {
+		m.recordRow(len(out), hitText, PaneDetails, int(textSearch), 0, "")
+	}
 	return append(out, m.st.tone(t, fit(status, w)))
 }
 
@@ -881,6 +884,7 @@ func (m *Model) renderDetails(w, h int) []string {
 		for len(out) < h-1 {
 			out = append(out, "")
 		}
+		m.recordRow(h-1, hitText, PaneDetails, int(textSearch), 0, "")
 		return append(out, m.findBar(w))
 	}
 	return m.renderTab(w, h)

@@ -67,6 +67,7 @@ func computeLayout(w, h int) layout {
 // last call the cached frame is returned, and Bubble Tea writes nothing.
 func (m *Model) View() string {
 	if m.quitting {
+		m.hits = nil
 		return ""
 	}
 	if !m.dirty && m.frame != "" {
@@ -74,7 +75,9 @@ func (m *Model) View() string {
 	}
 	m.dirty = false
 	m.frames++
+	m.building = nil
 	m.frame = strings.Join(m.render(), "\n")
+	m.hits, m.building = m.building, nil
 	return m.frame
 }
 
@@ -100,7 +103,12 @@ func (m *Model) render() []string {
 	l := computeLayout(m.width, m.height)
 
 	pane := func(p Pane, r rect, title, right string, content func(w, h int) []string) []string {
-		return m.st.box(title, right, content(r.w-2, r.h-2), r.w, r.h, m.focus == p)
+		// The pane first, so that what is drawn in it wins the lookup.
+		m.record(hit{r: r, kind: hitPane, pane: p})
+		m.org = rect{r.x + 1, r.y + 1, r.w - 2, r.h - 2}
+		lines := content(r.w-2, r.h-2)
+		m.recordTitle(p, r, title, right)
+		return m.st.box(title, right, lines, r.w, r.h, m.focus == p)
 	}
 	kinds := pane(PaneKinds, l.kinds, "1 Kinds", "", func(w, h int) []string { return m.renderKinds(w, h, m.focus == PaneKinds) })
 	lt, lr := m.listTitle()
@@ -121,6 +129,13 @@ func (m *Model) render() []string {
 		body = append(joinH(kinds, center), joinH(events, jobsPane)...)
 	}
 
+	overlayOpen := m.pk.open || m.fs.open || m.sp.open || m.rb.open
+	if overlayOpen {
+		// The view covers the panes: nothing drawn under it can be clicked.
+		m.building = m.building[:0]
+		m.record(hit{r: rect{0, headerLines, m.width, len(body)}, kind: hitOverlay})
+		m.org = rect{2, headerLines + 1, m.width - 4, len(body) - 2}
+	}
 	switch {
 	case m.pk.open:
 		body = m.packagesBox(m.width, len(body))
@@ -150,6 +165,7 @@ func (m *Model) overlayDialog(out []string) []string {
 			y = headerLines // never cover the header or the strip: the daemon stays visible
 		}
 		out = m.st.overlay(out, box, x, y, w)
+		m.recordDialog(x, y, w, h)
 	}
 	return out
 }
@@ -500,6 +516,22 @@ func (m *Model) helpLines(w int) []string {
 	row("T", "next colour theme ("+m.st.theme+" now)")
 	row("?", "this help")
 	row("q, Ctrl+C", "quit (asks first if jobs are running)")
+
+	sect("Mouse")
+	if m.opts.NoMouse {
+		out = append(out, "  Off: started with --no-mouse, so the terminal keeps clicks, the wheel",
+			"  and text selection. Every binding below is the keyboard's.")
+	} else {
+		row("click", "focus a pane; pick a kind, row, Details tab, daemon or job")
+		row("click a text line", "filter, search, form field, name or path: type there (caret at the end)")
+		row("click in a dialog", "a menu entry runs as Enter; a picker row is chosen on a second click")
+		row("wheel", "move the pane under the pointer three rows (Kinds: one kind); focus stays")
+		out = append(out,
+			"  A click never opens a menu, selects a row for an action or confirms anything:",
+			"  confirmations take the keyboard only. --no-mouse leaves the mouse to the",
+			"  terminal; without it most terminals select text with Shift held.",
+		)
+	}
 
 	sect("Moving (lists and text)")
 	row("↑ ↓  or  k j", "one row")

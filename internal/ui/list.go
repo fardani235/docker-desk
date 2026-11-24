@@ -633,6 +633,7 @@ func (m *Model) renderList(w, h int, focused bool) []string {
 			sb.WriteString(cell(cells[idx[ci]], ci))
 		}
 		text := sb.String()
+		m.recordRow(len(lines), hitListRow, PaneList, i, int(k), r.key)
 		// The gutter: the highlight's cursor, then the selection's marker.
 		_, marked := m.marks[k][r.key]
 		gutter := "  "
@@ -711,6 +712,7 @@ func (m *Model) renderKinds(w, h int, focused bool) []string {
 		}
 		nameW := w - 2 - len(count) - 1
 		text := fit(kindNames[k], nameW) + " " + count
+		m.recordRow(len(lines), hitKindRow, PaneKinds, int(k), 0, "")
 		switch {
 		case k == m.kind && focused:
 			lines = append(lines, m.st.selected.Render("▸ "+text))

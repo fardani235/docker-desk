@@ -812,12 +812,16 @@ func (m *Model) filesBox(w, h int) []string {
 	fs.curShown = curLine >= fs.off && curLine < fs.off+listH
 
 	body := append([]string{}, fixed...)
+	if len(fixed) > 0 && (fs.typing || fs.filter != "") {
+		m.recordRow(0, hitText, paneNone, int(textFilesFilter), 0, "")
+	}
 	for i := fs.off; i < total && len(body) < listH+len(fixed); i++ {
 		if rowsAt < 0 || i < rowsAt {
 			body = append(body, "  "+lines[i])
 			continue
 		}
 		r := i - rowsAt
+		m.recordRow(len(body), hitFilesRow, paneNone, r, 0, v.Rows[r].Node.Path)
 		text := m.filesRowText(v.Rows[r], cols, ix)
 		if r == cur {
 			body = append(body, st.selected.Render("▸ "+fit(ansi.Strip(text), inner-2)))

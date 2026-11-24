@@ -347,7 +347,9 @@ func (m *Model) copyBody(d *dialog, w int) (string, []string) {
 		} else if len(d.fields) > 1 {
 			label = "  " + st.tone(toneDim, label)
 		}
-		body = append(body, "", label, f.rows[0].View())
+		body = append(body, "", label)
+		m.recordDialogRow(len(body), hitFormRow, i, 0, "")
+		body = append(body, f.rows[0].View())
 	}
 	resolved := func(label, text string) {
 		if strings.TrimSpace(text) == "" {

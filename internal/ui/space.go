@@ -710,6 +710,9 @@ func (m *Model) spaceBox(w, h int) []string {
 	for i := m.sp.off; i < len(lines) && len(body) < listH; i++ {
 		l := lines[i]
 		text := l.text
+		if l.row != nil {
+			m.recordRow(len(body), hitSpaceRow, paneNone, 0, 0, l.row.key)
+		}
 		if l.row != nil && curLine == i {
 			text = st.selected.Render("▸ " + fit(ansi.Strip(text), inner-2))
 		} else {

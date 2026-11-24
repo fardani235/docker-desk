@@ -85,6 +85,10 @@ Flags:
   --no-compose-files  never read a compose file: the Compose › Declared tab
                       compares nothing (--read-only alone still allows the
                       comparison, which only reads)
+  --no-mouse          leave the mouse to the terminal: clicks and the wheel are
+                      not reported to the desk, and selecting text works
+                      natively. Without it the desk takes clicks and the
+                      wheel, and most terminals select text with Shift held
   --check             resolve the daemon, verify it answers, print what would
                       be used, and exit without opening the workspace
   --report PATH       write a report of --report-object to PATH and exit,
@@ -119,12 +123,14 @@ type access struct {
 	readOnly       bool // --read-only: GET and HEAD only
 	noRegistry     bool // --no-registry: no registry request at all
 	noComposeFiles bool // --no-compose-files: no compose file is read
+	noMouse        bool // --no-mouse: the terminal keeps the mouse
 }
 
 func (a *access) register(fs *flag.FlagSet) {
 	fs.BoolVar(&a.readOnly, "read-only", false, "")
 	fs.BoolVar(&a.noRegistry, "no-registry", false, "")
 	fs.BoolVar(&a.noComposeFiles, "no-compose-files", false, "")
+	fs.BoolVar(&a.noMouse, "no-mouse", false, "")
 }
 
 // apply threads the flags into the workspace's options.
@@ -132,7 +138,18 @@ func (a access) apply(o ui.Options) ui.Options {
 	o.ReadOnly = a.readOnly
 	o.NoRegistry = a.noRegistry
 	o.NoComposeFiles = a.noComposeFiles
+	o.NoMouse = a.noMouse
 	return o
+}
+
+// programOptions are the Bubble Tea options the desk runs with. Mouse
+// reporting (cell motion, SGR coordinates) is asked for unless --no-mouse.
+func programOptions(noMouse bool, in io.Reader, out io.Writer) []tea.ProgramOption {
+	opts := []tea.ProgramOption{tea.WithAltScreen(), tea.WithInput(in), tea.WithOutput(out)}
+	if !noMouse {
+		opts = append(opts, tea.WithMouseCellMotion())
+	}
+	return opts
 }
 
 func run(args []string, stdin *os.File, stdout, stderr io.Writer) int {
@@ -346,7 +363,7 @@ The workspace was not opened.
 	}
 	stopSignals()
 	model := ui.New(uiOpts)
-	prog := tea.NewProgram(model, tea.WithAltScreen(), tea.WithInput(stdin), tea.WithOutput(stdout))
+	prog := tea.NewProgram(model, programOptions(acc.noMouse, stdin, stdout)...)
 	// Bubble Tea ends the program on SIGINT and SIGTERM. Closing the
 	// terminal window sends SIGHUP, which by default would end the process
 	// on the spot — leaving the tunnel's socket behind and, where the

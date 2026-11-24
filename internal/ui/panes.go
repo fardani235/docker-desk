@@ -105,6 +105,7 @@ func eventText(e live.EventEntry, w int, nameOf func(id string) string) (string,
 func (m *Model) renderEvents(w, h int, focused bool) []string {
 	m.eventHeight = h
 	var entries []live.EventEntry
+	var pos0 uint64 // the ring position of entries[0]
 	cur := -1
 	if m.evHeld {
 		m.evCur = clamp(m.evCur, 0, len(m.evSnap)-1)
@@ -117,8 +118,12 @@ func (m *Model) renderEvents(w, h int, focused bool) []string {
 		m.evOff = clamp(m.evOff, 0, max(len(m.evSnap)-h, 0))
 		entries = m.evSnap[m.evOff:min(m.evOff+h, len(m.evSnap))]
 		cur = m.evCur - m.evOff
-	} else {
-		entries = m.hub.Events.Tail(h)
+		pos0 = m.evSnapEnd - uint64(len(m.evSnap)) + uint64(m.evOff)
+	} else if h > 0 {
+		// The tail, read with the position of its first entry, so that a
+		// click names exactly the entry drawn.
+		_, end := m.hub.Events.Bounds()
+		entries, pos0 = m.hub.Events.Read(end-min(end, uint64(h)), end)
 	}
 	if len(entries) == 0 {
 		return []string{
@@ -140,6 +145,7 @@ func (m *Model) renderEvents(w, h int, focused bool) []string {
 	out := make([]string, 0, h)
 	for i, e := range entries {
 		line, t := eventText(e, w-2, nameOf)
+		m.recordRow(i, hitEventRow, PaneEvents, int(pos0)+i, 0, "")
 		switch {
 		case i == cur && focused:
 			out = append(out, m.st.selected.Render("▸ "+line))
@@ -249,6 +255,7 @@ func (m *Model) renderJobs(w, h int, focused bool) []string {
 			detail = j.Err
 		}
 		text := glyph + " " + head
+		m.recordRow(len(out), hitJobRow, PaneJobs, j.ID, 0, "")
 		room := w - 2 - len([]rune(prog)) - 1
 		line := fit(text, room) + " " + prog
 		if detail != "" && j.State != jobs.Succeeded {

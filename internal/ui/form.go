@@ -315,6 +315,13 @@ func (m *Model) createBody(d *dialog, w, maxBody int) []string {
 	// The fields, each a label line and its rows.
 	type span struct{ from, to int }
 	var lines []string
+	// at is, for each line, the field row drawn on it (field -1: none).
+	type fieldRow struct{ field, row int }
+	var at []fieldRow
+	put := func(l string, field, row int) {
+		lines = append(lines, l)
+		at = append(at, fieldRow{field, row})
+	}
 	spans := make([]span, len(d.fields))
 	const lw = 12
 	pad := strings.Repeat(" ", lw+2)
@@ -334,17 +341,17 @@ func (m *Model) createBody(d *dialog, w, maxBody int) []string {
 		from := len(lines)
 		switch f.kind {
 		case fieldText:
-			lines = append(lines, mark+label+f.rows[0].View())
+			put(mark+label+f.rows[0].View(), i, 0)
 		case fieldList:
 			for j := range f.rows {
 				prefix := pad
 				if j == 0 {
 					prefix = mark + label
 				}
-				lines = append(lines, prefix+f.rows[j].View())
+				put(prefix+f.rows[j].View(), i, j)
 			}
 			if focused {
-				lines = append(lines, pad+st.tone(toneDim, fmt.Sprintf("entry %d of %d · Ctrl+N add · Ctrl+X remove", f.row+1, len(f.rows))))
+				put(pad+st.tone(toneDim, fmt.Sprintf("entry %d of %d · Ctrl+N add · Ctrl+X remove", f.row+1, len(f.rows))), -1, 0)
 			}
 		case fieldChoice:
 			var opts []string
@@ -359,9 +366,9 @@ func (m *Model) createBody(d *dialog, w, maxBody int) []string {
 			if focused && f.row == 0 {
 				cur = st.tone(toneAccent, "‹ ")
 			}
-			lines = append(lines, mark+label+cur+strings.Join(opts, ""))
+			put(mark+label+cur+strings.Join(opts, ""), i, 0)
 			if f.choiceTakesValue() {
-				lines = append(lines, pad+st.tone(toneDim, "retry limit ")+f.rows[0].View())
+				put(pad+st.tone(toneDim, "retry limit ")+f.rows[0].View(), i, 1)
 			}
 		}
 		spans[i] = span{from, len(lines)}
@@ -395,8 +402,18 @@ func (m *Model) createBody(d *dialog, w, maxBody int) []string {
 	// one so that the focused field is always in view.
 	middle := append(append([]string{}, lines...), summary...)
 	room := max(maxBody-len(ident)-1-len(tail)-1, 3)
+	// rows records the field rows of the middle lines [off, off+n), which
+	// start at body line top.
+	rows := func(off, n, top int) {
+		for k := off; k < off+n && k < len(at); k++ {
+			if at[k].field >= 0 {
+				m.recordDialogRow(top+k-off, hitFormRow, at[k].field, at[k].row, "")
+			}
+		}
+	}
 	if len(middle) <= room {
 		d.formOff = 0
+		rows(0, len(middle), len(ident)+1)
 		return append(append(append(ident, ""), middle...), append([]string{""}, tail...)...)
 	}
 	sp := spans[d.focus]
@@ -413,6 +430,7 @@ func (m *Model) createBody(d *dialog, w, maxBody int) []string {
 	}
 	d.formOff = clamp(d.formOff, 0, len(middle)-room)
 	window := middle[d.formOff : d.formOff+room]
+	rows(d.formOff, room, len(ident)+1)
 	more := st.tone(toneDim, fmt.Sprintf("  lines %d–%d of %d · Tab moves the view with the focus", d.formOff+1, d.formOff+room, len(middle)))
 	body := append(append(ident, ""), window...)
 	return append(body, append([]string{more}, tail...)...)

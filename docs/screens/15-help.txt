@@ -1,4 +1,5 @@
- Docker Desk  unix:///tmp/ddfake3128835518/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake3888266259/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…259/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Conta┏━ ◆ Keys ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓────────────────────── ● live ─┐
 │▸ Containers    13│┃  NAME     ┃                                                                                    ┃kill sig 15 shop-web-1         │
 │  Images        17│┃  distroles┃   ↑ ↓ PgUp PgDn    move the cursor; ↑ PgUp g also hold a live view                 ┃die exit 0 shop-web-1          │
@@ -25,18 +26,17 @@
 │                  ││Restart  no┃     • a selection, whatever the action: type the word with the count shown         ┃                               │
 │                  ││Runtime  tt┃       (stop 3, remove 7) and press Enter. The dialog lists every object, and       ┃                               │
 │                  ││Created  20┃       under "Not included" each selected one left out, with the reason.            ┃                               │
-│                  ││           ┃     • pull, new volume/network, shell: you type the name; Enter submits.           ┃                               │
-│                  ││Ports      ┃   A dialog ignores those keys for its first quarter of a second, and a key         ┃───────────────────────────────┘
-│                  ││  0.0.0.0:3┃   pressed while a confirmation is still being prepared drops it: nothing typed     ┃────────────────────── 4 done ─┐
-│                  ││           ┃   ahead, or typed for something else, can consent. Esc always works at once.       ┃es 2 volumes                2ms│
-│                  ││Networks   ┃   Nothing is ever forced. If something is in use the dialog says by what and       ┃hello-world:latest        427ms│
-│                  ││  shop_defa┃   refuses. A prune lists exactly what it will delete and deletes only that.        ┃iner shop-web-1             2ms│
-│                  ││           ┃                                                                                    ┃ner shop-web-1              3ms│
+│                  ││           ┃     • pull, new volume/network, shell: you type the name; Enter submits.           ┃───────────────────────────────┘
+│                  ││Ports      ┃   A dialog ignores those keys for its first quarter of a second, and a key         ┃────────────────────── 4 done ─┐
+│                  ││  0.0.0.0:3┃   pressed while a confirmation is still being prepared drops it: nothing typed     ┃es 2 volumes                1ms│
+│                  ││           ┃   ahead, or typed for something else, can consent. Esc always works at once.       ┃hello-world:latest        433ms│
+│                  ││Networks   ┃   Nothing is ever forced. If something is in use the dialog says by what and       ┃iner shop-web-1             4ms│
+│                  ││  shop_defa┃   refuses. A prune lists exactly what it will delete and deletes only that.        ┃ner shop-web-1              7ms│
+│                  ││           ┃                                                                                    ┃                               │
 │                  ││Mounts     ┃ Inside a shell (e)                                                                 ┃                               │
 │                  ││  volume sh┃   exit, Ctrl-D     back to the desk                                                ┃                               │
 │                  ││           ┃   Ctrl-] ×3        leave at once, even if the daemon has stopped answering         ┃                               │
 │                  ││           ┃                                                                                    ┃                               │
-│                  ││           ┃ ↑↓ PgUp PgDn scroll  Esc close  246–279 of 279                                     ┃                               │
-└──────────────────┘└───────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───────────────────────────────┘
- Back from the shell in shop-api-1 (500ms).
- ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell       Tab pane  ? keys  q quit
+└──────────────────┘└───────────┃ ↑↓ PgUp PgDn scroll  Esc close  304–337 of 337                                     ┃───────────────────────────────┘
+ Back from the shell in shop-api┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  n new  e she… Tab pane  ? keys  q quit

@@ -359,17 +359,26 @@ func (m *Model) renderStrip() string {
 	}
 	var sb strings.Builder
 	sb.WriteString(head)
+	col := ansi.StringWidth(head)
 	if lo > 0 {
-		sb.WriteString(st.tone(toneDim, fmt.Sprintf("‹%d more ", lo)))
+		more := fmt.Sprintf("‹%d more ", lo)
+		sb.WriteString(st.tone(toneDim, more))
+		col += ansi.StringWidth(more)
 	}
 	for i := lo; i <= hi; i++ {
 		if i > lo {
 			sb.WriteString(sep)
+			col += 3
 		}
 		text := labels[i].text
 		if i == at && ansi.StringWidth(text) > room {
 			text = fit(text, max(room, 8))
 		}
+		tw := ansi.StringWidth(text)
+		if col < m.width {
+			m.record(hit{r: rect{col, 1, min(tw, m.width-col), 1}, kind: hitDaemon, pane: paneNone, index: members[i].ID()})
+		}
+		col += tw
 		if i == at && focus != nil {
 			sb.WriteString(st.dialogTitle.Render(text))
 		} else {
@@ -801,18 +810,24 @@ func (m *Model) daemonsBody(d *dialog, w, maxBody int) (string, []string) {
 	// Lay the entries out with their section headings, and scroll so that
 	// the highlighted one is whole on screen.
 	var lines []string
+	var lineKey []string // the entry each line belongs to ("" for none)
 	start, end := 0, 0
 	for i, b := range blocks {
 		if s, ok := section[i]; ok {
 			if len(lines) > 0 {
 				lines = append(lines, "")
+				lineKey = append(lineKey, "")
 			}
 			lines = append(lines, st.tone(toneAccent, s))
+			lineKey = append(lineKey, "")
 		}
 		if i == sel {
 			start = len(lines)
 		}
 		lines = append(lines, b...)
+		for range b {
+			lineKey = append(lineKey, entries[i].key)
+		}
 		if i == sel {
 			end = len(lines)
 		}
@@ -834,6 +849,14 @@ func (m *Model) daemonsBody(d *dialog, w, maxBody int) (string, []string) {
 		p.off = 0
 	}
 	shown := lines[p.off:min(p.off+room, len(lines))]
+	for k := range shown {
+		if p.off+k >= len(lineKey) {
+			break
+		}
+		if key := lineKey[p.off+k]; key != "" {
+			m.recordDialogRow(len(head)+k, hitDaemonsRow, 0, 0, key)
+		}
+	}
 	body := append(append(append([]string{}, head...), shown...), tail...)
 	return "Daemons", body
 }
