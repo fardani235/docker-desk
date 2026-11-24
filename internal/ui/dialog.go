@@ -40,8 +40,9 @@ const (
 	formNetwork
 	formShell
 	formCreate
-	formCopyOut // the Files view's o (copy.go)
-	formCopyIn  // the Files view's i
+	formCopyOut   // the Files view's o (copy.go)
+	formCopyIn    // the Files view's i
+	formSaveImage // Images' w (saveimage.go)
 )
 
 type pickItem struct {
@@ -87,8 +88,9 @@ type dialog struct {
 	formOff  int         // first line of the create form's scrolled window
 	formErr  string
 	formBusy bool
-	target   row       // shell: the container
-	cp       *copyForm // the copy forms: the container and its path
+	target   row        // shell: the container
+	cp       *copyForm  // the copy forms: the container and its path
+	si       *saveImage // the save form: the image it is bound to
 
 	// dlgPicker
 	pickTitle string
@@ -631,6 +633,9 @@ func (m *Model) formBody(d *dialog, w, maxBody int) (string, []string) {
 	}
 	if d.form == formCopyOut || d.form == formCopyIn {
 		return m.copyBody(d, w)
+	}
+	if d.form == formSaveImage {
+		return m.saveBody(d, w)
 	}
 	daemon := strings.Join(m.daemonLines(w, true), "\n")
 	var title, prompt, verb string

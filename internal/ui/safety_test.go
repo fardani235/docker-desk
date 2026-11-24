@@ -213,6 +213,14 @@ func TestNoSingleKeystrokeMutates(t *testing.T) {
 	}
 }
 
+// readActions are the actions that change nothing on the daemon — a read
+// that writes one local file — and so are allowed in read-only mode. Each is
+// named here on purpose, with the test that covers it; any other action not
+// marked mutating fails TestEveryActionKeyIsCovered.
+var readActions = map[string]string{
+	fmt.Sprintf("%d/w", KindImages): "TestSaveArchive* in saveimage_test.go",
+}
+
 // TestEveryActionKeyIsCovered makes the table above exhaustive: an action
 // added to the desk without a row there fails this test.
 func TestEveryActionKeyIsCovered(t *testing.T) {
@@ -231,6 +239,12 @@ func TestEveryActionKeyIsCovered(t *testing.T) {
 	for k := Kind(0); k < kindCount; k++ {
 		for _, a := range kindActions[k] {
 			id := fmt.Sprintf("%d/%s", k, a.key)
+			if _, read := readActions[id]; read {
+				if a.mutating || a.setCapable {
+					t.Errorf("%s %q is a read action but is marked mutating or set-capable", kindNames[k], a.label)
+				}
+				continue
+			}
 			if !a.mutating {
 				t.Errorf("%s %q is not marked mutating: read-only mode would let it through", kindNames[k], a.label)
 			}
@@ -427,6 +441,9 @@ func TestReadOnlyDisablesEveryAction(t *testing.T) {
 		b.m.focus = PaneList
 		b.kind(k)
 		for _, a := range kindActions[k] {
+			if _, read := readActions[fmt.Sprintf("%d/%s", k, a.key)]; read {
+				continue // allowed in read-only mode; see TestSaveArchiveReadOnly
+			}
 			b.srv.ResetRequests()
 			b.keys(a.key)
 			b.settle()

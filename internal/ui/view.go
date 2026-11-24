@@ -430,6 +430,9 @@ func (m *Model) renderHints() string {
 			if m.shadowed(a.key) {
 				continue // n steps through matches while a search is open
 			}
+			if a.listOnly && m.focus != PaneList {
+				continue // the key means something else here (w wraps)
+			}
 			add(a.key, strings.TrimSuffix(a.label, "…"))
 		}
 		if m.kind == KindImages {
@@ -755,7 +758,23 @@ func (m *Model) helpLines(w int) []string {
 	for k := Kind(0); k < kindCount; k++ {
 		sect(kindNames[k] + " (List or Details pane focused)")
 		for _, a := range kindActions[k] {
-			row(a.key, a.desc)
+			key := a.key
+			if a.listOnly {
+				key += " (List)"
+			}
+			row(key, a.desc)
+		}
+		if k == KindImages {
+			out = append(out,
+				"  w saves one image (never a selection) to a local tar, also in read-only mode:",
+				"  the form names the reference or ID, the platform the image is inspected as",
+				"  and the path, ~/docker-desk-image-<object>-<YYYYMMDD>.tar. Enter re-inspects",
+				"  the reference and refuses if the tag has moved; the archive then streams",
+				"  (GET /images/get) to a hidden file beside the path and gets its name only",
+				"  when complete: mode 0600, never over a file, never into a folder created",
+				"  for it. A cancel or failure removes the partial file. In the Details pane",
+				"  w wraps text; the action menu (Enter) offers save archive from either pane.",
+			)
 		}
 	}
 

@@ -237,6 +237,8 @@ type Model struct {
 
 	// ---- packages view (Images › Findings, then i) ----
 	pk pkgView
+	// si is Images' w while it reads the image's platform (saveimage.go).
+	si saveState
 
 	// ---- space view ----
 	sp spaceState
@@ -595,6 +597,11 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case pickMsg:
 		m.dirty = true
 		m.onPick(msg)
+		return m, nil
+
+	case saveInspectMsg:
+		m.dirty = true
+		m.onSaveInspect(msg)
 		return m, nil
 
 	case repoTagsMsg:
