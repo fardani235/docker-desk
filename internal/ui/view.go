@@ -702,6 +702,7 @@ func (m *Model) helpLines(w int) []string {
 	if !m.readOnly {
 		row("d", "the desk's own removal confirmation for the highlighted object")
 		row("X", "the desk's own prune preview for its kind (images, volumes)")
+		row("b", "prune the build cache: a fresh account's unused records, Tab for all types; the daemon decides the final set")
 	}
 	row("S, Esc", "close: the desk is as it was")
 	out = append(out,

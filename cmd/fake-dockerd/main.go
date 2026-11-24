@@ -44,6 +44,7 @@ func main() {
 	empty := flag.Bool("empty", false, "start with no containers, images, volumes or custom networks")
 	changes := flag.Bool("changes", false, "also seed a container for every case the Changes tab has nothing to compare")
 	regAddr := flag.String("registry", "", "also serve a registry on this loopback address (127.0.0.1:0 picks a port), with a repository to browse")
+	buildScopes := flag.Bool("build-cache-scopes", false, "also seed an in-use, an internal and a frontend build-cache record")
 	composeDir := flag.String("compose-dir", "", "write the demo's compose files into this directory and point the seeded labels at them")
 	flag.Parse()
 
@@ -57,6 +58,9 @@ func main() {
 	}
 	if *changes {
 		srv.SeedChanges()
+	}
+	if *buildScopes {
+		srv.SeedBuildCacheScopes()
 	}
 	var reg *fakeregistry.Registry
 	repo := ""

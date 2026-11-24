@@ -411,6 +411,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 		s.handleEvents(w, r)
 	case path == "/system/df" && get:
 		s.handleDiskUsage(w, r)
+	case path == "/build/prune" && post:
+		s.handleBuildPrune(w, r)
 
 	case path == "/containers/json" && get:
 		s.handleContainerList(w, r)

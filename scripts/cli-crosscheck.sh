@@ -16,9 +16,11 @@ DIR="$(mktemp -d /tmp/docker-desk-crosscheck.XXXXXX)"
 SOCK="$DIR/fake.sock"
 HOST="unix://$SOCK"
 FAKE_PID=""
+FAKE2_PID=""
 
 cleanup() {
   [ -n "$FAKE_PID" ] && kill "$FAKE_PID" 2>/dev/null || true
+  [ -n "$FAKE2_PID" ] && kill "$FAKE2_PID" 2>/dev/null || true
   rm -rf "$DIR"
 }
 trap cleanup EXIT
@@ -57,7 +59,7 @@ expect_contains "ps -a shows exited" "$(d ps -a --format '{{.Names}} {{.Status}}
 expect_contains "ps label filter" "$(d ps -a --filter label=com.docker.compose.project=blog --format '{{.Names}}' | sort | tr '\n' ' ')" "blog-app-1 blog-db-1"
 expect_contains "ports rendered" "$(d ps --format '{{.Names}} {{.Ports}}')" "0.0.0.0:8080->80/tcp"
 expect_contains "images" "$(d images --format '{{.Repository}}:{{.Tag}}')" "nginx:1.27"
-expect_eq "dangling images" "$(d images -f dangling=true -q | wc -l | tr -d ' ')" "2"
+expect_eq "dangling images" "$(d images -f dangling=true -q | wc -l | tr -d ' ')" "3"
 expect_contains "volume ls" "$(d volume ls --format '{{.Name}}')" "shop_pgdata"
 expect_contains "dangling volumes" "$(d volume ls -f dangling=true --format '{{.Name}}')" "old-backups"
 expect_contains "network ls" "$(d network ls --format '{{.Name}} {{.Driver}}')" "shop_default bridge"
@@ -74,8 +76,8 @@ expect_fails "inspect missing" "no such object" d inspect definitely-not-here
 
 echo "== disk usage (the Space view's sources)"
 df_out="$(d system df --format '{{.Type}} {{.TotalCount}} {{.Active}} {{.Size}} {{.Reclaimable}}')"
-expect_contains "system df images" "$df_out" "Images 14 10 3.276GB 1.326GB (40%)"
-expect_contains "system df containers" "$df_out" "Containers 12 8 107.1MB 24.11MB (22%)"
+expect_contains "system df images" "$df_out" "Images 19 11 3.562GB 1.505GB (42%)"
+expect_contains "system df containers" "$df_out" "Containers 13 8 120.5MB 37.51MB (31%)"
 expect_contains "system df volumes" "$df_out" "Local Volumes 7 4 2.443GB 1.872GB (76%)"
 expect_contains "system df build cache" "$df_out" "Build Cache 4 0 511.7MB 511.7MB"
 expect_contains "system df -v shared/unique" "$(d system df -v | grep 'shop/worker' | tr -s ' ')" "220MB 131MB 88.7MB 1"
@@ -240,7 +242,9 @@ d create --name cross-clone \
 ins() { d inspect --format "$1" cross-clone; }
 expect_eq "clone: entrypoint" "$(ins '{{json .Config.Entrypoint}}')" '["/bin/sh"]'
 expect_eq "clone: command" "$(ins '{{json .Config.Cmd}}')" '["-c","serve"]'
-expect_contains "clone: environment, values included" "$(ins '{{json .Config.Env}}')" '"LOG_LEVEL=info","TOKEN=crosscheck-sentinel"'
+# Some CLI versions send -e entries in no fixed order: check each one.
+expect_contains "clone: environment, LOG_LEVEL" "$(ins '{{json .Config.Env}}')" '"LOG_LEVEL=info"'
+expect_contains "clone: environment, values included" "$(ins '{{json .Config.Env}}')" '"TOKEN=crosscheck-sentinel"'
 expect_eq "clone: labels" "$(ins '{{index .Config.Labels "com.docker.compose.project"}} {{index .Config.Labels "tier"}}')" "cross web"
 expect_eq "clone: working dir, user, hostname" "$(ins '{{.Config.WorkingDir}} {{.Config.User}} {{.Config.Hostname}}')" "/srv 1000 cross-host"
 expect_eq "clone: tty, open stdin, init" "$(ins '{{.Config.Tty}} {{.Config.OpenStdin}} {{.HostConfig.Init}}')" "true true true"
@@ -278,6 +282,37 @@ expect_fails "network rm with endpoints refused" "active endpoints" d network rm
 d network disconnect cross-net shop-api-1
 d network rm cross-net >/dev/null
 expect_fails "predefined network rm refused" "pre-defined network" d network rm bridge
+
+echo "== builder prune (the Space view's b sends the same request)"
+# A second fake, seeded with an in-use, an internal and a frontend record
+# besides the demo's four unused ones, so the two scopes differ. The legacy
+# builder path is forced: it is the CLI's own client for POST /build/prune,
+# which is exactly the request the desk sends. (buildx's docker driver would
+# talk BuildKit's gRPC instead, which the fake does not serve.)
+SOCK2="$DIR/fake-build.sock"
+"$DIR/fake-dockerd" -socket "$SOCK2" -build-cache-scopes >"$DIR/fake-build.log" 2>&1 &
+FAKE2_PID=$!
+for _ in $(seq 1 50); do [ -S "$SOCK2" ] && break; sleep 0.1; done
+d2() { DOCKER_BUILDKIT=0 docker -H "unix://$SOCK2" "$@"; }
+case "$(d2 version --format '{{.Server.Version}}')" in
+  *-fake) ;;
+  *) kill "$FAKE2_PID" 2>/dev/null; echo "ABORT: second socket is not the fake. Nothing was changed."; exit 2 ;;
+esac
+if ! d2 builder prune --help >/dev/null 2>&1; then
+  echo "  skip  docker builder prune: this CLI has no builder command"
+else
+  expect_contains "system df before: 7 records, 1 active" "$(d2 system df --format '{{.Type}} {{.TotalCount}} {{.Active}}')" "Build Cache 7 1"
+  out="$(d2 builder prune -f 2>&1)"
+  expect_contains "builder prune: the daemon's reclaimed bytes" "$out" "Total reclaimed space: 573MB"
+  expect_contains "builder prune: the daemon's deleted record" "$out" "kq3x9w2m7v4n8p1r5t6y0z2a"
+  expect_contains "builder prune: in-use, internal and frontend kept" "$(d2 system df --format '{{.Type}} {{.TotalCount}} {{.Active}}')" "Build Cache 3 1"
+  out="$(d2 builder prune -a -f 2>&1)"
+  expect_contains "builder prune -a: internal removed" "$out" "intern000000000000000001"
+  expect_contains "builder prune -a: frontend removed" "$out" "front0000000000000000001"
+  if printf '%s' "$out" | grep -q inuse0000000000000000001; then bad "builder prune -a: in-use kept" "$out"; else ok "builder prune -a: in-use kept"; fi
+  expect_contains "after -a only the in-use record is left" "$(d2 system df --format '{{.Type}} {{.TotalCount}} {{.Active}}')" "Build Cache 1 1"
+fi
+kill "$FAKE2_PID" 2>/dev/null || true
 
 echo
 echo "cross-check: $pass passed, $fail failed"

@@ -61,6 +61,7 @@ const (
 	OpCreateContainer
 	OpCopyIn
 	OpRename
+	OpPruneBuildCache
 )
 
 var opVerbs = map[Op]string{
@@ -68,7 +69,7 @@ var opVerbs = map[Op]string{
 	OpKill: "kill", OpRemoveContainer: "remove", OpPullImage: "pull", OpRemoveImage: "remove",
 	OpCreateVolume: "create", OpRemoveVolume: "remove", OpCreateNetwork: "create",
 	OpRemoveNetwork: "remove", OpConnect: "connect", OpDisconnect: "disconnect",
-	OpCreateContainer: "create", OpCopyIn: "copy", OpRename: "rename",
+	OpCreateContainer: "create", OpCopyIn: "copy", OpRename: "rename", OpPruneBuildCache: "prune",
 }
 
 func (o Op) String() string { return opVerbs[o] }
@@ -180,6 +181,10 @@ type Plan struct {
 	PinID  string
 	// SuccessNote, when set, is logged when every step succeeded.
 	SuccessNote string
+	// BuildCache is the build-cache prune's preview: display-only, and the
+	// list Execute compares the daemon's report with. Listed stays false —
+	// the one step does not map to the records (docs/DECISIONS.md).
+	BuildCache *BuildCachePreview
 }
 
 // Runnable reports whether the plan may be confirmed.

@@ -544,8 +544,13 @@ the real docker CLI was used to check that it reports them as Docker does.
 | A refresh that finds nothing changed ages nothing; a change makes everything older STALE; `r` makes the account current and leaves the old measurement stale | `TestFiguresTurnStaleAfterAChange` |
 | Enter goes to an image, a container, a volume; a filter that hid it is cleared | `TestEnterGoesToTheObject` |
 | `d` and `X` open the desk's own dialogs, which state what they free (unique size; nothing for an untag; the set; the measured writable layer; the volume's size); the confirmed request is the only mutation and is not forced; no prune endpoint | `TestSpaceReclaimUsesTheExistingDialogs`, `TestRemovalConfirmationStatesWhatItFrees`, `TestRemovalConfirmationWithoutAnAccountSaysSo` |
-| Read-only: every figure and both measurements, no `d`/`X` in hints or help, the keys open nothing, only GET/HEAD | `TestSpaceInReadOnlyMode` |
+| Read-only: every figure and both measurements, no `d`/`X`/`b` in hints or help, the keys open nothing, only GET/HEAD | `TestSpaceInReadOnlyMode` |
 | An older daemon's totals are labelled as the client library's sums | `TestSpaceOnAnOlderDaemon` |
+| Build cache, engine: one `POST /build/prune`, no parameter by default and only `all=1` with all; the daemon's IDs and bytes; in-use kept; internal/frontend only with all; a refusal carries the daemon's words; read-only sends nothing | `internal/engine/buildcache_test.go`, `TestReadOnlySendsNothing`, `TestReadOnlyCoversEveryMutation` |
+| Build cache, plan: one step of size 0, typed `prune`, candidates by scope and never in use, largest first, "nothing to prune" (with Tab's hint), no "exactly"; execution logs the daemon's report, names records also removed and records kept, fails with the daemon's message, escapes and bounds IDs | `internal/plan/buildcache_test.go` |
+| Build cache, desk: `b` reads only `/system/df`; the preview lists every candidate, scrolls, escapes descriptions, never says the set is exact; Tab re-reads and clears the word, nothing confirms while recomputing; a wrong word sends nothing; `prune` sends one POST, the job shows the report and the account is read again (also after a refusal); `b` inside a dialog and in read-only mode opens nothing | `internal/ui/buildcache_test.go` |
+| Build cache, real CLI: `docker builder prune` and `-a` against the fake — reclaimed bytes, deleted IDs, in-use kept | `scripts/cli-crosscheck.sh` |
+| Build cache, end to end on a pty: `S`, `b`, `Tab`, `prune`, Enter — one `POST /build/prune?all=1`, the report in the job, the account read again; read-only `b` opens and sends nothing | `TestBuildCachePrune`, `TestBuildCachePruneReadOnly` (screens 62–64) |
 | The containerd case — no layer sizes add up — is said, not guessed: `?` for group sizes, floors for sets | `TestSpaceWhenLayerSizesDoNotAddUp` |
 
 **End to end**, `TestSpace` runs the binary at 120×40 and at 80×24 with `--read-only`, and

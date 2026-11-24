@@ -161,11 +161,74 @@ type BuildRecord struct {
 }
 
 // AddBuildCache seeds build-cache records. The fake has no builder: they are
-// only reported, by GET /system/df.
+// reported by GET /system/df and removed by POST /build/prune.
 func (s *Server) AddBuildCache(records ...BuildRecord) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.buildCache = append(s.buildCache, records...)
+}
+
+// BuildCache returns a copy of the build-cache records the fake holds.
+func (s *Server) BuildCache() []BuildRecord {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]BuildRecord(nil), s.buildCache...)
+}
+
+// SetBuildCacheInUse marks a record in use (or released), as a running build
+// would; it reports whether the record exists.
+func (s *Server) SetBuildCacheInUse(id string, inUse bool) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := range s.buildCache {
+		if s.buildCache[i].ID == id {
+			s.buildCache[i].InUse = inUse
+			return true
+		}
+	}
+	return false
+}
+
+// buildPrunable is the daemon's rule for POST /build/prune: a record in use
+// is never removed, and the internal and frontend types only with all.
+func buildPrunable(b BuildRecord, all bool) bool {
+	if b.InUse {
+		return false
+	}
+	if !all && (b.Type == "internal" || b.Type == "frontend") {
+		return false
+	}
+	return true
+}
+
+// handleBuildPrune serves POST /build/prune the way the daemon does, for the
+// only parameter the desk sends (all). Any other parameter — a filter or a
+// space threshold — is refused, so a test notices if one is ever sent.
+func (s *Server) handleBuildPrune(w http.ResponseWriter, r *http.Request) {
+	for k := range r.URL.Query() {
+		if k != "all" {
+			httpError(w, http.StatusBadRequest, "fake engine: unsupported build prune parameter %q", k)
+			return
+		}
+	}
+	all := boolParam(r, "all")
+	s.mu.Lock()
+	deleted := []string{}
+	var reclaimed uint64
+	kept := s.buildCache[:0:0]
+	for _, b := range s.buildCache {
+		if buildPrunable(b, all) {
+			deleted = append(deleted, b.ID)
+			if b.Size > 0 {
+				reclaimed += uint64(b.Size)
+			}
+			continue
+		}
+		kept = append(kept, b)
+	}
+	s.buildCache = kept
+	s.mu.Unlock()
+	writeJSON(w, http.StatusOK, build.CachePruneReport{CachesDeleted: deleted, SpaceReclaimed: reclaimed})
 }
 
 // SetVolumeSize sets the bytes a volume holds, as /system/df measures them.

@@ -3,7 +3,10 @@
 ## Purpose
 Defines the rules that make the desk trustworthy as a control plane: nothing is changed or
 deleted without a deliberate confirmation of the exact object and effect, nothing in use is
-forced, and a prune destroys exactly what it showed.
+forced, and a prune of images, volumes or networks destroys exactly what it showed. The build
+cache, which Docker can only prune as a set it chooses, is pruned under its own rule: its
+candidates are shown, the daemon's discretion is stated, and only the daemon's report is
+claimed.
 
 ## Requirements
 
