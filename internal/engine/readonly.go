@@ -66,6 +66,12 @@ func (r *readOnlyEngine) CreateNetwork(context.Context, string) (string, error) 
 
 func (r *readOnlyEngine) RemoveNetwork(context.Context, string) error { return ErrReadOnly }
 
+// BuildCachePrune acts on a set the daemon chooses: refused before anything
+// is sent.
+func (r *readOnlyEngine) BuildCachePrune(context.Context, bool) (BuildCachePruneReport, error) {
+	return BuildCachePruneReport{}, ErrReadOnly
+}
+
 func (r *readOnlyEngine) ConnectNetwork(context.Context, string, string) error { return ErrReadOnly }
 
 func (r *readOnlyEngine) DisconnectNetwork(context.Context, string, string) error {

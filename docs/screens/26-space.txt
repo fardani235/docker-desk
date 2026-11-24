@@ -1,11 +1,12 @@
- Docker Desk  unix:///tmp/ddfake649889652/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
-┏━ ◆ Space — where the bytes went, and what removing something frees ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 06:32:11 ━┓
+ Docker Desk  unix:///tmp/ddfake3297556798/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…798/d.sock ●]                                                              M picker  < > focus
+┏━ ◆ Space — where the bytes went, and what removing something frees ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 09:11:50 ━┓
 ┃   TYPE            TOTAL  ACTIVE      SIZE  RECLAIMABLE                                                               ┃
 ┃   Images             16      11    3.39GB  1.333GB (39%)                                                             ┃
 ┃   Containers         13       8   120.5MB  37.51MB (31%)                                                             ┃
 ┃   Local Volumes       7       4   2.443GB  1.872GB (76%)                                                             ┃
 ┃   Build Cache         4       0   511.7MB  511.7MB                                                                   ┃
-┃   daemon (GET /system/df) · 06:32:11, 0s ago                                                                         ┃
+┃   daemon (GET /system/df) · 09:11:50, 0s ago                                                                         ┃
 ┃   Reclaimable is the daemon's estimate. Nothing is freed until something is removed; with the containerd image       ┃
 ┃   store, the bytes go when its garbage collector runs.                                                               ┃
 ┃                                                                                                                      ┃
@@ -29,12 +30,11 @@
 ┃   alpine:3.20                                                            7.8MB       0B    7.8MB   2 ctr             ┃
 ┃   A: analysed in Images › Findings — its layers are attributed below when highlighted.                               ┃
 ┃                                                                                                                      ┃
-┃   SHARED LAYERS  each byte once, against the images that hold it · computed from the daemon's layer sizes            ┃
-┃ ───────────────────────────────────────────────────────────────────────────────────────────────── lines 1–30 of 70 ─ ┃
+┃ ───────────────────────────────────────────────────────────────────────────────────────────────── lines 1–29 of 70 ─ ┃
 ┃ alone      frees 88.7MB — unique; 131MB shared stay · daemon, 0s ago                                                 ┃
 ┃ together   with the 7 image(s) sharing its layers: frees 2.468GB · computed from layer sizes, 0s ago                 ┃
 ┃            <none> 2407967658b3 · <none> 8bae7d2a8907 · ghost:5 · nginx:1.27 · postgres:16 · python:3.12-slim · redi… ┃
 ┃ removal    used by 1 container(s): refused until they are removed — the alone figure is what it frees then           ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
  ✓ measure disk usage GET /system/df
- ↑↓ move  ⏎ go to  r re-read  m writable  w export  d remove…  X prune…                                 S close  ? keys
+ ↑↓ move  ⏎ go to  r re-read  m writable  w export  d remove…  X prune…  b build cache…                 S close  ? keys

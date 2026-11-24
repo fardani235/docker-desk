@@ -583,12 +583,28 @@ build cache. For the highlighted image, two numbers:
 - **Analysed images** (Images › Findings) get their archive's size by layer and the largest
   build instruction, from the report already kept. No archive is read again.
 - **Enter** goes to the highlighted image, container or volume in its own kind.
-- **Reclaim is the desk's own dialogs, nothing else:** `d` opens the usual removal
-  confirmation for the highlighted object, `X` the usual prune preview. Every removal and
-  prune confirmation — from here or from the list — now has a **frees** line with the bytes
-  it would free, its source and its age ("not measured" before the first account). There is
-  no new way to delete anything, Docker's prune endpoints are not called, nothing is forced.
-  In read-only mode every figure is there and `d`, `X` are not.
+- **Reclaim is the desk's own dialogs:** `d` opens the usual removal confirmation for the
+  highlighted object, `X` the usual prune preview — both delete exactly the objects they list,
+  one request each. Every removal and prune confirmation — from here or from the list — has a
+  **frees** line with the bytes it would free, its source and its age ("not measured" before
+  the first account). Nothing is forced. In read-only mode every figure is there and `d`, `X`,
+  `b` are not.
+- **`b` prunes the build cache** — the one reclaim whose set the daemon chooses. Docker has no
+  per-record build-cache delete, only its own prune, so the desk reads a fresh account
+  (`GET /system/df`, nothing else) and lists every candidate record with its type,
+  description, size and shared flag, largest first, with how many records in use are kept
+  (those are never offered, and the daemon never removes them). `Tab` switches scope, reading
+  the account again: unused records except internal/frontend ones (`docker builder prune`), or
+  every unused record (`-a`). Type `prune` and Enter to send one `POST /build/prune` with that
+  scope — no filter, no size threshold, no force. The dialog says plainly that **the daemon
+  decides the final set**: it re-checks eligibility when the request arrives, so it may also
+  remove cache created or released after the account, and keep a record that has since come
+  into use. The **frees** line quotes the daemon's reclaimable estimate, never a sum the desk
+  made (shared cache bytes are not attributed per record). The job logs the daemon's report —
+  records deleted, bytes reclaimed — and names any record it removed that the preview did not
+  list, and any listed record it kept. The account is marked stale and, with Space open, read
+  again when the job ends. (Screens: `docs/screens/62-build-cache-preview.txt`,
+  `63-build-cache-all-types.txt`, `64-build-cache-pruned.txt`.)
 
 The opening account is itself a job ("measure disk usage"), cancellable with `c`: the daemon
 walks container and volume filesystems to answer it too.
@@ -1122,8 +1138,11 @@ setting a re-create does not reproduce — privilege, capabilities, devices, sec
 custom runtime, kernel settings, tmpfs, DNS and host overrides, links, a non-default log driver,
 a read-only root filesystem, auto-remove, shared namespaces, a fixed address, and the rest named
 in [Changes](#re-creating-it-on-the-new-build) — is refused, each setting named. It copies files
-in or out only from the Files view, one path at a time. The build cache is accounted for in Space but never removed: the desk
-has no builder, and calls no prune endpoint.
+in or out only from the Files view, one path at a time. It has no builder; the build cache is
+only ever reclaimed through Docker's own build-cache prune (Space, `b`), whose final set the
+daemon decides — no single cache record can be removed, and no `until`, size or filter is sent.
+Images, volumes and networks are never pruned through a prune endpoint: each listed object is
+removed by its own request.
 
 Good to know:
 

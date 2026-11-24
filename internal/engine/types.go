@@ -425,6 +425,13 @@ type BuildCacheUsage struct {
 	LastUsed    time.Time
 }
 
+// BuildCachePruneReport is the daemon's answer to POST /build/prune: the
+// records it deleted and the bytes it says it reclaimed.
+type BuildCachePruneReport struct {
+	Deleted   []string
+	Reclaimed int64
+}
+
 // ContainerSize is a container's writable layer as the daemon measured it
 // by walking its filesystem.
 type ContainerSize struct {

@@ -4561,3 +4561,70 @@ Quitting turns reporting off with the rest of the terminal (Bubble Tea's shutdow
 tests `TestProcessesView`, `TestRecreateCarriesADefaultVolume` and `TestFilesInTheSandbox`
 fail intermittently under the full package run on this machine **on the base commit as well**
 (each passes alone); they are timing-sensitive pty waits, not this round's.
+
+## Round twenty-two — reclaiming the build cache
+
+The request: let Space free the build cache it already accounts for. The change is the
+OpenSpec change `reclaim-build-cache`: a proposal, deltas to `disk-space` and
+`mutation-safety`, a design (its D1–D7) and tasks. It adds the desk's first mutation whose
+request acts on a set the daemon chooses, so most of what follows is about saying so.
+
+### B1 — One set-acting engine method, refused twice in read-only mode
+
+`Engine.BuildCachePrune(ctx, all)` sends `POST /build/prune` with only `all` (moby's
+`BuildCachePruneOptions{All: all}`): no filter, no reserved/max/min space, no force. The
+interface comment no longer claims every mutation names one object; it names this exception.
+`readOnlyEngine` refuses it before anything is sent, and the HTTP hook below it refuses the
+POST anyway (`TestReadOnlySendsNothing` calls it through both layers). The daemon's
+`SpaceReclaimed` is a `uint64`; it is clamped to `MaxInt64` rather than wrapped negative.
+
+### B2 — A preview, not a list of steps
+
+The plan has one step (`OpPruneBuildCache`, `Size` 0) and a display-only
+`Plan.BuildCache` preview; `Listed` stays false. The dialog renders the candidates through the
+same scrolling list path with the headline "These N were unused at the last account; the
+daemon decides the final set:", never "Exactly these N". The **frees** line quotes the
+daemon's reclaimable figure as its estimate (the daemon states one figure for unused cache; it
+is not adjusted per scope), never a desk sum. `BuildCachePrune` takes the account's time as an
+argument — the design's signature had none — so the plan stays a pure function.
+
+### B3 — The account behind it is read fresh, and Tab reads it again
+
+`b` calls `prepareBuildCachePrune`: `GET /system/df` with a 30 s bound, through the same
+`planSeq` rule as every preparation, so any key pressed before the answer drops it. The dialog
+carries a `rebuild func(*Model, bool) tea.Cmd` (it takes the model rather than closing over
+it). Tab replaces the dialog with a new one — typed word empty, arming restarted — and while
+recomputing nothing confirms.
+
+### B4 — After the job
+
+Starting the prune moves `changedAt` to now, which marks the Space account (and, being the
+desk's single staleness clock, the other Space figures) STALE: conservative, since the engine
+changed. `spaceState.pruneJob` remembers the job; `collectSpace` sees it end — succeeded or
+refused — and, with Space open, starts a fresh account read. With Space closed, opening it
+re-reads, because the account is stale.
+
+The job logs the daemon's deleted count and reclaimed bytes, the deleted IDs (short, escaped,
+at most 20, then "… and N more"), every deletion that was not a candidate ("also removed"),
+and every candidate the daemon kept. The generic "reclaimed about" line cannot fire: the step
+claims no size.
+
+### B5 — Decisions taken where the plan left room
+
+- **The fake's demo seed is unchanged.** The in-use, internal and frontend records live in
+  `SeedBuildCacheScopes` (and `fake-dockerd -build-cache-scopes`), so the existing screens,
+  `system df` figures and tests keep their numbers. The cross-check runs a second fake with
+  them.
+- **The fake refuses unknown `/build/prune` parameters** (a filter, a threshold) with 400, so
+  a test notices if one is ever sent.
+- **The cross-check forces `DOCKER_BUILDKIT=0`.** buildx's docker driver prunes over BuildKit's
+  gRPC session, which the fake does not serve; the legacy builder path is the CLI's own client
+  for `POST /build/prune`, which is exactly the request the desk sends.
+- **Untrusted text is escaped.** Build-cache types and descriptions come from Dockerfiles. The
+  new dialog escapes them, and so now does Space's existing build-cache list, which drew them
+  raw (`TestBuildCacheLongListScrollsAndIsEscaped`).
+- **Pre-existing cross-check drift fixed.** Three expectations predated `SeedUpstream`'s
+  images (19 images/3 dangling, 13 containers), and the clone's environment check assumed the
+  CLI keeps `-e` order, which this CLI does not; it now checks each entry.
+- **A plan with nothing in the default scope** says how many internal/frontend records Tab
+  would include; Tab works from it.

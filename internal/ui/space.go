@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"github.com/fardani235/docker-desk/internal/escape"
 	"math"
 	"sort"
 	"strings"
@@ -63,6 +64,9 @@ type spaceState struct {
 	sizesAt  time.Time
 	sizesErr string
 	sizeRun  *sizeRun
+
+	// pruneJob is the build-cache prune whose end re-reads the account.
+	pruneJob int
 
 	cursorKey string
 	off       int
@@ -219,8 +223,65 @@ func (m *Model) startWritable() {
 	m.sp.sizeRun = run
 }
 
+// buildCacheAccountTimeout bounds the account read behind the build-cache
+// confirmation: on a busy engine /system/df can be slow.
+const buildCacheAccountTimeout = 30 * time.Second
+
+// prepareBuildCachePrune reads a fresh account (GET /system/df only) and
+// opens the build-cache confirmation from it. Nothing that changes the
+// daemon is sent. Its answer is dropped, like any plan's, if the operator
+// moves on first (planSeq).
+func (m *Model) prepareBuildCachePrune(all bool) tea.Cmd {
+	if m.readOnly {
+		return nil
+	}
+	m.preparing = true
+	m.planSeq++
+	tmpl := planMsg{seq: m.planSeq, scopeAll: all, rebuild: func(m *Model, all bool) tea.Cmd { return m.prepareBuildCachePrune(all) }}
+	eng := m.eng
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), buildCacheAccountTimeout)
+		defer cancel()
+		du, err := eng.DiskUsage(ctx)
+		if err != nil {
+			tmpl.err = fmt.Errorf("could not read the daemon's build-cache account: %w", err)
+			return tmpl
+		}
+		tmpl.plan = plan.BuildCachePrune(du, all, time.Now())
+		return tmpl
+	}
+}
+
+// buildCachePruneStarted marks the Space account stale — the prune changes
+// what it counts — and remembers the job, so that its end re-reads the
+// account while the view is open.
+func (m *Model) buildCachePruneStarted(jobID int) {
+	if jobID == 0 {
+		return
+	}
+	if now := time.Now(); now.After(m.changedAt) {
+		m.changedAt = now
+	}
+	m.sp.pruneJob = jobID
+	m.dirty = true
+}
+
 // collectSpace takes what the jobs have produced since the last frame.
 func (m *Model) collectSpace() {
+	if id := m.sp.pruneJob; id != 0 {
+		if j, ok := m.jobs.Get(id); !ok || j.State != jobs.Running {
+			m.sp.pruneJob = 0
+			// Succeeded or refused, the account is read again: the
+			// daemon may have removed something either way.
+			if now := time.Now(); now.After(m.changedAt) {
+				m.changedAt = now
+			}
+			if m.sp.open && m.sp.run == nil {
+				m.startDiskUsage()
+			}
+			m.dirty = true
+		}
+	}
 	if run := m.sp.run; run != nil {
 		// The job's state is read before its results: a job seen finished
 		// has written everything, so nothing it wrote after the copy can be
@@ -407,6 +468,11 @@ func (m *Model) onSpaceKey(k tea.KeyMsg) tea.Cmd {
 		m.exportSpace()
 	case "T":
 		m.setTheme(nextTheme(m.st.theme))
+	case "b":
+		if m.readOnly {
+			return nil // no reclaim in read-only mode: the key is not offered
+		}
+		return m.prepareBuildCachePrune(false)
 	case "d", "X":
 		if m.readOnly {
 			return nil // no reclaim in read-only mode: the keys are not offered
@@ -881,7 +947,7 @@ func (m *Model) spaceLines(w int, now time.Time) []spLine {
 	}
 
 	// -- build cache ------------------------------------------------------------
-	head("BUILD CACHE", srcDaemon+" · the desk has no builder, so nothing here is removed from it")
+	head("BUILD CACHE", srcDaemon+" · b asks the daemon to prune the unused records")
 	if len(du.BuildItems) == 0 {
 		text(toneDim, "No build-cache records.")
 	}
@@ -895,7 +961,8 @@ func (m *Model) spaceLines(w int, now time.Time) []spLine {
 		if b.Shared {
 			flags += " shared"
 		}
-		text(toneDim, fmt.Sprintf("%8s  %-15s %s%s", cliSize(b.Size), b.Type, b.Description, flags))
+		// Type and description are the daemon's (a Dockerfile's) text: escaped.
+		text(toneDim, fmt.Sprintf("%8s  %-15s %s%s", cliSize(b.Size), escape.Name(b.Type), escape.Name(b.Description), flags))
 	}
 	return out
 }
@@ -1140,7 +1207,7 @@ func (m *Model) spaceHints() []string {
 		pairs = append(pairs, "c", "cancel")
 	}
 	if !m.readOnly {
-		pairs = append(pairs, "d", "remove…", "X", "prune…")
+		pairs = append(pairs, "d", "remove…", "X", "prune…", "b", "build cache…")
 	}
 	return pairs
 }
@@ -1241,6 +1308,23 @@ func (m *Model) freesLines(p plan.Plan) []freeLine {
 			return []freeLine{{fmt.Sprintf("at least %s — %s; %d created since the measurement · %s", cliSize(total), what, missing, m.prov(srcWritable, m.sp.sizesAt, now)), toneWarn}}
 		}
 		return []freeLine{{fmt.Sprintf("%s — %s · %s", cliSize(total), what, m.prov(srcWritable, m.sp.sizesAt, now)), m.provTone(m.sp.sizesAt)}}
+
+	case plan.OpPruneBuildCache:
+		// The daemon's own figure, quoted: shared cache bytes are not
+		// attributed to one record, so no sum is claimed as certain.
+		pv := p.BuildCache
+		if pv == nil {
+			return []freeLine{notYet}
+		}
+		src := srcDaemon
+		if pv.Derived {
+			src = "summed by the client from an older daemon's records"
+		}
+		text := fmt.Sprintf("about %s — the daemon's estimate of reclaimable build cache, not a promise", cliSize(pv.Reclaimable))
+		if pv.Shared > 0 {
+			text += fmt.Sprintf("; %d shared record(s) may free more", pv.Shared)
+		}
+		return []freeLine{{text + " · " + m.prov(src, pv.At, now), toneWarn}}
 
 	case plan.OpRemoveVolume:
 		du := m.sp.du

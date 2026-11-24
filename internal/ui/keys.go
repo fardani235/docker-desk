@@ -643,6 +643,12 @@ func (m *Model) onPlanKey(k tea.KeyMsg) tea.Cmd {
 			d.recomputing = true
 			return m.preparePrune(d.scope, !d.scopeAll)
 		}
+		if d.rebuild != nil && !m.preparing {
+			// The build cache's other scope: a fresh account, read now.
+			// The new preview replaces this dialog, typed word and all.
+			d.recomputing = true
+			return d.rebuild(m, !d.scopeAll)
+		}
 		return nil
 	}
 	if d.recomputing {
@@ -697,7 +703,11 @@ func (m *Model) onPlanKey(k tea.KeyMsg) tea.Cmd {
 // starts, so that the next action key means the highlighted row again.
 func (m *Model) confirmed(d *dialog) {
 	m.dlg = nil
-	m.watchCopyIn(m.runPlan(d.plan), d.plan)
+	id := m.runPlan(d.plan)
+	if d.plan.BuildCache != nil {
+		m.buildCachePruneStarted(id)
+	}
+	m.watchCopyIn(id, d.plan)
 	if d.fromSet {
 		m.clearMarks(d.setKind)
 	}

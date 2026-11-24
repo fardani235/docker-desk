@@ -386,3 +386,15 @@ func (s *Server) writeComposeFiles() error {
 	}
 	return nil
 }
+
+// SeedBuildCacheScopes adds the build-cache records the demo lacks: one in
+// use, which no prune may remove, and one internal and one frontend record,
+// which only a prune with all removes.
+func (s *Server) SeedBuildCacheScopes() {
+	now := time.Now()
+	s.AddBuildCache(
+		BuildRecord{ID: "inuse0000000000000000001", Type: "regular", Description: "[api 5/5] COPY . .", Size: 5_000_000, InUse: true, LastUsed: now},
+		BuildRecord{ID: "intern000000000000000001", Type: "internal", Description: "local source for dockerfile", Size: 7_000, LastUsed: now},
+		BuildRecord{ID: "front0000000000000000001", Type: "frontend", Description: "docker/dockerfile:1", Size: 12_000_000, LastUsed: now},
+	)
+}

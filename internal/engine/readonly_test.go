@@ -53,8 +53,8 @@ func TestReadOnlyCoversEveryMutation(t *testing.T) {
 			}
 		}()
 	}
-	if checked != 21 {
-		t.Errorf("checked %d mutating methods, expected 21 — update readMethods if the interface changed", checked)
+	if checked != 22 {
+		t.Errorf("checked %d mutating methods, expected 22 — update readMethods if the interface changed", checked)
 	}
 }
 
@@ -109,6 +109,10 @@ func TestReadOnlySendsNothing(t *testing.T) {
 		add(e.DisconnectNetwork(ctx, net, id))
 		_, err = e.ExecCreate(ctx, id, []string{"sh"}, 24, 80)
 		add(err)
+		_, err = e.BuildCachePrune(ctx, false)
+		add(err)
+		_, err = e.BuildCachePrune(ctx, true)
+		add(err)
 		return errs
 	}
 
@@ -126,6 +130,9 @@ func TestReadOnlySendsNothing(t *testing.T) {
 	}
 	if muts := srv.Mutations(); len(muts) != 0 {
 		t.Fatalf("read-only mode let %d mutating request(s) reach the daemon: %v", len(muts), muts)
+	}
+	if n := len(srv.BuildCache()); n != 4 {
+		t.Fatalf("read-only mode changed the build cache: %d records", n)
 	}
 	if st, _ := srv.ContainerState("shop-web-1"); st != "running" {
 		t.Fatalf("container state changed to %q", st)

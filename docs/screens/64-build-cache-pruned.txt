@@ -1,0 +1,40 @@
+ Docker Desk  unix:///tmp/ddfake3057865773/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…773/d.sock ●]                                                              M picker  < > focus
+┌─ 1 Kinds ────────┐┌─ 2 Containers (13) ────────────────────────────────────────┐┌─ 4 Events ──────────────── ● live ─┐
+│▸ Containers    13││  NAME            IMAGE         STATE          CPU       MEM││Waiting for engine events…          │
+│  Images        16││▸ distroless-svc  gcr.io/dist…  ● running     9.3%   49.5MiB││Everything the daemon does          │
+│  Volumes        7││  noisy-logger    alpine:3.20   ● running    38.9%    328MiB││shows up here as it happens.        │
+│  Networks       7││  paused-batch    alpine:3.20   ‖ paused                    ││                                    │
+│  Compose        2││  redis-cache     redis:7       ● running     7.9%    385MiB││                                    │
+│                  ││  shop-api-1      shop/api:dev  ● running    79.5%    418MiB││                                    │
+│  ● 7 running     ││  shop-db-1       postgres:16   ● running   133.8%    707MiB││                                    │
+│  ‖ 1 paused      ││  shop-web-1      nginx:1.27    ● running    80.6%    492MiB││                                    │
+│  ○ 5 stopped   ┏━ ◆ Job #2 output ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                │
+│                ┃                                                                                    ┃                │
+│                ┃ ✓ succeeded   prune build cache 6 records                                          ┃                │
+│                ┃ started 09:11:49 · ran 0ms                                                         ┃                │
+│                ┃ on daemon unix:///tmp/ddfake3057865773/d.sock                                      ┃                │
+│                ┃                                                                                    ┃                │
+│                ┃ the daemon deleted 6 build-cache records and reported 585.0 MB reclaimed           ┃                │
+│                ┃   deleted kq3x9w2m7v4n                                                             ┃                │
+│                ┃   deleted u8c2d7e1f5g9                                                             ┃                │
+│                ┃   deleted p0q4r8s2t6u0                                                             ┃                │
+│                ┃   deleted b5c9d3e7f1g5                                                             ┃                │
+│                ┃   deleted intern000000                                                             ┃                │
+│                ┃   deleted front0000000                                                             ┃                │
+│                ┃ ✓ prune build cache all unused build-cache records, internal and frontend included ┃                │
+│                ┃  done                                                                              ┃                │
+│                ┃                                                                                    ┃                │
+│                ┃ ↑↓ PgUp PgDn scroll  Esc close                                                     ┃────────────────┘
+│                ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛━━━━━━━ 3 done ━┓
+│                  ││                                                            │┃  ✓ measure disk usage GET /sys… 2ms┃
+│                  ││Networks                                                    │┃▸ ✓ prune build cache 6 records  0ms┃
+│                  ││  bridge  172.17.0.5  gw 172.17.0.1                         │┃  ✓ measure disk usage GET /sy… 15ms┃
+│                  ││                                                            │┃                                    ┃
+│                  ││Mounts                                                      │┃                                    ┃
+│                  ││  none                                                      │┃                                    ┃
+│                  ││                                                            │┃                                    ┃
+│                  ││                                                            │┃                                    ┃
+└──────────────────┘└────────────────────────────────────────────────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ measure disk usage GET /system/df
+ ↑↓ move  Enter output  c cancel  x clear finished                                             Tab pane  ? keys  q quit

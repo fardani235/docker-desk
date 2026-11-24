@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"net"
 	"net/http"
 	"net/netip"
@@ -1069,6 +1070,22 @@ func (m *mobyEngine) CreateVolume(ctx context.Context, name string) (Volume, err
 func (m *mobyEngine) RemoveVolume(ctx context.Context, name string) error {
 	_, err := m.cli.VolumeRemove(ctx, name, client.VolumeRemoveOptions{})
 	return m.wrap("remove volume", err)
+}
+
+func (m *mobyEngine) BuildCachePrune(ctx context.Context, all bool) (BuildCachePruneReport, error) {
+	// Only All is set: no filters, no reserved/max/min space, no force.
+	res, err := m.cli.BuildCachePrune(ctx, client.BuildCachePruneOptions{All: all})
+	if err != nil {
+		return BuildCachePruneReport{}, m.wrap("prune build cache", err)
+	}
+	reclaimed := res.Report.SpaceReclaimed
+	if reclaimed > math.MaxInt64 { // a daemon's figure is untrusted: never wrap negative
+		reclaimed = math.MaxInt64
+	}
+	return BuildCachePruneReport{
+		Deleted:   append([]string(nil), res.Report.CachesDeleted...),
+		Reclaimed: int64(reclaimed),
+	}, nil
 }
 
 func (m *mobyEngine) CreateNetwork(ctx context.Context, name string) (string, error) {

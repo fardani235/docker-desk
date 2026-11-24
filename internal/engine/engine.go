@@ -11,8 +11,10 @@ import (
 // Engine is everything the desk can ask of a Docker daemon.
 //
 // Methods are grouped into reads, mutations, streams and exec. Every mutating
-// method takes the daemon identifier of exactly one object; none of them can
-// force, cascade or act on a set.
+// method but one takes the daemon identifier of exactly one object; none of
+// them can force or cascade. The exception is BuildCachePrune: Docker has no
+// per-record build-cache delete, so that one request acts on a set the daemon
+// chooses (unused records only), and its report says what it removed.
 type Engine interface {
 	// ---- identity -------------------------------------------------------
 	Ping(ctx context.Context) error
@@ -112,6 +114,13 @@ type Engine interface {
 	RemoveNetwork(ctx context.Context, id string) error
 	ConnectNetwork(ctx context.Context, networkID, containerID string) error
 	DisconnectNetwork(ctx context.Context, networkID, containerID string) error
+
+	// BuildCachePrune asks the daemon to remove unused build-cache records
+	// (POST /build/prune). all includes internal/frontend records. The daemon
+	// chooses the records — it never removes one in use — and the report
+	// names what it removed. No filter, size threshold or force is sent.
+	// This is the only mutating method whose request acts on a set.
+	BuildCachePrune(ctx context.Context, all bool) (BuildCachePruneReport, error)
 
 	// ---- streams (block until ctx is cancelled or the stream ends) -------
 	// Events delivers engine events from since (zero means "from now").

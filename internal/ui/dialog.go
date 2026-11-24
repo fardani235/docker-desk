@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/fardani235/docker-desk/internal/escape"
 	"strings"
 	"time"
 
@@ -58,8 +59,11 @@ type dialog struct {
 	openedAt time.Time
 
 	// dlgPlan
-	plan     plan.Plan
-	scope    func(plan.Snapshot, bool) plan.Plan // set for prunes with two scopes
+	plan  plan.Plan
+	scope func(plan.Snapshot, bool) plan.Plan // set for prunes with two scopes
+	// rebuild, set for the build-cache prune, prepares the other scope's
+	// preview from a fresh account (not a list snapshot).
+	rebuild  func(m *Model, all bool) tea.Cmd
 	scopeAll bool
 	listOff  int
 	mismatch bool
@@ -127,6 +131,7 @@ type planMsg struct {
 	// the plan: the form named the copy, the dialog asks for y (W6).
 	confirm  bool
 	scope    func(plan.Snapshot, bool) plan.Plan
+	rebuild  func(m *Model, all bool) tea.Cmd
 	scopeAll bool
 	fromSet  bool
 	setKind  Kind
@@ -216,7 +221,7 @@ func (m *Model) onPlan(msg planMsg) tea.Cmd {
 		}
 		return nil
 	}
-	d := &dialog{kind: dlgPlan, plan: msg.plan, scope: msg.scope, scopeAll: msg.scopeAll, openedAt: time.Now(),
+	d := &dialog{kind: dlgPlan, plan: msg.plan, scope: msg.scope, rebuild: msg.rebuild, scopeAll: msg.scopeAll, openedAt: time.Now(),
 		fromSet: msg.fromSet, setKind: msg.setKind}
 	if msg.plan.Tier == plan.TierTyped && msg.plan.Runnable() {
 		d.hasInput = true
@@ -427,7 +432,7 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 	if p.Scope != "" {
 		line := st.tone(toneDim, fit("scope", 10)) + " " + p.Scope
 		ident = append(ident, line)
-		if d.scope != nil {
+		if d.scope != nil || d.rebuild != nil {
 			other := "all unused"
 			if d.scopeAll {
 				other = "the default scope"
@@ -499,6 +504,14 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 		}
 	}
 	listed := p.Listed && steps+len(skipLines) > 0
+	// A build-cache prune lists its candidates, not its steps: its one
+	// request acts on a set the daemon chooses.
+	var cache []engine.BuildCacheUsage
+	if p.BuildCache != nil && p.Runnable() {
+		cache = p.BuildCache.Candidates
+		steps = len(cache)
+		listed = steps > 0
+	}
 	total := steps
 	if len(skipLines) > 0 {
 		total += len(skipLines)
@@ -507,7 +520,9 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 		}
 	}
 	headline := ""
-	if listed && steps > 0 {
+	if cache != nil {
+		headline = st.dialogTitle.Render(fmt.Sprintf("These %d were unused at the last account; the daemon decides the final set:", steps))
+	} else if listed && steps > 0 {
 		outcome := "acted on"
 		switch p.Steps[0].Op {
 		case plan.OpRemoveContainer, plan.OpRemoveImage, plan.OpRemoveVolume, plan.OpRemoveNetwork:
@@ -541,6 +556,16 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 				i--
 			}
 			return skipLines[i]
+		}
+		if cache != nil {
+			r := cache[i]
+			flag := ""
+			if r.Shared {
+				flag = "  shared"
+			}
+			meta := escape.Name(r.Type) + "  " + humanBytes(r.Size) + flag
+			line := "  " + escape.Name(r.Description)
+			return fit(line, w-len([]rune(meta))-2) + "  " + st.tone(toneDim, meta)
 		}
 		s := p.Steps[i]
 		line := fmt.Sprintf("  %-7s %s", s.Op.String(), s.Name)

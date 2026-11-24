@@ -88,7 +88,13 @@ func Execute(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run) erro
 		if multi {
 			run.Status(fmt.Sprintf("%s %s", st.Op, st.Name))
 		}
-		id, err := executeStep(ctx, eng, st, run)
+		var id string
+		var err error
+		if st.Op == OpPruneBuildCache {
+			err = pruneBuildCache(ctx, eng, p.BuildCache, run)
+		} else {
+			id, err = executeStep(ctx, eng, st, run)
+		}
 		switch {
 		case err == nil:
 			outcomes[i] = ok

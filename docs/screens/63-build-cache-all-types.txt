@@ -1,0 +1,40 @@
+ Docker Desk  unix:///tmp/ddfake3057865773/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…773/d.sock ●]                                                              M picker  < > focus
+┏━ ◆ Space — where the bytes went, and what removing something frees ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 09:11:48 ━┓
+┃   TYPE         ┏━ ◆ Prune build cache ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                ┃
+┃   Images       ┃                                                                                    ┃                ┃
+┃   Containers   ┃ cache      6 records                                                               ┃                ┃
+┃   Local Volumes┃ daemon     unix:///tmp/ddfake3057865773/d.sock  (context default)                  ┃                ┃
+┃   Build Cache  ┃ scope      all unused build-cache records, internal and frontend included          ┃                ┃
+┃   daemon (GET /┃            Tab switch to the default scope                                         ┃                ┃
+┃   Reclaimable i┃                                                                                    ┃erd image       ┃
+┃   store, the by┃ • One request: the daemon's own build-cache prune (POST /build/prune), never       ┃                ┃
+┃                ┃   forced and with no filter.                                                       ┃                ┃
+┃   IMAGES  size,┃ • The daemon decides the final set when it receives it: it re-checks which records ┃                ┃
+┃                ┃   are unused then.                                                                 ┃SED  A          ┃
+┃ ▸ <none> 240796┃ • 1 record in use at the account is kept: the daemon never removes cache a build   ┃  -             ┃
+┃   mysql:8      ┃   is using.                                                                        ┃ctr             ┃
+┃   postgres:16  ┃ frees      about 523.7MB — the daemon's estimate of reclaimable build cache, not a ┃ctr             ┃
+┃   ghost:5      ┃            promise; 1 shared record(s) may free more · daemon, 0s ago              ┃ctr             ┃
+┃   <none> 8bae7d┃                                                                                    ┃  -             ┃
+┃   nginx:1.27   ┃ ▲ The daemon may also remove cache created or released after this account, and may ┃ctr             ┃
+┃   shop/worker:d┃   keep a listed record that has since come into use.                               ┃ctr             ┃
+┃   shop/api:dev ┃ ▲ The list below is the account of 09:11:48, not a pinned set; the job reports     ┃ctr             ┃
+┃   redis:7      ┃   what the daemon actually removed.                                                ┃ctr             ┃
+┃   acme/report:1┃                                                                                    ┃  -             ┃
+┃   busybox:1.36 ┃ These 6 were unused at the last account; the daemon decides the final set:         ┃ctr             ┃
+┃   gcr.io/distro┃   [worker 3/4] RUN pip install -r requirements.txt                  regular  277MB ┃ctr             ┃
+┃   node:22-alpin┃   mount / from exec /bin/sh -c npm ci --omit=dev            exec.cachemount  233MB ┃  -             ┃
+┃   python:3.12-s┃   [api 4/5] RUN npm ci --omit=dev                          regular  61.3MB  shared ┃  -             ┃
+┃   <none> eec6d5┃   docker/dockerfile:1                                             frontend  12.0MB ┃ctr             ┃
+┃   alpine:3.20  ┃   local source for context                                     source.local  1.9MB ┃ctr             ┃
+┃   A: analysed i┃   local source for dockerfile                                      internal  7.0kB ┃                ┃
+┃                ┃                                                                                    ┃                ┃
+┃   SHARED LAYERS┃ Type prune and press Enter to proceed:                                             ┃izes            ┃
+┃ ───────────────┃ >                                                                                  ┃es 1–30 of 73 ─ ┃
+┃ alone      free┃                                                                                    ┃                ┃
+┃ together   with┃ Enter proceed  Esc cancel                                                          ┃                ┃
+┃            <non┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛op/worker:dev   ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ measure disk usage GET /system/df
+ ↑↓ move  ⏎ go to  r re-read  m writable  w export  d remove…  X prune…  b build cache…                 S close  ? keys

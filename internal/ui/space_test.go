@@ -521,7 +521,7 @@ func TestSpaceInReadOnlyMode(t *testing.T) {
 	if strings.Contains(last, "remove") || strings.Contains(last, "prune") {
 		t.Fatalf("read-only hints offer reclaim: %q", last)
 	}
-	for _, k := range []string{"d", "X"} {
+	for _, k := range []string{"d", "X", "b"} {
 		b.keys(k)
 		b.settle()
 		if b.m.dlg != nil || b.m.preparing {
