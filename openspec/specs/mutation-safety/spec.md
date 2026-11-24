@@ -133,10 +133,11 @@ reports that an object is in use, that message SHALL be shown.
 - **THEN** the object is left alone and the daemon's message is shown as the job's error
 
 ### Requirement: A prune shows exactly what it will destroy and destroys only that
-Before a prune is confirmed the dialog SHALL list every individual object it will delete, by
-name and short ID, with the total count (and total size for images). After confirmation the
-program SHALL delete exactly the listed objects — each one individually, without force — and
-nothing that was not listed, even if more objects became eligible in the meantime.
+For images, volumes and networks, before a prune is confirmed the dialog SHALL list every
+individual object it will delete, by name and short ID, with the total count (and total size
+for images). After confirmation the program SHALL delete exactly the listed objects — each
+one individually, without force — and nothing that was not listed, even if more objects
+became eligible in the meantime. The build cache is pruned under its own rule below.
 
 #### Scenario: Preview
 - **WHEN** the operator asks to prune images
@@ -266,3 +267,52 @@ No pointer press or wheel notch SHALL cause a request that changes or deletes an
 #### Scenario: Read-only desk
 - **WHEN** the desk is read-only and the operator clicks a mutating menu entry
 - **THEN** nothing is sent and the status line refuses it exactly as the keyboard would
+
+### Requirement: Build-cache pruning names its candidates, not an exact set
+Build-cache reclaim SHALL require typing `prune`, list the candidate records from a fresh
+account, never offer an in-use record, and state that the daemon re-evaluates eligibility: it
+may remove records created or released after the account and may keep one now in use. The job
+SHALL claim only the daemon's report and name any deletion that was not a candidate, and no
+force SHALL be sent.
+
+#### Scenario: Preview
+- **WHEN** the operator opens the build-cache confirmation
+- **THEN** the dialog lists each candidate record with its type, description and size, says the daemon decides the final set, and no request that changes the daemon has been sent
+
+#### Scenario: New record appears after the preview
+- **WHEN** a cache record becomes unused after the account was taken and the operator then confirms
+- **THEN** the daemon may remove it as well, and the job names it as one that was not in the preview
+
+#### Scenario: A candidate became in use
+- **WHEN** a listed candidate is in use by the time the prune is sent
+- **THEN** the daemon may keep it, and the job reports fewer records than the preview listed
+
+#### Scenario: The claim is the daemon's
+- **WHEN** the prune finishes
+- **THEN** the deleted records and reclaimed bytes reported are the daemon's, never a sum computed by the desk
+
+#### Scenario: Read-only
+- **WHEN** the desk is read-only
+- **THEN** the build-cache action is not offered and nothing is sent
+
+### Requirement: Saving an image archive writes one named local path
+Saving an image archive SHALL write exactly the one local path named in its form, SHALL never
+replace a path that already exists, and SHALL never create a folder. It SHALL send only the
+archive `GET`, change nothing on the daemon, and be allowed in read-only mode. What it wrote
+SHALL be removed if the save is cancelled or fails.
+
+#### Scenario: The path exists
+- **WHEN** the named path is already taken
+- **THEN** nothing is read or written, and the form says the desk never replaces a file
+
+#### Scenario: Cancelled
+- **WHEN** the save is cancelled after it has written part of the archive
+- **THEN** the partial file is removed and the job says nothing remains
+
+#### Scenario: Read-only
+- **WHEN** the desk is in read-only mode
+- **THEN** the save runs, sends only the archive `GET`, and nothing on the daemon changes
+
+#### Scenario: No other request
+- **WHEN** the archive is saved
+- **THEN** the only request sent for it is the image archive read; no mutation and no other endpoint is called
