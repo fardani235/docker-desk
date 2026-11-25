@@ -37,7 +37,7 @@ func (m *Model) preparePush(r row) tea.Cmd {
 		return nil
 	}
 	if r.imageRef == "" {
-		m.setStatus(toneWarn, "This image has no tag to push; nothing was sent. (The desk never retags.)")
+		m.setStatus(toneWarn, "This image has no tag to push; nothing was sent. (t gives it a local tag first.)")
 		return nil
 	}
 	id, ref := r.imageID, r.imageRef

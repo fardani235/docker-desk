@@ -53,8 +53,8 @@ func TestReadOnlyCoversEveryMutation(t *testing.T) {
 			}
 		}()
 	}
-	if checked != 23 {
-		t.Errorf("checked %d mutating methods, expected 23 — update readMethods if the interface changed", checked)
+	if checked != 24 {
+		t.Errorf("checked %d mutating methods, expected 24 — update readMethods if the interface changed", checked)
 	}
 }
 
@@ -101,6 +101,7 @@ func TestReadOnlySendsNothing(t *testing.T) {
 		add(err1)
 		_, err := e.RemoveImage(ctx, "python:3.12-slim")
 		add(err)
+		add(e.TagImage(ctx, "python:3.12-slim", "ro/probe:1"))
 		_, err = e.CreateVolume(ctx, "x")
 		add(err)
 		add(e.RemoveVolume(ctx, "old-backups"))

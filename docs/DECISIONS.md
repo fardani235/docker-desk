@@ -4890,3 +4890,165 @@ retention (the job's output, the export, the index), read-only, and input consum
 ### A10 — Round twenty-four: what was run
 
 See docs/TESTING.md, round twenty-four, for the commands and their results.
+
+## Round twenty-five — tagging and untagging an image
+
+The request: give an image another local name, or take one away, without leaving the desk. The
+change is the OpenSpec change `tag-or-untag-image`: a proposal, a delta to `image-operations`
+(four added requirements), a design (its D1–D6) and tasks. It was applied without the operator
+in the loop — "where you would ask, decide and record" — so the decisions taken where the plan
+left room are all in J5. Two facts shape the rest: Docker moves a tag another image holds
+without a refusal, and removing an image's last reference deletes the image.
+
+### J1 — One local engine mutation, checked before a request is built
+
+`Engine.TagImage(ctx, source, target)` is moby's `ImageTag`: one `POST
+/images/{source}/tag?repo=…&tag=…`, `:latest` filled in by the client for a target without a
+tag, nothing else in the query. The read-only wrapper refuses it, and
+`TestReadOnlyCoversEveryMutation` now counts 24.
+
+The client library writes the source into the request path as it is, unescaped. Its own check
+(`reference.ParseAnyReference`) already keeps a path or a query out, but the engine does not
+lean on a library's check for that: `checkTagRequest` refuses an empty source or target, any
+white space or control character in either, a source that is neither an image ID nor a
+reference, a target that is not a named reference, and a digest target — each with "nothing
+was sent", and each before the client is called. Twelve such shapes are tested to produce zero
+requests.
+
+### J2 — The fake moves a tag the way the daemon does, and says so in a log
+
+`POST /images/{name}/tag` on the fake resolves the source (ID, reference or prefix), reads
+`repo` and `tag` as the daemon does (a digest in `repo` is a 400, a missing tag is `:latest`),
+removes the target from every other image, appends it to the source unless it is already
+there, answers 201, and emits the image `tag` event with the image's ID and the reference. A
+missing source is the daemon's 404. `TagRequests()` records, for each served request, the
+source as sent, the image it resolved to and the image the tag was moved from — the witness
+the UI tests use for "by ID" and "this move, and no other". The route is matched before
+`history`/`json`, on the last path segment, like push. `scripts/cli-crosscheck.sh` gained a
+`== tag` section: eleven checks with the real `docker tag` and `docker rmi`, including the
+silent move.
+
+### J3 — A tag is a plan of one step, built from the list the form showed
+
+`plan.ImageTag` builds a `TierForm` plan with one `OpTagImage` step: `ID` is the image's ID,
+and `Tag` (`TagStep`) carries the normalised target and `Owner`, the ID of the image the
+target named in the snapshot it was built from ("" for none). Every other plan is built from a
+fresh snapshot at the moment of the action. This one is deliberately built from the image list
+the form was drawn from (`m.snap`): the requirement is that the job refuse a target that
+differs "from what the form showed", and a fresh snapshot would record what the daemon says
+now — a move nobody read would then pass the job's check. The job's own inspect is the fresh
+look.
+
+`executeTag` (reached through `plan.Execute`, like every request) inspects the target
+immediately before tagging:
+
+| the form showed | the target names now | the job |
+| --- | --- | --- |
+| no image | no image | tags (a create) |
+| no image, or image B | this image | sends nothing, succeeds, says nothing needed doing |
+| image B | image B | tags (the move that was shown), and logs it |
+| no image, or image B | image C | **fails: "the target changed … nothing was tagged"** |
+| image B | no image | tags (a create: nothing moves), and logs that B lost it |
+
+An inspect that fails for any reason other than "no such image", or that succeeds without an
+image ID, is a refusal: only the daemon's 404 means the target is free. It refuses, with
+"nothing was sent", a step without its target, a source that is not
+`sha256:` and 64 hex digits, and a target that is not its own normalised form; and it returns
+`ErrReadOnly` before the inspect, so a read-only engine sees no request at all. The source
+needs no pin: it is an ID.
+
+### J4 — Untag is the removal plan's untag, with the refusals in front
+
+`plan.ImageUntag` refuses, as `NotApplicable` (a status line, no dialog): a missing image, an
+untagged row, a reference the image no longer has, a digest reference, a reference that does
+not read back as itself, and the image's last reference — "removing it would delete the
+image … use d remove". Otherwise it calls `ImageRemove` and insists the result is what an
+untag must be — one step, the reference as its ID, pinned to the image, `KeepsData` — before
+retitling it (`Untag image` / `untag image`) and making the typed word the tag. Nothing about
+the request or its guards is new: `checkImagePin` refuses a reference that moved or became
+the last one, exactly as for `d` on a multi-tagged row. Its refusal of a moved reference now
+begins "the tag moved:", the words the requirement and the push job use.
+
+### J5 — Decisions taken where the plan left room
+
+- **Surrounding blanks are trimmed; any other white space is refused.** The pull form trims
+  too. A control character anywhere is refused with the same sentence.
+- **Image B → no image goes ahead.** The design's D3 refuses when the target "now exists and
+  names a different image"; a target the shown holder has since lost is a plain create, moves
+  nothing, and is logged as such. The requirement's scenarios (absent → C, B → C) both refuse.
+- **A move must have been on screen before Enter can make it.** The tag form, like the pull
+  form, takes Enter as soon as a name is typed — the operator typed the whole value. But a
+  move is the one outcome that takes something from another image, and its warning appears
+  only with the last character typed, or when the image list (which refreshes under an open
+  form) changes what the target names. The form records when it first named this holder for
+  this target; when the holder is another image, an Enter within the arming delay — the
+  quarter second every confirmation has — keeps the form open and says the warning has only
+  just appeared. A create is not held up. (The first version guarded only a holder that
+  changed under an unchanged target; the independent review showed that typing a held target
+  and pressing Enter in one motion moved the tag unread — J6.)
+- **"Already names this image" keeps the form open.** Enter sends nothing and says so; the
+  operator can type another reference or press Esc.
+- **`u` on a digest reference is refused, pointing to `d`.** The typed word is the tag, and a
+  digest reference has none. `d` on such a row is already an untag when other references
+  remain.
+- **Only a reference that reads back as itself is untagged.** The reference goes into the
+  request path and its tag is what the operator types; both come from the daemon's list. One
+  that `NormalizeTag` would rewrite or refuse (a long-form name, upper case, a path, an escape
+  sequence) is refused, escaped. Docker lists familiar names, so nothing real is lost.
+- **Only an ID of the daemon's own form is a tag's source** (`sha256:` and 64 hex digits). The
+  plan refuses any other with "nothing was sent"; the job checks again.
+- **`t` and `u` join the hint line after `X prune`.** With two more hints the Images line no
+  longer fits `U upstream` at 140 columns (it is cut with `…`, as hints always are when the
+  line is short; it fits at 150). `?` and the action menu list everything.
+- **Push's untagged-row refusal now points to `t`** ("t gives it a local tag first") instead
+  of saying the desk never retags, which stopped being true of the desk — a push still never
+  does.
+- **The end-to-end session runs under `--no-registry`,** so that flag's "both stay available"
+  is proven in the real binary, not only in the model.
+- **Not done:** no "tag and push" shortcut, no retagging of several references, no tag from
+  the Repository view, no untag of the last reference under any confirmation.
+
+### J6 — Independent review
+
+An independent security and correctness review of the diff (a separate agent given the code,
+the requirements and the threat model — a hostile daemon's IDs, references and messages; races
+between what was shown and what is sent; typed-ahead input — not these conclusions) found
+nothing critical or high. Its four findings were all acted on:
+
+- **Medium: a move could be made before its warning was readable.** Typing a target another
+  image holds and pressing Enter at once started the job; the guard covered only a holder that
+  changed under an unchanged target. Fixed as J5 describes
+  (`TestTagMoveTypedAndEnteredAtOnceIsNotTaken`).
+- **Low: the untag confirmation drew the image's other references unescaped.** `u` validated
+  the reference being removed, but "still referenced as …" joined the others as the daemon
+  listed them. `ImageRemove` now escapes every reference it names — which also covers `d` on a
+  multi-tagged row, where the same line had always been raw (`TestImageUntagPlanOtherReferences`).
+- **Low: the recorded holder's ID reached the job log unchecked.** Only the source was held to
+  the daemon's ID form. The plan now refuses a holder whose ID is not `sha256:` and 64 hex
+  digits, the job refuses such a step, and the IDs `checkImagePin` and the tag job repeat from
+  an inspect answer are escaped (`TestImageTagPlanRefusesAnOddHolder`, two more malformed steps).
+- **Low: a digest reference counted as "another reference" for `u`.** A daemon that lists
+  `repo@sha256:…` among an image's tags drops it with the repository's last tag, and the image
+  with it. `u` now needs another *tag*: the plan refuses otherwise ("only tag"), and the step
+  carries `KeepsTag`, which has `checkImagePin` refuse if only digest references remain beside
+  the one being removed. `d` is unchanged: its dialog says what it is
+  (`TestImageUntagPlanOtherReferences`, `TestExecuteUntagRefusesWhenOnlyADigestReferenceRemains`).
+
+Stated as a limit, not fixed: the window between the job's inspect of the target and the tag
+request. The Engine API has no compare-and-swap for a tag; the form says "checked again just
+before the request", which is what happens, and claims nothing stronger.
+
+It confirmed as sound: the source is always the image's ID, with no path or query reachable
+through source or target; the job's table (J3) in every row, an empty holder never matching a
+present one; a stale image list failing safe in both directions; the owner lookup across long
+and short reference forms; read-only refused at the key, in the form, in the job before its
+inspect, and in the engine; a selection refused; no registry request and no force on either
+path; and untag's fresh snapshot, exact match, pin and last-reference refusals.
+
+### J7 — Round twenty-five: what was run
+
+See docs/TESTING.md, round twenty-five, for the commands and their results.
+
+`make e2e` was not green on this machine, on this branch or on an untouched checkout of `HEAD`,
+and one reader test from round twenty-four is flaky under the race detector on both: see
+TESTING.md. Task 5.3 of the change is therefore left open rather than ticked.

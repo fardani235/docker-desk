@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake3943339999/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…999/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3304405313/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…313/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (2 of 17) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: acme/api ━┓┌─ 4 Events ────────────────────────── ● live ─┐
 │  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│Waiting for engine events…                    │
 │▸ Images        17│┃▸ registry.sandbox.inva…  3.28.3        9ffe8111ff43    48.0MB     2d         - ┃│Everything the daemon does                    │
@@ -9,7 +9,7 @@
 │                  │┃           ┏━ ◆ Push image ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
 │  ● 7 running     │┃           ┃                                                                                    ┃                               │
 │  ‖ 1 paused      │┃           ┃ image      registry.sandbox.invalid/acme/api:3.28.3  (9ffe8111ff43)                ┃                               │
-│  ○ 5 stopped     │┃           ┃ daemon     unix:///tmp/ddfake3943339999/d.sock  (context default)                  ┃                               │
+│  ○ 5 stopped     │┃           ┃ daemon     unix:///tmp/ddfake3304405313/d.sock  (context default)                  ┃                               │
 │                  │┃           ┃ registry   registry.sandbox.invalid                                                ┃                               │
 │                  │┃           ┃ login      auths                                                                   ┃                               │
 │                  │┃           ┃                                                                                    ┃                               │
@@ -39,4 +39,4 @@
 │                  ││                                                                                ││                                              │
 └──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
 
- ↑↓ move  Space select  / filter  ⏎ actions  P pull  p push  d remove  X prune  w save archive  U upstream                   Tab pane  ? keys  q quit
+ ↑↓ move  Space select  / filter  ⏎ actions  P pull  p push  d remove  X prune  t tag  u untag  w save archive  U upstream   Tab pane  ? keys  q quit

@@ -202,6 +202,26 @@ expect_contains "other tag survives" "$(d images --format '{{.Repository}}:{{.Ta
 rm_out="$(d rmi hello-world)"
 expect_contains "rmi deletes last tag" "$rm_out" "Deleted: sha256:"
 
+echo "== tag (the desk's Images t sends the same request; its u is rmi of one of several tags)"
+node_id="$(d image inspect --format '{{.Id}}' node:22-alpine)"
+redis_id="$(d image inspect --format '{{.Id}}' redis:7)"
+d tag "$node_id" cross/node
+expect_eq "tag by image ID; no tag means :latest" "$(d image inspect --format '{{.Id}}' cross/node:latest)" "$node_id"
+d tag node:22-alpine localhost:5000/cross/node:v1
+expect_eq "tag with a registry host and port" "$(d image inspect --format '{{.Id}}' localhost:5000/cross/node:v1)" "$node_id"
+expect_contains "tag lists the new reference" "$(d images --format '{{.Repository}}:{{.Tag}}')" "localhost:5000/cross/node:v1"
+d tag "$node_id" cross/node:latest
+expect_eq "tagging what is already there changes nothing" "$(d image inspect --format '{{len .RepoTags}}' "$node_id")" "3"
+d tag "$redis_id" cross/node:latest
+expect_eq "a tag another image holds is moved, not refused" "$(d image inspect --format '{{.Id}}' cross/node:latest)" "$redis_id"
+expect_eq "the image that lost it keeps its data and its other tags" "$(d image inspect --format '{{join .RepoTags " "}}' "$node_id")" "node:22-alpine localhost:5000/cross/node:v1"
+expect_fails "tag of a missing image" "No such image" d tag nosuch-image:1 cross/x:1
+expect_fails "tag with a digest target" "digest" d tag node:22-alpine "cross/node@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+expect_contains "rmi of one of several tags only untags" "$(d rmi cross/node:latest)" "Untagged: cross/node:latest"
+expect_eq "…and the image stays under its other tag" "$(d image inspect --format '{{.Id}}' redis:7)" "$redis_id"
+d rmi localhost:5000/cross/node:v1 >/dev/null
+expect_eq "the tags are gone again" "$(d image inspect --format '{{join .RepoTags " "}}' "$node_id")" "node:22-alpine"
+
 echo "== push (the desk's Images p sends the same request)"
 # The script's private configuration (above) holds the sandbox registry's
 # credential; the fake registry checks nothing and keeps nothing.

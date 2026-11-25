@@ -43,6 +43,7 @@ const (
 	formCopyOut   // the Files view's o (copy.go)
 	formCopyIn    // the Files view's i
 	formSaveImage // Images' w (saveimage.go)
+	formTag       // Images' t (tag.go)
 )
 
 type pickItem struct {
@@ -91,6 +92,7 @@ type dialog struct {
 	target   row        // shell: the container
 	cp       *copyForm  // the copy forms: the container and its path
 	si       *saveImage // the save form: the image it is bound to
+	tg       *tagForm   // the tag form: the image it is bound to
 
 	// dlgPicker
 	pickTitle string
@@ -643,6 +645,9 @@ func (m *Model) formBody(d *dialog, w, maxBody int) (string, []string) {
 	}
 	if d.form == formSaveImage {
 		return m.saveBody(d, w)
+	}
+	if d.form == formTag {
+		return m.tagBody(d, w)
 	}
 	daemon := strings.Join(m.daemonLines(w, true), "\n")
 	var title, prompt, verb string

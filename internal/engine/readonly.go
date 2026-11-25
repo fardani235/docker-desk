@@ -60,6 +60,9 @@ func (r *readOnlyEngine) RemoveImage(context.Context, string) ([]ImageDelete, er
 	return nil, ErrReadOnly
 }
 
+// TagImage writes a local reference, and can move one: refused.
+func (r *readOnlyEngine) TagImage(context.Context, string, string) error { return ErrReadOnly }
+
 func (r *readOnlyEngine) CreateVolume(context.Context, string) (Volume, error) {
 	return Volume{}, ErrReadOnly
 }

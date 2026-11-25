@@ -114,6 +114,8 @@ type Server struct {
 	pushOnce sync.Once
 	push     *pushState
 
+	tagReqs []TagRequest // guarded by mu
+
 	reqMu    sync.Mutex
 	requests []Request
 
@@ -465,6 +467,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 		s.handleImageExport(w, r, []string{strings.Join(seg[1:len(seg)-1], "/")})
 	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "push" && post:
 		s.handleImagePush(w, r, strings.Join(seg[1:len(seg)-1], "/"))
+	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "tag" && post:
+		s.handleImageTag(w, r, strings.Join(seg[1:len(seg)-1], "/"))
 	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "history" && get:
 		s.handleImageHistory(w, strings.Join(seg[1:len(seg)-1], "/"))
 	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "json" && get:

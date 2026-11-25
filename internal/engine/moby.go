@@ -24,6 +24,7 @@ import (
 	"time"
 
 	cerrdefs "github.com/containerd/errdefs"
+	"github.com/distribution/reference"
 	"github.com/moby/moby/api/pkg/stdcopy"
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/api/types/mount"
@@ -1053,6 +1054,48 @@ func (m *mobyEngine) RemoveImage(ctx context.Context, ref string) ([]ImageDelete
 		out = append(out, ImageDelete{Untagged: it.Untagged, Deleted: it.Deleted})
 	}
 	return out, nil
+}
+
+// tagOp is how a tag is named in its errors.
+const tagOp = "tag image"
+
+// checkTagRequest refuses, before a request is built, a tag the daemon
+// should never be asked for: a source or target that is empty or carries
+// white space or a control character (the client library puts the source
+// into the request path as it is), a source that is neither an image ID nor
+// a reference, and a target that is not a named reference or names a
+// digest.
+func checkTagRequest(source, target string) error {
+	for _, v := range []struct{ what, s string }{{"source", source}, {"target", target}} {
+		if v.s == "" {
+			return fmt.Errorf("a tag needs a %s", v.what)
+		}
+		if strings.IndexFunc(v.s, func(r rune) bool { return r <= ' ' || r == 0x7f }) >= 0 {
+			return fmt.Errorf("the tag's %s cannot contain spaces or control characters", v.what)
+		}
+	}
+	if _, err := reference.ParseAnyReference(source); err != nil {
+		return fmt.Errorf("the tag's source is neither an image ID nor a reference: %v", err)
+	}
+	named, err := reference.ParseNormalizedNamed(target)
+	if err != nil {
+		return fmt.Errorf("the tag's target is not a valid image reference: %v", err)
+	}
+	if _, ok := named.(reference.Digested); ok {
+		return errors.New("a tag cannot be created from a digest reference")
+	}
+	return nil
+}
+
+func (m *mobyEngine) TagImage(ctx context.Context, source, target string) error {
+	if err := checkTagRequest(source, target); err != nil {
+		return &Error{Kind: KindOther, Op: tagOp, Msg: err.Error() + "; nothing was sent", Err: err}
+	}
+	// One POST /images/{source}/tag with repo and tag: the client fills
+	// ":latest" for a target without a tag and sends nothing else — no
+	// force, no registry.
+	_, err := m.cli.ImageTag(ctx, client.ImageTagOptions{Source: source, Target: target})
+	return m.wrap(tagOp, err)
 }
 
 func (m *mobyEngine) CreateVolume(ctx context.Context, name string) (Volume, error) {

@@ -92,6 +92,10 @@ var kindActions = [kindCount][]action{
 			}},
 		{key: "X", label: "prune…", desc: "remove unused images, after showing exactly which", mutating: true,
 			run: func(m *Model, _ row) tea.Cmd { return m.preparePrune(plan.ImagePrune, false) }},
+		// Tag and untag are local: one reference created, or one of several
+		// removed (tag.go).
+		tagAction,
+		untagAction,
 		// Saving is a read (GET /images/get) that writes one local file:
 		// not mutating, so read-only mode allows it (saveimage.go).
 		{key: "w", label: "save archive…", desc: "write this image's archive (docker save) to one local file; the tag is kept", needsRow: true,
@@ -307,6 +311,8 @@ func (m *Model) submitForm() tea.Cmd {
 		return m.submitCopyIn()
 	case formSaveImage:
 		return m.submitSaveImage()
+	case formTag:
+		return m.submitTag()
 	}
 	text := d.formText()
 	switch d.form {

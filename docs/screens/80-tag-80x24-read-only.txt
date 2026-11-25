@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake1858778196/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…196/d.sock ● ro]                   M picker  < > focus
+┌─ 1 Kinds ──────┐┏━ ◆ 2 Images (4 of 19) ━━━━━━━━━━━━━━━━━━ filter: acme/api ━┓
+│  Containers  13│┃  REPOSITORY        TAG        IMAGE ID          SIZE    AGE┃
+│▸ Images      19│┃▸ acme/api          3.29.0     51d1711ee5b8    48.0MB     2d┃
+│  Volumes      7│┃  acme/api          latest     8387789bd2a4    52.0MB     9d┃
+│  Networks     7│┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+│  Compose      2│┌─ 3 Details: acme/api:3.29.0 ────────────────── [Info] 1/4 ─┐
+│                ││Reference  acme/api:3.29.0                                  │
+│  ● 7 running   ││ID         51d1711ee5b8                                     │
+│  ‖ 1 paused    ││Size       48.0MB                                           │
+│  ○ 5 stopped   ││Created    2026-11-23 18:55:51  (2d ago)                    │
+│                ││Platform   linux/amd64                                      │
+│                ││Layers     2                                                │
+│                ││Command    /bin/app                                         │
+└────────────────┘└────────────────────────────────────────────────────────────┘
+┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ───────────────────────┐
+│Waiting for engine events…                  ││No jobs yet.                    │
+│Everything the daemon does                  ││Everything that changes the dae…│
+│shows up here as it happens.                ││runs here, in the background.   │
+│                                            ││                                │
+└────────────────────────────────────────────┘└────────────────────────────────┘
+ Read-only mode: "tag…" is disabled. Nothing was sent to the daemon.
+ ↑↓ move  Space select  / filter  ⏎ actions  P pull  … Tab pane  ? keys  q quit

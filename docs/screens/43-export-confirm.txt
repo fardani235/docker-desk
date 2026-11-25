@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/TestExportFromTheSandbox3651155387/002/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/TestExportFromTheSandbox3285721593/002/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
  Daemons [◆1 /tmp/TestEx…02/sb.sock ●]                                                                                  M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Images (1 of 22) ──────────────────────────────────── filter: python ─┐┌─ 4 Events ────────────────────── ● live ─┐
 │  Containers    13││  REPOSITORY          TAG         IMAGE ID          SIZE    AGE   USED BY ││Waiting for engine events…                │
@@ -15,7 +15,7 @@
 │                  ││      ┃                                                                                    ┃                          │
 │                  │└──────┃ Write this file?                                                                   ┃                          │
 │                  │┏━ ◆ 3 ┃                                                                                    ┃                          │
-│                  │┃4 find┃ path       /tmp/TestExportFromTheSandbox3651155387/001/docker-desk-findings-python ┃                          │
+│                  │┃4 find┃ path       /tmp/TestExportFromTheSandbox3285721593/001/docker-desk-findings-python ┃                          │
 │                  │┃live: ┃            -3.12-slim-20261125.json                                                ┃                          │
 │                  │┃▸ --  ┃ format     JSON — everything computed, in the desk's own schema                    ┃                          │
 │                  │┃  --  ┃ size       38576 bytes                                                             ┃                          │
@@ -27,7 +27,7 @@
 │                  │┃      ┃ y write  n Esc back                                                                ┃                          │
 │                  │┃      ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛──────────────────────────┘
 │                  │┃                                                                          ┃┌─ 5 Jobs ──────────────────────── 1 done ─┐
-│                  │┃───────────────────────────────────────────────────────────────── 1 of 4 ─┃│▸ ✓ analyse image python:3.12-slim    26ms│
+│                  │┃───────────────────────────────────────────────────────────────── 1 of 4 ─┃│▸ ✓ analyse image python:3.12-slim    22ms│
 │                  │┃why      The program the command names is not in the image: a container ca┃│                                          │
 │                  │┃         nnot start.                                                      ┃│                                          │
 │                  │┃evidence python3 is not in the final filesystem                           ┃│                                          │
@@ -37,4 +37,4 @@
 │                  │┃                                                                          ┃│                                          │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────┘
  ✓ analyse image python:3.12-slim
- / find  ↑↓ finding  o order  v reveal  i packages  w export  [ ] tab  P pull  p push  d remove  X prune  U upstr… Tab pane  ? keys  q quit
+ / find  ↑↓ finding  o order  v reveal  i packages  w export  [ ] tab  P pull  p push  d remove  X prune  t tag  … Tab pane  ? keys  q quit

@@ -543,8 +543,8 @@ registry it names — `host:5000/acme/api:3.28.3` goes to `host:5000`, `nginx:1.
 sends for one tag). It is in the action menu (`Enter`) as *push…* too. `P` is pull, `p` is push.
 
 - **Only a tag the image already carries.** An untagged row is refused (*this image has no tag
-  to push*), a selection is refused as one image at a time, and nothing is sent. The desk never
-  retags, never pushes another or every tag (`--all-tags`), never chooses a platform, and never
+  to push*; `t` gives it one first), a selection is refused as one image at a time, and nothing
+  is sent. A push never retags, never pushes another or every tag (`--all-tags`), never chooses a platform, and never
   builds.
 - **Typed with the tag.** The confirmation names the full reference, the image's short ID, the
   daemon, the **registry** and the **login** — the credential's *source* (`auths`,
@@ -581,6 +581,63 @@ The confirmation, captured: [`docs/screens/68-push-confirm.txt`](docs/screens/68
 the finished job [`docs/screens/69-push-done.txt`](docs/screens/69-push-done.txt), and the
 refusal at 80×24 in read-only mode
 [`docs/screens/70-push-80x24-read-only.txt`](docs/screens/70-push-80x24-read-only.txt).
+
+### Tag and untag — local names, and nothing else
+
+`t` on an Images row gives **that image** another local reference; `u` takes **that row's
+reference** away while the image stays under another one. Both are what `docker tag` and
+`docker rmi` of one of several tags send (`POST /images/{id}/tag?repo=…&tag=…`, `DELETE
+/images/{reference}`), both are in the action menu (`Enter`) as *tag…* and *untag…*, and both
+are **local**: no registry is contacted, nothing is pulled or pushed, so `--no-registry` leaves
+them available. On Containers `t` and `u` keep meaning stop and unpause.
+
+- **The form is the confirmation of a tag.** It names the image and its short ID, the daemon
+  and the references the image has, and takes the new one as `repository[:tag]`. What you type
+  is restated exactly as it will be created: `acme/api` reads **`acme/api:latest`** — one tag,
+  the familiar form the list shows — and `localhost:5000/team/api` keeps its registry host and
+  port. A reference with a digest (`@sha256:…`) is refused, because a digest names content and
+  cannot be given to an image; so is anything that is not a valid reference (upper case in the
+  repository, spaces, a tag that starts with `-`). The form says why as you type, and Enter on
+  a refused target sends nothing.
+- **The image is tagged by its ID.** The source of the request is the ID of the image that was
+  highlighted when `t` was pressed — also for an untagged image — never one of its references,
+  so a reference that moves elsewhere meanwhile cannot redirect the new tag to another image.
+- **A move is named, and checked again.** Docker moves a tag that another image holds without
+  a word. The form looks the target up in the image list: *no image has this reference: it is
+  created*; *already names this image* — Enter then sends nothing; or **it names image
+  `8387789bd2a4` now … the tag will MOVE to image `51d1711ee5b8`**, saying whether the other
+  image keeps other references or is left untagged (its data stays either way). Enter may
+  complete that move. Immediately before the request the job inspects the target again: if it
+  now names an image other than the one the form showed — including one that appeared where
+  the form said there was none — **nothing is tagged** and the job says *the target changed*.
+  If it already names this image, the job says nothing needed doing and sends nothing.
+- **A move has to have been on screen.** The warning appears with the last character typed, or
+  when the image list changes what the target names under an open form. An Enter within that
+  same quarter of a second — typed ahead, or pressed for what the form said a moment ago — is
+  not taken: the form says the warning has only just appeared, and Enter again proceeds. A
+  plain create takes nothing from any image and is not held up, as in the pull form.
+- **Untag is typed with the tag, and can never delete the image.** `u` opens the typed
+  confirmation: it names the reference, the image, the references that remain and that the
+  image data stays; you type the tag (`3.29.0`) and press Enter. `y`, a bare Enter, `remove` or
+  any other word send nothing. On an image's **last tag** `u` refuses before any dialog — Docker
+  cannot remove the last reference without deleting the image — and points to `d` remove,
+  which says *the image is deleted* and asks for that. An untagged row has nothing to untag,
+  and a digest reference is not a tag (`d` removes it). The reference is pinned to the image
+  that was shown: if it names another image by the time the request would be sent, or has
+  become the image's last reference, nothing is removed and the job says so.
+- **One image at a time, never forced.** A selection is refused (nothing is sent),
+  `--read-only` refuses both at the key and again in the engine, neither request carries
+  `force`, and only the one reference asked for is created or removed. A tag pushed to a
+  registry earlier stays there: untagging is local.
+
+The form, captured: [`docs/screens/74-tag-form.txt`](docs/screens/74-tag-form.txt); the new row
+[`docs/screens/75-tag-done.txt`](docs/screens/75-tag-done.txt); the move warning
+[`docs/screens/76-tag-move-warning.txt`](docs/screens/76-tag-move-warning.txt); the untag
+confirmation [`docs/screens/77-untag-confirm.txt`](docs/screens/77-untag-confirm.txt) and its
+result [`docs/screens/78-untag-done.txt`](docs/screens/78-untag-done.txt); the last-tag refusal
+[`docs/screens/79-untag-last-tag-refused.txt`](docs/screens/79-untag-last-tag-refused.txt); and
+read-only at 80×24
+[`docs/screens/80-tag-80x24-read-only.txt`](docs/screens/80-tag-80x24-read-only.txt).
 
 ### Space — where the bytes went, and what removing something frees
 
@@ -992,7 +1049,7 @@ Press `?` inside the desk for the same list.
 | Kind | Keys |
 | --- | --- |
 | Containers | `n` new (create and start, pulling the image first if it is missing) · `s` start · `t` stop · `R` restart · `p` pause · `u` unpause · `K` kill · `d` remove · `e` shell |
-| Images | `P` pull by name (on Upstream showing *moved*: the build the tag names now, by digest) · `p` push this tag to its registry… (typed with the tag; see [Push](#push--one-tag-back-to-its-registry)) · `d` remove · `X` prune · `w` save archive… (List pane; a read, allowed in read-only mode; see [Save](#save--an-images-archive-to-a-file)) |
+| Images | `P` pull by name (on Upstream showing *moved*: the build the tag names now, by digest) · `p` push this tag to its registry… (typed with the tag; see [Push](#push--one-tag-back-to-its-registry)) · `d` remove · `X` prune · `t` tag… (a local reference for this image; no tag means `:latest`) · `u` untag… (typed with the tag; refused on the last tag; see [Tag and untag](#tag-and-untag--local-names-and-nothing-else)) · `w` save archive… (List pane; a read, allowed in read-only mode; see [Save](#save--an-images-archive-to-a-file)) |
 | Volumes | `n` new · `d` remove · `X` prune |
 | Networks | `n` new · `d` remove · `X` prune · `c` connect a container · `D` disconnect a container |
 | Compose | `t` stop the whole project · `d` remove the whole project · (menu) compare with the compose file — a read, allowed in read-only mode |
@@ -1003,7 +1060,7 @@ they get a `✓` in the gutter and the title says how many, e.g. `2 Containers (
 The selection belongs to its kind and follows its objects across refreshes; an object that
 disappears leaves it. While a kind has a selection, `s` `t` `R` `p` `u` `K` `d` on Containers
 and `d` on Images, Volumes and Networks apply to every selected object instead of the
-highlighted one. `e` shell, `c` connect, `D` disconnect, `p` push and `w` save archive work on one object
+highlighted one. `e` shell, `c` connect, `D` disconnect, `p` push, `t` tag and `u` untag (on Images) and `w` save archive work on one object
 only and refuse (nothing is sent); `X` prune chooses its own objects and refuses too; `P` pull and `n` new
 (on Containers, Volumes and Networks) are unaffected. The selection is cleared when the job starts, and kept if you decline. `Space`
 still pages in the Details pane; in the Events pane it holds the view.
@@ -1166,6 +1223,12 @@ being careful.
   - push (`p` on Images) → type the tag being published (`3.28.3`) and press Enter. The dialog
     names the registry and the credential's source; the remote tag is created or moved and the
     desk cannot undo it. Nothing local changes. `--read-only` and `--no-registry` refuse it.
+  - tag (`t` on Images) → you type the new reference; the form restates it (`acme/api` is
+    `acme/api:latest`), says it is local, and names the image a tag would move from. Enter
+    sends one tag request for the image's ID; the job re-checks the target and tags nothing
+    if it changed. Untag (`u`) → type the tag being removed (`3.29.0`) and press Enter; it is
+    refused on an image's last tag, so it can never delete the image. Neither contacts a
+    registry; `--read-only` refuses both.
   - new container → the form restates the whole configuration and any pull it needs; Enter
     submits, never before the form has been on screen long enough to read.
   - re-create (`A` on Containers › Changes) → type `recreate` and press Enter. It stops a
@@ -1278,9 +1341,11 @@ images or volumes between them. No per-daemon read-only flag, and nothing about 
 saved for the next run. No Windows named pipes. No Swarm, no compose
 lifecycle — a compose file is read only for Declared, on request, and never run or
 interpolated (see [Compose, honestly](#compose-honestly)) — no image builds, no Kubernetes. It pushes
-only one existing tag of one image to the registry that tag names (Images, `p`): no retag, no
+only one existing tag of one image to the registry that tag names (Images, `p`): no retag as part of the push, no
 `--all-tags`, no platform choice, no push from the Repository view, and no push under
-`--no-registry`. It creates containers from its seven-field form
+`--no-registry`. It tags and untags one local reference of one image at a time (Images, `t`
+and `u`): no tag-all, no rewriting of several references, no untagging of an image's last tag
+(that is `d` remove), and no deleting of a tag in a registry. It creates containers from its seven-field form
 (no networks, users, limits or TTY; no build, no compose `up`), and re-creates one only on the
 newer build its own tag names, with the configuration it already has (Changes, `A`). It never
 edits a container's configuration, never pulls for a re-create, never rolls one back and never

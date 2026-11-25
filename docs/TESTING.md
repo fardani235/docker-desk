@@ -1310,6 +1310,83 @@ no daemon is known to do so (`docker cp` copies a link as a link).
 
 WHAT_WAS_RUN
 
+## Round twenty-five: tagging and untagging an image
+
+A tag is the first request that can take a name away from an image nobody was looking at —
+Docker moves a tag without a word — and an untag is one reference away from a deletion. Both
+are proven from four directions: Docker's client library against the fake (the request, and
+what is refused before one is built), the real `docker` CLI against the fake (the endpoint's
+shape, the silent move), the plan and its job against the fake (what the job re-checks), and
+the UI model and the real binary key by key. The fake's request log and its tag log
+(`TagRequests`: the source as sent, the image it resolved to, the image the tag was moved
+from) are the witnesses, so "nothing was sent" and "this image, by its ID" are assertions.
+
+| Property | Tests | Run |
+| --- | --- | --- |
+| The request: one `POST /images/sha256:<id>/tag` with exactly `repo` and `tag` (no force, nothing else), a registry host and port kept in `repo`; no tag means `tag=latest`; a tag another image holds is moved and that image keeps its data and other tags; tagging what is there changes nothing; no pull, push, distribution or auth request | `TestTagImageSendsOneRequestByID`, `TestTagImageDefaultsToLatestAndMoves` | `go test ./internal/engine -run Tag` |
+| A missing source is the daemon's 404 in its own words, with the store unchanged and nothing in the fake's tag log; the fake emits the daemon's image `tag` event with the image's ID and the new reference | `TestTagImageMissingSource`, `TestTagImageEvent` | `go test ./internal/engine -run Tag` |
+| Refused before a request is built — twelve shapes: an empty source or target, a digest target, a tag and a digest, an upper-case repository, a space, a newline, a bad tag, and a source carrying a path traversal, a query, an extra path segment or a space. Zero requests of any kind reach the daemon | `TestTagImageRefusesBadRequestsBeforeSending` | `go test ./internal/engine -run Tag` |
+| Read-only: the wrapper returns `ErrReadOnly`, the HTTP hook refuses the `POST` behind it, the store is unchanged; the wrapper covers every mutating method (24) | `TestTagImageReadOnly`, `TestReadOnlyCoversEveryMutation`, `TestReadOnlySendsNothing` | `go test ./internal/engine -run 'Tag\|ReadOnly'` |
+| Normalisation — ten accepted forms (`acme/api` → `acme/api:latest`, `docker.io/library/alpine:3` → `alpine:3`, `localhost:5000/team/api`, a host with a port and a tag, surrounding blanks trimmed, a 128-character tag), each a fixed point; eighteen refused: empty, blank, a space, a tab, a newline, an escape sequence, a digest, a tag and a digest, upper case, a bad tag, an empty tag, a 129-character tag, two colons, a path traversal, a query, a scheme, a bare image ID, non-ASCII | `TestNormalizeTag` | `go test ./internal/plan -run NormalizeTag` |
+| The owner lookup: free; this image (a target that is also one of its repository tags); another image, with its ID, short ID and references; the same target asked for its holder; an untagged source; the same repository with another tag is free; a daemon that lists the long form names the same target | `TestTagOwner` | `go test ./internal/plan -run TagOwner` |
+| The tag plan: one `OpTagImage` step whose ID is the image's ID and which records the target and the image shown as holding it; the move warning names the other image; an untagged source; already this image, a missing image and an ID that is not a `sha256` digest are not applicable with "nothing was sent"; a digest target is the form's error | `TestImageTagPlan` | `go test ./internal/plan -run ImageTagPlan` |
+| The tag job: creates (one mutation, by ID, never forced); moves what was shown; **refuses a target that changed** — absent → another image, image B → image C — with zero mutations and the new holder untouched; a target that already names this image sends nothing and succeeds; a target freed meanwhile is a plain create; a vanished source is the daemon's 404 with the store unchanged; eight malformed steps (no target, a source by reference, a source with a path, a target not normalised, with a digest, with white space, a recorded holder that is not an image ID) send no request at all; read-only sends no request at all, the inspect included; an inspect answer that carries no image ID is a refusal, not "the target is free" | `TestExecuteTagCreates`, `TestExecuteTagRefusesAnAnswerWithoutAnID`, `TestExecuteTagMovesWhatWasShown`, `TestExecuteTagRefusesATargetThatChanged`, `TestExecuteTagAlreadyThisImageSendsNothing`, `TestExecuteTagTargetFreedMeanwhile`, `TestExecuteTagSourceGone`, `TestExecuteTagRefusesMalformedSteps`, `TestExecuteTagReadOnlySendsNothing` | `go test ./internal/plan -run ExecuteTag` |
+| The untag plan: one removal of the reference, pinned to the image, `KeepsData`, size 0, typed word = the tag (the tag, not the port, of `localhost:5000/team/api:v1`), effects naming what remains; the last reference refused with "would delete the image" and `d remove`; a missing image, a missing reference, another image's tag and an untagged row refused with "nothing was sent"; a digest reference, a path-shaped reference, an upper-case one and one carrying an escape sequence refused, the sequence never repeated raw | `TestImageUntagPlan` | `go test ./internal/plan -run ImageUntagPlan` |
+| From the independent review: the other references named in the untag confirmation are escaped (an escape sequence and a bidirectional override among them are never drawn raw); a digest reference is not another tag — `u` refuses when only one remains, `d` on the same row is unchanged, and a job whose other tag vanished leaving only a digest reference fails with zero mutations; a holder whose ID is not the daemon's form is refused by the plan and by the job | `TestImageUntagPlanOtherReferences`, `TestImageTagPlanRefusesAnOddHolder`, `TestExecuteUntagRefusesWhenOnlyADigestReferenceRemains`, `TestExecuteTagRefusesMalformedSteps` | `go test ./internal/plan -run 'OtherReferences\|OddHolder\|DigestReference\|Malformed'` |
+| The untag job: one `DELETE /images/<reference>`, never forced, the image left under its other reference, no deletion logged; a moved tag refuses with "the tag moved" and zero mutations; a reference that became the last one refuses with zero mutations and the image intact, and planned afresh is refused before any dialog | `TestExecuteUntagKeepsTheImage`, `TestExecuteUntagRefusesAMovedTag`, `TestExecuteUntagRefusesWhatBecameTheLastReference` | `go test ./internal/plan -run ExecuteUntag` |
+| `t`: the form opens bound to the image's ID and references with nothing sent; typing sends nothing and restates `acme/web` as `acme/web:latest`; Enter starts one job, one request by ID, the row appears, the fake logged the tag and the Events pane shows `img tag`; an explicit tag with a registry port | `TestTagKeyFormAndJob`, `TestTagExplicitTagAndRegistryPort` | `go test ./internal/ui -run 'TestTag'` |
+| Eight refused targets (empty, digest, tag and digest, upper case, bad tag, space, path, image ID): the form says why before Enter and shows no "will create"; Enter keeps the form, says "Nothing was sent", starts no job and sends no mutation | `TestTagRefusedTargetsSendNothing` | `go test ./internal/ui -run TagRefused` |
+| An untagged image is tagged by its ID; read-only and a selection refuse `t` and `u` with nothing sent and no job, and a selection's menu offers neither; a form open on a desk that became read-only refuses on Enter | `TestTagUntaggedImageByID`, `TestTagAndUntagRefusals`, `TestTagFormRefusesWhenReadOnly` | `go test ./internal/ui -run 'TestTag'` |
+| The owner branches: already this image — the form says so, Enter keeps it and sends nothing; another image — named with its short ID, what it keeps and "the tag will MOVE", and Enter completes the move with the other image's data and other tag intact; **the target changed after the form** (absent → another image, B → C, the list not yet caught up) — the job fails with "the target changed", names the new holder and sends no mutation | `TestTagAlreadyThisImageSendsNothing`, `TestTagMoveIsNamedAndCompletes`, `TestTagTargetChangedAfterTheForm` | `go test ./internal/ui -run 'TestTag'` |
+| A move must have been on screen: with the arming delay on, a held target typed and entered in one motion is not taken ("has only just appeared", the holder named, no mutation, no job, the tag where it was), nor is a repeated Enter in the same moment; after the delay Enter completes the move; a plain create typed and entered at once is taken. The same when the image list changes what the target names under an open form | `TestTagMoveTypedAndEnteredAtOnceIsNotTaken`, `TestTagOwnerChangeUnderTheFormMustBeRead` | `go test ./internal/ui -run 'TagMoveTyped\|OwnerChange'` |
+| The source is the image's ID: the row's own reference moving to another image between `t` and Enter does not redirect the tag; a source that vanished is the daemon's 404 and nothing else is tagged | `TestTagSourceIsTheImageIDNotItsReference`, `TestTagSourceGone` | `go test ./internal/ui -run TagSource` |
+| `u`: the typed confirmation names the reference, the image, what remains and that nothing goes to a registry; `y`, a bare Enter, a wrong tag, `remove`, another of the image's tags and the full reference send nothing and say so; the tag removes exactly that reference, the image stays under the other, the row goes, no deletion is logged | `TestUntagTypedTagKeepsTheImage`, `TestNoSingleKeystrokeMutates/untag_(u)` | `go test ./internal/ui -run 'Untag\|NoSingleKeystroke'` |
+| `u` refused before any dialog: the last tag ("only tag", "would delete the image", `d remove`), an untagged row (no request at all), and a tag that became the last one since the list was drawn; a tag that moved after the confirmation, and one that became the last after it, fail the job with zero mutations and the image intact | `TestUntagRefusedBeforeAnyDialog`, `TestUntagRefusesAMovedTag`, `TestUntagCannotBecomeADeletion` | `go test ./internal/ui -run Untag` |
+| The local boundary: under `--no-registry`, with a credential helper configured, both actions work, no pull, push, distribution or auth request is sent, nothing is forced and the helper is never run | `TestTagAndUntagUnderNoRegistry` | `go test ./internal/ui -run NoRegistry` |
+| Both keys work from the Details pane and the action menu; the form fits 80×24 with its longest warning and an error; every action key has a safety test (`t` is a form, `u` is in the table); the keys list and the README document both | `TestTagAndUntagFromDetailsAndMenu`, `TestTagFormFitsTheMinimumTerminal`, `TestEveryActionKeyIsCovered`, `TestTagAndUntagAreDocumented` | `go test ./internal/ui -run 'Tag\|EveryActionKey'` |
+| The real `docker` CLI against the fake: `docker tag` by image ID with no tag (`:latest`), with a registry host and port, tagging what is there, a move from another image (that image keeps its data and other tags), a missing source, a digest target; `docker rmi` of one of several tags only untags | the `== tag` section (11 checks) | `make crosscheck` |
+| End to end: the real binary at 150×42 under `--no-registry` tags an image (the form, one request by ID, the new row, the `img tag` event), shows the move warning and declines it, untags with the tag typed (`y` refused), and the image stays; the last tag is refused before any dialog; at 80×24 in read-only mode both keys are refused with nothing sent | `TestTagAndUntagImage`, `TestUntagLastTagRefused`, `TestTagAndUntagReadOnly` | `go test ./internal/e2e -run 'Tag\|Untag'` |
+
+Screens: `docs/screens/74-tag-form.txt`, `75-tag-done.txt`, `76-tag-move-warning.txt`,
+`77-untag-confirm.txt`, `78-untag-done.txt`, `79-untag-last-tag-refused.txt` (150×42) and
+`80-tag-80x24-read-only.txt`. The captures whose Images hint line now lists `t tag  u untag`
+were regenerated.
+
+**What is not proven.** Between the job's inspect of the target and the tag request there is
+no lock: the Engine API has no compare-and-swap for a tag, so another client moving the target
+inside those few milliseconds is not noticed (the same window every pinned action of the desk
+has). The real daemon was not sent a tag: the test guard forbids a mutation on anything but
+the fake, and the endpoint's shape is what `make crosscheck` checks with Docker's own CLI.
+A daemon that lists a digest reference (`repo@sha256:…`) among an image's tags was stood in
+for by the fake only; `u` treats such a reference as not keeping the image, which is the safe
+reading whatever a given daemon does with it.
+
+What was run for this round, on Linux with Go 1.26.5 and Docker CLI against the fake only.
+The test suite needs a short temporary directory: the fake daemon listens on a unix socket
+under `os.TempDir()`, and a path longer than 108 bytes cannot be bound — every command below
+was run with `TMPDIR=/tmp`.
+
+- `gofmt -l`, `go vet ./...` — clean.
+- `go test ./...` — every package passed, `internal/e2e` (96 s) and `internal/ui` (184 s)
+  included.
+- `go test -race -p 1 ./...` — every package passed except one test in `internal/ui`,
+  `TestReaderTakesEveryKey` (round twenty-four's reader; it presses neither `t` nor `u`), which
+  saw one stray container-inspect `GET`. It is a timing flake that this round did not cause:
+  under the race detector it failed 1 run in 40 on this branch and 2 in 80 on an untouched
+  checkout of `HEAD`, and 0 in 40 without the detector. It was left as found. No data race was
+  reported anywhere; the new tests passed under the detector in every run.
+- `make crosscheck` — 152 passed, 0 failed (11 of them the new `== tag` section).
+- `make e2e` — **not green, and not because of this round.** `TestRecreateCarriesADefaultVolume`
+  failed in both full runs on this branch and in a full run on an untouched checkout of `HEAD`
+  (as round twenty-three recorded); `TestComposeDeclared` failed in both runs here and passed
+  on `HEAD`'s one run, and both pass when run alone on this branch, with and without
+  `-update-screens`. The same package passed in full, twice, without `-update-screens` (above).
+  The three tag tests passed in every run. Only the captures this round changes were kept —
+  the seven new ones and the nine existing ones whose Images hint line now lists
+  `t tag  u untag` (08, 24, 27, 37, 42, 43, 52, 65, 68); every other rewritten capture was
+  restored, so no capture from a failed test is committed. Task 5.3 of the change is therefore
+  left open rather than ticked.
+
 ## Running everything
 
 ```sh

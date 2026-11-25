@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake2746966929/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…929/d.sock ●]                                                                                            M picker  < > focus
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (1 of 19) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: acme/solo ━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│Waiting for engine events…                    │
+│▸ Images        19│┃▸ acme/solo               1             55b9c290a914     6.0MB     5d         - ┃│Everything the daemon does                    │
+│  Volumes        7│┃                                                                                ┃│shows up here as it happens.                  │
+│  Networks       7│┃                                                                                ┃│                                              │
+│  Compose        2│┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│  ● 7 running     │┃                                                                                ┃│                                              │
+│  ‖ 1 paused      │┃                                                                                ┃│                                              │
+│  ○ 5 stopped     │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┃                                                                                ┃│                                              │
+│                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                              │
+│                  │┌─ 3 Details: acme/solo:1 ──────────────────── [Info] Inspect Findings Upstream ─┐│                                              │
+│                  ││Reference  acme/solo:1                                                          ││                                              │
+│                  ││ID         55b9c290a914                                                         ││                                              │
+│                  ││Size       6.0MB                                                                ││                                              │
+│                  ││Created    2026-11-20 18:55:51  (5d ago)                                        ││                                              │
+│                  ││Platform   linux/amd64                                                          ││                                              │
+│                  ││Layers     2                                                                    ││                                              │
+│                  ││Command    /bin/app                                                             ││                                              │
+│                  ││Workdir    /                                                                    ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││References                                                                      ││                                              │
+│                  ││  acme/solo:1                                                                   │└──────────────────────────────────────────────┘
+│                  ││                                                                                │┌─ 5 Jobs ─────────────────────────────────────┐
+│                  ││Used by                                                                         ││No jobs yet.                                  │
+│                  ││  no container                                                                  ││Everything that changes the daemon            │
+│                  ││                                                                                ││runs here, in the background.                 │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+ acme/solo:1 is the image's only tag: removing it would delete the image. Nothing was sent — use d remove to delete it.
+ ↑↓ move  Space select  / filter  ⏎ actions  P pull  p push  d remove  X prune  t tag  u untag  w save archive  U upstream   Tab pane  ? keys  q quit

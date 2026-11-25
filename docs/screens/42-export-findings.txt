@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/TestExportFromTheSandbox3651155387/002/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/TestExportFromTheSandbox3285721593/002/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
  Daemons [◆1 /tmp/TestEx…02/sb.sock ●]                                                                                  M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Images (1 of 22) ──────────────────────────────────── filter: python ─┐┌─ 4 Events ────────────────────── ● live ─┐
 │  Containers    13││  REPOSITORY          TAG         IMAGE ID          SIZE    AGE   USED BY ││Waiting for engine events…                │
@@ -27,7 +27,7 @@
 │                  │┃      ┃                                                                                    ┃                          │
 │                  │┃      ┃ Enter review  Tab format  Esc cancel                                               ┃──────────────────────────┘
 │                  │┃      ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───────────────── 1 done ─┐
-│                  │┃───────────────────────────────────────────────────────────────── 1 of 4 ─┃│▸ ✓ analyse image python:3.12-slim    26ms│
+│                  │┃───────────────────────────────────────────────────────────────── 1 of 4 ─┃│▸ ✓ analyse image python:3.12-slim    22ms│
 │                  │┃why      The program the command names is not in the image: a container ca┃│                                          │
 │                  │┃         nnot start.                                                      ┃│                                          │
 │                  │┃evidence python3 is not in the final filesystem                           ┃│                                          │
@@ -37,4 +37,4 @@
 │                  │┃                                                                          ┃│                                          │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────┘
  ✓ analyse image python:3.12-slim
- / find  ↑↓ finding  o order  v reveal  i packages  w export  [ ] tab  P pull  p push  d remove  X prune  U upstr… Tab pane  ? keys  q quit
+ / find  ↑↓ finding  o order  v reveal  i packages  w export  [ ] tab  P pull  p push  d remove  X prune  t tag  … Tab pane  ? keys  q quit

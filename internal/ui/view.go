@@ -794,6 +794,14 @@ func (m *Model) helpLines(w int) []string {
 				"  when complete: mode 0600, never over a file, never into a folder created",
 				"  for it. A cancel or failure removes the partial file. In the Details pane",
 				"  w wraps text; the action menu (Enter) offers save archive from either pane.",
+				"  t tags one image (never a selection) with another local reference: the form",
+				"  restates it — acme/api is acme/api:latest; a digest or an invalid reference",
+				"  is refused — and names the image a tag would move from. The request is for",
+				"  the image's ID; the job inspects the target again and tags nothing if it",
+				"  names another image than the form showed. u removes this row's reference,",
+				"  typed with its tag, only while another reference remains: on the last tag it",
+				"  refuses (that would delete the image; use d remove). Both are local: no",
+				"  registry is contacted, so --no-registry leaves them available.",
 			)
 		}
 	}
@@ -844,7 +852,8 @@ func (m *Model) helpLines(w int) []string {
 		"    • a selection, whatever the action: type the word with the count shown",
 		"      (stop 3, remove 7) and press Enter. The dialog lists every object, and",
 		"      under \"Not included\" each selected one left out, with the reason.",
-		"    • pull, new volume/network, shell: you type the name; Enter submits.",
+		"    • pull, new volume/network, shell, tag: you type the name; Enter submits.",
+		"    • untag, push: type the tag shown and press Enter.",
 		"  A dialog ignores those keys for its first quarter of a second, and a key",
 		"  pressed while a confirmation is still being prepared drops it: nothing typed",
 		"  ahead, or typed for something else, can consent. Esc always works at once.",

@@ -52,6 +52,8 @@ func mutations(srv *fakeengine.Server) []mutation {
 		{name: "prune networks", kind: KindNetworks, key: "X", tier: plan.TierTyped, word: "prune", title: "Prune networks", wantReq: "DELETE 1×/networks/"},
 		// Appended, not inserted: other tests pick entries by index.
 		{name: "push image", kind: KindImages, row: "nginx:1.27", key: "p", tier: plan.TierTyped, word: "1.27", title: "Push image", wantReq: "POST /images/docker.io/library/nginx/push"},
+		// Images' u: the word is the tag, and only that reference goes.
+		{name: "untag (u)", kind: KindImages, row: "node:lts-alpine", key: "u", tier: plan.TierTyped, word: "lts-alpine", title: "Untag image", wantReq: "DELETE /images/node:lts-alpine"},
 	}
 }
 
@@ -237,6 +239,7 @@ func TestEveryActionKeyIsCovered(t *testing.T) {
 		fmt.Sprintf("%d/P", KindImages): true, fmt.Sprintf("%d/n", KindVolumes): true,
 		fmt.Sprintf("%d/n", KindNetworks): true, fmt.Sprintf("%d/e", KindContainers): true,
 		fmt.Sprintf("%d/n", KindContainers): true, // TestCreate* in create_test.go
+		fmt.Sprintf("%d/t", KindImages):     true, // TestTag* in tag_test.go
 	}
 	for k := Kind(0); k < kindCount; k++ {
 		for _, a := range kindActions[k] {

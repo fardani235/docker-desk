@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake2715391986/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…986/d.sock ●]                                                                                            M picker  < > focus
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (5 of 19) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: acme/api ━┓┌─ 4 Events ────────────────────────── ● live ─┐
+│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│  18:55:50 img tag        acme/api:release-7  │
+│▸ Images        19│┃▸ acme/api                3.29.0        51d1711ee5b8    48.0MB     2d         - ┃│                                              │
+│  Volumes        7│┃  acme/api                latest        8387789bd2a4    52.0MB     9d         - ┃│                                              │
+│  Networks       7│┃  acme/api                previous      8387789bd2a4    52.0MB     9d         - ┃│                                              │
+│  Compose        2│┃  acme/api                release-7     51d1711ee5b8    48.0MB     2d         - ┃│                                              │
+│                  │┃  acme/api                stable        51d1711ee5b8    48.0MB     2d         - ┃│                                              │
+│  ● 7 running     │┃                                                                                ┃│                                              │
+│  ‖ 1 paused      │┃                                                                                ┃│                                              │
+│  ○ 5 stopped     │┃                                                                                ┃│                                              │
+│                  │┃           ┏━ ◆ Tag image ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
+│                  │┃           ┃                                                                                    ┃                               │
+│                  │┃           ┃ image      acme/api:3.29.0  (51d1711ee5b8)                                         ┃                               │
+│                  │┃           ┃ daemon     unix:///tmp/ddfake2715391986/d.sock  (context default)                  ┃                               │
+│                  │┗━━━━━━━━━━━┃ tags       acme/api:3.29.0, acme/api:stable, acme/api:release-7                    ┃                               │
+│                  │┌─ 3 Details┃                                                                                    ┃                               │
+│                  ││Reference  ┃ New reference, repository[:tag]:                                                   ┃                               │
+│                  ││ID         ┃ > acme/api                                                                         ┃                               │
+│                  ││Size       ┃   will create acme/api:latest                                                      ┃                               │
+│                  ││Created    ┃ ▲ It names image 8387789bd2a4 now, which keeps its 1 other reference: the tag will ┃                               │
+│                  ││Platform   ┃   MOVE to image 51d1711ee5b8. Image 8387789bd2a4 keeps its data.                   ┃                               │
+│                  ││Layers     ┃                                                                                    ┃                               │
+│                  ││Command    ┃ • Local only: no registry is contacted, and nothing is pulled or pushed.           ┃                               │
+│                  ││Workdir    ┃ • The image is tagged by its ID. The target is checked again just before the       ┃                               │
+│                  ││           ┃   request: if it then names another image than shown here, nothing is tagged.      ┃                               │
+│                  ││References ┃                                                                                    ┃                               │
+│                  ││  acme/api:┃ Enter tag  Esc cancel                                                              ┃───────────────────────────────┘
+│                  ││  acme/api:┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛────────────────────── 1 done ─┐
+│                  ││  acme/api:release-7                                                            ││▸ ✓ tag image acme/api:release-7          14ms│
+│                  ││                                                                                ││                                              │
+│                  ││Used by                                                                         ││                                              │
+│                  ││  no container                                                                  ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+│                  ││                                                                                ││                                              │
+└──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
+ ✓ tag image acme/api:release-7
+ ↑↓ move  Space select  / filter  ⏎ actions  P pull  p push  d remove  X prune  t tag  u untag  w save archive  U upstream   Tab pane  ? keys  q quit

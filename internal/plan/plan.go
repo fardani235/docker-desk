@@ -18,6 +18,7 @@ import (
 	"github.com/distribution/reference"
 
 	"github.com/fardani235/docker-desk/internal/engine"
+	"github.com/fardani235/docker-desk/internal/escape"
 )
 
 // Snapshot is the engine state a plan is computed from.
@@ -64,6 +65,7 @@ const (
 	OpRename
 	OpPruneBuildCache
 	OpPushImage
+	OpTagImage
 )
 
 var opVerbs = map[Op]string{
@@ -72,7 +74,7 @@ var opVerbs = map[Op]string{
 	OpCreateVolume: "create", OpRemoveVolume: "remove", OpCreateNetwork: "create",
 	OpRemoveNetwork: "remove", OpConnect: "connect", OpDisconnect: "disconnect",
 	OpCreateContainer: "create", OpCopyIn: "copy", OpRename: "rename", OpPruneBuildCache: "prune",
-	OpPushImage: "push",
+	OpPushImage: "push", OpTagImage: "tag",
 }
 
 func (o Op) String() string { return opVerbs[o] }
@@ -103,6 +105,10 @@ type Step struct {
 	// place. Execute refuses it if the reference has since become the
 	// image's last one (the request would then delete the image).
 	KeepsData bool
+	// KeepsTag marks Images' untag (u): besides KeepsData, another tag — not
+	// only a digest reference — must still name the image when the request
+	// is sent.
+	KeepsTag bool
 	// MustBeUnused marks a prune step on a tagged image. An untag is not
 	// refused by the daemon when the image is in use, so Execute checks for
 	// containers using the image itself before sending it.
@@ -120,6 +126,9 @@ type Step struct {
 	// FailNote, when set, is logged after the step fails: what the failure
 	// leaves behind, in the operator's terms.
 	FailNote string
+	// Tag is an OpTagImage step's target and the image the form showed as
+	// holding it; ID is the source image's ID.
+	Tag *TagStep
 	// Copy is an OpCopyIn step's source, destination and the walk the
 	// confirmation showed; ID and Name are the container's.
 	Copy *CopyStep
@@ -569,8 +578,12 @@ func ImageRemove(snap Snapshot, imageID, ref string) (Plan, error) {
 		p.TotalSize = 0
 		p.Steps[0].Size = 0
 		p.Steps[0].KeepsData = true
+		// References are the daemon's words: drawn escaped.
+		for i := range rest {
+			rest[i] = escape.Name(rest[i])
+		}
 		p.Effects = []string{
-			fmt.Sprintf("Only the reference %s is removed.", ref),
+			fmt.Sprintf("Only the reference %s is removed.", escape.Name(ref)),
 			fmt.Sprintf("The image data stays: it is still referenced as %s.", strings.Join(rest, ", ")),
 		}
 		if users := snap.ImageUsers(img); len(users) > 0 {

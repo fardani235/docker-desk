@@ -1,8 +1,9 @@
 # image-operations Specification
 
 ## Purpose
-Defines the image actions available from the desk: pulling by name, removing, and pruning
-unused images.
+Defines the image actions available from the desk: pulling by name, removing, pruning
+unused images, giving an image another local tag, and removing one of an image's tags while
+the image stays.
 
 ## Requirements
 

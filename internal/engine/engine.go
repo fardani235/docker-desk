@@ -116,6 +116,14 @@ type Engine interface {
 	// RemoveImage removes a reference (untagging) or an image ID. An image in
 	// use is refused by the daemon.
 	RemoveImage(ctx context.Context, ref string) ([]ImageDelete, error)
+	// TagImage gives the image source (an ID or reference) the target tag
+	// locally (POST /images/{name}/tag?repo=…&tag=…). No registry is
+	// contacted. target must be a named reference without a digest; a
+	// target with no tag means ":latest". A target that already names
+	// another image is moved by the daemon without a word: callers that
+	// must not move a tag unseen inspect the target first (plan.Execute
+	// does). Nothing is forced and exactly one reference is written.
+	TagImage(ctx context.Context, source, target string) error
 
 	CreateVolume(ctx context.Context, name string) (Volume, error)
 	RemoveVolume(ctx context.Context, name string) error

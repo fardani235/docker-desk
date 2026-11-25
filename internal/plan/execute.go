@@ -243,6 +243,8 @@ func describe(st Step) string {
 		return "copy into " + st.Name
 	case OpRename:
 		return fmt.Sprintf("rename container %s to %s", escape.Name(st.Name), escape.Name(st.Rename))
+	case OpTagImage:
+		return fmt.Sprintf("tag image %s as %s", engine.ShortID(st.ID), escape.Name(st.Name))
 	case OpConnect:
 		return fmt.Sprintf("connect %s to %s", st.OtherName, st.Name)
 	case OpDisconnect:
@@ -409,6 +411,8 @@ func executeRequest(ctx context.Context, eng engine.Engine, st Step, run *jobs.R
 			}
 		}
 		return err
+	case OpTagImage:
+		return executeTag(ctx, eng, st, run)
 	case OpCreateVolume:
 		_, err := eng.CreateVolume(ctx, st.ID)
 		return err
@@ -453,11 +457,22 @@ func checkImagePin(ctx context.Context, eng engine.Engine, st Step) error {
 		return err
 	}
 	if trimSHA(d.ID) != trimSHA(st.Pin) {
-		return fmt.Errorf("%s now refers to a different image (%s) than the one that was shown (%s); nothing was removed",
-			st.ID, engine.ShortID(d.ID), engine.ShortID(st.Pin))
+		return fmt.Errorf("the tag moved: %s now refers to a different image (%s) than the one that was shown (%s); nothing was removed",
+			escape.Name(st.ID), escape.Name(engine.ShortID(d.ID)), escape.Name(engine.ShortID(st.Pin)))
 	}
 	if st.KeepsData && len(d.Refs()) <= 1 {
-		return fmt.Errorf("%s has become the image's only reference: removing it now would delete the image, which is not what was confirmed", st.ID)
+		return fmt.Errorf("%s has become the image's only reference: removing it now would delete the image, which is not what was confirmed", escape.Name(st.ID))
+	}
+	if st.KeepsTag {
+		others := 0
+		for _, r := range d.Refs() {
+			if r != st.ID && !strings.Contains(r, "@") {
+				others++
+			}
+		}
+		if others == 0 {
+			return fmt.Errorf("%s has become the image's only tag: removing it now would delete the image, which is not what was confirmed", escape.Name(st.ID))
+		}
 	}
 	if st.MustBeUnused {
 		cs, err := eng.Containers(ctx)
