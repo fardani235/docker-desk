@@ -526,7 +526,7 @@ func (m *Model) onDialogKey(k tea.KeyMsg) tea.Cmd {
 		case "up", "k":
 			d.pickSel = clamp(d.pickSel-1, 0, len(d.items)-1)
 		case "enter":
-			if d.pickSel < len(d.items) && m.armed() {
+			if d.pickSel < len(d.items) && m.armed() && !d.items[d.pickSel].disabled {
 				id, pick := d.items[d.pickSel].id, d.onPick
 				m.dlg = nil
 				return pick(m, id)
@@ -617,7 +617,9 @@ func (m *Model) closeDialog() {
 // only places from which a mutation can start.
 func (m *Model) onPlanKey(k tea.KeyMsg) tea.Cmd {
 	d := m.dlg
-	p := d.plan
+	// A copy is judged as the session is now: a target that has left
+	// since the dialog opened leaves nothing to confirm.
+	p := m.livePlan(d.plan)
 	key := k.String()
 
 	// Keys that never confirm anything.

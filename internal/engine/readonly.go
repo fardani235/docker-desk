@@ -60,6 +60,12 @@ func (r *readOnlyEngine) RemoveImage(context.Context, string) ([]ImageDelete, er
 	return nil, ErrReadOnly
 }
 
+// LoadImage adds an image to the daemon's store and can move a tag:
+// refused before anything is sent, and without reading a byte of the archive.
+func (r *readOnlyEngine) LoadImage(context.Context, io.Reader, Platform, func(LoadProgress)) (LoadResult, error) {
+	return LoadResult{}, ErrReadOnly
+}
+
 // TagImage writes a local reference, and can move one: refused.
 func (r *readOnlyEngine) TagImage(context.Context, string, string) error { return ErrReadOnly }
 

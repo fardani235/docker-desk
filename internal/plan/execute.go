@@ -23,6 +23,11 @@ import (
 // returned. Cancellation is honoured between steps: what was already done is
 // reported, nothing further is sent.
 func Execute(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run) error {
+	// An image copy acts on two daemons; this function has one. Refused
+	// before anything else, so that nothing at all is sent.
+	if p.ImageCopy != nil || hasCopyStep(p) {
+		return errors.New("internal error: an image copy runs between two daemons (plan.ExecuteCopy), not on one; nothing was sent")
+	}
 	if !p.Runnable() {
 		return errors.New("internal error: tried to execute a plan that is not runnable")
 	}
@@ -245,6 +250,8 @@ func describe(st Step) string {
 		return fmt.Sprintf("rename container %s to %s", escape.Name(st.Name), escape.Name(st.Rename))
 	case OpTagImage:
 		return fmt.Sprintf("tag image %s as %s", engine.ShortID(st.ID), escape.Name(st.Name))
+	case OpCopyImage:
+		return fmt.Sprintf("copy image %s to another daemon", escape.Name(st.Name))
 	case OpConnect:
 		return fmt.Sprintf("connect %s to %s", st.OtherName, st.Name)
 	case OpDisconnect:
@@ -499,4 +506,14 @@ func humanBytes(n int64) string {
 		exp++
 	}
 	return fmt.Sprintf("%.1f %cB", float64(n)/float64(div), "kMGTPE"[exp])
+}
+
+// hasCopyStep reports whether any step is an image copy.
+func hasCopyStep(p Plan) bool {
+	for _, st := range p.Steps {
+		if st.Op == OpCopyImage {
+			return true
+		}
+	}
+	return false
 }

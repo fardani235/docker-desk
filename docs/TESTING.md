@@ -1387,6 +1387,150 @@ was run with `TMPDIR=/tmp`.
   restored, so no capture from a failed test is committed. Task 5.3 of the change is therefore
   left open rather than ticked.
 
+## Round twenty-six: copying an image between daemons
+
+A copy is the first action that writes to a daemon the operator is not looking at, with bytes
+another daemon wrote. It is proven from five directions: Docker's client library against the
+fake and against a stub daemon (the request, the decoding and its bounds); the real `docker`
+CLI against the fake (`docker save | docker load` between two fakes: the endpoint's shape);
+the plan and its two-engine executor against two fakes (what is re-checked, what is refused,
+what is claimed); the archive guard against archives built for the purpose and against
+archives a **real** daemon writes, read-only; and the UI model and the real binary key by
+key. The fakes' request logs and the target's load log (`LoadRequests`: the bytes that
+arrived, the image registered, every reference moved and from which image) are the witnesses,
+so "the source is only read", "nothing was sent" and "no tag moved" are assertions.
+
+| Property | Tests | Run |
+| --- | --- | --- |
+| The request: one `POST /images/load` with `application/x-tar`, the archive reaching the daemon byte for byte, `platform` sent to API 1.48+ and omitted for 1.47; messages decoded (progress never past its total, an unknown JSON message ignored, a non-JSON line passed on as text), "Loaded image" and "Loaded image ID" collected | `TestLoadImageRequest`, `TestLoadImagePlatformGuard`, `TestLoadImageIntoTheFake` | `go test ./internal/engine -run Load` |
+| A daemon's error is the load's error in its words: inside a 200 answer (`errorDetail`, or `error` alone) and as an HTTP refusal; nothing is reported loaded | `TestLoadImageStreamError`, `TestLoadImageHTTPError` | `go test ./internal/engine -run Load` |
+| The answer is bounded: a 2 MiB message ends the load instead of being buffered; of 1000 "Loaded image" lines 64 are kept; a 100 kB status is cut at 4 KiB | `TestLoadImageBoundsTheStream` | `go test ./internal/engine -run Load` |
+| Cancelling closes the request, during the answer and during the upload (the fake sees the archive stop and registers nothing); the result is the context's error | `TestLoadImageCancel` | `go test ./internal/engine -run Load` |
+| Read-only: `LoadImage` returns `ErrReadOnly` without reading a byte of the archive or sending a request; the wrapper covers every mutating method (25) | `TestLoadImageReadOnly`, `TestReadOnlyCoversEveryMutation` | `go test ./internal/engine -run 'Load\|ReadOnlyCovers'` |
+| The fake's load: both archive layouts register the image under its reference with the config's diff IDs and platform, named by the config's digest; a second load changes nothing; an existing tag is moved and its image keeps its data; an untagged archive loads untagged; four malformed archives load nothing; a refusal before the archive and a failure inside the answer register nothing | `TestLoadRegistersTheArchive`, `TestLoadMovesAnExistingTag`, `TestLoadUntagged`, `TestLoadRefusesAMalformedArchive`, `TestLoadInjectedFailure` | `go test ./internal/fakeengine -run Load` |
+| The plan: typed, the word is the tag or the short ID; effects name the image, size, platform and both daemons; tag new / named by another image (warned, recorded) / the same build already there (blocked, by content, under another ID) / target unreadable (blocked) / target ID not a digest (blocked); untagged and digest-only rows go by ID; insecure links warned for each end; no platform said | `TestCopyImagePlan` | `go test ./internal/plan -run CopyImagePlan` |
+| Refused before a dialog: image gone, an ID that is not a digest, a reference not the image's, a reference that does not read back as itself, an answer for another image, the same daemon twice, a platform that is not plain words (six shapes: a query, a traversal, a space, an escape sequence, 33 characters, JSON) | `TestCopyImagePlanRefusals`, `TestCopyPlanRefusesAnOddPlatform` | `go test ./internal/plan -run 'CopyImagePlanRefusals\|OddPlatform'` |
+| The comparison: the same build under two IDs is the same; nil and empty are equal; platform, a layer, fewer, more, reordered layers, command, entrypoint, user, environment names, labels and ports each differ and are named; a hostile layer ID is escaped | `TestSameBuild` | `go test ./internal/plan -run SameBuild` |
+| One copy's requests: the source gets its pin and exactly one `GET /images/get` (the reference, the platform) and no mutation; the target its state, exactly one `POST /images/load` and, after it, one inspect and its history; no push, pull, distribution or auth request to either; **no file on this machine** — the job runs with a temporary directory, home and working directory that are one empty folder and leaves it empty | `TestExecuteCopySuccess` | `go test ./internal/plan -run ExecuteCopySuccess` |
+| The image arrives: under the tag, as the same build, under another ID than the source's; an untagged one untagged; a tag another image held is moved, named before and reported after, and that image keeps its other names; the target's other images untouched | `TestExecuteCopySuccess`, `TestExecuteCopyUntagged`, `TestExecuteCopyMovesTheTargetTag` | `go test ./internal/plan -run ExecuteCopy` |
+| Nothing is streamed when: the source tag moved, the source image is gone, the source cannot be read, the target gained the tag, the target's tag moved to another image or to none, the target cannot be read, the source refuses the archive — each with zero loads and zero mutations on either daemon | `TestExecuteCopyRefusesBeforeTheStream`, `TestExecuteCopyTargetChangedFromTheDialog` | `go test ./internal/plan -run ExecuteCopy` |
+| Failures are attributed: the source's stream breaking mid-way names the source and the bytes; the target refusing (HTTP) or failing (in its answer) names the target with its message; the target stopped mid-load is "became unreachable … after N were streamed"; none produces an image, none claims one, the source is unchanged | `TestExecuteCopySourceFailsMidStream`, `TestExecuteCopyTargetFails`, `TestExecuteCopyTargetDisconnects` | `go test ./internal/plan -run ExecuteCopy` |
+| Cancel mid-stream: the job is cancelled, both streams closed (the target sees its request end and registers nothing), layers "may remain", no ✓ | `TestExecuteCopyCancel` | `go test ./internal/plan -run ExecuteCopyCancel` |
+| Verification: another layer chain, another platform, another config, nothing under the name, and a target that cannot be read afterwards each fail the job, named, with no ✓; an image without layers says what was compared | `TestExecuteCopyVerification`, `TestExecuteCopyOfALayerlessImage` | `go test ./internal/plan -run 'ExecuteCopyVerification\|Layerless'` |
+| **The archive guard.** Passed, in pieces of 1, 7, 512, 513, 4096, 32768 bytes and whole, with every byte handed on: both layouts tagged and untagged, the manifest first, the long form of a tag, zero padding, and the exact shape a containerd-store daemon writes for one platform (two descriptors, one an attestation). Refused, each before the last byte of the file at fault is handed on: another tag beside or instead of the confirmed one, any tag on an untagged copy, a digest reference, two images, none, a second `manifest.json`, `a/../manifest.json`, `./manifest.json`, `Manifest.JSON`, a naming file that is a symlink, a hard link or a directory, an entry placed through a link to the root, `index.json` and `repositories` naming another, a hostile name (escaped), not a tar, data after the end, a truncated archive, an 8 MiB naming file | `TestArchiveGuardPassesWhatADaemonWrites`, `TestArchiveGuardRefuses`, `TestArchiveGuardReleasesItsReader` | `go test ./internal/plan -run ArchiveGuard` |
+| A source that sends more than was confirmed: an archive naming the target's `resident:1` beside or instead of the copy's tag is stopped — `resident:1` still names its image, the target registered nothing, no ✓; a truncated archive is the source's failure; a target that reports a reference beyond the confirmed one fails the job; an untagged image is found by the IDs the archive carries when the target reports none | `TestExecuteCopyRefusesAnArchiveThatNamesMore`, `TestExecuteCopyRefusesATruncatedArchive`, `TestExecuteCopyChecksWhatTheTargetSaysItLoaded`, `TestExecuteCopyFindsAnUntaggedImageByTheArchivesOwnIDs` | `go test ./internal/plan -run ExecuteCopy` |
+| What a daemon says is text: an escape sequence, a title change, a bell, a forged "✓" line and a carriage return from the target's load stream reach the job's log, status and error escaped | `TestExecuteCopyEscapesTheTarget`, `noControl` in every failure test | `go test ./internal/plan -run ExecuteCopy` |
+| Read-only (either engine): refused before any request to either daemon. `plan.Execute` refuses a copy plan, and a copy step smuggled into another plan, with nothing sent. A malformed copy plan — no specification, blocked, two steps, another operation, an odd image ID, a pin that differs, an odd target owner, one daemon twice, a step naming something else, a tag not normalised, a path in the tag, an odd platform, not typed — is refused with nothing sent; one engine twice is not two daemons | `TestExecuteCopyReadOnly`, `TestExecuteRefusesACopyPlan`, `TestExecuteCopyRefusesAMalformedPlan`, `TestCopyPlanRefusesAnOddPlatform` | `go test ./internal/plan -run 'Copy'` |
+| One job on two daemons: recorded under the target with the source in `From`; "running on" both; removing either is refused, names the job and marks nothing; a third daemon is not held; never started when either is closing, or when the pair is not two different daemons; single-daemon jobs unchanged | `TestPairHoldsBothDaemons`, `TestPairRefusedWhenEitherDaemonIsClosing`, `TestPairNeedsTwoDifferentDaemons`, `TestSingleDaemonJobsAreUnchanged` | `go test ./internal/jobs -run 'Pair\|Daemon'` |
+| The session: removing the source or the target of a running copy is a `RefusedError` naming it; a focus change does not interrupt it; afterwards both can be removed, and a copy cannot start on them | `TestRemovalRefusedForEitherDaemonOfACopy` | `go test ./internal/session -run Removal` |
+| The action: with one daemon, or with only disconnected others, `C` says a second connected daemon is needed and names `M`, with zero requests; a selection refuses; read-only refuses from the key and from the menu with zero requests to either daemon; `--no-registry` copies | `TestCopyNeedsASecondConnectedDaemon`, `TestCopyRefusesASelectionAndReadOnly`, `TestCopyIsAvailableUnderNoRegistry` | `go test ./internal/ui -run Copy` |
+| The chooser: opening it asks neither daemon about the image; connected members are listed with name, endpoint, engine and version; a disconnected one is listed as unusable with its reason and Enter on it does nothing and sends nothing; choosing one builds the confirmation with reads only | `TestCopyChooserListsMembers` | `go test ./internal/ui -run CopyChooser` |
+| The confirmation: both daemons by name, endpoint and context, the image, short ID, platform and tag carried; tag created / moved (the other image's short ID) / already present (refused; typing and `y` send nothing) / target unreadable (refused); an untagged row's word is its short ID; Enter alone, `y` and a wrong word send nothing and the dialog stays; a chooser and a confirmation that have only just appeared ignore input typed ahead | `TestCopyConfirmationTagEffect`, `TestCopyUntaggedImage`, `TestCopyConfirmationIsTyped`, `TestCopyConfirmationMustBeReadFirst` | `go test ./internal/ui -run Copy` |
+| The session changing under the dialog: the target removed, or its daemon lost, turns the open confirmation into a refusal — "The target is gone" — that no key gets past; a focus change drops the dialog; a daemon being removed when the word is completed gets no job that runs | `TestCopyTargetRemovedWhileTheDialogIsOpen`, `TestCopyFocusChangeDropsTheDialog`, `TestCopyNotStartedOnADaemonBeingRemoved` | `go test ./internal/ui -run Copy` |
+| Long endpoints and small terminals: with the longest socket path a unix socket allows and a 43-character context name, at 80×24, 100×30 and 140×40, every frame is exactly the terminal's size, both endpoints are in the identity block in full, no identity line is wider than the dialog, the prompt and the input are on screen, and the copy completes | `TestCopyConfirmationFitsLongEndpointsAndTheMinimumTerminal` | `go test ./internal/ui -run CopyConfirmationFits` |
+| The job in the desk: the image appears on the target and in its list once focused; the source has no mutation and the same images and references; the job is recorded against both daemons, listed and announced as `on <target> from <source>`, its output names both endpoints; while it runs the bytes are shown, neither daemon can be removed, a third is not held, focus moves without interrupting it; `c` cancels it and the target registers nothing; a target failure is announced with both names and the daemon's escape sequence as text | `TestCopyJobCopiesTheImage`, `TestCopyJobCancelAndHeldDaemons`, `TestCopyFailureIsAnnouncedWithBothDaemons`, `TestTwoDaemonJobIsNamedWithBoth` | `go test ./internal/ui -run 'Copy\|TwoDaemonJob'` |
+| A daemon's own name is text: a target whose `/info` name carries an escape sequence, a title change and a bell reaches no frame as control characters — in the chooser, the header or the "connected" notice (the last two were raw before this round) | `TestCopyEscapesTheTargetsOwnName` | `go test ./internal/ui -run CopyEscapes` |
+| The safety tables and the documents: every action key is covered; the help, the action menu and README name `C` and say what it does and does not do | `TestEveryActionKeyIsCovered`, `TestCopyIsDocumented` | `go test ./internal/ui -run 'EveryActionKey\|Documented'` |
+| End to end, the real binary and two fake daemons: the chooser, the confirmation, `y` and Enter without the word sending nothing, the job, exactly one load on the target and no mutation on the source, no registry request, **an empty home and temporary directory afterwards**, "Already present" on the second attempt, the target's list after focusing it; at 80×24 a copy whose tag will move, neither daemon removable from the picker while it runs, a cancel that leaves the tag where it was; `--read-only` refusing before the chooser | `TestCopyImageBetweenDaemons`, `TestCopyImageMovesATagAndCancels`, `TestCopyImageReadOnly` | `go test ./internal/e2e -run CopyImage` |
+| The real CLI against the fake: `docker save` on one fake piped into `docker load` on another prints the daemon's "Loaded image" line, the image has the saved layers and is listed under its tag, the same archive again changes nothing, and what is not an archive is refused | the `== image load` section | `make crosscheck` |
+| A real daemon's archives, read-only (opt-in): saved by tag and by ID for the inspected platform, three images, each passes the guard for what was asked and is refused for an untagged copy and for another reference | `TestRealDaemonImageCopyGuardReadOnly` | `make real-readonly-check` |
+
+Screens, from the real binary: `docs/screens/81-copy-image-destination.txt`,
+`82-copy-image-confirm.txt`, `83-copy-image-done.txt`, `84-copy-image-already-present.txt`
+(160×44), and at 80×24 `85-copy-image-tag-moves-80x24.txt` and
+`86-copy-image-cancelled-80x24.txt`.
+
+**The `image-copy` scenarios, walked (task 6.2).** Every scenario of the change's four spec
+files has a test above: *the key*, *several selected*, *read-only*, *no registry* (the action
+tests); *one daemon only*, *choosing a destination*, *a disconnected destination*, *the chosen
+daemon is removed before confirming* (the chooser and dialog tests); *a tagged image*, *an
+untagged image*, *the wrong word*, *`y` is not consent*; *the tag is new / names another image
+/ the image is already there / the target cannot be read*; *tag moved*, *gone*, *platform*,
+*the source is unchanged*; *success*, *cancelled*, *the source fails mid-stream*, *the target
+refuses or fails*, *the target disconnects*; *the same build, whatever the store calls it*,
+*different content*, *nothing to inspect*; *removing the source / the target*, *focus moves*;
+and from the modified capabilities *a copy spans two daemons*, *removing either daemon of a
+copy*, *a copy names its target* and *an existing target tag moves*. One thing no scenario
+can be automated for: **a load into a real daemon**. The test guard refuses a read-write
+connection to anything but a fake, by design, so the real daemon's handling of `POST
+/images/load` — and of its `platform` parameter on a classic image store — is known from
+Docker's API documentation, from the real CLI driving the fake, and from real archives read
+through the guard, not from a real load.
+
+**What is not proven.** Between the job's inspect of the target and the daemon's own load
+there is no lock (the Engine API has no conditional load). A hostile target can answer the
+verification as it likes. A hostile source can add unnamed manifests to an OCI archive, which
+a containerd target keeps as untagged images: no name is created or moved. An untagged copy
+between two real daemons depends on the target answering for one of the IDs the archive
+carries, or reporting its own; that was exercised against the fake and against the real
+daemon's archives, not against a real load. The fake's size-only images are not
+self-consistent (DECISIONS K5) and do not copy.
+
+What was run for this round, on Linux with Go 1.26.5, Docker CLI 29 against the fake, and —
+read-only — Docker 29.10 (containerd image store, API 1.57). As before, every command needs a
+short temporary directory, and `internal/ui` has a test that names `/tmp` itself: all were run
+with `TMPDIR=/tmp`.
+
+- `gofmt -l cmd internal`, `go vet ./...` — clean.
+- `make test` (`go test ./...`) — three full runs. The first failed two existing UI tests
+  this round had to answer for: `TestEveryActionKeyIsCovered` (the new action had no entry in
+  the safety table) and `TestSaveArchiveMenuAndDetailsKey` (the new hint pushed
+  `w save archive` off the 140-column hint line — which is why `C` is now the last Images
+  action). The second, with the feature and the archive guard complete, passed every package
+  (27; `internal/e2e` 109 s, `internal/ui` 192 s). The third, after the last small change to
+  the guard, passed every package but `internal/e2e`, which lost `TestSpace` for the reason
+  in the next point but one; `internal/plan` and `internal/ui` passed in it.
+- An untouched checkout of `HEAD` (a separate worktree) — every package passed, once, before
+  anything was changed: the baseline.
+- `go test -race -p 1 ./...` — 26 packages passed, `internal/ui` included, and **no data race
+  was reported anywhere**; the changed packages (`engine`, `fakeengine`, `jobs`, `plan`,
+  `session`) passed under the detector again on the finished tree. `internal/e2e` lost two
+  tests in that run (see next).
+- `internal/e2e` is **flaky on this machine, on this branch and on `HEAD`**, and the three
+  new tests are not among the failures. The package was green in four full runs on this
+  branch (118, 109, 103 and 101 s) and lost one to three tests in seven others — a different
+  test nearly every time (`TestComposeDeclared` most often; `TestSession`,
+  `TestPackagesView`, `TestSpace`, `TestFilesView`, `TestFilesInTheSandbox`,
+  `TestSaveImageArchiveCancel`, `TestRecreateCarriesADefaultVolume`, `TestMouseClickAndWheel`
+  once each). Four full runs of an untouched `HEAD`, back to back in the same hour, were
+  green twice and lost `TestComposeDeclared` twice and `TestRecreateCarriesADefaultVolume`
+  once; `TestComposeDeclared` alone fails about one run in four on both. The one failure
+  read in full was not a wrong screen: the harness had sent `Esc`, `Esc`, `q` 15 ms apart,
+  the view was still open and "the program did not exit within 8s". The likely reading —
+  not proven — is that the loaded machine delivered the keys in one read and the terminal
+  layer took an `Esc` and the key after it for one chord. Run alone, `TestSpace` passed 8 of 8 and `TestMouseClickAndWheel` 12 of 12 on both
+  trees; `TestSession`, `TestPackagesView`, `TestFilesInTheSandbox` and
+  `TestSaveImageArchiveCancel` 4 of 4; `TestFilesView` 3 of 4, the failure just described.
+  `TestCopyImageBetweenDaemons`, `TestCopyImageMovesATagAndCancels` and
+  `TestCopyImageReadOnly` passed in every run, full or alone. The harness's key pacing was
+  left as found: it is not this round's, and changing it would touch every e2e test.
+- `make crosscheck` — 157 passed, 0 failed (5 of them the new `== image load` section).
+- `make e2e` — **not green, and not because of this round**: `TestComposeDeclared` and
+  `TestRecreateCarriesADefaultVolume` failed in its one run, as rounds twenty-three and
+  twenty-five recorded. Only the captures this round changes were kept — the six new ones
+  (81–86) and the eleven existing ones whose Images hint line now ends
+  `… w save archive  C copy to daemon` (08, 37, 52, 65, 68, 74–79), all from tests that
+  passed; every other rewritten capture was restored, so no capture from a failed test is
+  in the tree.
+- `DOCKER_DESK_REAL_HOST=unix:///var/run/docker.sock go test ./internal/plan -run
+  TestRealDaemonImageCopyGuardReadOnly -v` — the opt-in read-only check (GET and HEAD only,
+  enforced below the engine) against the machine's real daemon. Its **first run failed**:
+  the guard refused every real archive, because a containerd-store daemon lists an unnamed
+  attestation manifest beside the platform's (DECISIONS K6). With the rule corrected it
+  passes: three images, each saved by ID and by tag for its platform (about 250 MB read and
+  discarded), each passed for what was asked and refused for an untagged copy and for another
+  reference. Nothing was written to that daemon, by this test or by anything else in this
+  round; the test logs byte counts only. The archive metadata of the smallest local image
+  (`hello-world`) was looked at with `docker save | tar -xO index.json manifest.json` to see
+  the shape.
+- README's "Trying it safely" steps for a copy were walked with the built binaries:
+  `fake-dockerd` twice, `docker context create second …` under a scratch `DOCKER_CONFIG`
+  (the operator's own configuration untouched), the desk on the first; `acme/report:1.4`
+  copied and verified, `redis:7` — a size-only image — loaded and refused by the
+  verification, as the text says.
+- The independent review (DECISIONS K6): nothing critical or high; one medium and four low
+  findings, all fixed, each with a test named in the table above.
+
 ## Running everything
 
 ```sh

@@ -100,6 +100,11 @@ var kindActions = [kindCount][]action{
 		// not mutating, so read-only mode allows it (saveimage.go).
 		{key: "w", label: "save archive…", desc: "write this image's archive (docker save) to one local file; the tag is kept", needsRow: true,
 			listOnly: true, run: (*Model).openSaveArchive},
+		// Copying streams this image into another daemon of the session:
+		// the one action with two daemons (imagecopy.go). It is last, so
+		// that on a line too short for every hint it is the newest one
+		// that is cut; the action menu and ? list them all.
+		copyImageAction,
 	},
 	KindVolumes: {
 		{key: "n", label: "new…", desc: "create a volume", mutating: true, ignoresSet: true, run: func(m *Model, _ row) tea.Cmd { return m.openForm(formVolume) }},

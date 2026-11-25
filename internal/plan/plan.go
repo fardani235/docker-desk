@@ -66,6 +66,9 @@ const (
 	OpPruneBuildCache
 	OpPushImage
 	OpTagImage
+	// OpCopyImage is the one step of an image copy between two daemons.
+	// It is never sent by Execute: ExecuteCopy runs it, with two engines.
+	OpCopyImage
 )
 
 var opVerbs = map[Op]string{
@@ -74,7 +77,7 @@ var opVerbs = map[Op]string{
 	OpCreateVolume: "create", OpRemoveVolume: "remove", OpCreateNetwork: "create",
 	OpRemoveNetwork: "remove", OpConnect: "connect", OpDisconnect: "disconnect",
 	OpCreateContainer: "create", OpCopyIn: "copy", OpRename: "rename", OpPruneBuildCache: "prune",
-	OpPushImage: "push", OpTagImage: "tag",
+	OpPushImage: "push", OpTagImage: "tag", OpCopyImage: "copy",
 }
 
 func (o Op) String() string { return opVerbs[o] }
@@ -208,11 +211,31 @@ type Plan struct {
 	// list Execute compares the daemon's report with. Listed stays false —
 	// the one step does not map to the records (docs/DECISIONS.md).
 	BuildCache *BuildCachePreview
+	// ImageCopy marks an image copy between two daemons and holds what it
+	// was confirmed on: both daemons' identities, the pin and the target's
+	// state. Such a plan has exactly one OpCopyImage step and is executed
+	// by ExecuteCopy, never by Execute (openspec change
+	// copy-image-between-daemons, D6). It holds no engine.
+	ImageCopy *ImageCopySpec
 }
 
 // Runnable reports whether the plan may be confirmed.
 func (p Plan) Runnable() bool {
-	return len(p.Blockers) == 0 && p.Nothing == "" && len(p.Steps) > 0
+	if len(p.Blockers) != 0 || p.Nothing != "" || len(p.Steps) == 0 {
+		return false
+	}
+	// A copy is exactly one copy step with its specification, and a copy
+	// step is never part of any other plan.
+	copies := 0
+	for _, st := range p.Steps {
+		if st.Op == OpCopyImage {
+			copies++
+		}
+	}
+	if p.ImageCopy != nil {
+		return copies == 1 && len(p.Steps) == 1
+	}
+	return copies == 0
 }
 
 // NotApplicable is returned instead of a Plan when an action makes no sense

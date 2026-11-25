@@ -821,3 +821,72 @@ func TestBackgroundExitsAreRateLimited(t *testing.T) {
 		t.Fatalf("after the gap: %+v", n)
 	}
 }
+
+// TestRemovalRefusedForEitherDaemonOfACopy: a job that spans two daemons —
+// an image copy — holds both. Removing the source or the target is refused
+// and names the job; once it ends, both can go (openspec change
+// copy-image-between-daemons, D8).
+func TestRemovalRefusedForEitherDaemonOfACopy(t *testing.T) {
+	a, b, c := startFake(t, "a"), startFake(t, "b"), startFake(t, "c")
+	mgr := jobs.NewManager()
+	t.Cleanup(mgr.Close)
+	s := newSession(t, Config{Jobs: mgr})
+	launch(t, s, a, false)
+	source := add(t, s, endpoint(b.Host(), "laptop"))
+	target := add(t, s, endpoint(c.Host(), "staging"))
+	connected(t, source)
+	connected(t, target)
+
+	gate := make(chan struct{})
+	id, err := mgr.StartOnPair(target.Daemon(), source.Daemon(), "copy image", "acme/api:3.28.3", func(ctx context.Context, r *jobs.Run) error {
+		select {
+		case <-gate:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range []*Member{source, target} {
+		_, err := s.Remove(m.ID())
+		var refused *RefusedError
+		if !errors.As(err, &refused) {
+			t.Fatalf("removing %s during the copy: %v", m.Name(), err)
+		}
+		if len(refused.Jobs) != 1 || refused.Jobs[0].ID != id || refused.Jobs[0].From != source.Daemon() || refused.Jobs[0].Daemon != target.Daemon() ||
+			!strings.Contains(err.Error(), "copy image acme/api:3.28.3") || !strings.Contains(err.Error(), m.Name()) {
+			t.Fatalf("the refusal for %s does not name the copy: %v", m.Name(), err)
+		}
+		if s.Get(m.ID()) != m || m.State() != Connected || mgr.Closing(m.Daemon()) {
+			t.Fatalf("a refused removal changed %s", m.Name())
+		}
+		if jobsOn := s.RunningJobs(m); len(jobsOn) != 1 || jobsOn[0].ID != id {
+			t.Fatalf("RunningJobs(%s) = %+v", m.Name(), jobsOn)
+		}
+	}
+	// The job is still running: neither refusal touched it.
+	if j, _ := mgr.Get(id); j.State != jobs.Running {
+		t.Fatalf("the copy is %v", j.State)
+	}
+	// Moving focus does not interrupt it either.
+	if _, err := s.Focus(target.ID()); err != nil {
+		t.Fatal(err)
+	}
+	if j, _ := mgr.Get(id); j.State != jobs.Running {
+		t.Fatalf("after a focus change the copy is %v", j.State)
+	}
+	close(gate)
+	waitFor(t, "the copy to end", func() bool { return len(mgr.RunningOn(source.Daemon()))+len(mgr.RunningOn(target.Daemon())) == 0 })
+	for _, m := range []*Member{source, target} {
+		if _, err := s.Remove(m.ID()); err != nil {
+			t.Fatalf("removing %s after the copy: %v", m.Name(), err)
+		}
+	}
+	// And a copy cannot start on a daemon that has left.
+	ran := false
+	if _, err := mgr.StartOnPair(target.Daemon(), source.Daemon(), "copy image", "x", func(context.Context, *jobs.Run) error { ran = true; return nil }); !errors.Is(err, jobs.ErrDaemonClosing) || ran {
+		t.Fatalf("a copy started on removed daemons: err %v, ran %v", err, ran)
+	}
+}

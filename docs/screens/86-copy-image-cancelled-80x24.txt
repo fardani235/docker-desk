@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake231190752/d.sock  ctx default  ● connected
+ Daemons [◆1 /tmp/ddfake…752/d.sock ●] │  2 staging ●       M picker  < > focus
+┌─┏━ ◆ Job #1 output ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓─┐
+│ ┃                                                                          ┃E│
+│▸┃ from daemon unix:///tmp/ddfake231190752/d.sock                           ┃s│
+│ ┃                                                                          ┃ │
+│ ┃ image acme/report:1.4, by its tag, pinned to efc03945f57b                ┃─┘
+│ ┃ platform linux/amd64                                                     ┃─┐
+│ ┃ from /tmp/ddfake231190752/d.sock (unix:///tmp/ddfake231190752/d.sock)    ┃ │
+│ ┃ to   staging (unix:///tmp/ddfake122796890/d.sock)                        ┃ │
+│ ┃ the target's acme/report:1.4 names image b40bd0435a3f now: the load move ┃ │
+│ ┃ s it to the copied image                                                 ┃ │
+│ ┃ streaming: GET /images/get on the source → POST /images/load on the targ ┃ │
+│ ┃ et                                                                       ┃ │
+│ ┃ cancelled: both streams were closed. Layers the target already accepted  ┃ │
+└─┃ may remain in its store; no image and no moved tag is claimed            ┃─┘
+┌─┃ 79.9 kB were streamed before the cancel                                  ┃━┓
+│W┃ the source was only read: nothing on it was created, moved or removed    ┃s┃
+│E┃                                                                          ┃ ┃
+│s┃ Error: cancelled                                                         ┃ ┃
+│ ┃                                                                          ┃ ┃
+└─┃ ↑↓ PgUp PgDn scroll  Esc close  4–19 of 19                               ┃━┛
+ c┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛s…
+ ↑↓ move  Enter output  c cancel  x clear finished     Tab pane  ? keys  q quit

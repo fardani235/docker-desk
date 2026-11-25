@@ -1,0 +1,44 @@
+ Docker Desk  unix:///tmp/ddfake3240146581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…581/d.sock ●] │  2 staging ●                                                                                       M picker  < > focus
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (1 of 16) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: acme/report ━┓┌─ 4 Events ───────────────────────────── ● live ─┐
+│  Containers    13│┃  REPOSITORY                   TAG             IMAGE ID          SIZE    AGE   USED BY ┃│Waiting for engine events…                       │
+│▸ Images        16│┃▸ acme/report                  1.4             efc03945f57b     114MB     2s         - ┃│Everything the daemon does                       │
+│  Volumes        7│┃                ┏━ ◆ Copy image to another daemon ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ as it happens.                     │
+│  Networks       7│┃                ┃                                                                                    ┃                                    │
+│  Compose        2│┃                ┃ image      acme/report:1.4  (efc03945f57b)                                         ┃                                    │
+│                  │┃                ┃ from       /tmp/ddfake3240146581/d.sock  unix:///tmp/ddfake3240146581/d.sock       ┃                                    │
+│  ● 7 running     │┃                ┃            (context default)                                                       ┃                                    │
+│  ‖ 1 paused      │┃                ┃ to         staging  unix:///tmp/ddfake577938491/d.sock  (context staging)          ┃                                    │
+│  ○ 5 stopped     │┃                ┃ platform   linux/amd64 · tag acme/report:1.4                                       ┃                                    │
+│                  │┃                ┃                                                                                    ┃                                    │
+│                  │┃                ┃ • Copies image efc03945f57b (114.4 MB as the source lists it), platform            ┃                                    │
+│                  │┃                ┃   linux/amd64, from /tmp/ddfake3240146581/d.sock to staging.                       ┃                                    │
+│                  │┃                ┃ • The archive streams directly from the source daemon into the target daemon,      ┃                                    │
+│                  │┃                ┃   through this desk's memory only: no file is written on this machine and no       ┃                                    │
+│                  │┗━━━━━━━━━━━━━━━━┃   registry is contacted.                                                           ┃                                    │
+│                  │┌─ 3 Details: acm┃ • Only this platform is sent: one archive, one image. The copy never retags and    ┃                                    │
+│                  ││Reference  acme/┃   sends no other tag: an archive that names anything else is stopped before the    ┃                                    │
+│                  ││ID         efc03┃   target has it whole.                                                             ┃                                    │
+│                  ││Size       114MB┃ • Immediately before the stream, acme/report:1.4 is checked to still name image    ┃                                    │
+│                  ││Created    2026-┃   efc03945f57b on the source, and the target to hold what is shown here; otherwise ┃                                    │
+│                  ││Platform   linux┃   nothing is sent.                                                                 ┃                                    │
+│                  ││Layers     5    ┃ • Afterwards the image is inspected on the target: its layers, platform and config ┃                                    │
+│                  ││Command    pytho┃   must be the source's. The two daemons may give the same build different IDs.     ┃                                    │
+│                  ││Workdir    /app ┃ • The source is only read: nothing on it is created, moved or removed.             ┃                                    │
+│                  ││User       repor┃ • It runs as one background job that holds both daemons: neither can be removed    ┃                                    │
+│                  ││Exposes    8000/┃   from the session until it ends. Cancelling closes both streams; layers the       ┃                                    │
+│                  ││                ┃   target already accepted may remain there, with no image and no moved tag.        ┃────────────────────────────────────┘
+│                  ││References      ┃                                                                                    ┃─────────────────────────── 1 done ─┐
+│                  ││  acme/report:1.┃ ✗ REFUSED — nothing will be sent to the daemon                                     ┃e acme/report:1.4 on staging f… 11ms│
+│                  ││                ┃   Already present: staging holds this build as acme/report:1.4 (image ee7f885de343 ┃                                    │
+│                  ││Used by         ┃   there: the same layers, platform and config). Nothing needs copying, and nothing ┃                                    │
+│                  ││  no container  ┃   was sent.                                                                        ┃                                    │
+│                  ││                ┃                                                                                    ┃                                    │
+│                  ││                ┃ Esc close                                                                          ┃                                    │
+│                  ││                ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                                    │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+└──────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└─────────────────────────────────────────────────┘
+ ✓ copy image acme/report:1.4 on staging from /tmp/ddfake3240146581/d.sock
+ ↑↓ move  Space select  / filter  ⏎ actions  P pull  p push  d remove  X prune  t tag  u untag  w save archive  C copy to daemon  U u… Tab pane  ? keys  q quit

@@ -51,6 +51,14 @@ type pickItem struct {
 	label  string
 	detail string
 	tone   tone
+	// disabled marks an item that is listed and cannot be chosen: it is
+	// drawn dim, Enter and a second click on it do nothing, and reason
+	// says why, beneath the list, while it is highlighted.
+	disabled bool
+	reason   string
+	// more is the highlighted item in full, beneath the list: what a row
+	// of the list has no room for (an endpoint is never cut off there).
+	more []string
 }
 
 // dialog is whatever overlay is open. Only one can be open at a time, and
@@ -99,7 +107,10 @@ type dialog struct {
 	pickNote  string
 	items     []pickItem
 	pickSel   int
-	onPick    func(m *Model, id string) tea.Cmd
+	// pickVerb is what Enter is said to do; "" means the usual
+	// "continue to confirmation".
+	pickVerb string
+	onPick   func(m *Model, id string) tea.Cmd
 
 	// dlgMenu
 	menu       []action
@@ -277,6 +288,10 @@ func (m *Model) runPlan(p plan.Plan) int {
 	if !p.Runnable() {
 		return 0
 	}
+	if p.ImageCopy != nil {
+		// The one plan with two daemons: its own job, on both.
+		return m.runCopyImage(p)
+	}
 	eng := m.eng
 	id := m.startJob(p.JobTitle, p.JobTarget, func(ctx context.Context, run *jobs.Run) error {
 		return plan.Execute(ctx, eng, p, run)
@@ -420,7 +435,7 @@ func bullets(st styles, glyph string, t tone, items []string, w int) []string {
 // terminal with a long confirmation it is not; then the whole middle scrolls
 // as one, rather than pushing the prompt and the input off the screen.
 func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
-	p := d.plan
+	p := m.livePlan(d.plan)
 	st := m.st
 	var ident, info, tail []string
 
@@ -432,7 +447,12 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 		}
 		ident = append(ident, line)
 	}
-	ident = append(ident, m.daemonLines(w, true)...)
+	if p.ImageCopy != nil {
+		// A copy names two daemons, each in full: never just "the daemon".
+		ident = append(ident, m.copyIdent(p, w)...)
+	} else {
+		ident = append(ident, m.daemonLines(w, true)...)
+	}
 	if p.Registry != "" {
 		// A push: where it goes and with which credential — its source,
 		// never a value.
@@ -714,16 +734,45 @@ func (m *Model) pickerBody(d *dialog, w, maxBody int) (string, []string) {
 		it := d.items[i]
 		line := fit(it.label, w-22) + "  " + fit(it.detail, 18)
 		m.recordDialogRow(len(body), hitPickerRow, i, 0, it.id)
-		if i == d.pickSel {
+		switch {
+		case i == d.pickSel && it.disabled:
+			// Highlighted, and plainly not choosable: no selection bar.
+			body = append(body, st.tone(toneDim, "▸ "+line))
+		case i == d.pickSel:
 			body = append(body, st.selected.Render("▸ "+line))
-		} else {
+		case it.disabled:
+			body = append(body, "  "+st.tone(toneDim, line))
+		default:
 			body = append(body, "  "+st.tone(it.tone, line))
 		}
 	}
 	if len(d.items) > room {
 		body = append(body, st.tone(toneDim, fmt.Sprintf("  %d of %d", d.pickSel+1, len(d.items))))
 	}
-	body = append(body, "", m.hints("↑↓", "choose", "Enter", "continue to confirmation", "Esc", "cancel"))
+	verb := d.pickVerb
+	if verb == "" {
+		verb = "continue to confirmation"
+	}
+	if d.pickSel < len(d.items) {
+		it := d.items[d.pickSel]
+		if len(it.more) > 0 {
+			body = append(body, "")
+		}
+		for i, text := range it.more {
+			t := toneDim
+			if it.disabled && i == len(it.more)-1 {
+				t = toneWarn
+			}
+			for _, part := range wrapWords(text, w) {
+				body = append(body, st.tone(t, part))
+			}
+		}
+		if it.disabled {
+			body = append(body, "", m.hints("↑↓", "choose another", "Esc", "cancel")+st.tone(toneDim, "   (Enter does nothing on this one)"))
+			return d.pickTitle, body
+		}
+	}
+	body = append(body, "", m.hints("↑↓", "choose", "Enter", verb, "Esc", "cancel"))
 	return d.pickTitle, body
 }
 

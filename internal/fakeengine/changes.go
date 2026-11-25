@@ -54,7 +54,9 @@ func (s *Server) SetImageFixture(ref string, f fixture.Image, sizes ...int64) bo
 		Env: f.Env, ExposedPorts: f.ExposedPorts, Healthcheck: f.Healthcheck,
 	}
 	img.Labels = f.Labels
-	img.layers = nil
+	// Not nil: an image of no layers has none, not the two a size-only
+	// image is given (layersLocked).
+	img.layers = []Layer{}
 	img.Size = 0
 	for i, l := range f.Layers {
 		size := l.ContentSize()

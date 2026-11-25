@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake231190752/d.sock  ctx default  ● connected
+ Daemons [◆1 /tmp/ddfake…752/d.sock ●] │  2 staging ●       M picker  < > focus
+┌─┏━ ◆ Copy image to another daemon ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓━┓
+│ ┃                                                                          ┃E┃
+│▸┃ image      acme/report:1.4  (efc03945f57b)                               ┃s┃
+│ ┃ from       /tmp/ddfake231190752/d.sock                                   ┃ ┃
+│ ┃            unix:///tmp/ddfake231190752/d.sock  (context default)         ┃━┛
+│ ┃ to         staging  unix:///tmp/ddfake122796890/d.sock                   ┃─┐
+│ ┃            (context staging)                                             ┃ │
+│ ┃ platform   linux/amd64 · tag acme/report:1.4                             ┃ │
+│ ┃                                                                          ┃ │
+│ ┃ • Copies image efc03945f57b (114.4 MB as the source lists it), platform  ┃ │
+│ ┃   linux/amd64, from /tmp/ddfake231190752/d.sock to staging.              ┃ │
+│ ┃ • The archive streams directly from the source daemon into the target    ┃ │
+│ ┃   daemon, through this desk's memory only: no file is written on this    ┃ │
+└─┃   machine and no registry is contacted.                                  ┃─┘
+┌─┃   lines 1–6 of 24 · ↑↓ PgUp PgDn scroll — read all of it                 ┃─┐
+│W┃                                                                          ┃ │
+│E┃ Type 1.4 and press Enter to proceed:                                     ┃…│
+│s┃ >                                                                        ┃ │
+│ ┃                                                                          ┃ │
+└─┃ Enter proceed  Esc cancel                                                ┃─┘
+ s┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ↑↓ move  Space select  / filter  ⏎ actions  P pull  … Tab pane  ? keys  q quit

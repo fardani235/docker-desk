@@ -1,0 +1,44 @@
+ Docker Desk  unix:///tmp/ddfake3240146581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…581/d.sock ●] │  2 staging ●                                                                                       M picker  < > focus
+┌─ 1 Kinds ────────┐┌─ 2 Images (1 of 16) ──────────────────────────────────────────── filter: acme/report ─┐┌─ 4 Events ───────────────────────────── ● live ─┐
+│  Containers    13││  REPOSITORY                   TAG             IMAGE ID          SIZE    AGE   USED BY ││Waiting for engine events…                       │
+│▸ Images        16││▸ acme/report                  1.4             efc03945f57b     114MB     2s         - ││Everything the daemon does                       │
+│  Volumes        7││                                                                                       ││shows up here as it happens.                     │
+│  Networks       7││                                                                                       ││                                                 │
+│  Compose        2││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│  ● 7 running     ││                ┏━ ◆ Job #1 output ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                    │
+│  ‖ 1 paused      ││                ┃                                                                                    ┃                                    │
+│  ○ 5 stopped     ││                ┃ ✓ succeeded   copy image acme/report:1.4                                           ┃                                    │
+│                  ││                ┃ started 03:17:08 · ran 11ms                                                        ┃                                    │
+│                  ││                ┃ on daemon unix:///tmp/ddfake577938491/d.sock                                       ┃                                    │
+│                  ││                ┃ from daemon unix:///tmp/ddfake3240146581/d.sock                                    ┃                                    │
+│                  ││                ┃                                                                                    ┃                                    │
+│                  ││                ┃ image acme/report:1.4, by its tag, pinned to efc03945f57b                          ┃                                    │
+│                  │└────────────────┃ platform linux/amd64                                                               ┃                                    │
+│                  │┌─ 3 Details: acm┃ from /tmp/ddfake3240146581/d.sock (unix:///tmp/ddfake3240146581/d.sock)            ┃                                    │
+│                  ││Reference  acme/┃ to   staging (unix:///tmp/ddfake577938491/d.sock)                                  ┃                                    │
+│                  ││ID         efc03┃ streaming: GET /images/get on the source → POST /images/load on the target         ┃                                    │
+│                  ││Size       114MB┃   target: Loaded image: acme/report:1.4                                            ┃                                    │
+│                  ││Created    2026-┃ the target's load ended after 79.9 kB (79872 bytes) were streamed                  ┃                                    │
+│                  ││Platform   linux┃ ✓ copy image acme/report:1.4 done: 79.9 kB streamed, platform linux/amd64          ┃                                    │
+│                  ││Layers     5    ┃   verified on the target: the same 5 layers, platform and config as the source     ┃                                    │
+│                  ││Command    pytho┃   source image efc03945f57b on /tmp/ddfake3240146581/d.sock (unix:///tmp/ddfake324 ┃                                    │
+│                  ││Workdir    /app ┃ 0146581/d.sock)                                                                    ┃                                    │
+│                  ││User       repor┃   target image ee7f885de343 on staging (unix:///tmp/ddfake577938491/d.sock)        ┃                                    │
+│                  ││Exposes    8000/┃   the two stores name this build differently: that is expected, the content is the ┃                                    │
+│                  ││                ┃  same                                                                              ┃────────────────────────────────────┘
+│                  ││References      ┃   acme/report:1.4 was created on the target                                        ┃━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1 done ━┓
+│                  ││  acme/report:1.┃ the source was only read: nothing on it was created, moved or removed              ┃e acme/report:1.4 on staging f… 11ms┃
+│                  ││                ┃                                                                                    ┃                                    ┃
+│                  ││Used by         ┃ ↑↓ PgUp PgDn scroll  Esc close                                                     ┃                                    ┃
+│                  ││  no container  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                                    ┃
+│                  ││                                                                                       │┃                                                 ┃
+│                  ││                                                                                       │┃                                                 ┃
+│                  ││                                                                                       │┃                                                 ┃
+│                  ││                                                                                       │┃                                                 ┃
+│                  ││                                                                                       │┃                                                 ┃
+│                  ││                                                                                       │┃                                                 ┃
+└──────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ copy image acme/report:1.4 on staging from /tmp/ddfake3240146581/d.sock
+ ↑↓ move  Enter output  c cancel  x clear finished                                                                                     Tab pane  ? keys  q quit

@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake691218581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…581/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake2974348808/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…808/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (1 of 16) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: nginx ━┓┌─ 4 Events ────────────────────────── ● live ─┐
 │  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│Waiting for engine events…                    │
 │▸ Images        16│┃▸ nginx                   1.27          f673addec473     188MB    24h     1 ctr ┃│Everything the daemon does                    │
@@ -12,14 +12,14 @@
 │  ○ 5 stopped     │┃           ┏━ ◆ Save the image archive ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
 │                  │┃           ┃                                                                                    ┃                               │
 │                  │┃           ┃ image      nginx:1.27  (f673addec473)                                              ┃                               │
-│                  │┃           ┃ daemon     unix:///tmp/ddfake691218581/d.sock  (context default)                   ┃                               │
+│                  │┃           ┃ daemon     unix:///tmp/ddfake2974348808/d.sock  (context default)                  ┃                               │
 │                  │┃           ┃ saves      the reference nginx:1.27: the archive keeps the tag                     ┃                               │
 │                  │┗━━━━━━━━━━━┃ platform   linux/amd64                                                             ┃                               │
 │                  │┌─ 3 Details┃                                                                                    ┃                               │
 │                  ││Reference  ┃ Local file                                                                         ┃                               │
-│                  ││ID         ┃ > ~/docker-desk-image-nginx-1.27-20261125.tar                                      ┃                               │
-│                  ││Size       ┃   will write /tmp/TestSaveImageArchive65-save-image-form4098694160/001/docker-desk ┃                               │
-│                  ││Created    ┃              -image-nginx-1.27-20261125.tar                                        ┃                               │
+│                  ││ID         ┃ > ~/docker-desk-image-nginx-1.27-20261126.tar                                      ┃                               │
+│                  ││Size       ┃   will write /tmp/TestSaveImageArchive65-save-image-form3002937036/001/docker-desk ┃                               │
+│                  ││Created    ┃              -image-nginx-1.27-20261126.tar                                        ┃                               │
 │                  ││Platform   ┃                                                                                    ┃                               │
 │                  ││Layers     ┃ • The archive is a tar, as `docker save` writes it, for this one platform.         ┃                               │
 │                  ││Command    ┃ • The file is written mode 0600. A file already there is never replaced; the       ┃                               │
@@ -39,4 +39,4 @@
 │                  ││                                                                                ││                                              │
 └──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
 
- ↑↓ move  Space select  / filter  ⏎ actions  P pull  p push  d remove  X prune  t tag  u untag  w save archive  U upstream   Tab pane  ? keys  q quit
+ ↑↓ move  Space select  / filter  ⏎ actions  P pull  p push  d remove  X prune  t tag  u untag  w save archive  C copy to d… Tab pane  ? keys  q quit

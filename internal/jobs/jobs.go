@@ -57,7 +57,12 @@ type Job struct {
 	Target string // what it does it to, e.g. "shop-web-1"
 	// Daemon is the daemon the job acts on, as the operator named it
 	// ("" for a job that was not started on a daemon).
-	Daemon   string
+	Daemon string
+	// From is the second daemon of a job that spans two — the one an image
+	// copy reads from, Daemon being the one it writes to — and "" for every
+	// other job. A job holds both: neither may leave the session while it
+	// runs (CloseDaemon).
+	From     string
 	State    State
 	Started  time.Time
 	Finished time.Time
@@ -191,20 +196,52 @@ var ErrDaemonClosing = errors.New("the daemon is being removed from the session"
 // never called: the job is recorded as failed, with ErrDaemonClosing, so that
 // whoever started it sees it end like any other job.
 func (m *Manager) StartOn(daemon, title, target string, fn Func) (int, error) {
+	return m.start(daemon, "", title, target, fn, nil)
+}
+
+// StartOnPair is StartOn for a job that spans two daemons: it writes to
+// daemon and reads from source (an image copy). The job is recorded under
+// daemon, with source in Job.From, and holds both for as long as it runs.
+// When either is being removed, fn is never called and the job is recorded
+// as failed with ErrDaemonClosing. Both must be named and they must differ:
+// anything else is refused the same way, with nothing run.
+func (m *Manager) StartOnPair(daemon, source, title, target string, fn Func) (int, error) {
+	if daemon == "" || source == "" || daemon == source {
+		return m.start(daemon, source, title, target, fn, ErrBadPair)
+	}
+	return m.start(daemon, source, title, target, fn, nil)
+}
+
+// ErrBadPair is why a two-daemon job was not started: it did not name two
+// different daemons.
+var ErrBadPair = errors.New("internal error: a two-daemon job must name two different daemons; nothing was started")
+
+// on reports whether the job acts on daemon, as its target or its source.
+func (j *Job) on(daemon string) bool {
+	return daemon != "" && (j.Daemon == daemon || j.From == daemon)
+}
+
+// start records a job and runs fn, unless refused is set or one of the
+// job's daemons is being removed: the job is then recorded as failed, and fn
+// is never called.
+func (m *Manager) start(daemon, source, title, target string, fn Func, refused error) (int, error) {
 	ctx, cancel := context.WithCancel(m.ctx)
 	m.mu.Lock()
 	m.nextID++
 	now := time.Now()
-	j := &job{Job: Job{ID: m.nextID, Title: title, Target: target, Daemon: daemon, State: Running, Started: now, Fraction: -1}, cancel: cancel}
+	j := &job{Job: Job{ID: m.nextID, Title: title, Target: target, Daemon: daemon, From: source, State: Running, Started: now, Fraction: -1}, cancel: cancel}
 	m.jobs = append(m.jobs, j)
 	m.trimLocked()
-	if daemon != "" && m.closing[daemon] {
+	if refused == nil && (daemon != "" && m.closing[daemon] || source != "" && m.closing[source]) {
+		refused = ErrDaemonClosing
+	}
+	if refused != nil {
 		cancel()
-		j.State, j.Finished, j.Err = Failed, now, ErrDaemonClosing.Error()
+		j.State, j.Finished, j.Err = Failed, now, refused.Error()
 		m.finished = append(m.finished, j.ID)
 		m.mu.Unlock()
 		m.version.Add(1)
-		return j.ID, ErrDaemonClosing
+		return j.ID, refused
 	}
 	m.mu.Unlock()
 	m.version.Add(1)
@@ -244,7 +281,8 @@ func (m *Manager) StartOn(daemon, title, target string, fn Func) (int, error) {
 
 // CloseDaemon is the job side of removing a daemon from the session. Under
 // the lock that StartOn takes, it either finds jobs still running on the
-// daemon — and returns them, changing nothing — or marks the daemon closing,
+// daemon — as the daemon they write to or, for a two-daemon job, the one
+// they read from — and returns them, changing nothing, or marks the daemon closing,
 // after which StartOn refuses it, and returns nil. Exactly one of a
 // concurrent StartOn and CloseDaemon wins: the job runs and the removal is
 // refused, or the removal goes ahead and the job never runs.
@@ -252,7 +290,7 @@ func (m *Manager) CloseDaemon(daemon string) (running []Job) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, j := range m.jobs {
-		if j.Daemon == daemon && j.State == Running {
+		if j.on(daemon) && j.State == Running {
 			c := j.Job
 			c.Log = nil
 			running = append(running, c)
@@ -283,13 +321,14 @@ func (m *Manager) Closing(daemon string) bool {
 	return m.closing[daemon]
 }
 
-// RunningOn returns the jobs still running on daemon, oldest first.
+// RunningOn returns the jobs still running on daemon, oldest first: those
+// it is the target of and those it is the source of.
 func (m *Manager) RunningOn(daemon string) []Job {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var out []Job
 	for _, j := range m.jobs {
-		if j.Daemon == daemon && j.State == Running {
+		if j.on(daemon) && j.State == Running {
 			c := j.Job
 			c.Log = nil
 			out = append(out, c)

@@ -200,7 +200,10 @@ daemon is one member however it is named: two contexts that reach the same socke
 port (and, for TLS, the same certificates) are one daemon, and the picker says so.
 
 **One daemon is focused.** The panes, every action, the Events history, statistics and logs are
-the focused daemon's: an action always has that one target, named in its confirmation. `>` and
+the focused daemon's: an action always has that one target, named in its confirmation — with one
+exception: **one action may name two** members. Images' `C` copies the highlighted image from
+the focused daemon to another connected one, chosen from the session and named, with the
+source, in its confirmation (see [Copy](#copy--one-image-from-one-daemon-to-another)). `>` and
 `<` move the focus through the connected daemons in order; the line under the header — the
 **strip** — lists every member, marks the focused one with `◆`, and shows each one's state
 (`●` connected, `✗` disconnected, `…` connecting, `ro` read-only). When focus moves, the
@@ -223,7 +226,8 @@ with the reason, and retried every 1 to 15 seconds; the rest of the session is u
 
 **Removing a daemon** — `d` on it in the picker, then `y` — is allowed for any member, the launch
 daemon too. It is refused while a job runs on that daemon, and the picker names the job: let it
-finish, or cancel it in the Jobs pane. Removal closes the daemon's streams and connection and
+finish, or cancel it in the Jobs pane. An image copy runs on two daemons and holds both: neither
+its source nor its target can be removed until it ends. Removal closes the daemon's streams and connection and
 ends the ssh process started for it; nothing on the daemon changes. When the focused daemon
 goes, focus moves to another connected one and the status line says which. When the last one
 goes, the desk stays open on an empty state that says no daemon is connected: no action key
@@ -231,7 +235,8 @@ does anything there, `M` adds one, `q` quits.
 
 **Jobs belong to their daemon.** A pull keeps running on its daemon when you focus another, and
 the Jobs pane lists it with that daemon's name (`pull image redis:7 @staging`); its outcome is
-announced the same way.
+announced the same way. A copy between daemons is one job with both names:
+`copy image acme/api:3.28.3 on staging from laptop`.
 
 **Read-only is one flag for the whole session.** With `--read-only` every daemon refuses
 changes, including those added later; the picker says so before you add one, and the strip marks
@@ -893,6 +898,96 @@ tab-separated) or JSON — with every path's type, size, mode and layer and, for
 what it did to it; names escaped as on screen. Before the archive is read there is no index,
 and nothing is written.
 
+### Copy — one image, from one daemon to another
+
+`C` on an Images row copies **that image** from the focused daemon to **another connected daemon
+of the session** — a laptop build onto a staging engine, an image onto a host with no registry
+to reach. The archive the source daemon writes (`GET /images/get`, what `docker save` gives) is
+the body of the target daemon's `POST /images/load`, as it arrives: **no file on this machine**,
+no temporary tar, and **no registry** — so `--no-registry` leaves it available. It is in the
+action menu (`Enter`) too. `--read-only` refuses it before anything opens: the load is a write.
+
+- **One image, the one you saw.** The image is captured — ID, reference, name — when `C` is
+  pressed. With a selection, `C` refuses (it works on one image at a time) and nothing is sent.
+- **The destination is a member of the session.** `C` lists every other daemon of the session
+  with its name, endpoint, engine and version. A daemon that is not connected is listed with
+  the reason and cannot be chosen. With no other connected daemon, `C` says so and names `M`,
+  the picker that adds one; the copy itself never adds a context or asks for an endpoint.
+  Nothing is sent to either daemon until a destination is chosen.
+- **The tag travels; nothing is retagged.** A tagged row is saved by its reference, so the
+  image arrives under the same `repo:tag`. An untagged row — or one that has only a digest
+  reference — is saved by its ID and **arrives untagged**; `t` tags it on the target
+  afterwards. The copy never offers another name, and never sends another tag of the image.
+- **One platform, stated.** The platform is the one the source inspects the image as — the
+  same as Save, Files and Findings. It is named in the dialog and the job, sent with the save
+  and, to a target whose API has the parameter (1.48), with the load.
+- **The dialog names both daemons and what happens to the tag.** Before it opens, the desk
+  reads the source (its lists, and the image's inspect) and the target (its inspect of the
+  reference the copy will carry). The confirmation shows `from` and `to` — each daemon's name,
+  its endpoint in full, its context and how it is reached — the image, its short ID and the
+  platform, and says one of: the tag **is created** on the target; the tag **names image
+  `<short id>` there now and the load moves it** (that image keeps its data and loses the name);
+  or **Already present** — the target holds the same build under that name, and the copy is
+  refused with nothing sent. A target that cannot be read is refused too. An endpoint that is
+  not secured (`NO TLS`, `TLS NOT VERIFIED`) is warned about: the image's contents cross it.
+- **Typed, like a push.** Type the tag (`3.28.3`), or the short image ID for an image that
+  arrives untagged, and press Enter. `y`, Enter alone and anything else send nothing. If the
+  target leaves the session, or loses its daemon, while the dialog is open, the dialog says
+  the target is gone and offers only Esc.
+- **Checked again, then streamed.** The job inspects the source reference — if it names
+  another image now, nothing is streamed and the job says *the tag moved* — and the target
+  — if what it holds under that name is not what the dialog showed, nothing is streamed
+  and the job says *the target changed*. Then one `GET` on the source feeds one `POST` on the
+  target. The job reports the bytes streamed and the target's own latest message. (Docker has
+  no conditional load: another client moving the target's tag between that check and the load
+  itself cannot be prevented; the dialog has already said the tag may move.)
+- **The archive may name only what was confirmed.** A load applies whatever an archive names:
+  every image in it, under every reference it lists, moving any the target has given another
+  image — and the archive is the source daemon's to write. So the bytes are not handed over
+  unread: as they pass, the desk follows the tar's structure (never a layer's contents) and
+  reads the three files a daemon takes names from — `manifest.json`, the OCI layout's
+  `index.json`, and the legacy `repositories`. A second image, any reference but the confirmed
+  one (any reference at all, for an image that arrives untagged), a naming file that is a link
+  or reached through one, an archive that ends early or carries data after its end: each stops
+  the stream **before the bytes that complete it are passed on**, so the target is left with a
+  request that broke off and nothing to load. The job says what the archive named. Afterwards
+  the target's own account of what it loaded is held to the same rule.
+- **Verified by content, not by ID.** After the load, the image is inspected on the target:
+  its ordered layer diff IDs, its platform and its config (command, entrypoint, user, working
+  directory, environment names, ports, labels) must be the source's. The image **ID is not
+  compared**: a classic image store names an image by its config's digest and a containerd
+  store by its manifest's, so the same build has two IDs across them; the job reports both.
+  Anything else fails the job and names the first difference. A target that cannot be read
+  after the load fails it too, saying the load may have completed and nothing is claimed.
+- **One job, two daemons.** The job is listed `copy image <ref> on <target> from <source>`
+  and announced the same way, and it holds both: **neither can be removed** from the session
+  while it runs, and the picker names the copy. Moving focus does not interrupt it. The target
+  is not focused, so its lists are not redrawn here: focus it and they show the image.
+- **Cancel or failure claims nothing.** `c` in the Jobs pane closes both streams. A failure
+  says which daemon failed and in which direction — the source stopped sending after so many
+  bytes or sent an archive that is not what was confirmed, the target refused or failed the
+  load, the target became unreachable. In every such
+  case **layers the target already accepted may remain** in its store, with no image and no
+  moved tag, and nothing is said to exist there that was not inspected. A cancelled or failed
+  copy cannot be resumed: press `C` again.
+- **The source is only read.** Whatever happens, no image or tag on the source daemon is
+  created, moved or removed.
+
+It does not copy volumes, containers or compose projects; several platforms of one image;
+every tag of an image; or a selection. It does not add a daemon to the session, and it keeps
+no file.
+
+Captured from the real binary and two fake daemons: the destination chooser
+[`docs/screens/81-copy-image-destination.txt`](docs/screens/81-copy-image-destination.txt),
+the confirmation [`docs/screens/82-copy-image-confirm.txt`](docs/screens/82-copy-image-confirm.txt),
+the finished job [`docs/screens/83-copy-image-done.txt`](docs/screens/83-copy-image-done.txt),
+the refusal of a build that is already there
+[`docs/screens/84-copy-image-already-present.txt`](docs/screens/84-copy-image-already-present.txt),
+and at 80×24 a copy whose tag will move
+[`docs/screens/85-copy-image-tag-moves-80x24.txt`](docs/screens/85-copy-image-tag-moves-80x24.txt)
+and a cancelled one
+[`docs/screens/86-copy-image-cancelled-80x24.txt`](docs/screens/86-copy-image-cancelled-80x24.txt).
+
 ### Save — an image's archive to a file
 
 `w` in the Images list saves the highlighted image as **one tar on this machine** — the archive
@@ -1049,7 +1144,7 @@ Press `?` inside the desk for the same list.
 | Kind | Keys |
 | --- | --- |
 | Containers | `n` new (create and start, pulling the image first if it is missing) · `s` start · `t` stop · `R` restart · `p` pause · `u` unpause · `K` kill · `d` remove · `e` shell |
-| Images | `P` pull by name (on Upstream showing *moved*: the build the tag names now, by digest) · `p` push this tag to its registry… (typed with the tag; see [Push](#push--one-tag-back-to-its-registry)) · `d` remove · `X` prune · `t` tag… (a local reference for this image; no tag means `:latest`) · `u` untag… (typed with the tag; refused on the last tag; see [Tag and untag](#tag-and-untag--local-names-and-nothing-else)) · `w` save archive… (List pane; a read, allowed in read-only mode; see [Save](#save--an-images-archive-to-a-file)) |
+| Images | `P` pull by name (on Upstream showing *moved*: the build the tag names now, by digest) · `p` push this tag to its registry… (typed with the tag; see [Push](#push--one-tag-back-to-its-registry)) · `d` remove · `X` prune · `t` tag… (a local reference for this image; no tag means `:latest`) · `u` untag… (typed with the tag; refused on the last tag; see [Tag and untag](#tag-and-untag--local-names-and-nothing-else)) · `w` save archive… (List pane; a read, allowed in read-only mode; see [Save](#save--an-images-archive-to-a-file)) · `C` copy to daemon… (to another connected daemon of the session; typed with the tag, or the short ID of an untagged image; see [Copy](#copy--one-image-from-one-daemon-to-another)) |
 | Volumes | `n` new · `d` remove · `X` prune |
 | Networks | `n` new · `d` remove · `X` prune · `c` connect a container · `D` disconnect a container |
 | Compose | `t` stop the whole project · `d` remove the whole project · (menu) compare with the compose file — a read, allowed in read-only mode |
@@ -1060,7 +1155,7 @@ they get a `✓` in the gutter and the title says how many, e.g. `2 Containers (
 The selection belongs to its kind and follows its objects across refreshes; an object that
 disappears leaves it. While a kind has a selection, `s` `t` `R` `p` `u` `K` `d` on Containers
 and `d` on Images, Volumes and Networks apply to every selected object instead of the
-highlighted one. `e` shell, `c` connect, `D` disconnect, `p` push, `t` tag and `u` untag (on Images) and `w` save archive work on one object
+highlighted one. `e` shell, `c` connect, `D` disconnect, `p` push, `t` tag, `u` untag and `C` copy to daemon (on Images) and `w` save archive work on one object
 only and refuse (nothing is sent); `X` prune chooses its own objects and refuses too; `P` pull and `n` new
 (on Containers, Volumes and Networks) are unaffected. The selection is cleared when the job starts, and kept if you decline. `Space`
 still pages in the Details pane; in the Events pane it holds the view.
@@ -1223,6 +1318,12 @@ being careful.
   - push (`p` on Images) → type the tag being published (`3.28.3`) and press Enter. The dialog
     names the registry and the credential's source; the remote tag is created or moved and the
     desk cannot undo it. Nothing local changes. `--read-only` and `--no-registry` refuse it.
+  - copy to daemon (`C` on Images) → choose the destination, then type the tag being copied
+    (`3.28.3`) — the short image ID for an image that arrives untagged — and press Enter. The
+    dialog names both daemons in full, the platform, and whether the tag is created on the
+    target or moved from another image there. Only the target is written to, by one load; the
+    source is only read. Nothing touches a registry or this machine's disk. `--read-only`
+    refuses it before the destination chooser opens.
   - tag (`t` on Images) → you type the new reference; the form restates it (`acme/api` is
     `acme/api:latest`), says it is local, and names the image a tag would move from. Enter
     sends one tag request for the image's ID; the job re-checks the target and tags nothing
@@ -1336,9 +1437,12 @@ When nothing is compared, the tab says why in one sentence and shows no rows:
 
 ## What it does not do
 
-No view across daemons: one is focused at a time, and nothing acts on two at once — no copying
-images or volumes between them. No per-daemon read-only flag, and nothing about the session is
-saved for the next run. No Windows named pipes. No Swarm, no compose
+No view across daemons: one is focused at a time, and nothing acts on two at once except the
+copy of one image between daemons (Images, `C`). That copy is one image, one platform, under the tag it has: no
+copying of volumes, containers or compose projects between daemons, no multi-platform or
+all-tags copy, no retag as part of it, no copy of a selection, no resuming a stream that broke,
+and no copy to a daemon that is not already a connected member of the session. No per-daemon
+read-only flag, and nothing about the session is saved for the next run. No Windows named pipes. No Swarm, no compose
 lifecycle — a compose file is read only for Declared, on request, and never run or
 interpolated (see [Compose, honestly](#compose-honestly)) — no image builds, no Kubernetes. It pushes
 only one existing tag of one image to the registry that tag names (Images, `p`): no retag as part of the push, no
@@ -1465,6 +1569,26 @@ is real; break whatever you like. (The real `docker` CLI works against it too:
 `./bin/fake-dockerd -changes` adds a container for every case Changes has nothing to compare
 (pinned to a digest, created from an ID, a tag that no longer resolves, another platform, an
 unreadable layer) and one rebuilt on another base.
+
+To copy an image between two daemons without having two (Images, `C`), start a second, empty
+fake and give it a context in a scratch Docker configuration — the desk lists that directory's
+contexts in the picker, and nothing in your own `~/.docker` is touched:
+
+```sh
+make build
+./bin/fake-dockerd -socket /tmp/docker-desk-sandbox.sock &
+./bin/fake-dockerd -socket /tmp/docker-desk-second.sock -empty &
+export DOCKER_CONFIG=$(mktemp -d)
+docker context create second --docker host=unix:///tmp/docker-desk-second.sock
+DOCKER_HOST=unix:///tmp/docker-desk-sandbox.sock ./bin/docker-desk
+```
+
+`M`, `Enter` on `second`, `Esc`; then Images, `acme/report:1.4`, `C`. That image is seeded from
+one fixture, so its archive and its inspect agree and the copy verifies. Most of the demo's
+other images are a size and a name with a stand-in archive: copying one of those ends in
+*the target holds another image* (or, for an image the fake lists under two tags, in the
+archive being refused for naming the other one) — the checks doing their work on a fake that
+does not describe that image consistently, not a fault of the copy.
 
 To see how a daemon that is not a local socket is presented, without having one:
 

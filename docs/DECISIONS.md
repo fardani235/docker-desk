@@ -5052,3 +5052,235 @@ See docs/TESTING.md, round twenty-five, for the commands and their results.
 `make e2e` was not green on this machine, on this branch or on an untouched checkout of `HEAD`,
 and one reader test from round twenty-four is flaky under the race detector on both: see
 TESTING.md. Task 5.3 of the change is therefore left open rather than ticked.
+
+## Round twenty-six — copying an image between daemons
+
+The brief was the OpenSpec change `copy-image-between-daemons`: Images' `C` copies the
+highlighted image from the focused daemon to another connected daemon of the session, by
+streaming the source's archive into the target's load — no file, no registry. It was applied
+without the owner in the loop ("where you would ask, decide and record"), with the instruction
+to test and review it as QA and security would. The change's own decisions D1–D11 (design.md)
+were implemented as written; K1–K4 restate them against the code, K5 is everything decided
+where the plan left room or turned out to be wrong, K6 is the review, K7 what was run.
+
+Two facts shape it. Docker has no conditional load: a tag the archive carries is created or
+**moved** on the target without a refusal. And the two daemons need not agree on what an
+image is called: a classic store names it by its config's digest, a containerd store by its
+manifest's.
+
+### K1 — One new engine mutation, decoded and bounded here (D7, D2)
+
+`Engine.LoadImage(ctx, content, platform, progress)` is moby's `ImageLoad`: one `POST
+/images/load?quiet=0` with a raw `application/x-tar` body, and `platform` only when the
+daemon's API is 1.48 or newer (the same guard `SaveImage` has; an older daemon would make the
+library refuse to send). The read-only wrapper refuses it without reading a byte of the
+archive, and `TestReadOnlyCoversEveryMutation` now counts 25.
+
+The library returns the answer as a plain reader, so the engine decodes it: one JSON message
+per line, `errorDetail`/`error` ending the load as an `*engine.Error` in the daemon's words,
+"Loaded image: …" and "Loaded image ID: …" lines collected, and a line that is not JSON passed
+on as text rather than treated as a failure. Because the answer is a hostile daemon's to
+write, it is bounded: a message longer than 1 MiB ends the load with an error instead of being
+buffered, at most 64 references and 64 IDs are kept, and every string passed on is cut at
+4 KiB. A cancelled context is returned as the context's error whichever way the stream ended.
+The method takes no identifier, so there is no path or query for anything to reach.
+
+### K2 — The plan is data; two engines meet only in its executor (D5, D6, D9)
+
+`plan.CopyImage(snap, source, destination)` is pure: it takes the source daemon's snapshot, the
+source's inspect of the image, and what the target answered for the name the copy will carry.
+It builds a typed plan — the word is the tag, or the short image ID — with one `OpCopyImage`
+step, the pin, and both daemons' identities as text and session keys. No engine is stored in
+it. It is blocked when the target could not be read or already holds the same build, and warns
+when the load will move a tag another image holds there, naming that image's short ID.
+
+`plan.ExecuteCopy(ctx, src, dst, p, run)` is the only place an image crosses daemons. In
+order: read-only refused before any request; the source reference inspected and required to
+name the pinned ID as the platform shown; the target inspected and required to hold under that
+name exactly what the dialog recorded; `SaveImage`'s reader handed to `LoadImage` through a
+counting reader; then the target inspected and compared with the source. `plan.Execute`
+refuses a copy plan — and any plan with a copy step in it — before it sends anything, and
+`Plan.Runnable` is false for a copy step without its specification or beside another step.
+
+### K3 — One job on two daemons (D8)
+
+`jobs.Manager.StartOnPair(target, source, …)` records one job under the target with the
+source in `Job.From`. `CloseDaemon` and `RunningOn` match either, under the lock `StartOn`
+takes, so `Session.Remove` refuses the source or the target of a running copy and names it,
+and a copy cannot start once either is being removed. The Jobs pane and the status line say
+`on <target> from <source>`; single-daemon jobs are drawn as before (`@name`).
+
+### K4 — The gates are the existing ones (D4, D10, D11)
+
+`C` is `mutating` and `needsRow` without `setCapable`: `invokeOn` refuses read-only and a
+selection before the chooser opens. The chooser is the generic picker with two additions —
+an item can be `disabled` with a `reason` (drawn dim, Enter and a second click ignored), and
+the highlighted item is shown in full beneath the list. The target is identified by its
+session key; both engines are looked up when the job starts. Nothing refreshes the unfocused
+target's lists: its own event stream marks them dirty.
+
+### K5 — Decided along the way
+
+- **The design's names were taken.** `internal/plan/copy.go`, `copy_test.go` and the type
+  `CopySpec` already exist: they are the copy *into a container* (round eighteen). The new
+  code is `imagecopy.go`, `imagecopy_exec.go` and `imagecopy_test.go`, the specification is
+  `ImageCopySpec`, and the plan's field is `Plan.ImageCopy` (not `Plan.Copy`, which would sit
+  beside the unrelated `Step.Copy`). While applying the change the existing `copy.go` was
+  overwritten once by mistake and restored from git, byte for byte, before anything else was
+  built on it.
+- **`CopyImage` takes two structures, not five arguments.** The tasks named
+  `CopyImage(snap, imageID, ref, platform, destination)`. Deciding "already present" needs
+  the source's whole inspect (see the next point), and the dialog needs the source daemon's
+  identity, so it is `CopyImage(snap, CopySource, CopyDestination)`.
+- **The verification compares the config as well as the layers and platform.** D9 asked for
+  ordered diff IDs and platform. Two builds can share every layer and differ in what they
+  run, and an image with no layers has no diff IDs at all, so `SameBuild` also compares the
+  command, entrypoint, user, working directory, environment variable *names*, exposed ports
+  and labels — all read from the image config, which is the same document in either store.
+  Empty and absent compare equal. The image ID, creation time, size and history are not
+  compared: stores differ on them. The same function decides "already present" before the
+  dialog, so that is a statement about content too, not about IDs.
+- **A row with only a digest reference is copied by ID and arrives untagged.** A digest names
+  content; saving by it yields an archive with no tag, and the typed word would have been a
+  digest. It is treated exactly as an untagged row, and the dialog says so.
+- **Only names the desk can state exactly are sent.** The tag must read back as itself through
+  `NormalizeTag`, and the image ID must be `sha256:` and 64 hex digits, before either is put
+  into a request to *either* daemon — the dialog's read of the target included
+  (`plan.CopyName`), and again in the executor (`checkCopyPlan`). A reference comes from one
+  daemon's list and is sent to the other: this is what keeps a hostile source from choosing a
+  path or a query on the target.
+- **An untagged copy is found on the target by the target's own words.** The target may give
+  the build another ID than the source's, and there is no tag to ask by. The executor asks for
+  the IDs in the target's "Loaded image ID" lines first (only those in the daemon's ID form,
+  at most four), then for the source's ID.
+- **A target that changed since the dialog is refused, even if it now holds the build.** D9
+  says "refusing if its owner changed since the dialog". If another client loaded the same
+  image meanwhile, the job says *the target changed* and sends nothing; pressing `C` again
+  then shows "Already present". Nothing is assumed about a state nobody was shown.
+- **The source's failure is told from the target's.** The HTTP client reports a body that
+  failed to read as a failure of the request it was the body of. The counting reader remembers
+  the source's own read error, and the job names the source when there is one, the target
+  otherwise — "refused or failed the load", or "became unreachable" for a transport error —
+  each with the bytes streamed so far.
+- **The dialog re-judges itself.** A confirmation is modal, but the session can change under
+  it (a daemon dropping, a removal from another path). The plan is drawn and its keys handled
+  through `livePlan`: a target that left the session or lost its daemon, a source no longer
+  focused, or a session that became read-only blocks it — "The target is gone" — and leaves
+  only Esc. The same check runs once more when the job would start.
+- **Both ends are named in full in the dialog, by name only in its sentences.** `daemonLines`
+  became `endpointLines` with the label, name, endpoint, context and link as parameters; a
+  copy's identity block is `from` and `to`, each wrapped and never cut, then the platform and
+  the tag carried. The effects below use the session names, which keeps the confirmation
+  readable at 80×24 with the longest socket path a unix socket allows (tested).
+- **`From` is escaped where it is drawn.** A job's daemons are endpoints the operator wrote,
+  but they are drawn in the Jobs pane, the status line and the job's output: `jobPair`
+  escapes both.
+- **A pre-existing injection path was closed.** The header's `Engine <version> on <name>` and
+  the "connected (Engine … on …)" notice drew the daemon's own `/info` answers raw, so a
+  hostile daemon — more likely now that a second one is part of an action — could send
+  control sequences to the terminal. Both are escaped (`TestCopyEscapesTheTargetsOwnName`).
+  This was outside the change's task list and was fixed because it was found by this round's
+  tests and is three lines.
+- **The fake's size-only images do not copy, and the documents say so.** The fake daemon
+  describes most seeded images by a size and a name: their inspect lists two derived layers
+  while their archive is a stand-in fixture with one. A real daemon cannot disagree with
+  itself like that, and making the fake agree would change the layers, sizes and golden files
+  of fifteen rounds. A copy of such an image loads and then fails verification — correctly:
+  the content is not what the source's inspect said. Tests and captures use images seeded
+  from one fixture (`SetImageFixture`), the demo's `acme/report:1.4` among them, and README's
+  "Trying it safely" names it.
+- **The fake's load is a classic store.** It names the loaded image by its config's digest,
+  whatever the saving daemon called it, so every copy in the tests is a cross-ID copy; it
+  takes the config's diff IDs at their word and does not unpack layers.
+- **Not done:** no multi-platform or all-tags copy, no retag, no selection, no resume, no
+  adding a context from the chooser, no refresh of the target's lists from the job, and no
+  removal of an image that failed verification — the job names what the target holds and
+  leaves it there; deleting was not asked for.
+
+### K6 — Independent review, and the archive guard it led to
+
+An independent security and correctness review of the diff — a separate agent given the code,
+the requirements and the threat model (either daemon hostile: its IDs, references, platform
+strings, messages and name; races between what was shown and what is sent; read-only;
+resource exhaustion; truthfulness; concurrency; no local file and no registry), not these
+conclusions — found nothing critical or high. Its one medium and four low findings were all
+acted on:
+
+- **Medium: a hostile source could create or move tags on the target that nobody was shown,
+  and the job still ended ✓.** The archive is whatever the source sends, and `POST
+  /images/load` applies every image and every reference in it. The pin, the target re-check
+  and the verification all concerned one name; an archive carrying `postgres:16` beside it
+  would have moved the target's `postgres:16` silently, against the dialog's "sends no other
+  tag". Fixed in two layers.
+  **The archive guard** (`internal/plan/imagecopy_guard.go`): every piece of the stream is
+  read by a tar parser before it is handed to the target's request. Layers are skipped; the
+  three files a daemon takes names from are read whole — Docker's `manifest.json` (exactly
+  one image, no `RepoTags` but the confirmed one), the OCI layout's `index.json` (no
+  `io.containerd.image.name` or `org.opencontainers.image.ref.name` but the confirmed
+  reference, or its tag alone), and the legacy `repositories`. For an image that arrives
+  untagged, any name at all is refused. Also refused: a naming file that is a link or not a
+  regular file, any entry placed through a link (a daemon that unpacks the archive would
+  follow it), a naming file in another letter case, one over 8 MiB, an archive that is not a
+  tar or ends early, and non-zero data after its end. The refusal comes *before* the piece
+  holding the last byte of the file at fault is passed on, and the read then fails, which
+  breaks the target's request off: it never holds a complete archive. The parser runs beside
+  the stream and the two meet under one lock — a piece is released only when the parser has
+  read it through and asked for more — so there is no window in which a piece is forwarded
+  while still being judged (`TestArchiveGuardRefuses`: 27 shapes × 7 piece sizes, each
+  asserting how many bytes were handed on).
+  **The target's own account**: after a clean load, every "Loaded image: …" reference the
+  target reported is held to the same rule; one beyond the confirmed reference fails the job
+  and says references there may have been created or moved.
+- **The guard's first rule for `index.json` was wrong, and only a real daemon showed it.** It
+  required one image (one digest). The read-only check against a real daemon (Docker 29.10,
+  containerd image store) refused every archive: saved for one platform, such a daemon lists
+  the platform's manifest *and* the attestation manifest that refers to it
+  (`io.containerd.manifest.subject`), unnamed. An unnamed descriptor creates or moves no
+  reference, so the rule now judges names, not the number of descriptors; an archive of
+  that exact shape is a unit test, and `TestRealDaemonImageCopyGuardReadOnly` (GETs only)
+  passes archives the real daemon saves by tag and by ID and sees them refused for a
+  different confirmation. What this leaves possible: a hostile source can add *unnamed*
+  manifests, which a containerd target keeps as untagged images. No name is created or moved;
+  it costs the target disk, as any image the operator chose to copy from that source could.
+- **An untagged copy is looked for under the IDs the archive carries.** Found while reading
+  the real archives: the source's ID (an index digest), the ID a containerd target gives the
+  platform's manifest and the ID a classic target gives the config are three different
+  strings. The guard notes the digests `index.json` lists (not the attestation's) and the
+  config `manifest.json` points at; the verification asks the target for those, after the
+  target's own "Loaded image ID" lines and before the source's ID — each only in the ID form,
+  and whatever answers is still held to `SameBuild`.
+- **Low: the platform reached the target's query unvalidated.** The client encodes it, so no
+  injection was found, but it is the source's string sent to the target. A platform whose OS,
+  architecture or variant is not at most 32 letters, digits, `.`, `_` or `-` is refused when
+  the plan is built and again in `checkCopyPlan`.
+- **Low: "verified … the same 0 layers".** An image without layers has nothing its content can
+  be told by. The job now says only the platform and config were compared.
+- **Low: a shared `*Error` value was completed in place** by `mobyEngine.wrap` (the
+  oversized-message error). It is made anew each time.
+- **Low: a source that ended its archive early was blamed on the target.** The guard knows
+  where a tar ends: a stream that stops before it is the source's failure, by name.
+- **Info:** `checkCopyPlan` now also requires the typed tier and a word; the job output's
+  single-daemon line escapes its endpoint like the two-daemon lines.
+
+Stated as limits, not fixed. Between the job's inspect of the target and the daemon's own
+load there is no lock: the Engine API has no conditional load, so another client moving the
+target's tag inside that window is not noticed — the dialog says the tag may be moved. A
+hostile *target* can lie about anything it is asked afterwards; the verification is evidence
+about an honest target, not a proof against a dishonest one. And no archive was loaded into a
+real daemon: the test guard forbids a mutation on anything but the fake, so the real daemon's
+side of `POST /images/load` is known from Docker's documentation, from the real CLI driving
+the fake, and from real archives read through the guard — not from a real load.
+
+It confirmed as sound: every name sent to either daemon is a `sha256:` ID or a tag that
+round-trips `NormalizeTag`, validated before the dialog's read and again in the executor;
+every daemon string traced into a log, status, error, dialog or picker is escaped or a
+validated identifier; read-only is refused at the key, the menu and the mouse (all through
+`invokeOn`), in the live check, in the executor before any request and in the engine;
+`plan.Execute` cannot run a copy step; the dialog and the executor classify every case the
+same way; the bounds on the load stream; one cancellable context over both requests with both
+closed on every way out; ✓ only after an inspect that matched; the job manager's single lock
+over both daemons of a pair.
+
+### K7 — Round twenty-six: what was run
+
+See docs/TESTING.md, round twenty-six, for the commands and their results.

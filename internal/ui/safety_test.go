@@ -240,6 +240,11 @@ func TestEveryActionKeyIsCovered(t *testing.T) {
 		fmt.Sprintf("%d/n", KindNetworks): true, fmt.Sprintf("%d/e", KindContainers): true,
 		fmt.Sprintf("%d/n", KindContainers): true, // TestCreate* in create_test.go
 		fmt.Sprintf("%d/t", KindImages):     true, // TestTag* in tag_test.go
+		// The copy to another daemon needs two daemons, which this file's
+		// one-daemon table cannot give it: TestCopy* in imagecopy_test.go
+		// (read-only, a selection, the typed word, a blocked plan, the
+		// target leaving) and the e2e TestCopyImage*.
+		fmt.Sprintf("%d/C", KindImages): true,
 	}
 	for k := Kind(0); k < kindCount; k++ {
 		for _, a := range kindActions[k] {

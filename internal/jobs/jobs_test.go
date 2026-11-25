@@ -269,3 +269,95 @@ func TestAFailureIsNotRelabelledAsCancelled(t *testing.T) {
 		t.Fatalf("job: state=%v err=%q", j.State, j.Err)
 	}
 }
+
+// ---- a job that spans two daemons (image copy) ----------------------------------
+
+// TestPairHoldsBothDaemons: a two-daemon job is recorded under its target
+// with its source in From, and is "running on" both until it ends.
+func TestPairHoldsBothDaemons(t *testing.T) {
+	m := NewManager()
+	defer m.Close()
+	release := make(chan struct{})
+	id, err := m.StartOnPair("unix:///target", "unix:///source", "copy image", "acme/api:1", func(ctx context.Context, r *Run) error {
+		<-release
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	j, _ := m.Get(id)
+	if j.Daemon != "unix:///target" || j.From != "unix:///source" {
+		t.Fatalf("job %+v", j)
+	}
+	for _, d := range []string{"unix:///target", "unix:///source"} {
+		if on := m.RunningOn(d); len(on) != 1 || on[0].ID != id {
+			t.Fatalf("RunningOn(%s) = %+v", d, on)
+		}
+		// The removal of either is refused, names the job, and marks nothing.
+		if running := m.CloseDaemon(d); len(running) != 1 || running[0].Title != "copy image" || m.Closing(d) {
+			t.Fatalf("CloseDaemon(%s) = %+v, closing %v", d, running, m.Closing(d))
+		}
+	}
+	if on := m.RunningOn("unix:///third"); len(on) != 0 {
+		t.Fatalf("a third daemon holds %+v", on)
+	}
+	if on := m.RunningOn(""); len(on) != 0 {
+		t.Fatalf("the empty daemon matched %+v", on)
+	}
+	close(release)
+	m.Wait()
+	for _, d := range []string{"unix:///target", "unix:///source"} {
+		if running := m.CloseDaemon(d); running != nil || !m.Closing(d) {
+			t.Fatalf("after the job: CloseDaemon(%s) = %+v", d, running)
+		}
+	}
+}
+
+// TestPairRefusedWhenEitherDaemonIsClosing: the body never runs when the
+// target or the source is being removed.
+func TestPairRefusedWhenEitherDaemonIsClosing(t *testing.T) {
+	for _, closing := range []string{"unix:///target", "unix:///source"} {
+		m := NewManager()
+		if running := m.CloseDaemon(closing); running != nil {
+			t.Fatal(running)
+		}
+		ran := false
+		id, err := m.StartOnPair("unix:///target", "unix:///source", "copy image", "x", func(context.Context, *Run) error {
+			ran = true
+			return nil
+		})
+		m.Wait()
+		j, _ := m.Get(id)
+		if !errors.Is(err, ErrDaemonClosing) || ran || j.State != Failed || j.From != "unix:///source" {
+			t.Fatalf("closing %s: err %v ran %v job %+v", closing, err, ran, j)
+		}
+		m.Close()
+	}
+}
+
+// TestPairNeedsTwoDifferentDaemons: a pair that is not one never runs.
+func TestPairNeedsTwoDifferentDaemons(t *testing.T) {
+	m := NewManager()
+	defer m.Close()
+	for _, c := range [][2]string{{"a", "a"}, {"", "a"}, {"a", ""}} {
+		ran := false
+		id, err := m.StartOnPair(c[0], c[1], "copy image", "x", func(context.Context, *Run) error { ran = true; return nil })
+		m.Wait()
+		if j, _ := m.Get(id); !errors.Is(err, ErrBadPair) || ran || j.State != Failed {
+			t.Fatalf("%q: err %v ran %v", c, err, ran)
+		}
+	}
+}
+
+// TestSingleDaemonJobsAreUnchanged: StartOn leaves From empty and matches
+// only its own daemon.
+func TestSingleDaemonJobsAreUnchanged(t *testing.T) {
+	m := NewManager()
+	defer m.Close()
+	release := make(chan struct{})
+	id, _ := m.StartOn("unix:///a", "pull image", "x", func(context.Context, *Run) error { <-release; return nil })
+	if j, _ := m.Get(id); j.From != "" || len(m.RunningOn("unix:///a")) != 1 || len(m.RunningOn("unix:///b")) != 0 {
+		t.Fatalf("job %+v", j)
+	}
+	close(release)
+}

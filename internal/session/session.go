@@ -25,6 +25,7 @@ import (
 
 	"github.com/fardani235/docker-desk/internal/dockerctx"
 	"github.com/fardani235/docker-desk/internal/engine"
+	"github.com/fardani235/docker-desk/internal/escape"
 	"github.com/fardani235/docker-desk/internal/jobs"
 	"github.com/fardani235/docker-desk/internal/live"
 )
@@ -756,7 +757,7 @@ func (s *Session) TakeNotices(now time.Time) []Notice {
 			m.nInit, m.nUp, m.nSeen = true, up, end
 			if !m.launch && m != focus {
 				info := m.Info()
-				out = append(out, Notice{Member: m, Text: m.Name() + ": connected (Engine " + info.ServerVersion + " on " + info.Name + ") — > or M to focus it"})
+				out = append(out, Notice{Member: m, Text: m.Name() + ": connected (Engine " + escape.Name(info.ServerVersion) + " on " + escape.Name(info.Name) + ") — > or M to focus it"})
 			}
 			continue
 		}

@@ -53,8 +53,8 @@ func TestReadOnlyCoversEveryMutation(t *testing.T) {
 			}
 		}()
 	}
-	if checked != 24 {
-		t.Errorf("checked %d mutating methods, expected 24 — update readMethods if the interface changed", checked)
+	if checked != 25 {
+		t.Errorf("checked %d mutating methods, expected 25 — update readMethods if the interface changed", checked)
 	}
 }
 

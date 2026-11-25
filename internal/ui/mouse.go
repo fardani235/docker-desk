@@ -437,7 +437,7 @@ func (m *Model) mouseDialog(h hit, delta int) tea.Cmd {
 		}
 		// A second click on the selected row chooses it, as Enter does —
 		// which leads to a confirmation, never past one.
-		if !m.armed() {
+		if !m.armed() || d.items[h.index].disabled {
 			return nil
 		}
 		id, pick := d.items[h.index].id, d.onPick

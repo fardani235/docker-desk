@@ -257,3 +257,27 @@ Documentation to update with the implementation: README's Images key row and act
 "Several daemons in one session" section and the "What it does not do" paragraph (images leave
 the cross-daemon limitation; volumes stay), a copy section beside Save and Push, and
 `docs/DECISIONS.md`/`docs/TESTING.md` for the round's decisions and commands.
+
+## Implementation notes
+
+Recorded while applying the change; the decisions above stand, these are where the code differs
+from the names and shapes this document and tasks.md used. The full record is
+`docs/DECISIONS.md`, round twenty-six (K1–K7).
+
+- **Names.** `internal/plan/copy.go`, `copy_test.go` and the type `CopySpec` already belong to
+  the copy *into a container*. The image copy lives in `internal/plan/imagecopy.go`,
+  `imagecopy_exec.go` and `imagecopy_test.go`; D6's `Plan.Copy *CopySpec` is
+  `Plan.ImageCopy *ImageCopySpec`. `OpCopyImage`, `plan.CopyImage` and `plan.ExecuteCopy` are
+  as named.
+- **`plan.CopyImage`'s parameters** are `(snap, CopySource, CopyDestination)` rather than
+  `(snap, imageID, ref, platform, destination)`: the source's whole inspect is needed to decide
+  "already present", and the source daemon's identity to draw the dialog.
+- **D9's comparison is wider.** Besides the ordered diff IDs and the platform, the
+  verification (and the "already present" check) compares the image config's command,
+  entrypoint, user, working directory, environment names, exposed ports and labels. All are
+  store-independent; the image ID is still not compared.
+- **A digest-only row** is copied by ID and arrives untagged, like an untagged row.
+- **D8's Jobs-pane phrase** is `on <target> from <source>` for a two-daemon job, as written;
+  single-daemon jobs keep their existing `@<daemon>` form in the pane.
+- **Outside the task list:** the daemon's own name and version (`/info`) were drawn unescaped
+  in the header and in the "connected" notice; both are now escaped.

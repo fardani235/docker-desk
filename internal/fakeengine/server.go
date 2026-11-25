@@ -105,6 +105,14 @@ type Server struct {
 	// archive (GET /containers/{id}/archive).
 	ArchiveChunkDelay time.Duration
 
+	// LoadChunkDelay is the pause after each piece of an image archive the
+	// fake reads (POST /images/load), and LoadStepDelay the pause after each
+	// message of its answer.
+	LoadChunkDelay time.Duration
+	LoadStepDelay  time.Duration
+	loadReqs       []LoadRequest // guarded by mu
+	loadFail       string        // guarded by mu; see FailLoad
+
 	buildCache []BuildRecord
 	uploads    []Upload
 
@@ -461,6 +469,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string) {
 		s.handleImageList(w, r)
 	case path == "/images/create" && post:
 		s.handleImagePull(w, r)
+	case path == "/images/load" && post:
+		s.handleImageLoad(w, r)
 	case path == "/images/get" && get:
 		s.handleImageExport(w, r, r.URL.Query()["names"])
 	case len(seg) >= 3 && seg[0] == "images" && seg[len(seg)-1] == "get" && get:

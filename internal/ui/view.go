@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/fardani235/docker-desk/internal/escape"
 )
 
 // rect is a pane's position and outer size in terminal cells.
@@ -228,8 +230,10 @@ func (m *Model) renderHeader() string {
 	title := st.header.Render(" Docker Desk")
 	endpoint := st.tone(toneAccent, m.endpoint.Host)
 	ctx := st.headerKey.Render("ctx ") + m.endpoint.Context
-	eng := st.headerKey.Render("Engine ") + m.info.ServerVersion
-	host := st.headerKey.Render("on ") + m.info.Name
+	// The daemon says what it is called and which version it is: drawn as
+	// text, never as whatever control characters it chose to send.
+	eng := st.headerKey.Render("Engine ") + escape.Name(m.info.ServerVersion)
+	host := st.headerKey.Render("on ") + escape.Name(m.info.Name)
 	conn := st.tone(toneGood, "● connected")
 	connShort := conn
 	if !m.hub.Connected() {
@@ -308,15 +312,49 @@ func (m *Model) linkSuffix() string {
 // already there when it fits and onto a line of its own when it does not,
 // and one that is longer than a line is continued on the next.
 func (m *Model) daemonLines(w int, withContext bool) []string {
+	context := ""
+	if withContext {
+		context = m.endpoint.Context
+	}
+	return m.endpointLines(w, endpointIdent{label: "daemon", host: m.endpoint.Host, context: context, withContext: withContext,
+		link: m.link.Label, linkTone: m.linkTone()})
+}
+
+// endpointIdent is one daemon as a dialog names it: the focused one
+// (daemonLines), or either end of an image copy.
+type endpointIdent struct {
+	label string // "daemon", "from", "to"
+	// name, when set, is the session's name for the daemon; it leads, and
+	// the endpoint follows it.
+	name        string
+	host        string
+	context     string
+	withContext bool
+	link        string // "" for a local socket
+	linkTone    tone
+}
+
+// endpointLines lays one daemon's identity out by daemonLines' rule: every
+// part in full, beside what is there when it fits, else on its own lines.
+// The parts are escaped: a name or an endpoint is the operator's, and a
+// copy's are carried in a plan.
+func (m *Model) endpointLines(w int, e endpointIdent) []string {
 	st := m.st
 	const label = 11 // "daemon" padded, and a space
 	room := max(w-label, 8)
 	indent := strings.Repeat(" ", label)
 
 	var lines []string
-	for i, part := range wrapLine(m.endpoint.Host, room) {
+	first := escape.Name(e.host)
+	if e.name != "" {
+		first = escape.Name(e.name)
+	}
+	for i, part := range wrapLine(first, room) {
 		if i == 0 {
-			lines = append(lines, st.tone(toneDim, fit("daemon", label-1))+" "+part)
+			if e.name != "" {
+				part = st.dialogTitle.Render(part)
+			}
+			lines = append(lines, st.tone(toneDim, fit(e.label, label-1))+" "+part)
 		} else {
 			lines = append(lines, indent+part)
 		}
@@ -331,11 +369,14 @@ func (m *Model) daemonLines(w int, withContext bool) []string {
 			lines = append(lines, indent+st.tone(t, part))
 		}
 	}
-	if withContext {
-		add("(context "+m.endpoint.Context+")", toneDim)
+	if e.name != "" {
+		add(escape.Name(e.host), toneNormal)
 	}
-	if m.link.Label != "" {
-		add("["+m.link.Label+"]", m.linkTone())
+	if e.withContext {
+		add("(context "+escape.Name(e.context)+")", toneDim)
+	}
+	if e.link != "" {
+		add("["+escape.Name(e.link)+"]", e.linkTone)
 	}
 	return lines
 }
@@ -513,6 +554,9 @@ func (m *Model) helpLines(w int) []string {
 		"  A daemon added from the picker never asks anything on the terminal: an ssh",
 		"  login that needs a passphrase, a password or a host key fails, and says why.",
 		"  A daemon with a running job cannot be removed. --read-only covers all of them.",
+		"  One action names a second daemon: Images' C copies the highlighted image",
+		"  from the focused daemon to another connected one, which its confirmation",
+		"  names. Its job holds both, and the Jobs pane shows it on <target> from <source>.",
 	)
 
 	sect("Everywhere")
@@ -802,6 +846,24 @@ func (m *Model) helpLines(w int) []string {
 				"  typed with its tag, only while another reference remains: on the last tag it",
 				"  refuses (that would delete the image; use d remove). Both are local: no",
 				"  registry is contacted, so --no-registry leaves them available.",
+				"  C copies one image (never a selection) to another connected daemon of this",
+				"  session: choose the destination, then type the tag — or the short ID of an",
+				"  untagged image — and press Enter. The archive streams from this daemon's",
+				"  GET /images/get into the other's POST /images/load: no file on this machine,",
+				"  no registry, so --no-registry leaves it available; read-only refuses it. Only",
+				"  the platform the image is inspected as is sent, under the same tag; an",
+				"  untagged or digest-only row arrives untagged. The archive's own list of names",
+				"  is read as it passes: one that names any other image or tag is stopped",
+				"  before the target has it whole. The dialog names both daemons",
+				"  and says whether the tag is created on the target or moved from another",
+				"  image there; the same build already there is refused as already present.",
+				"  The job holds both daemons — neither can be removed while it runs — checks",
+				"  the tag and the target again before streaming, and afterwards inspects the",
+				"  target: the layers, platform and config must be the source's (the two",
+				"  stores may give the build different IDs). Cancelling closes both streams;",
+				"  layers the target already accepted may remain, with no image and no moved",
+				"  tag. A disconnected daemon is listed and cannot be chosen; with one daemon",
+				"  only, M adds another. This daemon is only read.",
 			)
 		}
 	}
@@ -854,6 +916,8 @@ func (m *Model) helpLines(w int) []string {
 		"      under \"Not included\" each selected one left out, with the reason.",
 		"    • pull, new volume/network, shell, tag: you type the name; Enter submits.",
 		"    • untag, push: type the tag shown and press Enter.",
+		"    • copy to daemon: type the tag shown — the short image ID for an untagged",
+		"      image — and press Enter. The dialog names both daemons.",
 		"  A dialog ignores those keys for its first quarter of a second, and a key",
 		"  pressed while a confirmation is still being prepared drops it: nothing typed",
 		"  ahead, or typed for something else, can consent. Esc always works at once.",

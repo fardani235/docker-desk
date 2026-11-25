@@ -15,6 +15,8 @@ import (
 // them can force or cascade. The exception is BuildCachePrune: Docker has no
 // per-record build-cache delete, so that one request acts on a set the daemon
 // chooses (unused records only), and its report says what it removed.
+// LoadImage takes no identifier at all: the image and the references it
+// writes are named by the archive it is given.
 type Engine interface {
 	// ---- identity -------------------------------------------------------
 	Ping(ctx context.Context) error
@@ -124,6 +126,29 @@ type Engine interface {
 	// must not move a tag unseen inspect the target first (plan.Execute
 	// does). Nothing is forced and exactly one reference is written.
 	TagImage(ctx context.Context, source, target string) error
+	// LoadImage sends one image archive — the stream SaveImage returns, as
+	// `docker save` writes it — to the daemon, which adds the image to its
+	// store (POST /images/load, a raw application/x-tar body). It is a
+	// write: the image is created, and every reference the archive carries
+	// is created or, when it names another image here, moved to the loaded
+	// one without a refusal. Docker has no conditional load: a caller that
+	// must not move a tag unseen inspects the reference first, and inspects
+	// it again afterwards to learn what it names (plan.ExecuteCopy does).
+	//
+	// One archive, one platform: platform selects the variant to load from
+	// a multi-platform archive, and is sent only to a daemon whose API has
+	// the parameter (1.48); an older daemon loads the one variant the
+	// archive carries. content is read once, to its end, and never written
+	// anywhere else; the caller owns it and closes it. No registry is
+	// contacted and nothing is forced.
+	//
+	// progress receives every message of the daemon's answer as it arrives.
+	// An error message in the stream ends the load as an *Error carrying
+	// the daemon's text. Cancelling ctx closes the request and returns
+	// ctx's error: layers the daemon already accepted may remain in its
+	// store, and nothing may be claimed about the image or its references.
+	// The result is only what the daemon said it loaded.
+	LoadImage(ctx context.Context, content io.Reader, platform Platform, progress func(LoadProgress)) (LoadResult, error)
 
 	CreateVolume(ctx context.Context, name string) (Volume, error)
 	RemoveVolume(ctx context.Context, name string) error

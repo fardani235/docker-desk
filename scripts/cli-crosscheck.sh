@@ -354,6 +354,24 @@ else
   if printf '%s' "$out" | grep -q inuse0000000000000000001; then bad "builder prune -a: in-use kept" "$out"; else ok "builder prune -a: in-use kept"; fi
   expect_contains "after -a only the in-use record is left" "$(d2 system df --format '{{.Type}} {{.TotalCount}} {{.Active}}')" "Build Cache 1 1"
 fi
+
+echo "== image load (docker save on one fake | docker load on the other)"
+# What the desk's copy between daemons does, with Docker's own client: the
+# archive one daemon writes is what the other loads.
+saved="$(d image ls --format '{{.Repository}}:{{.Tag}}' | grep -m1 '^acme/report:' || true)"
+if [ -z "$saved" ]; then
+  bad "an image to save" "the first fake has no acme/report image"
+else
+  out="$(d save "$saved" | d2 load 2>&1)"
+  expect_contains "load: the CLI prints the daemon's line" "$out" "Loaded image: $saved"
+  expect_eq "load: the image has the layers that were saved" \
+    "$(d2 image inspect "$saved" --format '{{json .RootFS.Layers}}')" \
+    "$(d image inspect "$saved" --format '{{json .RootFS.Layers}}')"
+  expect_contains "load: listed under its tag" "$(d2 image ls --format '{{.Repository}}:{{.Tag}}')" "$saved"
+  out="$(d save "$saved" | d2 load 2>&1)"
+  expect_contains "load: the same archive again changes nothing" "$out" "Loaded image: $saved"
+  expect_fails "load: not an archive is refused" "invalid tar header" sh -c "echo not-a-tar | docker -H unix://$SOCK2 load"
+fi
 kill "$FAKE2_PID" 2>/dev/null || true
 
 echo

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/fardani235/docker-desk/internal/engine"
+	"github.com/fardani235/docker-desk/internal/escape"
 	"github.com/fardani235/docker-desk/internal/jobs"
 	"github.com/fardani235/docker-desk/internal/live"
 )
@@ -247,7 +248,10 @@ func (m *Model) renderJobs(w, h int, focused bool) []string {
 		if j.Target != "" {
 			head += " " + j.Target
 		}
-		if d := m.jobDaemon(j); d != "" {
+		if j.From != "" {
+			// A copy spans two daemons: both are always named.
+			head += " " + m.jobPair(j)
+		} else if d := m.jobDaemon(j); d != "" {
 			head += " @" + d
 		}
 		detail := j.Status
@@ -306,8 +310,10 @@ func jobOutput(j jobs.Job, st styles) []string {
 		st.tone(t, glyph+" "+j.State.String()) + "   " + j.Title + " " + j.Target,
 		st.tone(toneDim, fmt.Sprintf("started %s · ran %s", j.Started.Local().Format("15:04:05"), humanDuration(j.Elapsed()))),
 	}
-	if j.Daemon != "" {
-		lines = append(lines, st.tone(toneDim, "on daemon "+j.Daemon))
+	if j.Daemon != "" && j.From != "" {
+		lines = append(lines, st.tone(toneDim, "on daemon "+escape.Name(j.Daemon)), st.tone(toneDim, "from daemon "+escape.Name(j.From)))
+	} else if j.Daemon != "" {
+		lines = append(lines, st.tone(toneDim, "on daemon "+escape.Name(j.Daemon)))
 	}
 	if j.Total > 0 {
 		lines = append(lines, st.tone(toneDim, fmt.Sprintf("%d of %d objects processed", j.Done, j.Total)))

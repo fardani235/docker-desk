@@ -12,6 +12,7 @@ import (
 
 	"github.com/fardani235/docker-desk/internal/dockerctx"
 	"github.com/fardani235/docker-desk/internal/engine"
+	"github.com/fardani235/docker-desk/internal/escape"
 	"github.com/fardani235/docker-desk/internal/jobs"
 	"github.com/fardani235/docker-desk/internal/live"
 	"github.com/fardani235/docker-desk/internal/session"
@@ -251,12 +252,24 @@ func (m *Model) jobDaemon(j jobs.Job) string {
 	return m.daemonName(j.Daemon)
 }
 
-// onDaemon is jobDaemon as a phrase for the status line.
+// onDaemon is jobDaemon as a phrase for the status line. A job that spans
+// two daemons — an image copy — always names both: "on <target> from
+// <source>".
 func (m *Model) onDaemon(j jobs.Job) string {
+	if j.From != "" {
+		return " " + m.jobPair(j)
+	}
 	if d := m.jobDaemon(j); d != "" {
 		return " on " + d
 	}
 	return ""
+}
+
+// jobPair names both daemons of a two-daemon job: the one it writes to and
+// the one it reads from. Names come from the operator's configuration, or
+// are endpoints: escaped like any other name.
+func (m *Model) jobPair(j jobs.Job) string {
+	return "on " + escape.Name(m.daemonName(j.Daemon)) + " from " + escape.Name(m.daemonName(j.From))
 }
 
 // ---- the strip -------------------------------------------------------------------
