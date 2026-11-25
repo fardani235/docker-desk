@@ -768,7 +768,7 @@ func TestReaderBoundsAndBinary(t *testing.T) {
 			t.Fatalf("%s: %+v", p, rd.pv)
 		}
 		got := b.flat()
-		for _, want := range []string{"path " + p, "type regular file · mode 06", "in the container now", "shown not text: the", "hold a NUL byte or are not valid UTF-8, so no contents are shown, and there is no hex view",
+		for _, want := range []string{"path " + p, "type regular file · mode 06", "in the container now", "shown not text: the", "contains a NUL byte or is not valid UTF-8, so no contents are shown, and there is no hex view",
 			"Not text. The reader shows valid UTF-8 without NUL bytes only: no bytes of this file are drawn"} {
 			if !strings.Contains(got, want) {
 				t.Errorf("%s lacks %q:\n%s", p, want, b.screen())

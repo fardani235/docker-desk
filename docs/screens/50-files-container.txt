@@ -1,4 +1,5 @@
- Docker Desk  unix:///tmp/ddfake1033943153/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake2030380243/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…243/d.sock ●]                                                              M picker  < > focus
 ┏━ ◆ Files — the image's tree with the container's changes over it ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ shop-web-1 ━┓
 ┃ by name · 3 rows · filter: nginx.conf · 1 match of 46 searched                                                       ┃
 ┃   container  shop-web-1 · f948ec4de9e4 · from nginx:1.27 (f673addec473)                                              ┃
@@ -15,7 +16,6 @@
 ┃   - etc/                                                                            258B  dir 5            changed   ┃
 ┃     - nginx/                                                                        171B  dir 3            changed   ┃
 ┃ ▸       nginx.conf                                                                   88B  file      L2     changed   ┃
-┃                                                                                                                      ┃
 ┃ ─────────────────────────────────────────────────────────────────────────────────────────────────────────── 3 of 3 ─ ┃
 ┃ path       /etc/nginx/nginx.conf                                                                                     ┃
 ┃ type       regular file · mode 0644 (-rw-r--r--) · uid 0 gid 0 · modified 2024-01-02 03:04:05 UTC                    ┃
@@ -27,4 +27,4 @@
 ┃                                                                                                                      ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
  ✓ read the image archive nginx:1.27
- ↑↓ move  →← open  s order  / filter  w export  r changes  Esc clear filter                         F Esc close  ? keys
+ ⏎ read the file  ↑↓ move  →← open  s order  / filter  w export  r changes  o copy out  i copy in … F Esc close  ? keys

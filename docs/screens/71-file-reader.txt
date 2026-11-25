@@ -1,0 +1,40 @@
+ Docker Desk  unix:///tmp/ddfake854505461/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…461/d.sock ●]                                                                                  M picker  < > focus
+┏━ ◆ File — read from the container, shown here only ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ shop-web-1 ━┓
+┃ path       /etc/nginx/nginx.conf                                                                                                         ┃
+┃ container  shop-web-1 · f948ec4de9e4                                                                                                     ┃
+┃ type       regular file · mode 0644 (-rw-r--r--) · uid 0 gid 0 · modified 2026-11-01 09:30:00 UTC                                        ┃
+┃ size       85B in the container now                                                                                                      ┃
+┃ source     the container's current filesystem, as the daemon read it for this request — not a snapshot, and not the image's file         ┃
+┃ shown      the whole file: 4 lines, 85B                                                                                                  ┃
+┃ ────────────────────────────────────────────────────────────────────────────────────────────────────────────────── all of it · wrapped ─ ┃
+┃ user nginx;                                                                                                                              ┃
+┃ worker_processes 4;                                                                                                                      ┃
+┃ events {}                                                                                                                                ┃
+┃ http { include /etc/nginx/conf.d/*.conf; }                                                                                               ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ read a container file shop-web-1:/etc/nginx/nginx.conf
+ ↑↓ scroll  PgUp PgDn page  g G ends  w no wrap                                                                         Esc q close  ? keys

@@ -1351,11 +1351,11 @@ Good to know:
   rows on screen. A pinned pull leaves no local tag (the Engine API sends the digest in place of
   it); nothing there retags, deletes or pushes a tag — a push is Images' `p`, of a tag you already
   have.
-- Files (`F`): the tree never reads a container's archive or a file's contents, and there is no
-  file-level difference. A container's side is the daemon's change list over its image's tree:
-  a changed file's own size and what an added directory holds are not read. Nothing is compared
-  between a container and its image beyond what the daemon lists. The index keeps at most
-  200,000 entries; zstd layers are named as unread.
+- Files (`F`): the tree itself holds no file's contents and makes no file-level difference; the
+  reader (below) is the one on-request read. A container's side is the daemon's change list
+  over its image's tree: a changed file's own size and what an added directory holds are not
+  read. Nothing is compared between a container and its image beyond what the daemon lists.
+  The index keeps at most 200,000 entries; zstd layers are named as unread.
 - The reader (`Enter` on a container's regular file): one file at a time, its first 1 MiB,
   10,000 lines and 2 KiB a line, as text. No image file is read. No hex view, no editor, no
   search, no export or copy of what is shown, no following a symlink, no device, FIFO or

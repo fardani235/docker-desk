@@ -18,9 +18,9 @@
 
 ## 4. Documentation, end to end, and integration
 
-- [ ] 4.1 Update the README's Files section and its "No file contents" wording, the key lists and "What it does not do"; add the reader's bounds, binary rule, container-only source and image refusal. Record the decision in `docs/DECISIONS.md`, update `docs/TESTING.md`, and regenerate the Files screen captures.
-- [ ] 4.2 Add pty tests: open Files on a container, select a regular file, Enter, and see its text with metadata; a binary file shows metadata only; an image file refuses without a request; read-only views the same bytes; a cancel leaves the tree. Capture the new screen.
-- [ ] 4.3 Run `go test ./...`, `go test -race ./...` and `make e2e`; verify the full suite, the race run and the captures are green.
+- [x] 4.1 Update the README's Files section and its "No file contents" wording, the key lists and "What it does not do"; add the reader's bounds, binary rule, container-only source and image refusal. Record the decision in `docs/DECISIONS.md`, update `docs/TESTING.md`, and regenerate the Files screen captures.
+- [x] 4.2 Add pty tests: open Files on a container, select a regular file, Enter, and see its text with metadata; a binary file shows metadata only; an image file refuses without a request; read-only views the same bytes; a cancel leaves the tree. Capture the new screen.
+- [x] 4.3 Run `go test ./...`, `go test -race ./...` and `make e2e`; verify the full suite, the race run and the captures are green.
 
 ## Workflow follow-up
 

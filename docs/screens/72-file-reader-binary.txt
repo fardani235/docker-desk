@@ -1,0 +1,40 @@
+ Docker Desk  unix:///tmp/ddfake854505461/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…461/d.sock ●]                                                                                  M picker  < > focus
+┏━ ◆ File — read from the container, shown here only ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ shop-web-1 ━┓
+┃ path       /var/lib/nginx/state.db                                                                                                       ┃
+┃ container  shop-web-1 · f948ec4de9e4                                                                                                     ┃
+┃ type       regular file · mode 0640 (-rw-r-----) · uid 0 gid 0 · modified 2026-11-01 09:30:00 UTC                                        ┃
+┃ size       4.1kB in the container now                                                                                                    ┃
+┃ source     the container's current filesystem, as the daemon read it for this request — not a snapshot, and not the image's file         ┃
+┃ shown      not text: the 4.1kB read contains a NUL byte or is not valid UTF-8, so no contents are shown, and there is no hex view        ┃
+┃ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ┃
+┃ Not text. The reader shows valid UTF-8 without NUL bytes only: no bytes of this file are drawn, and there is no hex view. o in the Files ┃
+┃ view copies it out.                                                                                                                      ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┃                                                                                                                                          ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ ✓ read a container file shop-web-1:/var/lib/nginx/state.db
+                                                                                                                        Esc q close  ? keys

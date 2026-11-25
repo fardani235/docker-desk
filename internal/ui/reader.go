@@ -460,7 +460,7 @@ func (m *Model) readerHints() []string {
 // every bound that was reached.
 func readerShownWords(pv files.Preview) string {
 	if pv.Binary {
-		s := fmt.Sprintf("not text: the %s read hold a NUL byte or are not valid UTF-8, so no contents are shown, and there is no hex view", humanBytes(pv.Read))
+		s := fmt.Sprintf("not text: the %s read contains a NUL byte or is not valid UTF-8, so no contents are shown, and there is no hex view", humanBytes(pv.Read))
 		if pv.CutBytes {
 			s = fmt.Sprintf("not text: the first 1 MiB of %s holds a NUL byte or is not valid UTF-8, so no contents are shown, and there is no hex view", humanBytes(pv.Size))
 		}
