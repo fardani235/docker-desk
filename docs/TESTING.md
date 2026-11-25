@@ -1268,6 +1268,48 @@ refusal's exact words), which the desk passes through as the daemon reports them
   lists `p push`; every other rewritten capture differed only in socket paths, clock times and
   CPU figures and was restored, so no capture from a failed run is committed.
 
+## Round twenty-four: reading one file of a container
+
+The reader is the first place the desk draws bytes a container chose. It is proven from three
+directions: the pure preview (bounds, classification, escaping) byte by byte; the read job
+against a stub daemon that answers with everything except the file asked for; and the UI model
+and the real binary against the fake daemon, whose request log is the witness for "one `GET`,
+for exactly that path" and "nothing was sent".
+
+| Property | Tests | Run |
+| --- | --- | --- |
+| The preview: a 40-line script whole; an empty file (empty, not binary); 3 MiB cut at 1 MiB with no more than one byte read past the bound; exactly 1 MiB whole and 1 MiB + 1 cut; a stream longer than its header's size cut, a shorter one an error; 20,000 lines cut at 10,000; a 3 KiB line cut at 2 KiB, on a character boundary; NUL, invalid UTF-8, an ELF header binary with no bytes kept; a NUL past the bound not judged; a cut inside a character not binary | `TestPreviewText`, `TestPreviewEmptyFile`, `TestPreviewLargeFileIsCutAtTheByteBound`, `TestPreviewExactSizeRead`, `TestPreviewManyLines`, `TestPreviewLongLine`, `TestPreviewBinary` | `go test ./internal/files -run Preview` |
+| Escaping: CSI, OSC title and clipboard, BEL, a lone CR, DEL, BS, FF, VT, C1 CSI, NEL, bidirectional overrides and isolates, line separators and the BOM are visible escapes; CRLF is a line end; tabs expand; a backslash is kept; every byte value comes out inert or binary, and every Unicode code point comes out of the line escaper as neither a control nor a format character | `TestPreviewEscapesControls`, `TestPreviewEveryByteIsInert` | `go test ./internal/files -run Preview` |
+| Cancellation and failure: a cancelled read returns the context's error and an empty preview; cancelled before it starts, nothing is read; a reader's own error keeps nothing | `TestPreviewCancellation` | `go test ./internal/files -run Preview` |
+| Names: `escape.Name` escapes format characters (bidirectional, zero-width, soft hyphen, tags) as it does C1 controls; no code point leaves it as a control or a format character | `TestNameIsInert` | `go test ./internal/escape` |
+| Nothing before Enter: moving, ordering and opening directories send nothing; Enter sends one archive `GET` for exactly the path; the image's archive is not read | `TestReaderNothingIsSentBeforeEnter` | `go test ./internal/ui -run Reader` |
+| Before the image's tree is built: an added file and a changed file open from the container, no image archive is requested; Enter on a directory, and `a`, still read the archive | `TestReaderOpensAnAddedFileBeforeTheTreeIsBuilt` | `go test ./internal/ui -run Reader` |
+| Refusals, each with its type and "Nothing was sent": symlink, hard link, character and block device, FIFO, another archive type, a deleted path, a path beneath a deleted directory; a directory is opened as before; an image's file says image files are not read, and an image's link is named — no archive request and no job in any case | `TestReaderRefusesWhatIsNotARegularContainerFile`, `TestReaderDoesNotReadImageFiles` | `go test ./internal/ui -run Reader` |
+| The answer is exactly the one regular file asked for — twenty answers from a stub daemon: the file (accepted, with the header's size, mode and owner); a stat for another name, a directory, a symlink, a FIFO, a socket, a device; a tar whose first entry is a directory, symlink, hard link, FIFO, device, another name, a path (`../app.conf`), a hostile name; two entries; an empty archive; not an archive; a cut archive; no trailer. One request each, the stream closed each time, nothing kept on refusal, no contents and no raw escape in any error | `TestReaderAcceptsOnlyTheOneRegularFileAskedFor` | `go test ./internal/ui -run Reader` |
+| Failures: a 404 path and a vanished container ("not there any more", the daemon's words), a 500 (the daemon's message, escaped), a path that became a link or a directory since the tree was read (refused, the link's target not read), a cancel mid-stream (the context's error, stream closed) — no contents kept or drawn, the tree unchanged | `TestReaderReportsADaemonFailureAndACancellation`, `TestReaderFailures` | `go test ./internal/ui -run Reader` |
+| Cancel: `c` while reading cancels the job and the reader says so with nothing kept; Esc while reading cancels, closes and the job hands nothing over; a run dropped before its job ends keeps nothing, and a result taken is moved out | `TestReaderCancel`, `TestReaderRunDroppedKeepsNothing` | `go test ./internal/ui -run Reader` |
+| Read-only: the same bytes, and the only container request is the archive `GET` | `TestReaderInReadOnlyMode` | `go test ./internal/ui -run Reader` |
+| The box: path, container, type, mode, owner, time, size in the container now, the image's size for a changed path, the source and its not-a-snapshot note, what is shown; Esc and `q` close onto the same cursor, expansion, order, filter and offset, the tree drawn line for line as it was, no contents left; bounds named on screen (1 MiB, 10,000 lines, 2 KiB); scroll keys; wrap on and off; an empty file; binary files with metadata and no bytes; 80×24 and a resize keep the frame's geometry | `TestReaderHeaderAndClosing`, `TestReaderBoundsAndBinary`, `TestReaderAt80Columns` | `go test ./internal/ui -run Reader` |
+| Input: 44 keys — the tree's, the desk's and the action keys — leave the tree, the desk, the daemon and this machine untouched and open no dialog; `?` opens the keys over the reader; the hit map holds no tree row and no text row behind the reader; a click reaches nothing; the wheel scrolls the reader alone | `TestReaderTakesEveryKey`, `TestReaderMouse` | `go test ./internal/ui -run Reader` |
+| The content boundary: a marker in a file is on screen in the reader and nowhere else — not what the filter searches, not any job's title, target, status, log or error, not the status line, not the export of the listing, not on screen after closing; one file is written on this machine, the export | `TestReaderContentStaysInTheReader`, `TestReaderJobLogsNoContent` | `go test ./internal/ui -run Reader` |
+| Escaping, end to end: a file of clear-screen, cursor-home, colour, title, clipboard, C1 and bidi sequences is drawn as visible escapes, wrapped and unwrapped, and the frame written to the terminal carries none of them raw; NUL and invalid UTF-8 give binary metadata with no bytes; a path with an escape sequence, a newline and an override is asked for byte for byte and drawn escaped in the reader, the job and the status line | `TestReaderEscapesHostileContentAndPath` | `go test ./internal/ui -run Reader` |
+| From the independent review: a megabyte of daemon error, or of archive entry name, is repeated as 400 bytes and says it was cut, with no raw byte at the cut; the focused daemon changing mid-read cancels the job, which hands nothing over | `TestReaderRepeatsOnlyASentenceOfWhatTheDaemonSays`, `TestReaderIsDroppedWhenTheDaemonChanges` | `go test ./internal/ui -run Reader` |
+| The keys are documented | `TestReaderIsDocumentedInTheKeys`, `TestFilesHelpAndFooter` | `go test ./internal/ui -run 'Reader\|FilesHelp'` |
+| End to end: the real binary at 140×40 reads a changed file before the image's archive was ever read (one `GET`, that path), keys behind it do nothing, a binary file shows no bytes, a slow read is cancelled and leaves the tree, an image's file is refused with nothing sent, nothing is written on this machine; at 80×24 in read-only mode the same bytes, GETs only | `TestFileReader` | `go test ./internal/e2e -run FileReader` |
+
+Screens: `docs/screens/71-file-reader.txt` (140×40), `docs/screens/72-file-reader-binary.txt`
+and `docs/screens/73-file-reader-80x24-read-only.txt`. The Files captures whose footer now
+offers `⏎ read the file` were regenerated.
+
+**What is not proven.** A real daemon's archive for a single file has been read by this
+project's copy-out against a real daemon (round eighteen) and has the shape the reader checks
+— one entry, named as the path's last element — but the reader itself was run only against the
+fake: the test guard forbids anything else. A daemon that followed a path's final symlink and
+named the target's contents with the link's own name could not be told from a regular file;
+no daemon is known to do so (`docker cp` copies a link as a link).
+
+WHAT_WAS_RUN
+
 ## Running everything
 
 ```sh

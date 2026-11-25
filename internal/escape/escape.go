@@ -6,6 +6,7 @@ package escape
 import (
 	"fmt"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -13,7 +14,8 @@ import (
 // whoever built the image or runs the container — as text that cannot act
 // on a terminal or forge a line of a listing (D8): a newline is `\n`, every
 // other control character, DEL and each byte of invalid UTF-8 is `\xNN`, a
-// C1 control is `\u00NN`, and a backslash is doubled so that no name can
+// C1 control is `\u00NN`, a character that reorders what is drawn around it
+// (Reorders) is `\uNNNN`, and a backslash is doubled so that no name can
 // pass for an escape. Everything else is kept as it is. The screen draws
 // this and the export writes it, so the two always agree, and the mapping
 // can be undone: no byte of a name is lost or invented.
@@ -43,10 +45,32 @@ func Name(s string) string {
 			fmt.Fprintf(&b, `\x%02x`, r)
 		case r >= 0x80 && r <= 0x9f:
 			fmt.Fprintf(&b, `\u%04x`, r)
+		case Reorders(r):
+			b.WriteString(Rune(r))
 		default:
 			b.WriteString(s[i : i+n])
 		}
 		i += n
 	}
 	return b.String()
+}
+
+// Reorders reports the characters that draw nothing themselves and change
+// how the text around them reads: every format character (the bidirectional
+// marks, embeddings, overrides and isolates, zero-width spaces and joiners,
+// the soft hyphen, the byte order mark, tag characters) and the line and
+// paragraph separators. Shown raw, they let a name or a file display as
+// other than it is (`gnp.exe` for `exe.png`) or hide text, so they are shown
+// as escapes.
+func Reorders(r rune) bool {
+	return unicode.In(r, unicode.Cf, unicode.Zl, unicode.Zp)
+}
+
+// Rune is the visible escape of a character outside ASCII: `\uNNNN`, or
+// `\UNNNNNNNN` above the basic plane.
+func Rune(r rune) string {
+	if r > 0xffff {
+		return fmt.Sprintf(`\U%08x`, r)
+	}
+	return fmt.Sprintf(`\u%04x`, r)
 }

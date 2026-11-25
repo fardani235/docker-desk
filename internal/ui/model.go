@@ -712,12 +712,13 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 	m.collectSpace()
 	m.collectDeclared()
 	m.collectFiles()
+	m.collectReader()
 	if cmd := m.collectCopyIn(); cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 	if m.fs.open {
 		// The change list's age moves each second; a read's progress too.
-		if sec := now.Unix(); sec != m.fs.drawnSec || m.fs.run != nil {
+		if sec := now.Unix(); sec != m.fs.drawnSec || m.fs.run != nil || m.fs.rd != nil && m.fs.rd.run != nil {
 			m.fs.drawnSec = sec
 			m.dirty = true
 		}

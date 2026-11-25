@@ -4746,3 +4746,147 @@ See docs/TESTING.md, round twenty-three, for the commands and their results.
 
 `make e2e` was not green on this machine, before or after this round: see TESTING.md. Task 5.3
 of the change is therefore left open rather than ticked.
+
+## Round twenty-four — reading one file of a container
+
+The request: answer "what is in this file?" without leaving the desk. The change is the
+OpenSpec change `view-file-contents`: a proposal, a delta to `files-explorer` (its "no file
+contents, ever" rule becomes "contents only on request, from a container, bounded and never
+kept"), a design (its D1–D6) and tasks. It is the first time the desk draws bytes a container
+chose, so most of what follows is about what those bytes can and cannot do.
+
+### A1 — Enter on a container's file is the reader; an image's file is refused
+
+`Enter` in the Files view now asks first what the row is (`filesEnter`, `internal/ui/reader.go`):
+a regular file of a container opens the reader; a symlink, hard link, device, FIFO, another
+archive type, or a path the container deleted (or one beneath a deleted directory) is named on
+the status line and nothing is sent; a directory, or no row at all, is what `Enter` was. An
+image's regular file says image files are not read and names the two ways to see one — a
+container made from the image, or the saved archive — because the only request that could
+answer is the whole archive again (the design's non-goal).
+
+The refusals are the status line's, not a reader opened to say no: the tree stays where it is
+and the sentence ends "Nothing was sent", as the copy keys' refusals do.
+
+### A2 — A path the change list alone names is asked for, and the answer decides
+
+The spec says two things that meet in one row: an entry whose type is unknown is refused, and
+an added regular file opens before the image's tree is built. The daemon's change list never
+says what a path is — every added path, and every changed one while the tree is unread, has no
+type. Refusing them would make the second requirement unreachable; asking a second request
+for the type (`HEAD …/archive`) would break "its only request is the archive `GET`".
+
+So for exactly those rows the one `GET` is sent and its answer decides, twice: the daemon's
+stat, which arrives in the response's headers before any of the archive, and then the tar
+header. Anything but a regular file is refused there, with what was received, and not a byte
+of it is read. The daemon does not follow a path's last element (it archives a link as a
+link), and if one did, the header's type would say so. "Unknown type, refused" is kept for
+what the index *does* type and cannot name (`TypeOther`: a socket, an entry type the archive
+does not define).
+
+### A3 — `a` reads the image's archive from any row
+
+Before this round `Enter` on any row read the image's archive when it had not been read. Now
+`Enter` on a file row is the reader, so a container whose change list is one file at the root
+(`A /app.log`) would have had no row left to press `Enter` on: a regression the plan did not
+foresee. `a` reads the archive from any row while it is unread, the footer offers it beside
+`⏎ read the file`, and `Enter` on a directory or an empty list is unchanged. This is one key
+beyond the proposal, added so that nothing that worked stops working.
+
+### A4 — One entry, a regular file, with the path's own name
+
+`readContainerFile` accepts an answer only if the stat names the path's last element and says
+regular, the archive's first header is `TypeReg` with exactly that name (no `./`, no path) and
+a size that is not negative, and — when the file was read to its end — the archive then ends.
+A file cut at the bound is not read on to look for a second entry: that would be the megabytes
+the bound exists to spare, and what was shown is the verified first entry either way. Every
+refusal names what was received, escaped; the stream is closed on every path (a test asserts
+it for each of twenty answers).
+
+### A5 — The preview is pure, bounded in the file's own bytes, and all-or-nothing
+
+`files.ReadPreview` (D3) reads at most 1 MiB plus one byte — the extra byte tells a file that
+ends at the bound from one that goes on, whatever size the header claimed — keeps 10,000 lines
+and 2 KiB of each, and reports each cut separately. The bounds count the file's bytes before
+escaping. Text is valid UTF-8 with no NUL in what was read; a cut that falls inside a
+character does not make text binary. Binary carries no bytes and no hex. A stream shorter than
+its header's size, a reader's error and a cancellation return an error and an empty preview:
+the reader never claims bytes it did not get.
+
+### A6 — Contents are made inert, and so, now, are reordering characters in names
+
+A file's text is escaped before it is stored for drawing: every C0 control and `DEL` as
+`\xNN`, a lone carriage return as `\r` (one before a newline is dropped), C1 controls and the
+characters that reorder what is drawn around them — bidirectional marks, embeddings, overrides
+and isolates, the line and paragraph separators, the byte order mark — as `\uNNNN`; tabs
+become spaces. A backslash is *not* doubled, unlike in a name: this is text to be read, not an
+identifier to be told apart from another, and a shell script full of `\\n` would be a lie.
+
+Writing the end-to-end test found that `escape.Name` let a bidirectional override through: a
+path named `exe<U+202E>gnp.txt` was drawn, and exported, reordered. That is not a terminal
+escape, but it is the same promise ("a name cannot read as another"), so `escape.Name` now
+escapes the same set (`escape.Reorders`; widened in A9), with a test over every code point. Names with
+such characters now show `\u202e` on screen and in exports where they showed the raw
+character; no other name changes.
+
+### A7 — Nothing is kept, and the job says only counts
+
+What was read lives in `filesState.rd` and its text view. Closing the reader drops the
+pointer; a read still running is cancelled and its hand-over (`readerRun`) is marked dropped,
+so a job that finishes after the reader closed delivers nothing, and a delivered result is
+moved out of the hand-over, not copied. The job's title, target, status, log and error hold
+the escaped path, sizes, line counts and bounds — never a line of the file; a daemon's error
+message is escaped before it is repeated. The index, the filter and the export are untouched
+code paths, and tests assert the contents are in none of them.
+
+### A8 — The reader replaces the tree's box, so nothing behind it can be reached
+
+While `rd` is set, `onFilesKey` and `onMouse` hand everything to the reader before any of the
+tree's own handling, the frame draws `readerBox` in place of `filesBox`, and the hit map holds
+the overlay's box alone — no tree row, no filter line. `?` still opens the key list (a dialog
+above the reader; closing it returns to the reader), since it is the footer's standing offer
+and acts on nothing. The header is fixed above the text; on a short terminal it is cut from
+the bottom so the text keeps three rows. Wrapping is on when the reader opens, because a 2 KiB
+line is otherwise mostly off screen; `w` toggles it.
+
+### A9 — Independent review
+
+An independent security review of the diff (a separate agent given the code, the requirements
+and the threat model — hostile file contents, names, archive headers and daemon messages — not
+these conclusions) found nothing critical, high or medium. Of its five low/info findings, three
+were acted on:
+
+- **Invisible format characters.** The first version escaped the bidirectional controls and
+  line separators only; zero-width spaces and joiners, the soft hyphen, the deprecated format
+  characters and the tag block were drawn raw, in contents and in names. `escape.Reorders` is
+  now every format character (Unicode `Cf`) and the two separators, shown as `\uNNNN` or
+  `\UNNNNNNNN`, and both sweeps cover every code point. The cost is stated: a zero-width
+  joiner inside an emoji sequence, or a zero-width non-joiner in Persian text, is shown as its
+  escape. Safe over pretty, as for C1 controls.
+- **A daemon switch orphaned a running read.** `switchTo` rebuilds the model; the read's job
+  kept running and delivered into a hand-over nothing referenced. `switchTo` now closes the
+  reader first: the job is cancelled and its hand-over dropped
+  (`TestReaderIsDroppedWhenTheDaemonChanges`).
+- **A megabyte of daemon error was wrapped on every frame.** Every string the daemon or the
+  archive chose that the reader repeats in a sentence — its error message, a stat's name and
+  link target, a header's name and link name — is now kept to 400 bytes before it is escaped,
+  and says it was cut (`TestReaderRepeatsOnlyASentenceOfWhatTheDaemonSays`).
+
+Not acted on, and stated as limits:
+
+- **Combining marks.** A line with stacked combining marks or variation selectors beside wide
+  characters can wrap to a row a cell or two wider than the box, which the box then cuts with
+  a visible `…`. No byte is altered and nothing reaches the terminal raw; escaping every
+  combining mark would mangle ordinary decomposed text. `w` (no wrap) and `o` (copy out) show
+  such a file another way.
+- **An archive of headers without end.** A daemon that streams extended headers forever keeps
+  the read job reading (memory stays bounded: one header at a time, 1 MiB at most). There is
+  no deadline on the read, since a slow link is not a failure; `c`, Esc and the Jobs pane
+  cancel it.
+
+It confirmed as sound: the two-step type and name check, the stream closed on every path,
+retention (the job's output, the export, the index), read-only, and input consumption.
+
+### A10 — Round twenty-four: what was run
+
+See docs/TESTING.md, round twenty-four, for the commands and their results.

@@ -29,8 +29,10 @@ import (
 // desk already holds and says nothing has been read: an image's archive is
 // the one expensive read, and only Enter starts it, as one cancellable job.
 // A container's change list is one small GET, read when the view opens and
-// on r. No file's contents are ever read, and every name is escaped
-// (files.Escape) before it is drawn or written.
+// on r. The tree, the filter and the export hold names and metadata only;
+// a file's contents are read on request alone — a copy (copy.go), or the
+// reader, Enter on a regular file of a container (reader.go) — and every
+// name is escaped (files.Escape) before it is drawn or written.
 
 // filesCacheSize is how many image indexes are kept: the one shown and the
 // one before it. An index is tens of megabytes at its bound (V11).
@@ -133,6 +135,10 @@ type filesState struct {
 	copyReread bool
 	copyOK     bool
 
+	// rd is the reader, while it is open on one file of the container
+	// (reader.go). What it read is here and nowhere else.
+	rd *filesReader
+
 	memo struct {
 		ix     *files.Index
 		expVer int
@@ -208,6 +214,7 @@ func (m *Model) openFiles() tea.Cmd {
 // nothing.
 func (m *Model) closeFiles() {
 	fs := &m.fs
+	m.closeReader() // what it read goes with it
 	fs.open, fs.typing = false, false
 	fs.copyWatch, fs.copyReread = nil, false // a copy-in still running keeps going; the view no longer waits for it
 	if fs.run != nil {
@@ -467,6 +474,9 @@ func (m *Model) filesCursor(v files.View) int {
 
 func (m *Model) onFilesKey(k tea.KeyMsg) tea.Cmd {
 	fs := &m.fs
+	if fs.rd != nil {
+		return m.onReaderKey(k) // the reader takes every key: none reaches the tree
+	}
 	if fs.typing {
 		m.onFilesFilterKey(k)
 		return nil
@@ -511,9 +521,14 @@ func (m *Model) onFilesKey(k tea.KeyMsg) tea.Cmd {
 		if fs.run != nil {
 			m.jobs.Cancel(fs.run.jobID)
 		}
-	case "enter", "right", "l":
-		if key == "enter" && m.filesBase() == nil {
+	case "a":
+		// The image's archive, from any row: Enter on a file row is that
+		// file's reader, so a list of files alone still has a way to it.
+		if m.filesBase() == nil {
 			m.startFilesRead()
+		}
+	case "enter", "right", "l":
+		if key == "enter" && m.filesEnter(here) {
 			return nil
 		}
 		if here == nil {
@@ -603,11 +618,26 @@ func (m *Model) onFilesFilterKey(k tea.KeyMsg) {
 
 func (m *Model) filesHints() []string {
 	fs := &m.fs
+	if fs.rd != nil {
+		return m.readerHints()
+	}
 	if fs.typing {
 		return []string{"type", "to filter paths", "Enter", "keep", "Esc", "undo"}
 	}
 	var pairs []string
-	if m.filesBase() == nil && fs.run == nil {
+	var here *files.Row
+	if v, _ := m.filesView(); len(v.Rows) > 0 {
+		if cur := m.filesCursor(v); cur >= 0 {
+			here = &v.Rows[cur]
+		}
+	}
+	unread := m.filesBase() == nil && fs.run == nil
+	switch {
+	case m.filesReadable(here) && unread:
+		pairs = append(pairs, "⏎", "read the file", "a", "read the archive")
+	case m.filesReadable(here):
+		pairs = append(pairs, "⏎", "read the file")
+	case unread:
 		pairs = append(pairs, "⏎", "read the archive")
 	}
 	if fs.run != nil {
@@ -1046,7 +1076,7 @@ func (m *Model) filesDetail(r files.Row, ix *files.Index, w int) []string {
 	}
 	switch {
 	case n.FromChanges && n.Change == files.Added:
-		kv("size", "not read: the container added this path after its image, and the view does not read a container's archive (o copies it out)", toneDim)
+		kv("size", "not read: the container added this path after its image, and the tree does not hold a container's sizes (Enter reads the file, o copies it out)", toneDim)
 	case n.FromChanges && n.Implicit:
 		kv("size", "not known: a directory the container's change list implies", toneDim)
 	case n.FromChanges:

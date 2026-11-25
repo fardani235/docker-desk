@@ -211,6 +211,9 @@ func (m *Model) onMouse(msg tea.MouseMsg) tea.Cmd {
 		return m.mouseDialog(h, delta)
 	case m.pk.open:
 		return nil // the Packages view takes keys only
+	case m.fs.open && m.fs.rd != nil:
+		m.mouseReader(delta) // nothing reaches the tree behind it
+		return nil
 	case m.fs.open:
 		m.mouseFiles(h, delta)
 		return nil

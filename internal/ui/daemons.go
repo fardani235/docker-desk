@@ -106,6 +106,7 @@ func (m *Model) bind(mem *session.Member) {
 // the returned command.
 func (m *Model) switchTo(mem *session.Member) tea.Cmd {
 	m.dropRepoRequests()
+	m.closeReader() // a file being read is the previous daemon's: cancelled, and nothing kept
 	keep := *m
 	dlg := keep.dlg
 	if dlg != nil && dlg.kind != dlgDaemons {

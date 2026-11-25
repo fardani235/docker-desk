@@ -139,6 +139,10 @@ func (m *Model) render() []string {
 	switch {
 	case m.pk.open:
 		body = m.packagesBox(m.width, len(body))
+	case m.fs.open && m.fs.rd != nil:
+		// The reader is drawn in place of the tree, and records no row of
+		// it: a click has only the reader's own box to land on.
+		body = m.readerBox(m.width, len(body))
 	case m.fs.open:
 		body = m.filesBox(m.width, len(body))
 	case m.sp.open:
@@ -456,6 +460,8 @@ func (m *Model) renderHints() string {
 	switch {
 	case m.pk.open:
 		right = m.hints("Esc", "close", "?", "keys") + " "
+	case m.fs.open && m.fs.rd != nil:
+		right = m.hints("Esc q", "close", "?", "keys") + " "
 	case m.fs.open && m.fs.typing:
 		right = "" // every key is text
 	case m.fs.open:
@@ -718,6 +724,8 @@ func (m *Model) helpLines(w int) []string {
 	sect("Files view (F, on an image or a container)")
 	row("F", "open on the highlighted image or container, from any pane; again to close")
 	row("Enter", "before the image is read: read its archive and build the index (a job)")
+	row("Enter", "a container, on a regular file: read that file and show its text (a job)")
+	row("a", "a container: read the image's archive from any row, when Enter is a file's")
 	row("↑ ↓  or  k j", "one row")
 	row("PgUp PgDn", "one page")
 	row("g  G", "first / last row")
@@ -735,12 +743,14 @@ func (m *Model) helpLines(w int) []string {
 	}
 	row("c", "cancel the archive read in progress: nothing is kept")
 	row("Esc", "clear the filter; again, close: the desk is as it was")
+	row("in a file", "↑ ↓ PgUp PgDn g G scroll, w wraps, c cancels the read, Esc or q closes")
 	out = append(out,
 		"  Opening reads nothing on an image, and on a container only the daemon's",
 		"  change list (what `docker diff` prints). Enter streams the image's archive",
 		"  once per session (GET /images/get) and keeps headers only: names, types,",
-		"  sizes, modes, owners and the layer that wrote each path. No file's contents",
-		"  are read, shown or searched; names are escaped on screen and in the file.",
+		"  sizes, modes, owners and the layer that wrote each path. The tree, the",
+		"  filter and the export hold no file's contents; names are escaped on screen",
+		"  and in the file.",
 		"  At most 200,000 entries, 4 KiB a path and 48 MB of path text are kept; the",
 		"  header says how many of how many, and the filter says when it may miss.",
 		"  Directory sizes are computed from their files and carry no layer. The",
@@ -753,6 +763,16 @@ func (m *Model) helpLines(w int) []string {
 		"  A local path that exists is never replaced, and a copy out that fails or is",
 		"  cancelled removes what it wrote. Modes are copied, ownership is not; links",
 		"  stay links; devices, FIFOs and sockets are skipped and listed in the job.",
+		"  Enter on a regular file of a container reads that one path (one GET of the",
+		"  container's archive, allowed in read-only mode) from its filesystem as it",
+		"  is now. At most 1 MiB, 10,000 lines and 2 KiB a line are kept, and every",
+		"  cut is named. Only valid UTF-8 without NUL bytes is shown, with control",
+		"  characters and escape sequences made visible (\\x1b); anything else gets",
+		"  its metadata and no bytes — there is no hex view. What is read is drawn in",
+		"  the reader only: never written, exported, searched or logged, and dropped",
+		"  when it closes. An image's files are not read (use a container, or save the",
+		"  archive: w in Images); links, devices, FIFOs, sockets and deleted paths are",
+		"  named, never followed or opened.",
 	)
 
 	for k := Kind(0); k < kindCount; k++ {

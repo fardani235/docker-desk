@@ -411,7 +411,11 @@ func TestFilesContainerBeforeAndAfterTheImage(t *testing.T) {
 	b.see("not known: the image's index does not hold this path")
 
 	// State 2: the image read; the changes over its tree, not asked again.
-	b.readArchive()
+	// The cursor is on a file, where Enter is that file's reader: a reads
+	// the archive from any row.
+	b.keys("a")
+	b.until("the archive to be read", func() bool { return b.m.filesBase() != nil && b.m.fs.run == nil })
+	b.settle()
 	if n := b.changeRequests(); n != 1 {
 		t.Fatalf("reading the image asked for the changes again: %d", n)
 	}

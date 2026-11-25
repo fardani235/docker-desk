@@ -688,18 +688,20 @@ back exactly as it was.
   (`GET /images/get`) — read once per session, as one job, and only when you press `Enter`.
   Until then the view shows what the desk already knows (the image, its platform, its layer
   count and the daemon's size for it) and says *nothing has been read*. The job reads tar
-  headers only: names, types, sizes, modes, owners and times. **No file's contents are read,
-  shown or searched.** `c` cancels it; closing the view cancels it too. A cancelled or failed
+  headers only: names, types, sizes, modes, owners and times. **The tree, the filter and the
+  export hold no file's contents**, and an image's files are never read. `c` cancels it;
+  closing the view cancels it too. A cancelled or failed
   read keeps nothing and says why. The last two images read are kept, so reopening is
   instant and the archive is not read again.
 - **A container's files** are its image's tree with the daemon's own change list laid over it
   — `GET /containers/{id}/changes`, what `docker diff` prints — read when the view opens and
   again on `r`, which reads nothing else. Paths the container **added** are marked and have no
-  size (the tree never reads a container's archive; only a copy does), a directory it added cannot be opened
+  size (the tree never reads a container's archive; only a copy or the reader does), a directory it added cannot be opened
   and says its contents are not read, a **changed** file keeps the image's size and says so,
   and a **deleted** path is struck through with the image's size and layer. Opened before the
   image is read, the view lists the changes alone, without sizes, and says the image's files
-  have not been read and that `Enter` reads them. With no changes it says *this container has
+  have not been read and that `Enter` reads them — except on a file, where `Enter` is that
+  file's reader (below) and `a` reads the archive. With no changes it says *this container has
   written nothing since its image*. The list's age is shown ("read 12s ago"); the image's tree
   never goes stale, since an image's archive cannot change.
 
@@ -721,7 +723,8 @@ is cut, the filter says it may miss a path the image holds. A **zstd-compressed 
 read** — the desk carries no zstd decoder — and the header names it: no row is drawn, and no
 path is said to be absent, on its account.
 
-**Moving.** `↑` `↓` `PgUp` `PgDn` `g` `G` move; `→` or `Enter` opens a directory, `←` closes it
+**Moving.** `↑` `↓` `PgUp` `PgDn` `g` `G` move; `→` or `Enter` opens a directory (on a
+container, `Enter` on a regular file reads it: see below), `←` closes it
 or goes to the one it is in; `s` orders by name or by size (largest first, directories by
 their files); `/` filters by path, case ignored, showing every match with the directories that
 hold it and counting the matches among the paths searched. `Esc` clears the filter and keeps
@@ -729,12 +732,63 @@ the cursor on its path. Long names are cut on the left, so the end of a name sta
 
 **Names are hostile.** Whoever built the image chose them. Every name is escaped before it is
 drawn or written — a newline as `\n`, other control characters, `DEL` and invalid UTF-8 as
-`\xNN`, a backslash doubled — so a name cannot colour the screen, move the cursor or forge a
-row of the listing. A name shaped like `../../etc/passwd` is a name in the tree; no path is
+`\xNN`, an invisible format character (a bidirectional override, a zero-width space, a line
+separator) as `\uNNNN`, a backslash doubled — so a name cannot colour the screen, move the
+cursor, forge a row of the listing or read as another name. A name shaped like `../../etc/passwd` is a name in the tree; no path is
 ever opened, resolved or joined to the machine's filesystem.
 
+**Reading one file.** On a container, `Enter` on a regular file opens a full-screen reader on
+it. Nothing is sent before `Enter`; then one request asks the daemon for that one path
+(`GET /containers/{id}/archive`, what `docker cp` reads — a `GET`, so it works in read-only
+mode), as a job with progress that `c` cancels.
+
+```
+ path       /etc/nginx/nginx.conf
+ container  shop-web-1 · f948ec4de9e4
+ type       regular file · mode 0644 (-rw-r--r--) · uid 0 gid 0 · modified 2026-11-01 09:30:00 UTC
+ size       85B in the container now; the tree's 88B is the image's — the container changed
+            this file
+ source     the container's current filesystem, as the daemon read it for this request — not
+            a snapshot, and not the image's file
+ shown      the whole file: 4 lines, 85B
+ ───────────────────────────────────────────────────────────────── all of it · wrapped ─
+ user nginx;
+ worker_processes 4;
+```
+
+- **Bounded, and it says so.** At most **1 MiB** is read, **10,000 lines** are kept, and a line
+  is kept to **2 KiB**. Whatever was cut is named on the `shown` line ("the first 1 MiB of
+  3.1MB: the rest was cut, unread"); `o` copies the whole file out.
+- **Text only.** Contents are shown only when what was read is valid UTF-8 with no NUL byte.
+  Anything else gets its metadata — path, type, size, mode, owner, time, source — and **no
+  bytes at all**: there is no hex view.
+- **Contents are hostile too.** Whoever writes in the container chose them. Every control
+  character, `DEL`, C1 control and invisible format character is shown as a visible escape (`\x1b`,
+  `\u202e`), a carriage return before a newline is dropped, tabs become spaces: a file cannot
+  colour the screen, move the cursor, set the title or the clipboard, or draw as other than it
+  is.
+- **The container, now — never the image.** What is shown is what the container's filesystem
+  holds when the daemon answers, not a snapshot; for a file the container changed the reader
+  says the tree's size is the image's. **An image's files are not read**: there is no request
+  for one file of an image, only the whole archive again, so `Enter` on one says so and sends
+  nothing — open Files on a container made from it, or save the archive (`w` in Images).
+- **One regular file, verified.** A symlink, hard link, device, FIFO, socket or a path the
+  container deleted is named and refused before anything is sent; nothing is followed. A path
+  the change list alone names has no type until the daemon answers, so it is asked for and the
+  answer decides. Either way the answer must be exactly one archive entry, a regular file with
+  the path's own name: a directory, a link or another name is refused with what was received,
+  unread.
+- **Kept nowhere.** What is read is held in memory for the open reader only. It is never
+  written, exported, searched, logged or put in a job's output (which holds the path, sizes and
+  bounds), and it is dropped when the reader closes. A missing path, a refusal, a cancelled
+  read or a vanished container leaves the reason and no contents.
+- **Keys.** `↑` `↓` `PgUp` `PgDn` `g` `G` scroll, `w` toggles wrapping, `c` cancels a read in
+  progress, `Esc` or `q` closes back to the tree exactly as it was — cursor, open directories,
+  order and filter. While it is open every key and wheel notch is the reader's; a click
+  reaches nothing. Before the image's tree is read, `a` reads the archive from any row.
+
 **Copying, out and in.** On a container, `o` and `i` copy the highlighted path between the
-container and this machine — the only time the desk reads or writes a container file's contents, and only
+container and this machine — with the reader, the only times the desk reads a container file's contents, and only
 the path asked for, streamed and never drawn. On an image both keys say copies are between a
 container and this machine, and open nothing.
 
@@ -925,7 +979,7 @@ Press `?` inside the desk for the same list.
 | `r` | refresh every list now; also takes a new Processes snapshot (now if the tab is shown, else on the next visit), and asks upstream again if Images › Upstream is shown |
 | `U` | Images: check every tagged image upstream, one at a time, as one job (see [Upstream](#upstream--what-the-tag-names-today)) |
 | `S` | Space: where the bytes went, and what removing something frees (see above) |
-| `F` | Files: the highlighted image's merged tree, or a container's changes over it (see [Files](#files--what-is-inside-an-image-and-what-a-container-wrote)) |
+| `F` | Files: the highlighted image's merged tree, or a container's changes over it; there, `Enter` on a container's regular file reads it (see [Files](#files--what-is-inside-an-image-and-what-a-container-wrote)) |
 | `B` | Repository: a registry's tags for the highlighted image's repository, and a pull by digest (see [Repository](#repository--a-registrys-tags-and-one-build-by-its-digest)) |
 | `M` | the daemon picker: this session's daemons and this machine's Docker contexts (see [Several daemons](#several-daemons-in-one-session)) |
 | `>` `<` | focus the next / previous connected daemon |
@@ -1299,9 +1353,13 @@ Good to know:
   have.
 - Files (`F`): the tree never reads a container's archive or a file's contents, and there is no
   file-level difference. A container's side is the daemon's change list over its image's tree:
-  a changed file's own size and what an added directory holds are not read. No file is
-  previewed, and nothing is compared between a container and its image beyond what the daemon
-  lists. The index keeps at most 200,000 entries; zstd layers are named as unread.
+  a changed file's own size and what an added directory holds are not read. Nothing is compared
+  between a container and its image beyond what the daemon lists. The index keeps at most
+  200,000 entries; zstd layers are named as unread.
+- The reader (`Enter` on a container's regular file): one file at a time, its first 1 MiB,
+  10,000 lines and 2 KiB a line, as text. No image file is read. No hex view, no editor, no
+  search, no export or copy of what is shown, no following a symlink, no device, FIFO or
+  socket, and no snapshot: it is the container's file as the daemon read it at that moment.
 - Copies (`o`, `i`): one path between one container and this machine — not between containers
   or daemons, no globs, no local file browser, no copy from an image. An existing local path is
   never replaced and there is no option to force it. Ownership, times (on copy out), extended
