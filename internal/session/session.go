@@ -6,6 +6,9 @@
 // member's hub streams everything the panes ask for; every other member's hub
 // keeps only its event stream and its ping (live.ModeEventsOnly), and the
 // little that matters from it reaches the operator as a notice (TakeNotices).
+// The one exception is an explicitly opened view: while Attention is on
+// screen it reads every connected member's containers, and stops when it
+// closes (attention.go).
 //
 // The single-daemon desk is the case of a session with one member: the
 // launch daemon, added with AddLaunch. Members added later come from the
@@ -314,6 +317,9 @@ type Session struct {
 	started bool
 	closed  bool
 	wg      sync.WaitGroup
+	// attention holds the read runs of open views (attention.go); they end
+	// with the session.
+	attention map[*Attention]struct{}
 
 	noticeMu sync.Mutex
 }
@@ -702,6 +708,18 @@ func (s *Session) Close() {
 	s.closed = true
 	ms := s.members
 	s.members, s.focus = nil, nil
+	// A view's reads end before the engines they use are released.
+	runs := make([]*Attention, 0, len(s.attention))
+	for a := range s.attention {
+		runs = append(runs, a)
+	}
+	s.attention = nil
+	s.mu.Unlock()
+	for _, a := range runs {
+		a.Close()
+		a.Wait()
+	}
+	s.mu.Lock()
 	for _, m := range ms {
 		m.mu.Lock()
 		m.removing = true

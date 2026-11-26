@@ -121,6 +121,9 @@ func (m *Model) switchTo(mem *session.Member) tea.Cmd {
 		filter: keep.filter, filterIn: keep.filterIn, tab: keep.tab, logWrap: keep.logWrap,
 		jobSel: keep.jobSel, dlg: dlg, status: keep.status, spinner: keep.spinner,
 		frames: keep.frames, started: keep.started, quitting: keep.quitting, lastPoll: keep.lastPoll,
+		// The Attention view is the session's: it stays open, with its
+		// reads and its cursor, when the focused daemon changes under it.
+		at: keep.at,
 	}
 	m.initDaemonView()
 	m.bind(mem)

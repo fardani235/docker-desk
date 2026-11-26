@@ -20,6 +20,13 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 	if key == "ctrl+c" {
 		return m.requestQuit()
 	}
+	// A key means the operator has taken over: a jump from the Attention
+	// view still waiting for its container must not move the highlight —
+	// or the focus — under whatever is typed next. The key that ends the
+	// wait does nothing else: it was typed before the container was there.
+	if m.dropAttentionJump() {
+		return nil
+	}
 	// A terminal too small to draw the desk cannot show a dialog either.
 	// Nothing may be acted on, or confirmed, that is not on screen.
 	if m.tooSmall() {
@@ -71,6 +78,10 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 	if m.rb.open {
 		return m.onRepoKey(k)
 	}
+	// And the Attention view: it has no actions, so no key behind it either.
+	if m.at.open {
+		return m.onAttentionKey(k)
+	}
 
 	switch key {
 	case "q":
@@ -90,6 +101,10 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 		return m.cycleFocus(-1)
 	case "S":
 		return m.openSpace()
+	case keyAttention:
+		// A read, like S: it changes nothing on any daemon, and works in
+		// read-only mode. It is the one view that reads every member.
+		return m.openAttention()
 	case "F":
 		// A read, like S and B: it works in read-only mode, and opening it
 		// reads nothing expensive (an image: nothing at all).

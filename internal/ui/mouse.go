@@ -35,7 +35,8 @@ const (
 	hitFilesRow                  // key: path
 	hitSpaceRow                  // key: row key
 	hitRepoRow                   // key: tag
-	hitOverlay                   // the Files, Space, Repository or Packages view
+	hitAttnRow                   // key: "<member id>/<container id>"
+	hitOverlay                   // the Files, Space, Repository, Packages or Attention view
 	hitDialog                    // the open dialog's box: inert unless a row says otherwise
 	hitMenuRow                   // index: menu entry
 	hitPickerRow                 // index: item, key: item id
@@ -206,6 +207,11 @@ func (m *Model) onMouse(msg tea.MouseMsg) tea.Cmd {
 		delta = 1
 	}
 	m.dirty = true
+	// The pointer, like a key, takes over from a jump still on its way, and
+	// the press that ends it does nothing else.
+	if m.dropAttentionJump() {
+		return nil
+	}
 	switch {
 	case m.dlg != nil:
 		return m.mouseDialog(h, delta)
@@ -222,6 +228,9 @@ func (m *Model) onMouse(msg tea.MouseMsg) tea.Cmd {
 		return nil
 	case m.rb.open:
 		m.mouseRepo(h, delta)
+		return nil
+	case m.at.open:
+		m.mouseAttention(h, delta)
 		return nil
 	}
 	return m.mouseDesk(h, delta)

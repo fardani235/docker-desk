@@ -154,6 +154,11 @@ type Options struct {
 	// time.Now.
 	Now func() time.Time
 
+	// Attention bounds the Attention view's reads (the inspects per daemon,
+	// the gap between two reads of one daemon); zero values select the
+	// session's defaults. Tests shorten them.
+	Attention session.AttentionConfig
+
 	// NoMouse is --no-mouse: the program asks the terminal for no mouse
 	// reporting, and any mouse event that arrives anyway is ignored. The
 	// zero value — mouse on — is what every other caller gets.
@@ -189,10 +194,14 @@ type Model struct {
 	kind          Kind
 
 	// ---- data ----
-	snap        plan.Snapshot
-	projects    []plan.Project
-	loaded      [listCount]bool
-	listErr     [listCount]string
+	snap     plan.Snapshot
+	projects []plan.Project
+	loaded   [listCount]bool
+	listErr  [listCount]string
+	// listAt is when each list shown was answered, and listAsked when the
+	// request it answers was sent.
+	listAt      [listCount]time.Time
+	listAsked   [listCount]time.Time
 	inflight    [listCount]bool
 	reqSeq      [listCount]uint64
 	lastStart   [listCount]time.Time
@@ -246,6 +255,8 @@ type Model struct {
 	fs filesState
 	// ---- repository browser (B) ----
 	rb repoState
+	// ---- attention view (H): every daemon of the session ----
+	at attnState
 	// changedAt is when a refresh last found the engine different from what
 	// the desk knew: a list, or the disk account. A figure taken before it
 	// is stale. listPrint is what each list said, for comparison.
@@ -408,6 +419,7 @@ func (m *Model) Jobs() *jobs.Manager { return m.jobs }
 // Close stops every stream and cancels running jobs. Requests the daemon has
 // already accepted complete or fail on the daemon's side.
 func (m *Model) Close() {
+	m.dropAttention() // the view's reads end with it
 	m.jobs.Close()
 	m.sess.Close()
 	if m.ds2.idle != nil {
@@ -422,6 +434,7 @@ type frameMsg time.Time
 type listMsg struct {
 	list       int
 	seq        uint64
+	asked      time.Time // when the request was sent
 	containers []engine.Container
 	images     []engine.Image
 	volumes    []engine.Volume
@@ -471,7 +484,7 @@ func (m *Model) refreshCmd(li int) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
-		msg := listMsg{list: li, seq: seq}
+		msg := listMsg{list: li, seq: seq, asked: time.Now()}
 		switch li {
 		case listContainers:
 			msg.containers, msg.err = eng.Containers(ctx)
@@ -662,6 +675,12 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		cmds = append(cmds, cmd)
 	}
 	m.collectNotices(now)
+	// The Attention view is the session's, not one daemon's: its reads are
+	// followed, and a jump from it is carried through, whoever is focused.
+	m.collectAttention(now)
+	if cmd := m.syncAttentionJump(now); cmd != nil {
+		cmds = append(cmds, cmd)
+	}
 	if m.cur == nil {
 		// No daemon: nothing to refresh, stream or measure.
 		m.expireStatus(now)
@@ -782,7 +801,7 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		m.dirty = true
 	}
 	m.expireStatus(now)
-	if m.jobs.RunningCount() > 0 || m.preparing || m.repoBusy() {
+	if m.jobs.RunningCount() > 0 || m.preparing || m.repoBusy() || m.attnBusy() {
 		// Spinner and elapsed times move only while something runs.
 		if next := int(now.UnixMilli()/120) % len(spinnerFrames); next != m.spinner {
 			m.spinner = next
@@ -831,6 +850,7 @@ func (m *Model) onList(msg listMsg) tea.Cmd {
 	}
 	m.listErr[li] = ""
 	m.loaded[li] = true
+	m.listAt[li], m.listAsked[li] = time.Now(), msg.asked
 	if p := listFingerprint(msg); p != m.listPrint[li] {
 		m.listPrint[li] = p
 		m.changedAt = time.Now()

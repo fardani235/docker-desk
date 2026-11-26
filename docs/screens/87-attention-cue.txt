@@ -1,0 +1,44 @@
+ Docker Desk  unix:///tmp/ddfake161356155/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…155/d.sock ●] │  2 staging ●                                                                                       M picker  < > focus
+┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (14) · 1 needs attention — H reads exit codes and restarts too ━━━━━━━┓┌─ 4 Events ───────────────────────────── ● live ─┐
+│▸ Containers    14│┃  NAME           IMAGE        STATE           CPU       MEM  STATUS        PORTS       ┃│Waiting for engine events…                       │
+│  Images        17│┃▸ distroless-s…  gcr.io/dis…  ● running      9.0%   50.0MiB  Up 5 hours                ┃│Everything the daemon does                       │
+│  Volumes        7│┃  noisy-logger   alpine:3.20  ● running     38.5%    329MiB  Up 12 minut…              ┃│shows up here as it happens.                     │
+│  Networks       7│┃  paused-batch   alpine:3.20  ‖ paused                       Up 50 minut…              ┃│                                                 │
+│  Compose        2│┃  payments-api   acme/payme…  ● unhealthy   14.8%    313MiB  Up 3 hours …              ┃│                                                 │
+│                  │┃  redis-cache    redis:7      ● running      7.3%    379MiB  Up 26 hours   6379→6379…  ┃│                                                 │
+│  ● 8 running     │┃  shop-api-1     shop/api:d…  ● running     70.9%    411MiB  Up 3 hours    3000→3000…  ┃│                                                 │
+│  ‖ 1 paused      │┃  shop-db-1      postgres:16  ● healthy    134.8%    701MiB  Up 3 hours …  5432/tcp    ┃│                                                 │
+│  ○ 5 stopped     │┃  shop-web-1     nginx:1.27   ● running     75.5%    489MiB  Up 3 hours    8080→80/t…  ┃│                                                 │
+│  ▲ 1 needs you   │┃  slow-stopper   busybox:1.…  ● running      9.4%    467MiB  Up 40 minut…              ┃│                                                 │
+│    H reads more  │┃  blog-app-1     ghost:5      ○ exited                       Exited (0) …              ┃│                                                 │
+│                  │┃  blog-db-1      mysql:8      ○ exited                       Exited (0) …              ┃│                                                 │
+│                  │┃  old-migration  shop/api:d…  ○ exited                       Exited (0) …              ┃│                                                 │
+│                  │┃  report-job     acme/repor…  ○ exited                       Exited (0) …              ┃│                                                 │
+│                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                                 │
+│                  │┌─ 3 Details: distroless-svc ───────────── [Info] Changes Logs Stats Processes Inspect ─┐│                                                 │
+│                  ││Name     distroless-svc                                                                ││                                                 │
+│                  ││ID       86f975de6cbb                                                                  ││                                                 │
+│                  ││Image    gcr.io/distroless/static:nonroot                                              ││                                                 │
+│                  ││State    ● running   Up 5 hours                                                        ││                                                 │
+│                  ││Started  2026-11-26 06:04:02                                                           ││                                                 │
+│                  ││Command  /svc                                                                          ││                                                 │
+│                  ││Restart  no (restarted 0×)                                                             ││                                                 │
+│                  ││Runtime  tty=false  privileged=false  env vars=1                                       ││                                                 │
+│                  ││Created  2026-11-26 06:04:02                                                           ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││Ports                                                                                  │└─────────────────────────────────────────────────┘
+│                  ││  none                                                                                 │┌─ 5 Jobs ────────────────────────────────────────┐
+│                  ││                                                                                       ││No jobs yet.                                     │
+│                  ││Networks                                                                               ││Everything that changes the daemon               │
+│                  ││  bridge  172.17.0.5  gw 172.17.0.1                                                    ││runs here, in the background.                    │
+│                  ││                                                                                       ││                                                 │
+│                  ││Mounts                                                                                 ││                                                 │
+│                  ││  none                                                                                 ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+│                  ││                                                                                       ││                                                 │
+└──────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└─────────────────────────────────────────────────┘
+ staging: connected (Engine 29.0.0-fake on staging-host) — > or M to focus it
+ ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  n new  e shell          Tab pane  ? keys  q quit

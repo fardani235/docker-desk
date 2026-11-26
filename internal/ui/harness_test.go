@@ -16,6 +16,7 @@ import (
 	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/fakeengine"
 	"github.com/fardani235/docker-desk/internal/live"
+	"github.com/fardani235/docker-desk/internal/session"
 )
 
 func TestMain(m *testing.M) {
@@ -72,6 +73,9 @@ type benchOpts struct {
 	// contexts is what the daemon picker lists; nil lists nothing — a test
 	// never reads the Docker configuration of whoever runs it.
 	contexts func() []dockerctx.Context
+	// attention bounds the Attention view's reads; the gap between two
+	// reads of one daemon defaults to 40 ms here, so tests need not wait.
+	attention session.AttentionConfig
 }
 
 func newBench(t testing.TB, o benchOpts) *bench {
@@ -116,7 +120,11 @@ func newBench(t testing.TB, o benchOpts) *bench {
 			t.Fatal(err)
 		}
 	}
+	if o.attention.Gap == 0 {
+		o.attention.Gap = 40 * time.Millisecond
+	}
 	m := New(Options{
+		Attention:     o.attention,
 		Engine:        eng,
 		Endpoint:      ep,
 		Info:          engine.Info{Name: "sandbox", ServerVersion: fakeengine.EngineVersion, APIVersion: "1.56"},

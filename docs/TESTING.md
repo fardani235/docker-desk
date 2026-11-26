@@ -1531,6 +1531,124 @@ with `TMPDIR=/tmp`.
 - The independent review (DECISIONS K6): nothing critical or high; one medium and four low
   findings, all fixed, each with a test named in the table above.
 
+## Round twenty-seven: the Attention view
+
+The view is the first thing that reads a daemon the operator is not looking at, and it draws
+what that daemon says. It is proven from four directions: the rules alone, with no daemon
+(`internal/attention`, 99.0% of statements); the read run against two fake daemons, with their
+request logs as witnesses of what was asked, how often and when it stopped
+(`internal/session`); the UI model key by key, click by click and frame by frame
+(`internal/ui`); and the real binary on a pseudo-terminal with two daemons
+(`internal/e2e`). No real daemon was contacted in this round, by a read or otherwise.
+
+### What each layer shows
+
+| | Tests | Shows |
+| --- | --- | --- |
+| The ladder | `TestClassifyLadder` (32 cases, the precedence conflicts among them), `TestNothingIsFineWithoutEvidence` (every state × health × detail), `TestCertainIsTheCheapSubset` | one class per container; nothing fine without a healthy probe and a read restart count; the cue never disagrees with the view |
+| Order and counts | `TestBuildOrdersAndCounts`, `TestBuildSpecScenarios`, `TestBuildEmptyAndClear`, `TestExitedTiesAndZeroTimes`, `TestCountsPartitionTheList` | restarting, unhealthy, dead, exits newest first, then watch; the counts add up to the list, whatever is read |
+| Reading | `TestReadingIsNeitherAndSettles`, `TestSkippedIsNeverClassified`, `TestCandidatesOrder` | an unread exit is neither fine nor needing you, and settles on the answer; what is not inspected is in no class |
+| The read run | `TestAttentionReadsEveryConnectedMember`, `…OneMemberFailsTheRestStaysUsable`, `…CloseStopsReads`, `TestSessionCloseEndsAttention`, `TestSessionCloseWaitsForAClosedRun` | one list and only the candidates' inspects per daemon; a failure stays in its block; closing stops the requests and the goroutines |
+| The focused daemon | `TestAttentionSeedIsInstantAndAsksNoList` (session), `TestAttentionFocusedBlockIsInstant`, `…ReadsTheFocusedDaemonWhenItsListIsNotHeld` (ui) | its block is whole on the frame of the key, before any other daemon answers, and no list request reaches it |
+| Bounds | `TestAttentionStopsAtTheBound`, `…InspectFailureIsCounted`, `…ListBeyondTheBoundIsCounted`, `TestConvertContainersBoundsADaemonsList`, `TestAttentionSaysWhatWasNotInspected`, `…SaysWhatWasNotLookedAt`, `…ListsABoundedNumberOfRows` | inspects stop at the bound and rows fill as answers arrive; the list, the strings and the rows are bounded, and what is left out is counted in words |
+| Events | `TestAttentionRereadsOnTellingEventsOnly`, `…DebouncesABurst`, `…QuietViewSendsNothing`, `…FollowsABackgroundDaemonsEvents` | `die`, `oom` and `health_status` re-read that daemon and no other; 30 exits in 300 ms are at most one read per gap; a quiet view sends nothing but the ping it always sent |
+| Evidence | `TestAttentionDoesNotClassifyOnAStaleDetail`, `…ListAndInspectDisagree` | nothing is classed on a detail an event has overtaken; a container that changes mid-read is in no class and costs one follow-up read, not a loop |
+| Members coming and going | `TestAttentionMemberRemovedMidRead`, `…MemberDisconnectedMidRead`, `…UnreachableMemberHasNoRows` (session); `…MemberRemovedWhileOpen`, `…SurvivesAFocusChange`, `…DisconnectedMemberHasAReasonAndNoRows` (ui) | a removed member's read is cancelled and its block goes; a lost one keeps its reason and no rows, and is read again when it returns |
+| The view | `TestAttentionOpensAndClosesWhereItWas` (four desk states × both close keys, three daemons), `…TitleTotalsHintsAndHelp`, `…EmptyAnswerIsSaidOnce`, `…SingleDaemon`, `…LongEndpointFits`, `…FailedReadKeepsTheRest` | restoration of pane, kind and highlight; every frame exactly the terminal's size at 140×40 and 80×24 |
+| Moving | `TestAttentionNavigatesAndScrolls` (80×24 and 150×30), `…CursorSurvivesAReRead`, `…EnterNeedsItsRowOnScreen`, `TestAttentionMouse` | the cursor is always on screen, crosses blocks, survives a re-read; a click highlights and never jumps; nothing behind the view can be clicked |
+| Enter | `TestAttentionJumpToAnotherDaemon`, `…OnTheFocusedDaemon`, `…ToAContainerThatIsGone`, `…ToADisconnectedMember`, `…IsDroppedByAKey` | the happy path, both failures with the desk put back, and typed-ahead keys that do nothing |
+| Read-only | `TestAttentionIsReadOnly` (every printable key and 16 special ones, on a row of each daemon, with and without `--read-only`), `TestAttentionReadOnlySessionSendsOnlyReads` | no mutation, no confirmation, no job; the unfocused daemon receives only its ping, its event stream, container lists and inspects |
+| Hostile text | `TestAttentionDrawsHostileTextAsText`, `TestDeskDrawsHostileContainerTextAsText`, `TestGuardLine`, `TestGuardLeavesTheDesksOwnFramesAlone`, `TestClipText` | an OSC title, a screen clear, a newline, a right-to-left override, a 5000-byte error and a hostile health word reach no frame — in the view, on the desk the jump lands on, in every Details tab and in a confirmation |
+| The cue | `TestContainersStateCellShowsReportedHealth`, `TestAttentionCueCountsOnlyTheCertainSignals`, `TestCueTitleForms` | health in the STATE cell, warn-toned, never invented, never at a column's cost; the count is of dead, restarting and unhealthy only, follows the list and clears |
+| The texts | `TestAttentionIsDocumented` | README and the help name the key, the view and its bounds — and the bounds are the code's |
+| The real binary | `TestAttentionAcrossDaemons`, `TestAttentionCompactReadOnly` | two daemons, the cue, `H`, an exit on the unfocused daemon read unasked, Enter to its container, `--read-only` at 80×24 |
+
+### The spec's scenarios, one by one (task 6.2)
+
+Every scenario of the `container-attention` and `daemon-session` deltas has a covering test; none
+was left to manual checking.
+
+| Scenario | Covered by |
+| --- | --- |
+| Opening with several daemons | `TestAttentionOpensAndClosesWhereItWas` (three daemons, focused first, no mutation) |
+| A disconnected member | `TestAttentionDisconnectedMemberHasAReasonAndNoRows`; `TestAttentionMemberDisconnectedMidRead`, `…UnreachableMemberHasNoRows` |
+| Read-only | `TestAttentionIsReadOnly`; `TestAttentionReadOnlySessionSendsOnlyReads`; e2e `TestAttentionCompactReadOnly` |
+| A restart loop · A failing probe · A failed exit · A clean exit · No healthcheck | `TestClassifyLadder`; `TestNothingIsFineWithoutEvidence`; shown as a count only: `TestBuildEmptyAndClear`, `TestAttentionTitleTotalsHintsAndHelp` |
+| Out of memory | `TestAttentionRereadsOnTellingEventsOnly` (the fake's OOM kill: row, code 137, listed first); `TestAttentionTitleTotalsHintsAndHelp` (`exited 137 · OOM-killed · finished …`) |
+| Several failures | `TestBuildOrdersAndCounts`, `TestExitedTiesAndZeroTimes`; `TestAttentionNavigatesAndScrolls` |
+| An exited row while its code is read · The answer arrives | `TestReadingIsNeitherAndSettles`; `TestAttentionFocusedBlockIsInstant` |
+| The focused daemon is instant | `TestAttentionFocusedBlockIsInstant`; `TestAttentionSeedIsInstantAndAsksNoList` |
+| A background daemon changes | `TestAttentionRereadsOnTellingEventsOnly`; `TestAttentionFollowsABackgroundDaemonsEvents`; e2e |
+| Nothing happened | `TestAttentionQuietViewSendsNothing`; `TestAttentionFollowsABackgroundDaemonsEvents`; e2e (1.5 s of silence) |
+| A read fails | `TestAttentionOneMemberFailsTheRestStaysUsable`; `TestAttentionFailedReadKeepsTheRest` |
+| Details fill in · The bound is reached | `TestAttentionStopsAtTheBound`; `TestAttentionSaysWhatWasNotInspected` |
+| Mixed problems · Counts | `TestBuildSpecScenarios`; `TestAttentionTitleTotalsHintsAndHelp` |
+| Jump to another daemon | `TestAttentionJumpToAnotherDaemon`; e2e |
+| The container is gone | `TestAttentionJumpToAContainerThatIsGone` (on another daemon, and on the focused one) |
+| Closing | `TestAttentionOpensAndClosesWhereItWas` |
+| Nothing wrong | `TestAttentionEmptyAnswerIsSaidOnce` |
+| An unhealthy row · No healthcheck is not healthy | `TestContainersStateCellShowsReportedHealth` |
+| The count | `TestAttentionCueCountsOnlyTheCertainSignals` (two restarting, one unhealthy: three) |
+| No actions | `TestAttentionIsReadOnly`; e2e `TestAttentionCompactReadOnly` |
+| Out of scope | `TestAttentionTitleTotalsHintsAndHelp` (no image, volume, disk or registry text); `TestAttentionIsReadOnly` (no such request) |
+| *daemon-session:* Attention reads a background daemon | `TestAttentionReadsEveryConnectedMember`, `…QuietViewSendsNothing`; e2e |
+| *daemon-session:* Attention closes | `TestAttentionCloseStopsReads`; `TestAttentionFollowsABackgroundDaemonsEvents` (after Esc: no container request, and the exit is a notice again) |
+
+### What was run, and what it said
+
+The machine's `TMPDIR` is a long path under which a unix socket cannot be bound (the 108-byte
+limit: `bind: invalid argument`), so every test command was run with `TMPDIR=/tmp` — where the
+tests' sockets go on any machine that does not set it.
+
+- `go vet ./...` — clean. `gofmt -l .` — nothing.
+- `TMPDIR=/tmp make test` — three full runs (about four minutes each). **Every package passed
+  in each except `internal/e2e`, which lost one test per run to failures that are not this
+  round's:** `TestRecreateCarriesADefaultVolume` in the first two, `TestComposeDeclared` in the
+  third. Both are named as intermittent in rounds twenty-three, twenty-five and twenty-six.
+  - `TestRecreateCarriesADefaultVolume` was measured on an untouched checkout of `HEAD` in a
+    separate worktree: 5 failures in 10 runs there, against 1 in 10 here. Its cause is its own:
+    it types before the desk has drawn its first frame, when no key is accepted; every other
+    caller of the same helper waits first. One line was added to wait as they do — a test-only
+    change outside this round's scope, made because the cause was plain: 24 runs of it then
+    passed.
+  - `TestComposeDeclared` passed 8 of 8 alone on this tree. Its `scrollTo` helper pages down
+    until text appears and can page past it under load; it was left as found.
+  - `go test ./internal/e2e/ -count=1 -update-screens` alone: all of it passed (100 s).
+- `TMPDIR=/tmp go test -race ./internal/attention/ ./internal/session/` — passed (three runs of
+  the session package after the review's changes). `go test -race ./internal/ui/ -run
+  'Attention|StateCell|Cue|ClipText|Guard|DeskDraws|Daemon|Mouse'` — passed. `make race` over
+  the whole tree was not run: the UI package takes several times its four minutes under the
+  detector.
+- `make crosscheck` (the real `docker` CLI against the fake daemon only; the script refuses a
+  server that is not the fake) — run 15 times because the fake's inspect changed (restart
+  count, OOM kill, `State.Error`, `Dead`): **157 passed, 0 failed in 13 runs; 156 and 1 in two.**
+  The one failure, captured in the second of them, is `create: environment`: the script expects
+  `"LOG_LEVEL=info","EMPTY="` in that order and the CLI sometimes sends the two the other way
+  round. It is the script's assertion and the CLI's ordering, not the fake's inspect; left as
+  found, named here.
+- **Screens.** Four new captures from tests that passed: `87-attention-cue`, `88-attention`,
+  `89-attention-jump` (160×44) and `90-attention-80x24-read-only`. Five existing captures were
+  kept because this round changes what they show — `shop-db-1`'s STATE cell now reads
+  `● healthy` (01, 20, 23, 35, 64); the other 83 rewritten by the run differ only in clock
+  times and statistics and were restored. **These are captures of two *fake* daemons on one
+  machine: there is no screenshot of the view on a real multi-daemon session**, and none was
+  attempted — the test guard keeps every test on the fake.
+- The independent review (DECISIONS AT16): nothing critical; one high finding that predates
+  the round and that Enter made reachable, four medium, four low — all fixed, each with a test
+  named in that table.
+
+### Not proven
+
+- The view against a **real** daemon: what a real engine's list and inspect say about health,
+  OOM kills and restart counts is known from Docker's own client library decoding them and from
+  the real CLI driving the fake — not from a real container that was OOM-killed. `--read-only`
+  with `H` is the careful first look: the view sends nothing but `GET`.
+- Whether three restarts is the right threshold, and whether 200 inspects, 5000 containers and
+  one read a second are the right bounds, on a daemon the size of a real production host.
+- The frame guard on terminals other than the emulated one: it removes bytes, so the worst a
+  wrong rule could do is drop a sequence the desk itself meant to send — and
+  `TestGuardLeavesTheDesksOwnFramesAlone` shows the desk sends none.
+
 ## Running everything
 
 ```sh

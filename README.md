@@ -215,7 +215,10 @@ answer still on its way from the previous daemon is dropped, never shown.
 ping, nothing else. What matters from it is a **notice** in the status line, with its name: a
 container that exited (`staging: container shop-web-1 exited (code 137)`), the daemon going away
 or coming back. Its events are recorded in its own history — focus it and the Events pane shows
-them — and never in the focused daemon's.
+them — and never in the focused daemon's. The one exception is a view you open yourself:
+while **Attention** (`H`) is on screen it reads every connected daemon's containers for that
+one screen, and stops when it closes — no list refresh is left running behind it (see
+[Attention](#attention--is-anything-wrong-anywhere)).
 
 **A daemon added from the picker never asks.** It is reached exactly as at launch, with the same
 checks and time bound, but nothing is asked on the terminal: an ssh login that would need a
@@ -247,10 +250,11 @@ each `ro`.
 | Pane | Shows |
 | --- | --- |
 | **1 Kinds** | Containers, Images, Volumes, Networks, Compose — with live counts. Moving the highlight is enough; the list follows. |
-| **2 List** | The objects of that kind. Containers show live CPU and memory. The highlight follows the *object* when the list changes underneath it. |
+| **2 List** | The objects of that kind. Containers show live CPU and memory, and — in the STATE cell, when the daemon reports one — their health (`● running · unhealthy`, in the warning colour when it is not healthy; a container without a healthcheck is never called healthy). The highlight follows the *object* when the list changes underneath it. |
 | **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON; `/` finds a key or value and names its path), for containers **Changes** (what the image its tag names now would bring; see below), **Logs** (live follow; `/` filters), **Stats** (CPU, memory, network, disk — with history) and **Processes** (a snapshot of `docker top`; see below), for images **Findings** (what the image's own bytes hold; see below) and **Upstream** (whether the tag names another build today; see below), and for compose projects **Declared** (what the project's compose file says now against what runs; see [Compose, honestly](#compose-honestly)). |
 | **4 Events** | The engine's event stream as it happens. It is the answer to everything you do — and to everything anyone else does to this daemon. |
 | **5 Jobs** | Every change you asked for, running in the background: progress while it runs, the daemon's answer when it ends. |
+| **Attention** (`H`) | Not a pane: one full screen for every daemon of the session — the containers that need a person, first. See [Attention](#attention--is-anything-wrong-anywhere). |
 | **Space** (`S`) | Not a pane: a full-screen account of the disk — the daemon's totals, unique and shared bytes per image, what a removal frees. See [Space](#space--where-the-bytes-went-and-what-removing-something-frees). |
 | **Repository** (`B`) | Not a pane: a full-screen list of a repository's tags from its registry — what each names, whether that build is already here, and a pull of one build by its digest. See [Repository](#repository--a-registrys-tags-and-one-build-by-its-digest). |
 
@@ -643,6 +647,121 @@ result [`docs/screens/78-untag-done.txt`](docs/screens/78-untag-done.txt); the l
 [`docs/screens/79-untag-last-tag-refused.txt`](docs/screens/79-untag-last-tag-refused.txt); and
 read-only at 80×24
 [`docs/screens/80-tag-80x24-read-only.txt`](docs/screens/80-tag-80x24-read-only.txt).
+
+### Attention — is anything wrong, anywhere?
+
+`H`, from any pane, covers the desk with the one question an operator asks first, answered for
+**every daemon of the session** at once: which containers need a person. `H` or Esc puts the
+desk back exactly as it was — pane, kind and highlight.
+
+```
+ Attention — 3 need you · 1 to watch · 24 containers on 2 daemons ────── oldest read 14:02:11
+ ◆ laptop  ● connected  ctx default  Engine 27.3.1  focused
+   unix:///var/run/docker.sock
+   12 containers · 2 need you · 1 to watch · read 14:02:11, 12s ago (the desk's list)
+   ↻ shop-api-1     restarting · exit 1 · 12 restarts · Restarting (1) 3 seconds ago
+   ○ shop-worker-1  exited 137 · OOM-killed · finished 14:01:40, 43s ago
+   watch
+   ● shop-cache-1   running · 5 restarts
+   6 fine · 2 unknown (no health verdict) · 1 not a problem (paused, exited 0)
+
+   staging  ● connected  [REMOTE ssh]  ctx staging  Engine 26.1.4
+   ssh://deploy@staging.example.com
+   12 containers · 1 needs you · 0 to watch · read 14:02:12, 11s ago
+   ● billing-db-1   running · unhealthy · Up 3 hours (unhealthy)
+   9 fine · 1 unknown (no health verdict) · 1 not a problem (paused, exited 0)
+```
+
+One block per daemon, the focused one first, then the session's order. Each names the daemon,
+its endpoint, how it is reached, its engine, and its **read time** with its age: nothing in the
+view is live, and every block says how old it is. A daemon that is not connected is a block
+with its endpoint and the reason, and no rows.
+
+**The ladder.** Every container is in exactly one class; the first rule that matches decides.
+
+| Class | Is | Shown as |
+| --- | --- | --- |
+| **needs you** | restarting · running and unhealthy · dead · exited with an exit code other than 0 (an OOM kill is named) | rows, in that order; failed exits newest first |
+| **watch** | running, but restarted three or more times by its restart policy · created and never started | rows, after every needs-you row |
+| **fine** | running and healthy | a count |
+| **unknown** | running with no healthcheck, or one still starting | a count |
+| **not a problem** | paused · removing · exited with code 0 | a count |
+
+A container without a healthcheck is **unknown — never called fine**: nothing was measured, and
+the view claims nothing. A paused container whose last probe failed is not a problem (it is
+frozen on purpose), and an unhealthy container that also restarted is listed once, as
+unhealthy. Three restarts is a judgement call, one constant in `internal/attention`.
+
+**What is read, and when.** State and health come from the container list — one
+`GET /containers/json` per daemon. An exit code, an OOM kill, a finish time and a restart count
+come from one inspect per container, and only for the containers that need one: the exited, the
+restarting and dead (for their reason), and the running ones that are not already unhealthy
+(for their restart count). Rows fill in as the answers arrive. Until its answer is in, a
+container is *being read*: an exited one has a row that says so, and none is counted as fine or
+as needing you early. The view stops at **at most 200** inspects per daemon per read — exited
+containers first — and says how many were not inspected; those are in no class at all. The
+daemon's status text (`Exited (137) 2 minutes ago`) is shown as its own words and never parsed
+for a code. On a re-read, what was read about a container before is kept until its new answer
+arrives — unless an exit, OOM or health event named that container since, in which case it is
+*being read* again and classed only by the new answer. A container that changes between the
+list and its inspect is put in no class, and that daemon is read once more. Two further bounds
+keep a very large or hostile daemon from costing more than it should: the first 5000 containers
+of a list are looked at and the rest counted as not looked at, and a block lists at most 500
+rows and counts the rest.
+
+- **On open:** the focused daemon's block is the Containers list the desk already holds, drawn
+  at once (it says *the desk's list*); only its details are asked for. Every other connected
+  daemon's containers are read once.
+- **On `r`:** every connected daemon is read again.
+- **On the daemon's own events:** while the view is open, a daemon is read again only when its
+  event stream — which the desk follows anyway — reports a container exit (`die`), an OOM kill
+  or a health change, and **at most once a second** per daemon. A daemon that reconnects is read
+  once.
+- **Otherwise never:** nothing polls. A view left open on a quiet session sends no request, and
+  its blocks simply age. Closing it ends its reads; an exit on another daemon is then a notice
+  in the status line again.
+
+A read that fails says so in its block, with the daemon's message and the time, and keeps the
+rows it had — still dated with the time they were read, never passed off as current. The rest
+of the view is unaffected.
+
+**Enter goes to the container.** It closes the view, focuses the row's daemon, asks for its
+Containers list and selects the container there — where the desk's own actions and
+confirmations are. If the container is gone by then, or does not appear within two seconds, the
+status line says so — `shop-worker-1 is no longer on staging … The desk is where it was` — and
+the daemon, pane, kind and highlight you had are put back. A daemon that is not connected is
+not focused at all: the view stays, and says why. A key or a click while a jump is still waiting
+ends the wait and does nothing else — it was made before the container was there, so it must not
+act on some other row; the status line says the jump was given up and, if the focus had already
+moved, that it stays on that daemon. Enter goes only to a row that is on screen: a highlighted
+row scrolled out of view is brought back by the first Enter, and gone to by the next.
+
+**The view only reads.** It sends container lists and container inspects — `GET`, nothing
+else — and has no action of its own: no start, stop, remove, logs or shell inside it. It works
+in read-only mode exactly as otherwise. Names, images, status text and error messages are a
+daemon's to choose: here, and in the Containers list Enter lands on, they are drawn escaped
+(`evil\x1b]0;…`), so none can act on the terminal or forge a row. Behind that, every frame the
+desk draws — any pane, any dialog — is stripped on its way out of everything that is neither a
+character nor a colour: an escape sequence a daemon slipped into a string the desk does not
+escape is removed, never sent to the terminal.
+
+**Without opening it.** The Containers STATE cell carries the health the daemon reports, and
+the Kinds pane and the Containers title count the containers the list alone is sure of — dead,
+restarting, unhealthy: `3 need attention — H reads exit codes and restarts too`. That count is
+a subset on purpose: knowing about failed exits and restart loops takes an inspect per
+container, which the desk does not spend on every list refresh. The view is the full answer.
+
+Captured from the real binary on two (fake) daemons: the count on the desk
+([`87-attention-cue.txt`](docs/screens/87-attention-cue.txt)), the view
+([`88-attention.txt`](docs/screens/88-attention.txt)), the desk after Enter
+([`89-attention-jump.txt`](docs/screens/89-attention-jump.txt)) and, at 80×24 in read-only mode,
+[`90-attention-80x24-read-only.txt`](docs/screens/90-attention-80x24-read-only.txt).
+
+**What it does not do here.** No images with moved upstream tags, no disk pressure, no compose
+drift, no registry state: containers only. No actions, no notifications, no history — closing
+the view forgets it. No age filter: an old failed container stays listed until it is removed.
+A container that starts again after a failure is not re-read for that (a start is not an exit):
+its block keeps its age, and `r` reads it.
 
 ### Space — where the bytes went, and what removing something frees
 
@@ -1131,6 +1250,7 @@ Press `?` inside the desk for the same list.
 | `r` | refresh every list now; also takes a new Processes snapshot (now if the tab is shown, else on the next visit), and asks upstream again if Images › Upstream is shown |
 | `U` | Images: check every tagged image upstream, one at a time, as one job (see [Upstream](#upstream--what-the-tag-names-today)) |
 | `S` | Space: where the bytes went, and what removing something frees (see above) |
+| `H` | Attention: what needs a person, on every connected daemon of the session (see [Attention](#attention--is-anything-wrong-anywhere)) |
 | `F` | Files: the highlighted image's merged tree, or a container's changes over it; there, `Enter` on a container's regular file reads it (see [Files](#files--what-is-inside-an-image-and-what-a-container-wrote)) |
 | `B` | Repository: a registry's tags for the highlighted image's repository, and a pull by digest (see [Repository](#repository--a-registrys-tags-and-one-build-by-its-digest)) |
 | `M` | the daemon picker: this session's daemons and this machine's Docker contexts (see [Several daemons](#several-daemons-in-one-session)) |
@@ -1193,6 +1313,13 @@ fields do not cover (networks, user, limits, a TTY, …) is not offered. The for
 **In the daemon picker** (`M`): `↑` `↓` move · `Enter` focus the daemon, or add the context ·
 `d` remove the daemon (then `y` to confirm, `n` to keep it) · `r` read the contexts again ·
 `Esc`, `q` or `M` close.
+
+**In the Attention view** (`H`): `↑` `↓` `PgUp` `PgDn` move between the listed containers (at an
+end, scroll) · `g` `G` first / last · `Tab` `Shift+Tab` the next / previous daemon's block ·
+`Enter` close the view, focus the row's daemon and select the container there ·
+`r` read every connected daemon's containers again · `H` or `Esc` close. As everywhere, `k` `j`,
+`Space`, `Home` `End` also move, `?` opens the help, `T` changes the theme and `q` quits (asking
+first if jobs run). No key there acts on a container: the view has no actions.
 
 **Details**: `←` `→` switch tab · `f` pause/resume following (Logs) · `w` toggle wrapping (not Processes; on Images, `w` in the List saves the archive).
 
@@ -1294,6 +1421,11 @@ the desk back.
 Docker Desk changes and deletes real things, so it is deliberate by design rather than by your
 being careful.
 
+- **A daemon's text cannot drive your terminal.** Container names, images, status text and
+  errors are a daemon's to choose. Where the desk knows a string is one, it draws it escaped;
+  and every frame, whatever drew it, leaves with nothing in it but characters and colours — a
+  window-title, cursor, clear-screen or any other control sequence is removed before the
+  terminal sees it, and a newline inside a line with it.
 - **No single keystroke changes anything.** Every action key opens a dialog that names the
   exact object (name and ID), the exact effect in plain words, and the daemon it will be sent
   to. Nothing has been sent at that point.
@@ -1437,8 +1569,11 @@ When nothing is compared, the tab says why in one sentence and shows no rows:
 
 ## What it does not do
 
-No view across daemons: one is focused at a time, and nothing acts on two at once except the
-copy of one image between daemons (Images, `C`). That copy is one image, one platform, under the tag it has: no
+No view across daemons but Attention (`H`), which only reads their containers and only while
+it is open: one daemon is focused at a time, and nothing acts on two at once except the
+copy of one image between daemons (Images, `C`). Attention itself lists containers only — no
+images, disk, compose drift or registry state — offers no action, sends no notification and
+keeps no history. That copy is one image, one platform, under the tag it has: no
 copying of volumes, containers or compose projects between daemons, no multi-platform or
 all-tags copy, no retag as part of it, no copy of a selection, no resuming a stream that broke,
 and no copy to a daemon that is not already a connected member of the session. No per-daemon
@@ -1632,10 +1767,12 @@ cmd/docker-desk        the program: resolve the daemon, open the way to it, chec
 cmd/fake-dockerd       the sandbox engine
 internal/dockerctx     which daemon is meant, how it is reached (socket, SSH, TCP/TLS); why it cannot be
 internal/sshtunnel     the one supervised ssh process that carries an ssh:// daemon's connections
-internal/session       the session's daemons: which is focused, adding (never asking), removing, notices
+internal/session       the session's daemons: which is focused, adding (never asking), removing, notices;
+                       and the Attention view's reads of every member, which end with the view
 internal/engine        the only door to the daemon (Docker's client library behind a narrow interface)
 internal/plan          what a mutation will do, decided by pure code before anything is sent
 internal/space         which bytes images share, and what removing a set of them frees (pure)
+internal/attention     which containers need a person: the ladder, the order, the counts (pure)
 internal/changes       what differs between the image a container runs and the one its tag names (pure)
 internal/registry      the registry client: references, credentials, challenges, tags/list, manifests
 internal/freshness     whether a local image's tag names another build upstream (Images › Upstream)

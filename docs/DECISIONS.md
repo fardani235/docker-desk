@@ -5284,3 +5284,216 @@ over both daemons of a pair.
 ### K7 — Round twenty-six: what was run
 
 See docs/TESTING.md, round twenty-six, for the commands and their results.
+
+## Round twenty-seven — the Attention view
+
+The brief was the OpenSpec change `add-attention-view`: `H` covers the desk with one screen that
+answers, for every daemon of the session, the question an operator asks first — is anything
+wrong anywhere? It was applied without the owner in the loop ("where you would ask, decide and
+record"), with the instruction to test and review it as QA and security would, and that
+vulnerable code is not acceptable. The change's decisions D1–D11 (design.md) were implemented
+as written; AT1–AT5 restate them against the code, AT6–AT15 are what was decided where the plan
+left room or met the code, AT16 is the review — which changed more than one of them — and AT17
+what was run.
+
+Two facts shape it. The container list says a container's state and health, and nothing about
+*why* it stopped: an exit code, an OOM kill and a restart count each cost one inspect. And the
+session's rule until now was that an unfocused daemon is asked for nothing but its events and a
+ping. The view is the first thing allowed to read another member's lists — and only while it is
+on screen.
+
+### AT1 — A pure package holds the ladder (D4)
+
+`internal/attention` takes a container list and whatever inspect details have been read, and
+returns rows and counts. No engine, no terminal, no clock. `Classify` is the ladder — dead,
+restarting, exited (by its code), paused/removing, created, running+unhealthy, running+restart
+count, running+healthy, unknown — and the first rule that matches decides, so a paused container
+whose probe failed is not a problem and an unhealthy one that also restarted is listed once.
+`Build` orders the needs-you rows restarting, unhealthy, dead, then failed exits newest first;
+watch rows after; everything else is a count. `FlapThreshold` (3) is the one constant.
+
+### AT2 — The reads are the session's, and end with the view (D2, D3, D5, D6)
+
+`session.Attention` is one open view's read run. Per connected member: one
+`GET /containers/json`, then one inspect per candidate (`attention.Candidates`), a few at a
+time, every answer published under one mutex with a version counter the frame tick looks at.
+`Sync` — called on each frame while the view is open — follows the session (a member added,
+lost, removed, given a new engine) and each member's event ring from the position it had when
+the view opened; it starts a read only when one is due. Nothing is periodic: a view left open
+on a quiet session sends no request (`TestAttentionQuietViewSendsNothing`, and the real binary
+in `TestAttentionAcrossDaemons`). `Close` cancels the run's context; the session's own `Close`
+ends any run still open before it releases the engines.
+
+Jobs are not used (D5): a glance should not fill the Jobs ledger, and no Bubble Tea message
+carries a result — the rule that live data is not message traffic holds.
+
+### AT3 — The focused daemon's block is the desk's own list (D2)
+
+`Seed` hands the run the Containers list the desk already holds, with the time it was answered
+(`Model.listAt`, new): the block is whole on the frame of the key, says *the desk's list*, and
+its first read asks for the details only — no list request reaches the focused daemon on open.
+With that list not loaded, the view reads the daemon itself, like any other member. `r` reads
+every member, the focused one too.
+
+### AT4 — The view: Space's shape, the session's scope (D1, D9, D10, D11)
+
+`internal/ui/attention.go`. `H` opens it from any pane and saves pane, kind and highlight; `H`
+or Esc puts them back. One block per member, focused first: a heading (name, state, link tag,
+context, engine), the endpoint on a line of its own (its middle gives way when it is longer
+than the line; never an end), then totals with the read time and its age, the rows, and the
+counts line. When nothing is listed anywhere the view says so once, for the session; a block
+that is clear beside one that is not says so itself. The view is carried across a focus change
+(`switchTo` keeps `at`): it is the session's, not one daemon's.
+
+### AT5 — The ambient cue counts only what the list is sure of (D8)
+
+`attention.Certain` — dead, restarting, running and unhealthy — is the subset of needs-you that
+costs nothing; it is defined through `Classify`, so the cue and the view cannot disagree. The
+count is in the Containers title and the Kinds pane, each time naming `H`.
+
+### AT6 — Decided: what is not inspected is in no class
+
+The spec says a class that needs a detail waits for it. Taken strictly, that covers a running,
+healthy container too: until its restart count is read it may be *watch*, so it is not *fine*.
+`Classify` returns `Reading` for it, and when the reader stops at its bound — or an inspect
+fails — the container is counted as **not inspected** (or **could not be inspected**), never
+as fine. The price is a count that looks worse on a very large daemon; the alternative was a
+"fine" the view had not earned.
+
+The bound is 200 inspects per daemon per read, four at a time, exited containers first (a
+failure may hide there), then restarting and dead (the reason of a problem already listed),
+then running (the restart count). A running, unhealthy container is not inspected at all: its
+class is settled, and its row shows the daemon's own status text.
+
+| Considered | Why not |
+| --- | --- |
+| Count an uninspected healthy container as fine | a claim about restarts that were not read |
+| No bound | a daemon with thousands of containers would be sent thousands of requests per event |
+| Running containers first | flapping is a watch; a failed exit is a needs-you |
+
+### AT7 — Decided: a re-read keeps a detail until its own answer replaces it
+
+On a re-read the new list is published at once and every candidate is inspected again. A detail
+read before is kept for a container still in the state it was read in, until this read's answer
+for it arrives; a candidate beyond the bound loses its detail. Without this, every exit on a
+daemon made all of its rows blink through "reading" on each event. The block says it is reading
+throughout. (The review narrowed this — AT16, finding 5: nothing is kept for a container an
+event has named.)
+
+### AT8 — Decided: an OOM kill needs you whatever its exit code
+
+D4 says "exited with a known non-zero code → needs you (OOM named)". An exited container the
+daemon marks OOM-killed is needs-you even if its code reads 0: the kernel killed it.
+
+### AT9 — Decided: a daemon that connects while the view is open is read once
+
+The spec names three occasions for a read: open, `r`, and an exit/OOM/health event. A member
+that connects — for the first time, or again after a loss — while the view is open has no rows
+to show; reading it once is "read every connected member once" applied to the moment it
+becomes one. It is not a poll: nothing follows it but the member's own events.
+
+### AT10 — Found: a container that recovers is not re-read
+
+A `start` is not an exit, an OOM kill or a health change, and the spec says a daemon is re-read
+*only* for those. So a container listed as restarting, or exited with a failure, that starts
+again stays listed as it was read until the next telling event on that daemon or `r`. The
+block's read time and age say how old the row is, and README says it in so many words. Adding
+`start` to the list is a one-line change in `session.tells`; it was left out because the spec
+is explicit, and a busy daemon's starts would multiply the reads.
+
+### AT11 — Decided: the gap is counted from a read's end, too
+
+"At most one read per member per second" is enforced against both the last read's start and its
+end: a read that takes two seconds is not followed by another the instant it finishes. `r`
+goes through the same gate, so a held key is at most one read a second per daemon. An event
+that arrives during a read marks the member stale again; one read follows, after the gap.
+
+### AT12 — Decided: Enter's failure is decided by a list asked after the key
+
+D7: focus, wait up to `JumpWait`, select; on failure say so and go back. Waiting the whole two
+seconds for a container that is plainly gone is slow, so the wait ends as soon as a Containers
+list *requested after the key* (`Model.listAsked`, new) answers without the container. A jump
+within the focused daemon changes nothing until it lands; one to another daemon focuses it,
+and on failure focuses the previous one again with its pane and kind, and its highlight once
+its list is back. A member that is not connected is never focused: the view stays open and says
+why. Any key or click while a jump waits drops it — nothing moves a highlight, let alone the
+focus, under what the operator does next.
+
+### AT13 — Decided: the STATE cell never costs the list a column
+
+`● running · unhealthy` is 21 cells against the column's 10. Where that would drop a column the
+list had, or squeeze NAME below 16 cells, the cell is drawn short — `● unhealthy`: the glyph
+still says running — and the list keeps the layout it had (changing the Containers list was a
+non-goal). The row is warning-toned when the reported health is not healthy; no word is ever
+drawn that the daemon did not send, and the filter matches the cell, so `/unhealthy` works.
+
+### AT14 — Decided: the Kinds cue is two lines under the counts, not in the entry
+
+D8 puts the count "in the Kinds entry". At 80 columns the entry has 16 cells: `▸ Containers 12`
+leaves no room for a marker. The count is drawn in the Kinds pane's own summary, under
+running/paused/stopped: `▲ 3 need you` / `H reads more`. The Containers title carries the long
+form when it fits — `3 need attention — H reads exit codes and restarts too` — and shorter ones
+that still name `H` when it does not; the filter in the title wins the room over the count.
+
+### AT15 — Decided: everything a daemon says is drawn escaped, and bounded
+
+A daemon chooses its container names, images, labels, health word, status text and inspect
+error. In the view all of them pass `escape.Name`; prose (status, error, reason) is cut at 400
+bytes on a character boundary before it is laid out, and a block lists at most 500 rows,
+counting the rest in a line. The status line's messages about a jump are built from the same
+escaped names. `TestAttentionDrawsHostileTextAsText` seeds an OSC title sequence, a screen
+clear, a newline, a right-to-left override and a 5000-byte error, and checks the raw frame.
+
+### AT16 — The review: what an independent read found, and what was done
+
+The change was reviewed twice: by its author as it was written, and — with the code and the
+spec but none of the author's conclusions — by an independent reviewer holding it to one threat
+model: **a daemon of the session may be hostile.** It chooses its container names, images,
+labels, state and health strings, status prose, inspect errors and events, how many containers
+it reports, and whether a request answers at all. The operator's terminal and the other daemons
+must be safe from it; the view must only read.
+
+Nothing critical; no data race, deadlock, leak of a read past `Close`, or path to a mutation.
+What it did find, all fixed in this round, each with a test:
+
+| # | Finding | What was done |
+| --- | --- | --- |
+| 1 | **High, and older than this change — but Enter led straight to it.** The Containers list drew a daemon's name, image, state and status unescaped; a hostile name was escaped in the view and raw on the desk the jump landed on | The container rows escape every daemon string at the source (`ensureRows`: cells and the row's name, which titles the Details pane and is named in messages and confirmations). And **every frame passes a guard on its way out** (`guard.go`): a line keeps its characters and its colour sequences, and loses everything else that takes no cell — control characters, a newline inside a line, C1 controls, bytes that are no character, and every escape sequence but SGR, whole. That covers what no one escaped, anywhere in the desk, in one place (`TestGuardLine`, `TestGuardLeavesTheDesksOwnFramesAlone`, `TestDeskDrawsHostileContainerTextAsText`, and the successful-jump half of `TestAttentionDrawsHostileTextAsText`) |
+| 2 | Medium: the new `stateCell` escaped the health and not the state beside it | both go through `daemonWord`: escaped, and bounded to 16 cells |
+| 3 | Medium: a jump ended by a key or a click was given up silently, and the key then acted on whatever row was highlighted — `d` typed after Enter could open a confirmation for another container | the event that ends the wait is used up and says so (`dropAttentionJump`); when the focus had moved, the message says it stays there (`TestAttentionJumpIsDroppedByAKey`) |
+| 4 | Medium: a list naming one container ID twice trapped the cursor on its first row | the view keeps one container per ID, and none without one (`convertContainers`) |
+| 5 | Medium: a detail carried across a re-read could class a container on stale evidence — exited 0, ran again, exited 1, and "not a problem" until its inspect landed, which a slow daemon can stretch to minutes | AT7 is narrowed: a detail is carried only for a container **no exit, OOM or health event has named** since it was read (an exit code and a restart count change only through an exit); when events were lost from the ring, nothing is carried. And an inspect that describes a container in another state than the list did puts it in no class and asks for one more read — one, flagged as a follow-up, so a daemon whose answers never agree is read twice and not for ever (`TestAttentionDoesNotClassifyOnAStaleDetail`, `TestAttentionListAndInspectDisagree`) |
+| 6 | Low–medium: per-frame work and memory grew with whatever a daemon reported: every block was rebuilt and sorted on every answer, and names and images were measured unclipped | a list's first 5000 containers are looked at and the rest counted as *not looked at*, in no class; every string kept of a container is cut at 256 bytes; a member's block is rebuilt only when what it is built from changed (`TestConvertContainersBoundsADaemonsList`, `TestAttentionListBeyondTheBoundIsCounted`, `TestAttentionSaysWhatWasNotLookedAt`) |
+| 7 | Low: one container's health string could widen STATE until every other column was dropped | `daemonWord`'s bound (`TestClipText`) |
+| 8 | Low: Enter could act on a highlighted row that had been scrolled out of view | Enter lays the view out first; a row off screen is brought back, and only the next Enter goes to it (`TestAttentionEnterNeedsItsRowOnScreen`) |
+| 9 | Low: a run closed by the view was no longer known to the session, so a session closing right behind it did not wait for its reads | the run stays registered until its reads have ended (`TestSessionCloseWaitsForAClosedRun`) |
+| 10 | Low: README said no other key does anything in the view (`q`, `?`, `T` and the movement aliases do), and that a *key* cancels a waiting jump (a click does too) | both texts corrected, and the help with them; the documented bounds are asserted against the constants (`TestAttentionIsDocumented`) |
+| 11 | Info: `Refresh` did not move the version, so "reading" could lag a second; a jump whose daemon lost focus did not say who has it now | both done |
+
+**The frame guard is scope this change did not have.** It touches every screen, not one view.
+It was added because the alternative was to ship a key whose happy path ends on a screen a
+daemon could drive the terminal from, and because escaping string by string — the desk draws
+hundreds — is how the hole came to exist. It removes only what the layout already counted as
+zero cells, so no line changes width; the desk's own frames pass it unchanged, which a test
+checks at both sizes across every view and kind. It is the last line, not the escaping: a
+string only the guard caught is drawn with its sequences gone, not shown as `\x1b…`. Details'
+Info tab and the dialogs still draw container strings unescaped *underneath* it — harmless
+now, and worth escaping properly in a round of their own.
+
+Stated as limits, not fixed. A colour sequence (SGR) inside a string the desk does not escape
+still reaches the terminal: it can colour text, not move, hide or forge it — the guard's line
+is "nothing that acts", and SGR is what the desk's own styling is made of. A hostile daemon can
+still lie in what it *says*: report a failing container as healthy, or send no event. The view
+shows what was read and when; it cannot show what a daemon withholds. And the view has never
+been pointed at a real daemon: every read in this round was answered by the fake.
+
+It confirmed as sound: every string the view draws is escaped or clipped; the session code
+issues only `Containers` and `InspectContainer`; no key or click in the view reaches an action;
+a pending jump and a dialog cannot coexist; the lock order (`Attention.mu` before a member's or
+a ring's lock, never with `Session.mu` held); the `seq` check before every publication; one
+read per daemon per gap for `r`, events, a lost ring and a reconnect alike; inspects never past
+the bound; the counts partition the total; `Certain` agrees with `Classify`.
+
+### AT17 — Round twenty-seven: what was run
+
+See docs/TESTING.md, round twenty-seven, for the commands and their results.

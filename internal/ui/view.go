@@ -78,7 +78,9 @@ func (m *Model) View() string {
 	m.dirty = false
 	m.frames++
 	m.building = nil
-	m.frame = strings.Join(m.render(), "\n")
+	// Whatever was drawn, nothing leaves here that could act on the terminal
+	// (guard.go): only characters and colours.
+	m.frame = strings.Join(guardFrame(m.render()), "\n")
 	m.hits, m.building = m.building, nil
 	return m.frame
 }
@@ -131,7 +133,7 @@ func (m *Model) render() []string {
 		body = append(joinH(kinds, center), joinH(events, jobsPane)...)
 	}
 
-	overlayOpen := m.pk.open || m.fs.open || m.sp.open || m.rb.open
+	overlayOpen := m.pk.open || m.fs.open || m.sp.open || m.rb.open || m.at.open
 	if overlayOpen {
 		// The view covers the panes: nothing drawn under it can be clicked.
 		m.building = m.building[:0]
@@ -153,6 +155,10 @@ func (m *Model) render() []string {
 		body = m.spaceBox(m.width, len(body))
 	case m.rb.open:
 		body = m.repoBox(m.width, len(body))
+	case m.at.open:
+		// Under the header and the strip, which keep naming the focused
+		// daemon and every member: the view is about all of them.
+		body = m.attentionBox(m.width, len(body))
 	}
 	out := make([]string, 0, m.height)
 	out = append(out, m.renderHeader(), m.renderStrip())
@@ -404,6 +410,8 @@ func (m *Model) renderHints() string {
 		pairs = m.spaceHints()
 	case m.rb.open:
 		pairs = m.repoHints()
+	case m.at.open:
+		pairs = m.attentionHints()
 	case m.filtering:
 		add("type", "to filter")
 		add("Enter", "keep")
@@ -513,6 +521,8 @@ func (m *Model) renderHints() string {
 		right = "" // every key is text
 	case m.rb.open:
 		right = m.hints("B Esc", "close", "?", "keys") + " "
+	case m.at.open:
+		right = m.hints(keyAttention+" Esc", "close", "?", "keys") + " " // no pane takes keys behind the view
 	}
 	lw, rw := ansi.StringWidth(left), ansi.StringWidth(right)
 	if lw+rw+1 > m.width {
@@ -565,6 +575,7 @@ func (m *Model) helpLines(w int) []string {
 	row("[  ]", "previous / next Details tab")
 	row("r", "refresh every list now")
 	row("S", "Space: where the bytes went, and what removing something frees")
+	row(keyAttention, "Attention: what needs a person, on every connected daemon of the session")
 	row("B", "Repository: a registry's tags for the highlighted image's repository")
 	row("T", "next colour theme ("+m.st.theme+" now)")
 	row("?", "this help")
@@ -763,6 +774,48 @@ func (m *Model) helpLines(w int) []string {
 		"  only that image holds; shared bytes are listed once, against the images that",
 		"  hold them, from the daemon's own per-layer sizes. Every figure names its",
 		"  source and age; one taken before a refresh that changed something is STALE.",
+	)
+
+	sect("Attention view (" + keyAttention + ", from any pane)")
+	row("↑ ↓ PgUp PgDn", "move between the listed containers; at an end, scroll")
+	row("g  G", "first / last row")
+	row("Tab / Shift+Tab", "the next / previous daemon's block")
+	row("Enter", "close the view, focus the row's daemon and select the container there")
+	row("r", "read every connected daemon's containers again")
+	row(keyAttention+", Esc", "close: the pane, the kind and the highlight are as they were")
+	row("q  ?  T", "quit (asks first if jobs run) · this help · next colour theme, as everywhere")
+	out = append(out,
+		"  One block per daemon of the session, the focused one first: its endpoint,",
+		"  how it is reached, its engine and when its containers were read. Listed, in",
+		"  this order: needs you — restarting, unhealthy, dead, then exited with a",
+		"  code other than 0, newest first, an OOM kill named; watch — running but",
+		"  restarted 3 times or more, then created and never started. Counted only:",
+		"  fine (running and healthy), unknown (no healthcheck, or one still",
+		"  starting — never called fine), not a problem (paused, removing, exited 0).",
+		"  State and health come from the container list; an exit code, an OOM kill,",
+		"  a finish time and a restart count from one inspect each, only of the",
+		"  containers that need one, at most 200 a daemon — the rest are counted as",
+		"  not inspected, in no class. Until an answer is in, a container is being",
+		"  read: neither fine nor needing you. The daemon's status text is shown,",
+		"  never parsed. The focused daemon's block is the list the desk holds; every",
+		"  other connected daemon is read once when the view opens, and again on r.",
+		"  While it is open a daemon is read again only when its own event stream",
+		"  reports a container exit, an OOM kill or a health change, at most once a",
+		"  second: nothing polls, and each block shows its read time and age. A read",
+		"  that fails says so in its block and keeps the rows it had, with their time.",
+		"  A daemon that is not connected is named with the reason, without rows.",
+		"  The view only reads — container lists and inspects, GET — and has no",
+		"  action: it works in read-only mode, and Enter is the way to a container's",
+		"  actions. If the container is gone, or its daemon is not connected, the",
+		"  desk says so and stays where it was. A key or click while Enter still waits",
+		"  for the container ends the wait, says so, and does nothing else. Enter goes",
+		"  only to a row on screen: one scrolled away is brought back first. Closing",
+		"  ends the reads. Images, disk, compose files and registries are not looked",
+		"  at here. A list's first 5000 containers are looked at and at most 500 rows",
+		"  listed per daemon; the rest are counted, in words.",
+		"  Without the view: the Containers STATE cell carries the health the daemon",
+		"  reports, and the Kinds pane and the Containers title count the dead,",
+		"  restarting and unhealthy — a subset: "+keyAttention+" reads exit codes and restarts too.",
 	)
 
 	sect("Files view (F, on an image or a container)")

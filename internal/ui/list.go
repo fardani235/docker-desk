@@ -6,7 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/x/ansi"
+
+	"github.com/fardani235/docker-desk/internal/attention"
 	"github.com/fardani235/docker-desk/internal/engine"
+	"github.com/fardani235/docker-desk/internal/escape"
 	"github.com/fardani235/docker-desk/internal/plan"
 )
 
@@ -21,6 +25,7 @@ type row struct {
 
 	containerID string
 	state       string
+	health      string // as the daemon reports it; "" for none
 	imageID     string
 	imageRef    string // empty for an untagged image
 	volume      string
@@ -80,8 +85,9 @@ var columns = [kindCount][]column{
 
 // Indices of the live cells of a container row, filled at draw time.
 const (
-	colContainerCPU = 3
-	colContainerMem = 4
+	colContainerState = 2
+	colContainerCPU   = 3
+	colContainerMem   = 4
 	// colImageUpstream is the image row's UPSTREAM cell.
 	colImageUpstream = 6
 )
@@ -98,6 +104,31 @@ func stateTone(state string) tone {
 		return toneDim
 	}
 	return toneNormal
+}
+
+// stateCell is the Containers STATE cell: the state and, when the daemon
+// reports one, the health beside it — `● running · unhealthy`. A health the
+// daemon did not report is never written: a container without a healthcheck
+// reads `● running`, not healthy. The short form, for a list too narrow for
+// both words, keeps the glyph and says the health instead of the state.
+func stateCell(state, health string, short bool) string {
+	switch {
+	case health == "":
+		return stateGlyph(state) + " " + daemonWord(state)
+	case short:
+		return stateGlyph(state) + " " + healthWord(health)
+	}
+	return stateGlyph(state) + " " + daemonWord(state) + " · " + healthWord(health)
+}
+
+// rowTone is a container row's colour: its state's, or the warning colour
+// when the daemon reports a health that is not healthy.
+func rowTone(state, health string) tone {
+	t := stateTone(state)
+	if health != "" && health != attention.HealthHealthy && t != toneBad {
+		return toneWarn
+	}
+	return t
 }
 
 func stateGlyph(state string) string {
@@ -165,11 +196,14 @@ func (m *Model) ensureRows(k Kind) {
 			return cs[i].Name < cs[j].Name
 		})
 		for _, c := range cs {
-			state := stateGlyph(c.State) + " " + c.State
+			// The daemon's strings are drawn as text: a name, an image and
+			// a status are its to choose (docs/DECISIONS.md, AT16). A name
+			// the daemon itself would accept is unchanged by this.
+			name := escape.Name(c.Name)
 			rows = append(rows, row{
-				key: c.ID, name: c.Name, containerID: c.ID, state: c.State,
-				tone:  stateTone(c.State),
-				cells: []string{c.Name, shortImage(c.Image), state, "", "", c.Status, formatPorts(c.Ports)},
+				key: c.ID, name: name, containerID: c.ID, state: c.State, health: c.Health,
+				tone:  rowTone(c.State, c.Health),
+				cells: []string{name, escape.Name(shortImage(c.Image)), stateCell(c.State, c.Health, false), "", "", escape.Name(c.Status), escape.Name(formatPorts(c.Ports))},
 			})
 		}
 	case KindImages:
@@ -583,6 +617,13 @@ func (m *Model) renderList(w, h int, focused bool) []string {
 		// is the CLI's, column for column, and no width goes to blanks.
 		cols = cols[:colImageUpstream]
 	}
+	shortState := false
+	if k == KindContainers {
+		// The STATE column is as wide as its widest cell — a health word
+		// makes it longer. When that width would cost the list a column it
+		// otherwise has room for, the short form is drawn instead.
+		cols, shortState = stateColumns(cols, rows, w-cursorW)
+	}
 	idx, widths := layoutColumns(cols, w-cursorW)
 	cell := func(text string, ci int) string {
 		if cols[idx[ci]].right {
@@ -620,6 +661,9 @@ func (m *Model) renderList(w, h int, focused bool) []string {
 		if k == KindContainers {
 			cells = append([]string(nil), r.cells...)
 			cells[colContainerCPU], cells[colContainerMem] = m.liveCells(r)
+			if shortState {
+				cells[colContainerState] = stateCell(r.state, r.health, true)
+			}
 		}
 		if k == KindImages && len(cells) > colImageUpstream {
 			cells = append([]string(nil), r.cells...)
@@ -657,6 +701,41 @@ func (m *Model) renderList(w, h int, focused bool) []string {
 		}
 	}
 	return lines
+}
+
+// stateNameRoom is the NAME width the full STATE cell must leave: below it,
+// the health takes the state's place instead of the name's room.
+const stateNameRoom = 16
+
+// stateColumns returns the Containers columns with STATE sized for the rows'
+// cells, and whether the short form of the cell is to be drawn. The full
+// form — `● running · unhealthy` — is drawn only where it costs the list
+// nothing it had: no column, and a NAME column still stateNameRoom wide.
+// Everywhere else the short form keeps the layout the list always had.
+func stateColumns(cols []column, rows []row, w int) ([]column, bool) {
+	full, short := cols[colContainerState].min, cols[colContainerState].min
+	health := false
+	for _, r := range rows {
+		health = health || r.health != ""
+		full = max(full, ansi.StringWidth(stateCell(r.state, r.health, false)))
+		short = max(short, ansi.StringWidth(stateCell(r.state, r.health, true)))
+	}
+	if !health {
+		// No health anywhere: the list is laid out as it always was.
+		return cols, false
+	}
+	with := func(min int) []column {
+		out := append([]column(nil), cols...)
+		out[colContainerState].min = min
+		return out
+	}
+	wide, narrow := with(full), with(short)
+	iw, ww := layoutColumns(wide, w)
+	in, _ := layoutColumns(narrow, w)
+	if len(iw) == len(in) && len(iw) > 0 && iw[0] == 0 && ww[0] >= stateNameRoom {
+		return wide, false
+	}
+	return narrow, true
 }
 
 // liveCells returns the CPU and memory cells of a container row.
@@ -699,6 +778,15 @@ func (m *Model) listTitle() (title, right string) {
 	case m.filter[k] != "":
 		right = "filter: " + m.filter[k]
 	}
+	if k == KindContainers {
+		// The ambient count, in the longest form the border has room for
+		// beside the title and the filter.
+		room := computeLayout(m.width, m.height).list.w - 7 - ansi.StringWidth(title)
+		if right != "" {
+			room -= ansi.StringWidth(right) + 4
+		}
+		title += cueTitle(m.attentionCue(), room)
+	}
 	return title, right
 }
 
@@ -740,6 +828,16 @@ func (m *Model) renderKinds(w, h int, focused bool) []string {
 			lines = append(lines, m.st.tone(toneWarn, fit(fmt.Sprintf("  ‖ %d paused", paused), w)))
 		}
 		lines = append(lines, m.st.tone(toneDim, fit(fmt.Sprintf("  ○ %d stopped", stopped), w)))
+		if n := m.attentionCue(); n > 0 {
+			// Dead, restarting and unhealthy: what the list alone is sure
+			// of. The view reads exit codes and restarts too, and says so.
+			verb := "need"
+			if n == 1 {
+				verb = "needs"
+			}
+			lines = append(lines, m.st.tone(toneWarn, fit(fmt.Sprintf("  ▲ %d %s you", n, verb), w)))
+			lines = append(lines, m.st.tone(toneDim, fit("    "+keyAttention+" reads more", w)))
+		}
 	}
 	return lines
 }

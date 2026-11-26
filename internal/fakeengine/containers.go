@@ -37,8 +37,14 @@ type Container struct {
 	RestartRetries int
 	// Env is the environment it was created with (POST /containers/create);
 	// seeded containers have only PATH.
-	Env         []string
-	Health      string
+	Env    []string
+	Health string
+	// RestartCount and OOMKilled are what inspect reports of the restart
+	// policy's work and of the kernel's.
+	RestartCount int
+	OOMKilled    bool
+	// StateError is the daemon's account of a failed start (State.Error).
+	StateError  string
 	Privileged  bool
 	NetworkMode string // "" means bridge
 	User        string
@@ -143,6 +149,13 @@ type ContainerSpec struct {
 	StopDelay time.Duration
 	NoShell   bool
 	Health    string
+	// RestartCount is how often the restart policy has restarted it, and
+	// OOMKilled whether the kernel killed it for memory: inspect reports
+	// both, the list neither.
+	RestartCount int
+	OOMKilled    bool
+	// StateError is what inspect reports as State.Error.
+	StateError string
 	// Privileged, NetworkMode ("host", …) and User are the run-time flags
 	// inspect reports.
 	Privileged  bool
@@ -189,6 +202,9 @@ func (s *Server) AddContainer(spec ContainerSpec) string {
 		Ports:         spec.Ports,
 		RestartPolicy: "no",
 		Health:        spec.Health,
+		RestartCount:  spec.RestartCount,
+		OOMKilled:     spec.OOMKilled,
+		StateError:    spec.StateError,
 		Privileged:    spec.Privileged,
 		NetworkMode:   spec.NetworkMode,
 		User:          spec.User,
@@ -574,6 +590,9 @@ func (s *Server) handleContainerInspect(w http.ResponseWriter, ref string) {
 		Paused:     c.State == "paused",
 		Restarting: c.State == "restarting",
 		ExitCode:   c.ExitCode,
+		OOMKilled:  c.OOMKilled,
+		Error:      c.StateError,
+		Dead:       c.State == "dead",
 		StartedAt:  rfc3339(c.StartedAt),
 		FinishedAt: rfc3339(c.FinishedAt),
 	}
@@ -647,7 +666,7 @@ func (s *Server) handleContainerInspect(w http.ResponseWriter, ref string) {
 		State:        state,
 		Image:        "sha256:" + c.ImageID,
 		Name:         "/" + c.Name,
-		RestartCount: 0,
+		RestartCount: c.RestartCount,
 		Driver:       "overlayfs",
 		Platform:     "linux",
 		Mounts:       c.mountPoints(),
@@ -853,6 +872,7 @@ func (s *Server) startLocked(c *Container, attrs map[string]string) {
 	c.StartedAt = time.Now()
 	c.FinishedAt = time.Time{}
 	c.ExitCode = 0
+	c.OOMKilled = false
 	for name, ep := range c.Networks {
 		if n := s.networks[ep.NetworkID]; n != nil {
 			s.assignAddressLocked(c, n, ep)
@@ -952,6 +972,80 @@ func (s *Server) handleContainerRemove(w http.ResponseWriter, r *http.Request, r
 }
 
 // ---- test and sandbox helpers --------------------------------------------------
+
+// SetHealth changes what a container's healthcheck says ("healthy",
+// "unhealthy", "starting"; "" for none) and announces it as the daemon does:
+// a container event whose action is "health_status: <status>".
+func (s *Server) SetHealth(ref, health string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	c := s.findContainerLocked(ref)
+	if c == nil || c.Health == health {
+		return
+	}
+	c.Health = health
+	if health == "" {
+		return
+	}
+	a := cloneMap(c.Labels)
+	if a == nil {
+		a = map[string]string{}
+	}
+	a["name"], a["image"] = c.Name, c.Image
+	s.emit("container", "health_status: "+health, c.ID, a)
+}
+
+// SetRestartCount sets the restart count inspect reports. It emits nothing:
+// the daemon announces restarts as die and start events, which a test sends
+// itself when it needs them.
+func (s *Server) SetRestartCount(ref string, n int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if c := s.findContainerLocked(ref); c != nil {
+		c.RestartCount = n
+	}
+}
+
+// OOMKill makes a running container die as the kernel's OOM killer leaves
+// it: an oom event, then die with exit code 137, and OOMKilled in inspect.
+func (s *Server) OOMKill(ref string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	c := s.findContainerLocked(ref)
+	if c == nil || !c.active() {
+		return
+	}
+	a := cloneMap(c.Labels)
+	if a == nil {
+		a = map[string]string{}
+	}
+	a["name"], a["image"] = c.Name, c.Image
+	s.emit("container", "oom", c.ID, a)
+	c.OOMKilled = true
+	s.dieLocked(c, a, 137)
+}
+
+// RemoveContainer deletes a container whatever its state, announcing it as
+// the daemon does (die first when it ran, then destroy).
+func (s *Server) RemoveContainer(ref string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	c := s.findContainerLocked(ref)
+	if c == nil {
+		return
+	}
+	a := cloneMap(c.Labels)
+	if a == nil {
+		a = map[string]string{}
+	}
+	a["name"], a["image"] = c.Name, c.Image
+	if c.active() {
+		s.dieLocked(c, a, 137)
+	}
+	c.stopGenerators()
+	delete(s.containers, c.ID)
+	s.emit("container", "destroy", c.ID, a)
+}
 
 // ContainerState returns the state of a container by name or ID.
 func (s *Server) ContainerState(ref string) (state string, ok bool) {

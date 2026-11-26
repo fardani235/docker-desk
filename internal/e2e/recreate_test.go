@@ -145,6 +145,7 @@ func TestRecreateCarriesADefaultVolume(t *testing.T) {
 	})
 	oldID := srv.ContainerID("db-svc")
 	d := launch(t, srv, 40, 100)
+	d.see("2 Containers (14)") // keys typed before the first frame are not the desk's
 	d.openChangesOf("db-svc", "db-svc")
 	d.see("A re-create")
 	d.keys("A")

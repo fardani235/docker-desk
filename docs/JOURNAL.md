@@ -767,3 +767,34 @@ long tag; the narrow layout broke words in the detail lines. A full run failed a
 the cause was a pre-existing ordering race in `collectSpace`, fixed (B31). `go build`, `go vet`
 and `go test ./...` pass. Nothing was committed.
 
+## 46. Round twenty-seven — the Attention view
+
+The brief: `H` opens one screen that says, for every daemon of the session, which containers
+need a person — restarting, unhealthy, dead, failed exits — then what to watch, then counts of
+the rest; read once on open and on `r`, re-read only on the daemon's own events, never polled;
+Enter goes to the container, Esc puts the desk back. Applied without the owner in the loop, as
+QA and as security reviewer too.
+
+The rules came first, as a pure package with its own tests (`internal/attention`), then the read
+run in `internal/session` against two fake daemons, then the view, then the cue in the
+Containers list, then the documents. The fake daemon learned to report a restart count, an OOM
+kill, a start error and health changes, and the real `docker` CLI was run against it again.
+
+Three things were not as planned. The spec's "a class that needs a detail waits for it" covers
+healthy containers too — their restart count is a detail — so what the bound leaves uninspected
+is in no class rather than fine (DECISIONS AT6). The Kinds entry has no room for a count at 80
+columns; it went under the pane's own totals (AT14). And a `start` is not one of the events the
+spec re-reads for, so a container that recovers stays listed until the next event or `r`;
+README says so (AT10).
+
+The independent review found the round's most important fact, and it was not in the new code:
+the Containers list had always drawn a daemon's strings unescaped, and Enter now led straight
+there. The container rows escape them, and every frame the desk draws now leaves through a
+guard that keeps characters and colours and removes anything else that could act on a terminal
+(AT16) — scope the change did not have, taken because the alternative was shipping the path to
+it. The review's other findings — a jump ended silently by a typed-ahead key, stale evidence
+carried across a re-read, unbounded per-frame work — are fixed with tests.
+
+`go vet` is clean; every package passes; the two e2e tests that failed across three full runs
+are the ones earlier rounds name as intermittent, one of them diagnosed and steadied here
+(TESTING, round twenty-seven). Nothing was committed.
