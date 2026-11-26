@@ -507,7 +507,7 @@ func (m *Model) readerHead(w int) []string {
 		}
 	}
 	kv("path", files.Escape(rd.path), toneNormal)
-	kv("container", files.Escape(rd.containerName)+" · "+engine.ShortID(rd.containerID), toneNormal)
+	kv("container", files.Escape(rd.containerName)+" · "+escID(rd.containerID), toneNormal)
 	const source = "the container's current filesystem, as the daemon read it for this request — not a snapshot, and not the image's file"
 	switch {
 	case rd.run != nil:

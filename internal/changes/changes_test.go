@@ -172,3 +172,18 @@ func TestContent(t *testing.T) {
 		t.Fatalf("readable refused: %+v", r)
 	}
 }
+
+// A name the daemon chose is text in a row of the Changes tab: escaped by
+// the one mapping, nothing dropped; text that is one already is only
+// bounded (review findings 6 and 8a).
+func TestNamesAreTextAndTextIsNotEscapedAgain(t *testing.T) {
+	if got := name("a\x1b[8m\\b\u200f\u202e", 100); got != `a\x1b[8m\\b\u200f\u202e` {
+		t.Fatalf("name = %q", got)
+	}
+	if got := name("abcdef", 4); got != "abc…" {
+		t.Fatalf("name, bounded = %q", got)
+	}
+	if got := oneLine(`a\x1b[8m\\b`, 100); got != `a\x1b[8m\\b` {
+		t.Fatalf("oneLine changed text: %q", got)
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/fardani235/docker-desk/internal/escape"
 	"io"
 	"strings"
 	"testing"
@@ -535,8 +536,21 @@ func TestLiveFindings(t *testing.T) {
 }
 
 func TestSanitize(t *testing.T) {
-	if got := sanitize("a\x1b[31mb\nc\u2028d", 100); got != "a?[31mb?c?d" {
+	// A name becomes text by the one mapping the screen and the exports
+	// share: every byte is accounted for, none is replaced by another.
+	if got := sanitize("a\x1b[31mb\nc\u2028d\\e\xff", 100); got != `a\x1b[31mb\nc\u2028d\\e\xff` {
 		t.Errorf("sanitize = %q", got)
+	}
+	// The bound is on the name's characters, and is said.
+	if got := sanitize("ab\x1bcd", 3); got != `ab\x1b…` {
+		t.Errorf("sanitize, bounded = %q", got)
+	}
+	if got := clip(`a\x1b`, 3); got != `a\x…` {
+		t.Errorf("clip = %q", got)
+	}
+	// A revealed value is contents: inert, and no backslash added.
+	if got := inertValue("p\\w\x1b[8m\u202ex", 100); got != `p\w?[8m?x` {
+		t.Errorf("inertValue = %q", got)
 	}
 	if got := maskValue("AKIAQX7DESKTESTK3Y9Z", 4); got != "AKIA************ (20 chars)" {
 		t.Errorf("mask = %q", got)
@@ -617,5 +631,60 @@ func BenchmarkAnalyse(b *testing.B) {
 		if _, err := Analyse(context.Background(), bytes.NewReader(archive), Options{}, nil); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+// A live finding names its container on the screen and in the export: the
+// name is the daemon's, and is text in the evidence and the subject both.
+func TestLiveFindingsNameTheContainerAsText(t *testing.T) {
+	const name = "evil\x1b[8m\\box\nforged"
+	img := engine.Image{ID: "sha256:" + strings.Repeat("a", 64), RepoTags: []string{"app:1"}}
+	c := engine.Container{ID: "c1", Name: name, Image: "app:1", ImageID: img.ID, State: "running", NetworkMode: "host",
+		Ports: []engine.Port{{HostPort: 80, PrivatePort: 80, Proto: "tcp\x1b[8m"}}}
+	fs := LiveFindings(nil, LiveInput{Image: img, Images: []engine.Image{img}, Containers: []engine.Container{c},
+		Facts: map[string]ContainerFacts{"c1": {Privileged: true}}})
+	if len(fs) < 3 {
+		t.Fatalf("findings: %+v", fs)
+	}
+	const shown = `evil\x1b[8m\\box\nforged`
+	for _, f := range fs {
+		for _, s := range []string{f.Subject, f.Evidence, f.Path} {
+			if strings.ContainsAny(s, "\x1b\n") {
+				t.Errorf("%s: a raw sequence in %q", f.Rule, s)
+			}
+		}
+		if f.Subject != "" && f.Subject != shown {
+			t.Errorf("%s: subject %q", f.Rule, f.Subject)
+		}
+		if f.Subject != "" && !strings.Contains(f.Evidence, shown) {
+			t.Errorf("%s: evidence %q does not name the container as text", f.Rule, f.Evidence)
+		}
+		if strings.Contains(f.Evidence, `\\\\`) {
+			t.Errorf("%s: escaped twice: %q", f.Rule, f.Evidence)
+		}
+	}
+}
+
+// A private key's header line is the file's bytes: the evidence names it
+// as text, bounded (review finding 3) — and a command and a user are
+// escaped once, not quoted over their escapes (8b, 8c).
+func TestEvidenceComposedFromFileBytesIsText(t *testing.T) {
+	key := "-----BEGIN RSA PRIVATE KEY-----\x1b[8m\u202e hidden \x1b]0;t\x07\nMIIEow\n-----END RSA PRIVATE KEY-----\n"
+	hits := scanContent([]byte(key), 64, 4096)
+	if len(hits) == 0 {
+		t.Fatal("no hit for a private key")
+	}
+	for _, h := range hits {
+		for _, r := range h.masked {
+			if r < 0x20 || r == 0x7f || escape.Reorders(r) {
+				t.Fatalf("%U is raw in the evidence %q", r, h.masked)
+			}
+		}
+		if !strings.Contains(h.masked, `-----BEGIN RSA PRIVATE KEY-----\x1b[8m\u202e hidden \x1b]0;t\x07`) {
+			t.Fatalf("the header is not named as text: %q", h.masked)
+		}
+	}
+	if got := quoteArgv([]string{"sh", "-c", "a\\b\x1b[8m"}); got != `["sh","-c","a\\b\x1b[8m"]` {
+		t.Fatalf("quoteArgv = %q", got)
 	}
 }

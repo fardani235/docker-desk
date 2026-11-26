@@ -773,7 +773,7 @@ func cloneStorage(spec *CloneSpec, mounts []rawMountPt, host *rawHost, ref refus
 			ms.Source = m.Source
 		}
 		if ms.Source == "" {
-			ref.add(FamStorage, "a %s mount at %s without a source", m.Type, shown(m.Destination))
+			ref.add(FamStorage, "a %s mount at %s without a source", shown(m.Type), shown(m.Destination))
 			continue
 		}
 		spec.Mounts = append(spec.Mounts, ms)
@@ -1176,11 +1176,14 @@ func ContainerRecreate(snap Snapshot, detail engine.ContainerDetail, spec CloneS
 		return Plan{}, na("%s was created from %s, not %s", escape.Name(name), shown(spec.Image), shown(pin.Ref))
 	}
 	spec.Name = name
+	// name is what is sent (the rename, the create); shownName is how the
+	// plan's own text calls the container.
+	shownName := escape.Name(name)
 	p := Plan{
 		Title:     "Re-create container",
 		JobTitle:  "re-create container",
-		JobTarget: name,
-		Target:    Target{Kind: "container", Name: name, ID: engine.ShortID(c.ID)},
+		JobTarget: shownName,
+		Target:    Target{Kind: "container", Name: shownName, ID: shortID(c.ID)},
 		Tier:      TierTyped,
 		Word:      RecreateWord,
 		PinRef:    pin.Ref,
@@ -1193,7 +1196,7 @@ func ContainerRecreate(snap Snapshot, detail engine.ContainerDetail, spec CloneS
 	}
 	for _, o := range snap.Containers {
 		if o.ID != c.ID && strings.TrimPrefix(o.Name, "/") == name {
-			p.Blockers = append(p.Blockers, fmt.Sprintf("Name: %s is held by another container (%s).", escape.Name(name), engine.ShortID(o.ID)))
+			p.Blockers = append(p.Blockers, fmt.Sprintf("Name: %s is held by another container (%s).", escape.Name(name), shortID(o.ID)))
 		}
 	}
 	netNames := map[string]bool{}
@@ -1222,11 +1225,11 @@ func ContainerRecreate(snap Snapshot, detail engine.ContainerDetail, spec CloneS
 		prev = name + "-previous-" + engine.ShortID(c.ID)
 	}
 
-	shownName, shownPrev, shownRef := escape.Name(name), escape.Name(prev), shown(pin.Ref)
+	shownPrev, shownRef := escape.Name(prev), shown(pin.Ref)
 	active := c.IsActive()
 	at := 0
 	if active {
-		p.Steps = append(p.Steps, Step{Op: OpStop, Kind: "container", ID: c.ID, Name: name, Detail: c.State, IDFrom: -1,
+		p.Steps = append(p.Steps, Step{Op: OpStop, Kind: "container", ID: c.ID, Name: shownName, Detail: text(c.State), IDFrom: -1,
 			FailNote: shownName + " is left as it was; nothing was renamed or created."})
 		at = 1
 	}
@@ -1234,19 +1237,19 @@ func ContainerRecreate(snap Snapshot, detail engine.ContainerDetail, spec CloneS
 	if active {
 		keeps = shownName + " is stopped and keeps its name; nothing was created."
 	}
-	rename := Step{Op: OpRename, Kind: "container", ID: c.ID, Name: name, Rename: prev, IDFrom: -1, FailNote: keeps}
+	rename := Step{Op: OpRename, Kind: "container", ID: c.ID, Name: shownName, Rename: prev, IDFrom: -1, FailNote: keeps}
 	if active {
 		rename.DependsOn = []int{0}
 	}
 	cl := spec
-	create := Step{Op: OpCreateContainer, Kind: "container", Name: name, Detail: pin.Ref, Clone: &cl, Pin: pin.ID,
+	create := Step{Op: OpCreateContainer, Kind: "container", Name: shownName, Detail: text(pin.Ref), Clone: &cl, Pin: pin.ID,
 		ProducesID: true, IDFrom: -1, DependsOn: []int{at},
 		FailNote: fmt.Sprintf("The old container stays stopped as %s; nothing was started. `docker rename %s %s` gives it its name back.", shownPrev, shownPrev, shownName)}
-	start := Step{Op: OpStart, Kind: "container", Name: name, DependsOn: []int{at + 1}, IDFrom: at + 1,
+	start := Step{Op: OpStart, Kind: "container", Name: shownName, DependsOn: []int{at + 1}, IDFrom: at + 1,
 		FailNote: fmt.Sprintf("The old container stays stopped as %s.", shownPrev)}
 	p.Steps = append(p.Steps, rename, create, start)
 
-	oldShort, newShort := engine.ShortID(detail.ImageID), engine.ShortID(pin.ID)
+	oldShort, newShort := shortID(detail.ImageID), shortID(pin.ID)
 	if active {
 		p.Effects = append(p.Effects, shownName+" is stopped: its stop signal, then killed after its grace period.")
 	}

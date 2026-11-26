@@ -309,7 +309,7 @@ func (m *Model) findBar(w int) string {
 	q := m.tabQuery()
 	left := "find: " + q
 	if m.ds.typing {
-		left = m.ds.in.View()
+		left = escInput(m.ds.in.View())
 	}
 	v := m.tabView()
 	var right string
@@ -462,7 +462,7 @@ func (m *Model) logRows(line string, w int) []string {
 func (m *Model) logFilterStatus(state string, matched int, held uint64) (string, bool) {
 	left := "filter: " + m.ds.logQ
 	if m.ds.typing {
-		left = m.ds.in.View()
+		left = escInput(m.ds.in.View())
 	}
 	if m.ds.logQ == "" {
 		return left + "  " + state, false

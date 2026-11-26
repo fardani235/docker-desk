@@ -14,7 +14,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/files"
 	"github.com/fardani235/docker-desk/internal/jobs"
 	"github.com/fardani235/docker-desk/internal/plan"
@@ -119,19 +118,20 @@ func (m *Model) copyLocal(text string) (string, error) {
 // job that would fail.
 func checkCopyOutDest(abs string) string {
 	if _, err := os.Lstat(abs); err == nil {
-		return abs + " already exists: a copy never replaces a path on this machine. Name one that does not exist."
+		return esc(abs) + " already exists: a copy never replaces a path on this machine. Name one that does not exist."
 	} else if !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, syscall.ENOTDIR) {
-		return "Cannot check " + abs + ": " + err.Error() + "."
+		return "Cannot check " + esc(abs) + ": " + esc(err.Error()) + "."
 	}
 	parent := filepath.Dir(abs)
 	fi, err := os.Stat(parent)
+	parent = esc(parent) // from here on, the sentence's text
 	switch {
 	case errors.Is(err, syscall.ENOTDIR):
 		return parent + " is not a folder: something above it is a file."
 	case errors.Is(err, fs.ErrNotExist):
 		return parent + " does not exist: the parent must exist; no folder is created."
 	case err != nil:
-		return "Cannot check " + parent + ": " + err.Error() + "."
+		return "Cannot check " + parent + ": " + esc(err.Error()) + "."
 	case !fi.IsDir():
 		return parent + " is not a folder: the parent must be one."
 	}
@@ -143,7 +143,7 @@ func (m *Model) submitCopyOut() tea.Cmd {
 	d := m.dlg
 	abs, err := m.copyLocal(d.formText())
 	if err != nil {
-		d.formErr = capitalise(err.Error()) + "."
+		d.formErr = capitalise(esc(err.Error())) + "."
 		return nil
 	}
 	if why := checkCopyOutDest(abs); why != "" {
@@ -183,7 +183,7 @@ func (m *Model) startCopyOut(cp *copyForm, abs string) int {
 			what = "a symlink to " + files.Escape(a.Stat.LinkTarget)
 		}
 		r.Logf("from %s — %s, by the daemon's stat", target, what)
-		r.Logf("to %s", abs)
+		r.Logf("to %s", esc(abs))
 		var last time.Time
 		total := int64(0)
 		if a.Stat.Mode.IsRegular() {
@@ -204,13 +204,13 @@ func (m *Model) startCopyOut(cp *copyForm, abs string) int {
 		if err != nil {
 			switch {
 			case tree.Removed > 0:
-				r.Logf("removed what was written: %s (%s)", abs, files.Plural(tree.Removed, "path", "paths"))
+				r.Logf("removed what was written: %s (%s)", esc(abs), files.Plural(tree.Removed, "path", "paths"))
 			default:
 				r.Logf("nothing was written on this machine")
 			}
 			return err
 		}
-		r.Logf("wrote %s — %s — to %s", humanBytes(tree.Bytes), copyWords(tree), abs)
+		r.Logf("wrote %s — %s — to %s", humanBytes(tree.Bytes), copyWords(tree), esc(abs))
 		if readOnly {
 			r.Logf("nothing was changed on the daemon: its archive was only read (GET), as read-only mode allows")
 		} else {
@@ -220,7 +220,7 @@ func (m *Model) startCopyOut(cp *copyForm, abs string) int {
 		return nil
 	})
 	m.jobSel = jobID
-	m.setStatus(toneAccent, "started: copy out of "+target+" to "+abs)
+	m.setStatus(toneAccent, "started: copy out of "+target+" to "+esc(abs))
 	return jobID
 }
 
@@ -245,7 +245,7 @@ func (m *Model) submitCopyIn() tea.Cmd {
 	d := m.dlg
 	abs, err := m.copyLocal(d.fields[copyInSource].value())
 	if err != nil {
-		d.formErr = "Local source: " + err.Error() + "."
+		d.formErr = "Local source: " + esc(err.Error()) + "."
 		return nil
 	}
 	dest := strings.TrimSpace(d.fields[copyInDest].value())
@@ -332,7 +332,7 @@ func (m *Model) copyBody(d *dialog, w int) (string, []string) {
 			body = append(body, label+st.tone(t, part))
 		}
 	}
-	kv("container", files.Escape(cp.containerName)+"  ("+engine.ShortID(cp.containerID)+")", toneNormal)
+	kv("container", files.Escape(cp.containerName)+"  ("+escID(cp.containerID)+")", toneNormal)
 	body = append(body, m.daemonLines(w, true)...)
 	notes := func(items ...string) {
 		body = append(body, "")
@@ -349,16 +349,16 @@ func (m *Model) copyBody(d *dialog, w int) (string, []string) {
 		}
 		body = append(body, "", label)
 		m.recordDialogRow(len(body), hitFormRow, i, 0, "")
-		body = append(body, f.rows[0].View())
+		body = append(body, escInput(f.rows[0].View()))
 	}
 	resolved := func(label, text string) {
 		if strings.TrimSpace(text) == "" {
 			return
 		}
 		if abs, err := m.copyLocal(text); err != nil {
-			body = append(body, st.tone(toneWarn, "  "+capitalise(err.Error())+"."))
+			body = append(body, st.tone(toneWarn, "  "+capitalise(esc(err.Error()))+"."))
 		} else {
-			body = append(body, "  "+st.tone(toneDim, label)+" "+st.dialogTitle.Render(abs))
+			body = append(body, "  "+st.tone(toneDim, label)+" "+st.dialogTitle.Render(esc(abs)))
 		}
 	}
 

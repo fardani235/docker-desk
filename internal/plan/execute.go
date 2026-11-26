@@ -125,7 +125,7 @@ func Execute(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run) erro
 			outcomes[i] = bad
 			failed++
 			lastErr = err
-			run.Logf("✗ %s — %s", describe(shown[i]), daemonMessage(err))
+			run.Logf("✗ %s — %s", describe(shown[i]), shownMessage(err))
 			if st.FailNote != "" {
 				run.Logf("  %s", st.FailNote)
 			}
@@ -151,13 +151,13 @@ func Execute(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run) erro
 		}
 		return nil
 	case !multi:
-		return errors.New(daemonMessage(lastErr))
+		return errors.New(shownMessage(lastErr))
 	case skipped > 0:
 		run.Status(fmt.Sprintf("%d of %d failed, %d skipped", failed, total, skipped))
-		return fmt.Errorf("%d of %d failed, %d skipped (last: %s)", failed, total, skipped, daemonMessage(lastErr))
+		return fmt.Errorf("%d of %d failed, %d skipped (last: %s)", failed, total, skipped, shownMessage(lastErr))
 	default:
 		run.Status(fmt.Sprintf("%d of %d failed", failed, total))
-		return fmt.Errorf("%d of %d failed (last: %s)", failed, total, daemonMessage(lastErr))
+		return fmt.Errorf("%d of %d failed (last: %s)", failed, total, shownMessage(lastErr))
 	}
 }
 
@@ -181,19 +181,20 @@ func firstUnmet(st Step, i int, succeeded func(int) bool) (int, bool) {
 // form left it empty) and the short ID it returned.
 func createdStep(ctx context.Context, eng engine.Engine, st Step, id string) Step {
 	st.ID = id
-	st.Detail = strings.TrimSpace(st.Detail + " " + engine.ShortID(id))
+	st.Detail = strings.TrimSpace(st.Detail + " " + shortID(id))
+	// A step's Name is text: the name is escaped as it is set.
 	if st.Create != nil && st.Create.Name != "" {
-		st.Name = st.Create.Name
+		st.Name = text(st.Create.Name)
 		return st
 	}
 	if st.Clone != nil && st.Clone.Name != "" {
-		st.Name = st.Clone.Name
+		st.Name = text(st.Clone.Name)
 		return st
 	}
 	if d, err := eng.InspectContainer(ctx, id); err == nil && d.Name != "" {
-		st.Name = strings.TrimPrefix(d.Name, "/")
+		st.Name = text(strings.TrimPrefix(d.Name, "/"))
 	} else {
-		st.Name = engine.ShortID(id)
+		st.Name = shortID(id)
 	}
 	return st
 }
@@ -225,6 +226,10 @@ const (
 	skip
 )
 
+// describe is one step as a line of the job's log. A step's Name,
+// OtherName and Detail are text already — the constructor escaped them —
+// and are written as they are; what the step sends (a rename's new name, a
+// copy's paths, a create's image) is escaped here, where it becomes text.
 func describe(st Step) string {
 	switch st.Op {
 	case OpCreateContainer:
@@ -232,26 +237,26 @@ func describe(st Step) string {
 		// form (D29). The image, and the short ID once there is one.
 		s := "create container " + st.Name
 		if st.Create != nil {
-			s += " from " + st.Create.Image
+			s += " from " + text(st.Create.Image)
 		} else if st.Clone != nil {
 			s += " from " + escape.Name(st.Clone.Image)
 		}
 		if st.ID != "" {
-			s += " (" + engine.ShortID(st.ID) + ")"
+			s += " (" + shortID(st.ID) + ")"
 		}
 		return s
 	case OpCopyIn:
 		// Paths and the container only: never a byte of what is copied.
 		if st.Copy != nil {
-			return fmt.Sprintf("copy %s into %s:%s", escape.Name(st.Copy.Source), escape.Name(st.Name), escape.Name(st.Copy.Dest))
+			return fmt.Sprintf("copy %s into %s:%s", escape.Name(st.Copy.Source), st.Name, escape.Name(st.Copy.Dest))
 		}
 		return "copy into " + st.Name
 	case OpRename:
-		return fmt.Sprintf("rename container %s to %s", escape.Name(st.Name), escape.Name(st.Rename))
+		return fmt.Sprintf("rename container %s to %s", st.Name, escape.Name(st.Rename))
 	case OpTagImage:
-		return fmt.Sprintf("tag image %s as %s", engine.ShortID(st.ID), escape.Name(st.Name))
+		return fmt.Sprintf("tag image %s as %s", shortID(st.ID), st.Name)
 	case OpCopyImage:
-		return fmt.Sprintf("copy image %s to another daemon", escape.Name(st.Name))
+		return fmt.Sprintf("copy image %s to another daemon", st.Name)
 	case OpConnect:
 		return fmt.Sprintf("connect %s to %s", st.OtherName, st.Name)
 	case OpDisconnect:
@@ -264,8 +269,40 @@ func describe(st Step) string {
 	return s
 }
 
+// shownMessage is an error as a line of the job's log, or as the job's
+// error: the daemon's own words (daemonMessage) escaped here, where they
+// become text. An error this package composed is text already — its names
+// were escaped as it was written — and is returned as it is.
+func shownMessage(err error) string {
+	var e *engine.Error
+	if errors.As(err, &e) {
+		return escape.Name(e.Msg)
+	}
+	return err.Error()
+}
+
+// sentErr is the error of a request this package sent, ready for
+// shownMessage: the daemon's refusal (an engine.Error) is kept as it is and
+// escaped there; anything else — the engine layer refusing a value before
+// it sends it, and naming the value — is made text here. Cancellation is
+// recognised by identity and passes through.
+func sentErr(err error) error {
+	var e *engine.Error
+	if err == nil || errors.As(err, &e) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
+	return textError{err}
+}
+
+// textError is an error whose text is escaped; the error is still beneath.
+type textError struct{ err error }
+
+func (e textError) Error() string { return escape.Name(e.err.Error()) }
+func (e textError) Unwrap() error { return e.err }
+
 // daemonMessage returns the daemon's own words, without the "remove
-// container:" style prefix the engine layer adds for logs.
+// container:" style prefix the engine layer adds for logs. They are the
+// daemon's bytes: whoever draws them escapes them (shownMessage).
 func daemonMessage(err error) string {
 	var e *engine.Error
 	if errors.As(err, &e) {
@@ -284,7 +321,8 @@ func executeStep(ctx context.Context, eng engine.Engine, st Step, run *jobs.Run)
 		if st.Create == nil {
 			return "", errors.New("internal error: a create step without its configuration")
 		}
-		return eng.CreateContainer(ctx, CreateOptions(*st.Create))
+		id, err := eng.CreateContainer(ctx, CreateOptions(*st.Create))
+		return id, sentErr(err)
 	}
 	if st.Op == OpCopyIn {
 		return "", copyIn(ctx, eng, st, run)
@@ -324,11 +362,11 @@ func createClone(ctx context.Context, eng engine.Engine, st Step) (string, error
 	if st.Pin != "" {
 		d, err := eng.InspectImage(ctx, st.Clone.Image)
 		if err != nil {
-			return "", fmt.Errorf("%s could not be checked before the create: %s", escape.Name(st.Clone.Image), redactEnvValues(daemonMessage(err), st.Clone))
+			return "", fmt.Errorf("%s could not be checked before the create: %s", escape.Name(st.Clone.Image), escape.Name(redactEnvValues(daemonMessage(err), st.Clone)))
 		}
 		if trimSHA(d.ID) != trimSHA(st.Pin) {
 			return "", fmt.Errorf("%s now names %s, not the build %s that was shown; nothing was created",
-				escape.Name(st.Clone.Image), engine.ShortID(d.ID), engine.ShortID(st.Pin))
+				escape.Name(st.Clone.Image), shortID(d.ID), shortID(st.Pin))
 		}
 	}
 	id, err := eng.CreateContainer(ctx, CloneOptions(*st.Clone))
@@ -336,6 +374,9 @@ func createClone(ctx context.Context, eng engine.Engine, st Step) (string, error
 		if errors.Is(err, context.Canceled) {
 			return "", err
 		}
+		// Always an engine.Error from here: shownMessage escapes its
+		// message, whether the daemon wrote it or the engine layer did
+		// about a value of the daemon's (a port, an address).
 		return "", &engine.Error{Kind: engine.KindOf(err), Op: "create container", Msg: redactEnvValues(daemonMessage(err), st.Clone)}
 	}
 	return id, nil
@@ -355,7 +396,7 @@ func checkPlanPin(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run)
 		if errors.Is(err, context.Canceled) {
 			return err
 		}
-		msg := daemonMessage(err)
+		msg := shownMessage(err)
 		if engine.IsNotFound(err) {
 			msg = ref + " no longer names an image on this daemon"
 		}
@@ -364,7 +405,7 @@ func checkPlanPin(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run)
 		return fmt.Errorf("%s; nothing was stopped, renamed or created", msg)
 	}
 	if trimSHA(d.ID) != trimSHA(p.PinID) {
-		msg := fmt.Sprintf("the tag moved: %s now names %s, not the build %s that was shown", ref, engine.ShortID(d.ID), engine.ShortID(p.PinID))
+		msg := fmt.Sprintf("the tag moved: %s now names %s, not the build %s that was shown", ref, shortID(d.ID), shortID(p.PinID))
 		run.Logf("✗ before the first step: %s; nothing was sent", msg)
 		run.Status("not started: the tag moved")
 		return fmt.Errorf("%s; nothing was stopped, renamed or created", msg)
@@ -395,9 +436,10 @@ func executeRequest(ctx context.Context, eng engine.Engine, st Step, run *jobs.R
 		return eng.RemoveContainer(ctx, st.ID)
 	case OpPullImage:
 		return eng.PullImage(ctx, st.ID, func(pr engine.PullProgress) {
-			status := pr.Status
+			// The daemon's progress words, as text.
+			status := text(pr.Status)
 			if pr.Layer != "" {
-				status = pr.Layer + ": " + pr.Status
+				status = text(pr.Layer) + ": " + status
 			}
 			run.Status(status)
 			if pr.Total > 0 {
@@ -411,10 +453,10 @@ func executeRequest(ctx context.Context, eng engine.Engine, st Step, run *jobs.R
 		res, err := eng.RemoveImage(ctx, st.ID)
 		for _, r := range res {
 			if r.Untagged != "" {
-				run.Logf("  untagged %s", r.Untagged)
+				run.Logf("  untagged %s", text(r.Untagged))
 			}
 			if r.Deleted != "" {
-				run.Logf("  deleted  %s", engine.ShortID(r.Deleted))
+				run.Logf("  deleted  %s", shortID(r.Deleted))
 			}
 		}
 		return err
@@ -431,14 +473,14 @@ func executeRequest(ctx context.Context, eng engine.Engine, st Step, run *jobs.R
 			}
 			if v.CreatedAt != st.Pin {
 				return fmt.Errorf("a different volume now has the name %s (created %s, the one shown was created %s); nothing was removed",
-					st.ID, v.CreatedAt, st.Pin)
+					text(st.ID), text(v.CreatedAt), text(st.Pin))
 			}
 		}
 		return eng.RemoveVolume(ctx, st.ID)
 	case OpCreateNetwork:
 		id, err := eng.CreateNetwork(ctx, st.ID)
 		if err == nil {
-			run.Logf("  network id %s", engine.ShortID(id))
+			run.Logf("  network id %s", shortID(id))
 		}
 		return err
 	case OpRemoveNetwork:
@@ -465,7 +507,7 @@ func checkImagePin(ctx context.Context, eng engine.Engine, st Step) error {
 	}
 	if trimSHA(d.ID) != trimSHA(st.Pin) {
 		return fmt.Errorf("the tag moved: %s now refers to a different image (%s) than the one that was shown (%s); nothing was removed",
-			escape.Name(st.ID), escape.Name(engine.ShortID(d.ID)), escape.Name(engine.ShortID(st.Pin)))
+			escape.Name(st.ID), shortID(d.ID), shortID(st.Pin))
 	}
 	if st.KeepsData && len(d.Refs()) <= 1 {
 		return fmt.Errorf("%s has become the image's only reference: removing it now would delete the image, which is not what was confirmed", escape.Name(st.ID))
@@ -488,7 +530,7 @@ func checkImagePin(ctx context.Context, eng engine.Engine, st Step) error {
 		}
 		for _, c := range cs {
 			if trimSHA(c.ImageID) == trimSHA(d.ID) {
-				return fmt.Errorf("the image is now used by container %s (%s); left alone", c.Name, c.State)
+				return fmt.Errorf("the image is now used by container %s (%s); left alone", text(c.Name), text(c.State))
 			}
 		}
 	}

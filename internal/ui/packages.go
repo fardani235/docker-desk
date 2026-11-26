@@ -395,7 +395,7 @@ func (m *Model) pkgHeaderLines(w int, all []forensics.PkgRow) []pkgLine {
 	case sb.Unknown != "":
 		add("SBOM", "unknown: "+sb.Unknown, toneWarn)
 	default:
-		s := fmt.Sprintf("%s · %d packages · attestation %s", sb.Format, sb.Total, engineShort(sb.Digest))
+		s := fmt.Sprintf("%s · %d packages · attestation %s", sb.Format, sb.Total, esc(engineShort(sb.Digest)))
 		if sb.Others > 0 {
 			s += fmt.Sprintf(" · %d more SBOM(s) not compared", sb.Others)
 		}

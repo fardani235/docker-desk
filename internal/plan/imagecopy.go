@@ -157,7 +157,7 @@ func plainPlatform(p engine.Platform) bool {
 func SameBuild(want, got engine.ImageFacts) string {
 	short := func(ids []string, i int) string {
 		if i < len(ids) {
-			return escape.Name(engine.ShortID(ids[i]))
+			return shortID(ids[i])
 		}
 		return "none"
 	}
@@ -245,7 +245,7 @@ func CopyImage(snap Snapshot, source CopySource, destination CopyDestination) (P
 			found = found || r == source.Ref
 		}
 		if !found {
-			return Plan{}, na("%s is no longer a reference of image %s; nothing was sent", escape.Name(source.Ref), engine.ShortID(img.ID))
+			return Plan{}, na("%s is no longer a reference of image %s; nothing was sent", escape.Name(source.Ref), shortID(img.ID))
 		}
 	}
 	ref, err := copyRef(source.Ref)
@@ -254,7 +254,7 @@ func CopyImage(snap Snapshot, source CopySource, destination CopyDestination) (P
 	}
 	if source.Facts.ID != img.ID {
 		return Plan{}, na("the daemon answered for another image (%s) when asked about %s; nothing was sent",
-			escape.Name(engine.ShortID(source.Facts.ID)), engine.ShortID(img.ID))
+			shortID(source.Facts.ID), shortID(img.ID))
 	}
 	src, dst := source.Daemon, destination.Daemon
 	if src.Key == "" || dst.Key == "" {
@@ -264,7 +264,7 @@ func CopyImage(snap Snapshot, source CopySource, destination CopyDestination) (P
 		return Plan{}, na("a copy needs two different daemons: %s is the one the image is on; nothing was sent", daemonWords(src))
 	}
 
-	short := engine.ShortID(img.ID)
+	short := shortID(img.ID)
 	plat := source.Facts.Platform()
 	if !plainPlatform(plat) {
 		return Plan{}, na("the daemon reports a platform for this image that the desk cannot name exactly (%s); nothing was sent", escape.Name(clipName(plat.String())))
@@ -275,7 +275,8 @@ func CopyImage(snap Snapshot, source CopySource, destination CopyDestination) (P
 		platWords = "the daemon's own (it reported none)"
 	}
 	spec := &ImageCopySpec{Source: src, Target: dst, ImageID: img.ID, Ref: ref, Platform: plat}
-	name, word := ref, ""
+	// name is the reference as text; what is sent is spec.By().
+	name, word := text(ref), ""
 	if ref != "" {
 		_, word = engine.SplitRef(ref)
 	} else {
@@ -311,7 +312,7 @@ func CopyImage(snap Snapshot, source CopySource, destination CopyDestination) (P
 		p.Blockers = append(p.Blockers, fmt.Sprintf("%s holds %s under an ID that is not a sha256 digest (%s): it cannot be checked again before the stream. Nothing was sent.",
 			to, escape.Name(name), escape.Name(destination.Facts.ID)))
 	default:
-		held := engine.ShortID(destination.Facts.ID)
+		held := shortID(destination.Facts.ID)
 		spec.TargetOwner = destination.Facts.ID
 		diff := SameBuild(source.Facts, destination.Facts)
 		switch {

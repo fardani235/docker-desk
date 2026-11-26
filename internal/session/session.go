@@ -765,7 +765,9 @@ func (s *Session) TakeNotices(now time.Time) []Notice {
 			// Not reached yet: say why, once per distinct reason.
 			if r := m.Reason(); r != "" && r != m.nReason {
 				m.nReason = r
-				out = append(out, Notice{Member: m, Bad: true, Text: m.Name() + ": not reachable — " + r + " (retrying)"})
+				// A notice is drawn on the status line: the daemon's reason,
+				// like every name below, is text here.
+				out = append(out, Notice{Member: m, Bad: true, Text: escape.Name(m.Name()) + ": not reachable — " + escape.Name(r) + " (retrying)"})
 			}
 			continue
 		}
@@ -775,7 +777,7 @@ func (s *Session) TakeNotices(now time.Time) []Notice {
 			m.nInit, m.nUp, m.nSeen = true, up, end
 			if !m.launch && m != focus {
 				info := m.Info()
-				out = append(out, Notice{Member: m, Text: m.Name() + ": connected (Engine " + escape.Name(info.ServerVersion) + " on " + escape.Name(info.Name) + ") — > or M to focus it"})
+				out = append(out, Notice{Member: m, Text: escape.Name(m.Name()) + ": connected (Engine " + escape.Name(info.ServerVersion) + " on " + escape.Name(info.Name) + ") — > or M to focus it"})
 			}
 			continue
 		}
@@ -786,11 +788,11 @@ func (s *Session) TakeNotices(now time.Time) []Notice {
 		if up != m.nUp {
 			m.nUp = up
 			if up {
-				out = append(out, Notice{Member: m, Text: m.Name() + ": reconnected"})
+				out = append(out, Notice{Member: m, Text: escape.Name(m.Name()) + ": reconnected"})
 			} else {
-				text := m.Name() + ": lost the connection — retrying"
+				text := escape.Name(m.Name()) + ": lost the connection — retrying"
 				if p := m.Problem(); p != "" {
-					text += ": " + p
+					text += ": " + escape.Name(p)
 				}
 				out = append(out, Notice{Member: m, Bad: true, Text: text})
 			}
@@ -802,11 +804,12 @@ func (s *Session) TakeNotices(now time.Time) []Notice {
 				if e.Marker != "" || e.Event.Type != "container" || (e.Event.Action != "die" && e.Event.Action != "oom") {
 					continue
 				}
-				what := e.Event.Name()
+				// The event is the daemon's: its name and its code as text.
+				what := escape.Name(e.Event.Name())
 				if e.Event.Action == "oom" {
 					what += " ran out of memory"
 				} else if code := e.Event.Attributes["exitCode"]; code != "" {
-					what += " exited (code " + code + ")"
+					what += " exited (code " + escape.Name(code) + ")"
 				} else {
 					what += " exited"
 				}
@@ -814,7 +817,7 @@ func (s *Session) TakeNotices(now time.Time) []Notice {
 			}
 		}
 		if len(m.nPending) > 0 && now.Sub(m.nLastShown) >= s.cfg.NoticeGap {
-			text := m.Name() + ": container " + m.nPending[0]
+			text := escape.Name(m.Name()) + ": container " + m.nPending[0]
 			if more := len(m.nPending) - 1; more > 0 {
 				text += fmt.Sprintf(", and %d more container event(s)", more)
 			}

@@ -228,12 +228,12 @@ func (m *Model) startAnalysis(t findingsTarget) {
 	if m.fx.failed == nil {
 		m.fx.failed = map[string]string{}
 	}
-	run := &findingsRun{key: t.key, ref: t.ref}
+	run := &findingsRun{key: t.key, ref: esc(t.ref)} // as messages name it
 	eng := m.eng
 	// The command line's --report analyses with the same options.
 	opts := collect.AnalysisOptions(t.img.ID, t.ref, t.plat, m.info)
 	id, plat := t.img.ID, t.plat
-	run.jobID = m.startJob("analyse image", t.ref, func(ctx context.Context, r *jobs.Run) error {
+	run.jobID = m.startJob("analyse image", esc(t.ref), func(ctx context.Context, r *jobs.Run) error {
 		r.Status("asking the daemon for the archive")
 		rc, err := eng.SaveImage(ctx, id, plat)
 		if err != nil {
@@ -251,9 +251,9 @@ func (m *Model) startAnalysis(t findingsTarget) {
 		if err != nil {
 			return err
 		}
-		r.Logf("%s layout, %s, %d layers, %s read", rep.Layout, rep.Platform, len(rep.Layers), humanBytes(rep.BytesRead))
+		r.Logf("%s layout, %s, %d layers, %s read", esc(fmt.Sprint(rep.Layout)), esc(rep.Platform), len(rep.Layers), humanBytes(rep.BytesRead))
 		for _, l := range rep.Layers {
-			r.Logf("layer %d  %s  %s  %d files", l.Index, engine.ShortID(l.Digest), humanBytes(l.Size), l.Files)
+			r.Logf("layer %d  %s  %s  %d files", l.Index, escID(l.Digest), humanBytes(l.Size), l.Files)
 		}
 		r.Logf("%d findings from the archive", len(rep.Findings))
 		r.Status(fmt.Sprintf("%d layers · %d findings", len(rep.Layers), len(rep.Findings)))
@@ -441,7 +441,7 @@ func (m *Model) renderFindings(w, h int) []string {
 	cur := m.findingsCursor(fs)
 
 	var out []string
-	sum := fmt.Sprintf("%d findings · by %s · %d layers · %s · %s · %s", len(fs), m.fx.order, len(rep.Layers), humanBytes(rep.TotalSize()), rep.Layout, rep.Platform)
+	sum := fmt.Sprintf("%d findings · by %s · %d layers · %s · %s · %s", len(fs), m.fx.order, len(rep.Layers), humanBytes(rep.TotalSize()), esc(fmt.Sprint(rep.Layout)), esc(rep.Platform))
 	switch n := len(rep.Notes); n {
 	case 0:
 	case 1:
@@ -494,14 +494,14 @@ func (m *Model) renderFindingsPending(t findingsTarget, w int) []string {
 	switch run := m.fx.run; {
 	case run != nil && run.key == t.key:
 		p, _ := run.snapshot()
-		add(toneAccent, fmt.Sprintf("%s Analysing %s (%s) from its own archive…", spinnerFrames[m.spinner], t.ref, t.plat))
+		add(toneAccent, fmt.Sprintf("%s Analysing %s (%s) from its own archive…", spinnerFrames[m.spinner], esc(t.ref), esc(fmt.Sprint(t.plat))))
 		add(toneNormal, fmt.Sprintf("%s read · %d layers found", humanBytes(p.BytesRead), p.Layers))
 		add(toneDim, "The archive streams from the daemon (GET /images/get) and is read once; nothing is written to disk. c cancels.")
 	case m.fx.failed[t.key] != "":
 		add(toneBad, "The analysis ended without a report: "+m.fx.failed[t.key])
 		add(toneDim, "Enter analyses again.")
 	case m.needsConsent(t):
-		add(toneWarn, fmt.Sprintf("%s is %s, and the daemon is remote (%s).", t.ref, humanBytes(t.img.Size), m.endpoint.Host))
+		add(toneWarn, fmt.Sprintf("%s is %s, and the daemon is remote (%s).", esc(t.ref), humanBytes(t.img.Size), esc(m.endpoint.Host)))
 		add(toneNormal, "Analysing streams the whole archive across the network, once.")
 		add(toneDim, "Enter analyses it. Nothing is requested until you do.")
 	default:
@@ -518,9 +518,9 @@ func (m *Model) liveLine(img engine.Image) string {
 	}
 	var parts []string
 	for _, c := range users {
-		p := st.tone(stateTone(c.State), stateGlyph(c.State)) + " " + c.Name + " " + st.tone(toneDim, c.State)
+		p := st.tone(stateTone(c.State), stateGlyph(c.State)) + " " + esc(c.Name) + " " + st.tone(toneDim, esc(c.State))
 		if ports := formatPorts(c.Ports); ports != "" {
-			p += " " + ports
+			p += " " + esc(ports)
 		}
 		if f, ok := m.fx.facts[c.ID]; ok && f.Privileged {
 			p += " " + st.tone(toneBad, "privileged")
@@ -543,6 +543,11 @@ func certaintyTone(c forensics.Certainty) tone {
 	return toneDim
 }
 
+// A finding's path, evidence, reason, instruction and unknown are text by
+// the time the analysis hands them over: forensics escapes every name the
+// archive or the daemon chose as it writes the sentence, with the mapping
+// the export writes too, so the row, the detail block and the file agree.
+// They are drawn here as they are — not escaped a second time.
 func (m *Model) findingRow(f forensics.Finding, w int, selected, focused bool) string {
 	layer := "--"
 	if f.Layer > 0 {
@@ -582,7 +587,7 @@ func (m *Model) findingDetail(f forensics.Finding, w int) []string {
 	ev := f.Evidence
 	if f.Secret.Present() {
 		if m.fx.revealed == f.Key() {
-			kv("value", f.Secret.Reveal(), toneBad)
+			kv("value", f.Secret.Reveal(), toneBad) // contents, made inert by the analysis
 		} else {
 			ev += "   (v reveals)"
 		}

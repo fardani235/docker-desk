@@ -18,7 +18,8 @@ type Member struct {
 	// Ref is the image reference of an image row; empty for an untagged
 	// image and for every other kind.
 	Ref string
-	// Name is the row's name as the operator saw it.
+	// Name is the row's name as the operator saw it: text, escaped by the
+	// list that drew it, and not escaped again here.
 	Name string
 }
 
@@ -195,9 +196,12 @@ func excluded(p Plan, err error) (string, bool) {
 	return "", false
 }
 
+// memberName is how a member left out of a set is named: as the list named
+// it (already text), except an anonymous volume, which is named as a volume
+// plan names it. mb.ID is a volume's name as the daemon gave it.
 func memberName(op Op, mb Member) string {
-	if op == OpRemoveVolume {
-		return displayVolume(engine.Volume{Name: mb.Name})
+	if op == OpRemoveVolume && len(mb.ID) == 64 && isHex(mb.ID) {
+		return displayVolume(engine.Volume{Name: mb.ID})
 	}
 	return mb.Name
 }
@@ -260,7 +264,7 @@ func imageSet(snap Snapshot, members []Member, add func(Plan), skip func(name, r
 			continue
 		}
 		for i, r := range refs {
-			st := Step{Op: OpRemoveImage, Kind: "image", ID: r, Name: r, Detail: engine.ShortID(img.ID), Pin: img.ID}
+			st := Step{Op: OpRemoveImage, Kind: "image", ID: r, Name: text(r), Detail: shortID(img.ID), Pin: img.ID}
 			if i < len(refs)-1 {
 				st.KeepsData = true
 				st.Detail = detailUntag + st.Detail

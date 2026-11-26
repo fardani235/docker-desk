@@ -87,13 +87,18 @@ func LiveFindings(r *Report, in LiveInput) []Finding {
 	users := Users(in)
 	running := 0
 	for _, c := range users {
+		// The container is named in every finding about it, on the screen
+		// and in the export: its name and state are the daemon's, and are
+		// text in every sentence below. What is decided — is it active, is
+		// its network the host's — reads the container itself.
+		name, state := sanitize(c.Name, 256), sanitize(c.State, 64)
 		facts, inspected := in.Facts[c.ID]
 		if c.IsActive() {
 			running++
 		}
 		if inspected && facts.Privileged {
-			f := Finding{Rule: "live.privileged", Group: GroupLive, Source: SourceDaemon, Certainty: Certain, Subject: c.Name,
-				Evidence: c.Name + ": HostConfig.Privileged true (" + c.State + ")",
+			f := Finding{Rule: "live.privileged", Group: GroupLive, Source: SourceDaemon, Certainty: Certain, Subject: name,
+				Evidence: name + ": HostConfig.Privileged true (" + state + ")",
 				Reason:   "Privileged: the container has every capability and the host's devices.",
 				Unknown:  "what the processes inside do with that access"}
 			if r != nil && r.RootUser && facts.User == "" {
@@ -103,20 +108,20 @@ func LiveFindings(r *Report, in LiveInput) []Finding {
 			out = append(out, f)
 		}
 		if c.NetworkMode == "host" {
-			out = append(out, Finding{Rule: "live.host-network", Group: GroupLive, Source: SourceDaemon, Certainty: Certain, Subject: c.Name,
-				Evidence: c.Name + ": network mode host",
+			out = append(out, Finding{Rule: "live.host-network", Group: GroupLive, Source: SourceDaemon, Certainty: Certain, Subject: name,
+				Evidence: name + ": network mode host",
 				Reason:   "Shares the host's network stack: whatever it listens on is open on the host.",
 				Unknown:  "which ports its processes listen on"})
 		}
 		var open []string
 		for _, p := range c.Ports {
 			if p.HostPort != 0 && allInterfaces(p.HostIP) {
-				open = append(open, fmt.Sprintf("%d→%d/%s", p.HostPort, p.PrivatePort, p.Proto))
+				open = append(open, fmt.Sprintf("%d→%d/%s", p.HostPort, p.PrivatePort, sanitize(p.Proto, 16)))
 			}
 		}
 		if len(open) > 0 {
-			out = append(out, Finding{Rule: "live.published", Group: GroupLive, Source: SourceDaemon, Certainty: Certain, Subject: c.Name,
-				Evidence: c.Name + ": " + strings.Join(open, ", "),
+			out = append(out, Finding{Rule: "live.published", Group: GroupLive, Source: SourceDaemon, Certainty: Certain, Subject: name,
+				Evidence: name + ": " + strings.Join(open, ", "),
 				Reason:   "Published on every host interface, not only on loopback.",
 				Unknown:  "whether a firewall in front of the host filters it"})
 		}
@@ -124,13 +129,13 @@ func LiveFindings(r *Report, in LiveInput) []Finding {
 		switch {
 		case ref == "" || strings.HasPrefix(ref, "sha256:") || pinned(ref):
 		default:
-			out = append(out, Finding{Rule: "supply.tag-unpinned", Group: GroupSupply, Source: SourceDaemon, Certainty: Certain, Subject: c.Name,
-				Evidence: c.Name + " was created from " + sanitize(ref, 120),
+			out = append(out, Finding{Rule: "supply.tag-unpinned", Group: GroupSupply, Source: SourceDaemon, Certainty: Certain, Subject: name,
+				Evidence: name + " was created from " + sanitize(ref, 120),
 				Reason:   "A tag, not a digest: re-creating the container can give it different bytes.",
 				Unknown:  "whether the tag is managed so that it never moves"})
 			if now, ok := resolveRef(in.Images, ref); ok && now.ID != c.ImageID {
-				out = append(out, Finding{Rule: "supply.tag-moved", Group: GroupSupply, Source: SourceDesk, Certainty: Certain, Subject: c.Name,
-					Evidence: fmt.Sprintf("%s now names %s; %s runs %s", sanitize(ref, 80), engine.ShortID(now.ID), c.Name, engine.ShortID(c.ImageID)),
+				out = append(out, Finding{Rule: "supply.tag-moved", Group: GroupSupply, Source: SourceDesk, Certainty: Certain, Subject: name,
+					Evidence: fmt.Sprintf("%s now names %s; %s runs %s", sanitize(ref, 80), sanitize(engine.ShortID(now.ID), 12), name, sanitize(engine.ShortID(c.ImageID), 12)),
 					Reason:   "The tag moved after the container was created: it runs bytes the tag no longer names.",
 					Unknown:  "which of the two images is the intended one"})
 			}
@@ -143,8 +148,9 @@ func LiveFindings(r *Report, in LiveInput) []Finding {
 			continue
 		}
 		if now, ok := resolveRef(in.Images, ref); ok && now.ID == in.Image.ID {
-			out = append(out, Finding{Rule: "supply.tag-moved", Group: GroupSupply, Source: SourceDesk, Certainty: Certain, Subject: c.Name,
-				Evidence: fmt.Sprintf("%s now names this image; %s runs %s", sanitize(ref, 80), c.Name, engine.ShortID(c.ImageID)),
+			name := sanitize(c.Name, 256)
+			out = append(out, Finding{Rule: "supply.tag-moved", Group: GroupSupply, Source: SourceDesk, Certainty: Certain, Subject: name,
+				Evidence: fmt.Sprintf("%s now names this image; %s runs %s", sanitize(ref, 80), name, sanitize(engine.ShortID(c.ImageID), 12)),
 				Reason:   "The tag moved onto this image after the container was created: the container does not run these bytes.",
 				Unknown:  "which of the two images is the intended one"})
 		}
@@ -159,7 +165,7 @@ func LiveFindings(r *Report, in LiveInput) []Finding {
 		var names []string
 		for _, c := range users {
 			if c.IsActive() {
-				names = append(names, c.Name)
+				names = append(names, sanitize(c.Name, 256))
 			}
 		}
 		out = append(out, Finding{Rule: "live.secret-exposed", Group: GroupLive, Source: SourceDesk, Certainty: Likely,

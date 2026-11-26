@@ -177,7 +177,7 @@ func (m *Model) onChangesFacts(msg changesFactsMsg) {
 		if c.factsErr == nil {
 			c.factsErr = map[string]string{}
 		}
-		c.factsErr[msg.id] = plainError(msg.err)
+		c.factsErr[msg.id] = escErr(msg.err)
 		if engine.IsNotFound(msg.err) {
 			c.factsErr[msg.id] = "the image no longer exists"
 		}
@@ -260,19 +260,19 @@ func (m *Model) contentFor(t changesTarget) (*changes.Content, changes.Refusal, 
 // counts, digests and the desk's own words.
 func (m *Model) startChanges(t changesTarget) {
 	plat := t.old.Platform()
-	run := &changesRun{key: t.key, ref: oneLine(t.pair.Ref), oldKey: t.pair.OldID + "|" + t.plat, newKey: t.pair.NewID + "|" + t.plat}
+	run := &changesRun{key: t.key, ref: esc(t.pair.Ref), oldKey: t.pair.OldID + "|" + t.plat, newKey: t.pair.NewID + "|" + t.plat}
 	have := [2]*forensics.Report{m.fx.cache[run.oldKey], m.fx.cache[run.newKey]}
 	eng := m.eng
 	daemonOS, daemonArch := m.info.OSType, m.info.Architecture
 	sides := [2]struct {
 		name, id, ref string
-	}{{"running", t.pair.OldID, engine.ShortID(t.pair.OldID)}, {"new", t.pair.NewID, run.ref}}
+	}{{"running", t.pair.OldID, engine.ShortID(t.pair.OldID)}, {"new", t.pair.NewID, t.pair.Ref}} // ref: what the archive is matched by, as the daemon gave it
 	delete(m.chg.failed, t.key)
 	run.jobID = m.startJob("compare images", run.ref, func(ctx context.Context, r *jobs.Run) error {
 		for i, s := range sides {
 			rep := have[i]
 			if rep != nil {
-				r.Logf("%s image %s: report already made, not read again", s.name, engine.ShortID(s.id))
+				r.Logf("%s image %s: report already made, not read again", s.name, escID(s.id))
 			} else {
 				run.mu.Lock()
 				run.side, run.progress = s.name, forensics.Progress{}
@@ -300,7 +300,7 @@ func (m *Model) startChanges(t changesTarget) {
 				if err != nil {
 					return err
 				}
-				r.Logf("%s image %s: %d layers, %s read, %d findings", s.name, engine.ShortID(s.id), len(rep.Layers), humanBytes(rep.BytesRead), len(rep.Findings))
+				r.Logf("%s image %s: %d layers, %s read, %d findings", s.name, escID(s.id), len(rep.Layers), humanBytes(rep.BytesRead), len(rep.Findings))
 			}
 			run.mu.Lock()
 			if i == 0 {
@@ -390,7 +390,7 @@ func (m *Model) recreateGate(t changesTarget) recreateGate {
 	if orig, aside := plan.SetAsideName(t.container.Name, t.container.ID); aside {
 		for _, c := range m.snap.Containers {
 			if c.Name == orig && c.ID != t.container.ID {
-				return recreateGate{note: fmt.Sprintf("%s was set aside by a re-create: its name %s now belongs to another container (%s), so this tab offers nothing.", name, escape.Name(orig), engine.ShortID(c.ID))}
+				return recreateGate{note: fmt.Sprintf("%s was set aside by a re-create: its name %s now belongs to another container (%s), so this tab offers nothing.", name, escape.Name(orig), escID(c.ID))}
 			}
 		}
 		return recreateGate{note: fmt.Sprintf("%s was set aside by a re-create; its name was %s. Rename it back before re-creating it.", name, escape.Name(orig))}
@@ -403,7 +403,7 @@ func (m *Model) recreateGate(t changesTarget) recreateGate {
 		return recreateGate{note: name + " cannot be re-created here: it carries settings a re-create does not reproduce — " + strings.Join(refused, "; ") + "."}
 	}
 	return recreateGate{ok: true, note: fmt.Sprintf("A re-creates %s on that build (%s): it is stopped and renamed aside, and a new %s is created from %s with its configuration and started. Nothing is deleted.",
-		name, engine.ShortID(t.pair.NewID), name, escape.Name(oneLine(t.pair.Ref)))}
+		name, escID(t.pair.NewID), name, esc(t.pair.Ref))}
 }
 
 // cloneRefusals is the clone check for the inspect the tab is drawn from.
@@ -419,7 +419,7 @@ func (m *Model) cloneRefusals() ([]string, string) {
 		refused, err := plan.CloneRefusals(*d, def)
 		m.chg.cloneRefused = refused
 		if err != nil {
-			m.chg.cloneErr = err.Error()
+			m.chg.cloneErr = err.Error() // the plan's own text: escaped there
 		}
 	}
 	return m.chg.cloneRefused, m.chg.cloneErr
@@ -480,14 +480,14 @@ func (m *Model) prepareRecreate(containerID string) tea.Cmd {
 func buildRecreate(ctx context.Context, eng engine.Engine, def plan.CloneDefaults, containerID string) (plan.Plan, error) {
 	snap, err := plan.Take(ctx, eng)
 	if err != nil {
-		return plan.Plan{}, fmt.Errorf("could not read the daemon's current state: %w", err)
+		return plan.Plan{}, stateErr{err: err}
 	}
 	d, err := eng.InspectContainer(ctx, containerID)
 	if engine.IsNotFound(err) {
 		return plan.Plan{}, &plan.NotApplicable{Reason: "That container no longer exists."}
 	}
 	if err != nil {
-		return plan.Plan{}, fmt.Errorf("could not inspect the container: %s", plainError(err))
+		return plan.Plan{}, fmt.Errorf("could not inspect the container: %s", escErr(err))
 	}
 	pair := changes.FindPair(d.Image, d.ImageID, snap.Images)
 	if !pair.Refusal.None() {
@@ -496,7 +496,7 @@ func buildRecreate(ctx context.Context, eng engine.Engine, def plan.CloneDefault
 	read := func(id string) (engine.ImageDetail, error) {
 		img, err := eng.InspectImage(ctx, id)
 		if err != nil {
-			return img, fmt.Errorf("could not inspect image %s: %s", engine.ShortID(id), plainError(err))
+			return img, fmt.Errorf("could not inspect image %s: %s", escID(id), escErr(err))
 		}
 		return img, nil
 	}
@@ -578,15 +578,15 @@ func (m *Model) changesLines(t changesTarget, w int) []string {
 			if e := m.chg.factsErr[id]; e != "" {
 				why = "unknown: " + e + " (opening the tab again retries)"
 			}
-			hang(label, 9, toneDim, engine.ShortID(id)+"  "+why)
+			hang(label, 9, toneDim, escID(id)+"  "+why)
 			return
 		}
-		s := fmt.Sprintf("%s  %s old  %s", engine.ShortID(f.ID), humanAge(f.Created, now), humanBytes(f.Size))
+		s := fmt.Sprintf("%s  %s old  %s", escID(f.ID), humanAge(f.Created, now), humanBytes(f.Size))
 		hang(label, 9, toneNormal, s+extra)
 	}
 
-	ident("running", t.old, t.pair.OldID, "  ("+t.name+")")
-	ref := oneLine(t.pair.Ref)
+	ident("running", t.old, t.pair.OldID, "  ("+esc(t.name)+")")
+	ref := esc(t.pair.Ref)
 	if t.pair.NewID == "" {
 		hang("from", 9, toneNormal, ref)
 	} else {
@@ -746,7 +746,7 @@ func (m *Model) contentLines(t changesTarget, hang func(string, int, tone, strin
 		if f.Evidence != "" {
 			s += "  " + f.Evidence // masked by the analyser, as on Findings
 		}
-		hang("  "+sign, 4, tn, oneLine(s))
+		hang("  "+sign, 4, tn, s) // the analysis's text: escaped there, once
 	}
 	for _, f := range c.Appeared {
 		finding("+", toneWarn, f)

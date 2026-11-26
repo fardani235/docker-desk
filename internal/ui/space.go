@@ -180,7 +180,7 @@ func (m *Model) startDiskUsage() {
 				if ctx.Err() != nil {
 					return ctx.Err()
 				}
-				info.err = plainError(err)
+				info.err = escErr(err)
 			} else {
 				info.chains = space.ChainIDs(l.DiffIDs)
 				if sizes, ok := space.LayerSizes(len(l.DiffIDs), l.History); ok {
@@ -244,7 +244,7 @@ func (m *Model) prepareBuildCachePrune(all bool) tea.Cmd {
 		defer cancel()
 		du, err := eng.DiskUsage(ctx)
 		if err != nil {
-			tmpl.err = fmt.Errorf("could not read the daemon's build-cache account: %w", err)
+			tmpl.err = stateErr{err: err, what: "build-cache account"}
 			return tmpl
 		}
 		tmpl.plan = plan.BuildCachePrune(du, all, time.Now())
@@ -518,10 +518,10 @@ func (m *Model) deskRowFor(r spRow) row {
 		for _, img := range m.snap.Images {
 			if img.ID == r.imageID {
 				if refs := img.Refs(); len(refs) > 0 {
-					out.imageRef, out.name = refs[0], refs[0]
+					out.imageRef, out.name = refs[0], esc(refs[0])
 					out.key = img.ID + "|" + refs[0]
 				} else {
-					out.name = "<untagged> " + engine.ShortID(img.ID)
+					out.name = "<untagged> " + escID(img.ID)
 					out.key = img.ID + "|"
 				}
 			}
@@ -530,7 +530,7 @@ func (m *Model) deskRowFor(r spRow) row {
 	case KindContainers:
 		return row{key: r.containerID, name: r.name, containerID: r.containerID, state: r.state}
 	case KindVolumes:
-		return row{key: r.volume, name: r.volume, volume: r.volume}
+		return row{key: r.volume, name: r.name, volume: r.volume}
 	}
 	return row{}
 }
@@ -595,9 +595,9 @@ func (m *Model) findRow(k Kind, match ...func(row) bool) int {
 
 func imageLabel(tags []string, id string) string {
 	for _, t := range (engine.Image{RepoTags: tags}).Refs() {
-		return t
+		return esc(t)
 	}
-	return "<none> " + engine.ShortID(id)
+	return "<none> " + escID(id)
 }
 
 // spaceImages is the account's images, most unique bytes first.
@@ -656,10 +656,10 @@ func (m *Model) spaceObjectRows() []spRow {
 		out = append(out, spRow{key: "i:" + it.ID, kind: KindImages, name: imageLabel(it.RepoTags, it.ID), imageID: it.ID})
 	}
 	for _, c := range m.spaceContainers() {
-		out = append(out, spRow{key: "c:" + c.ID, kind: KindContainers, name: c.Name, containerID: c.ID, state: c.State})
+		out = append(out, spRow{key: "c:" + c.ID, kind: KindContainers, name: esc(c.Name), containerID: c.ID, state: c.State})
 	}
 	for _, v := range m.spaceVolumes() {
-		out = append(out, spRow{key: "v:" + v.Name, kind: KindVolumes, name: v.Name, volume: v.Name})
+		out = append(out, spRow{key: "v:" + v.Name, kind: KindVolumes, name: esc(v.Name), volume: v.Name})
 	}
 	return out
 }
@@ -916,7 +916,7 @@ func (m *Model) spaceLines(w int, now time.Time) []spLine {
 		if s, ok := m.sp.sizes[c.ID]; ok {
 			rw, virt = cliSize(s.SizeRw), cliSize(s.SizeRootFs)
 		}
-		line := st.tone(stateTone(c.State), fit(c.Name, cnameW)+fmt.Sprintf(" %-12s %8s %8s", stateGlyph(c.State)+" "+c.State, rw, virt))
+		line := st.tone(stateTone(c.State), fit(esc(c.Name), cnameW)+fmt.Sprintf(" %-12s %8s %8s", stateGlyph(c.State)+" "+esc(c.State), rw, virt))
 		r := spRow{key: "c:" + c.ID}
 		out = append(out, spLine{text: line, row: &r})
 	}
@@ -938,9 +938,11 @@ func (m *Model) spaceLines(w int, now time.Time) []spLine {
 		if v.RefCount == 0 {
 			t = toneDim
 		}
-		name := v.Name
-		if len(name) == 64 {
-			name = name[:12] + "… (anonymous)"
+		// Named as the plans name it: only a name of 64 hex digits is cut
+		// and called anonymous — 64 bytes of anything else is a name.
+		name := esc(v.Name)
+		if len(v.Name) == 64 && isHexName(v.Name) {
+			name = v.Name[:12] + "… (anonymous)"
 		}
 		r := spRow{key: "v:" + v.Name}
 		out = append(out, spLine{text: st.tone(t, fit(name, vnameW)+fmt.Sprintf(" %8s %11s", size, links)), row: &r})
@@ -1094,7 +1096,7 @@ func (m *Model) spaceDetail(rows []spRow, cur, w int, now time.Time) []string {
 			kv("writable", "not measured — m measures every container's writable layer", toneDim)
 		}
 		if c.IsActive() {
-			kv("removal", c.Name+" is "+c.State+": it must be stopped before it can be removed", toneWarn)
+			kv("removal", esc(c.Name)+" is "+esc(c.State)+": it must be stopped before it can be removed", toneWarn)
 		}
 	case KindVolumes:
 		for _, v := range m.sp.du.VolumeItems {
@@ -1104,7 +1106,7 @@ func (m *Model) spaceDetail(rows []spRow, cur, w int, now time.Time) []string {
 			if v.Size >= 0 {
 				kv("size", cliSize(v.Size)+" — what removing it frees · "+m.prov(srcDaemon, m.sp.duAt, now), m.provTone(m.sp.duAt))
 			} else {
-				kv("size", "not measured by the daemon (driver "+v.Driver+")", toneDim)
+				kv("size", "not measured by the daemon (driver "+esc(v.Driver)+")", toneDim)
 			}
 			if v.RefCount > 0 {
 				kv("removal", fmt.Sprintf("referenced by %d container(s): refused until they are removed", v.RefCount), toneWarn)

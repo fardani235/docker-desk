@@ -3,6 +3,7 @@ package forensics
 import (
 	"bytes"
 	"fmt"
+	"github.com/fardani235/docker-desk/internal/escape"
 	"path"
 	"regexp"
 	"strings"
@@ -277,9 +278,11 @@ func (p *contentPattern) match(b []byte, r [2]int, seen map[string]bool, revealM
 			h := secretHit{kind: p.kind, certainty: p.certainty, unknown: unknownLive}
 			if p.kind == "private key" {
 				first, _, _ := strings.Cut(v, "\n")
-				h.masked = strings.TrimSpace(first) + " ******** (" + fmt.Sprintf("%d bytes", len(v)) + ")"
+				// The header line is the file's bytes: text, and bounded.
+				header := sanitize(strings.TrimSpace(first), 80)
+				h.masked = header + " ******** (" + fmt.Sprintf("%d bytes", len(v)) + ")"
 				if !strings.Contains(v, "-----END") {
-					h.masked = strings.TrimSpace(first) + " ******** (block runs past the bytes read)"
+					h.masked = header + " ******** (block runs past the bytes read)"
 				}
 				if strings.Contains(first, "ENCRYPTED") {
 					h.certainty, h.unknown = Likely, "whether the passphrase protecting the key is weak or known"
@@ -337,7 +340,7 @@ func boundReveal(v string, max int) string {
 	if len(v) > max {
 		v = v[:max] + " …"
 	}
-	return sanitize(v, max+4)
+	return inertValue(v, max+4)
 }
 
 // maskText replaces every secret-shaped substring of s with its mask. It is
@@ -365,7 +368,46 @@ func bidiControl(r rune) bool {
 	return (r >= '\u202a' && r <= '\u202e') || (r >= '\u2066' && r <= '\u2069') || r == '\u200e' || r == '\u200f' || r == '\u061c'
 }
 
+// sanitize is a name the archive, the image or the daemon chose — a path,
+// a link's target, a package, a user, a reference — as the text a finding,
+// a note or a listing shows: at most max of its characters, then
+// escape.Name, the one mapping the screen and the exports share. Nothing in
+// it can act on a terminal or reorder a line, and no byte is replaced by
+// something else: `\x1b` says there was an ESC. It is applied once, where
+// the name becomes part of a sentence, and never to text that is one
+// already (builder.add bounds an evidence line; it does not escape it).
 func sanitize(s string, max int) string {
+	n, cut := 0, len(s)
+	for i := range s {
+		if n == max {
+			cut = i
+			break
+		}
+		n++
+	}
+	if cut < len(s) {
+		return escape.Name(s[:cut]) + "…"
+	}
+	return escape.Name(s)
+}
+
+// clip bounds text that is text already to max characters.
+func clip(s string, max int) string {
+	n := 0
+	for i := range s {
+		if n == max {
+			return s[:i] + "…"
+		}
+		n++
+	}
+	return s
+}
+
+// inertValue is a secret's value as v reveals it: contents, not a name.
+// What could act on a terminal or reorder the line is replaced by `?`, and
+// a backslash is left as it is — the value is read to be recognised and
+// replaced, and must not be shown with characters it does not have.
+func inertValue(s string, max int) string {
 	if !utf8.ValidString(s) {
 		s = strings.ToValidUTF8(s, "?")
 	}

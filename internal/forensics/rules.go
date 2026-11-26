@@ -479,9 +479,12 @@ type builder struct {
 	omitted  int
 }
 
+// add records a finding. Its path arrives as the archive gave it and
+// becomes text here (sanitize); its evidence is a sentence a rule composed
+// from parts that are text already, and is only bounded.
 func (b *builder) add(f Finding) {
 	f.Path = sanitize(f.Path, 400)
-	f.Evidence = sanitize(f.Evidence, 300)
+	f.Evidence = clip(f.Evidence, 300)
 	k := fmt.Sprintf("%s|%d", f.Rule, f.Layer)
 	b.count[k]++
 	if b.count[k] > b.lim.PerRule {
@@ -611,9 +614,15 @@ func isShell(s string) bool {
 	return false
 }
 
+// quoteArgv is a command as a finding shows it: each argument as text,
+// in quotes, the whole bounded. The arguments are escaped one by one — the
+// quotes and commas are the desk's — and nothing escapes them again.
 func quoteArgv(argv []string) string {
-	b, _ := json.Marshal(argv)
-	return sanitize(string(b), 160)
+	parts := make([]string, len(argv))
+	for i, a := range argv {
+		parts[i] = `"` + sanitize(a, 160) + `"`
+	}
+	return clip("["+strings.Join(parts, ",")+"]", 160)
 }
 
 func (a *analyser) configRules(b *builder, rep *Report, fs *finalFS) {
@@ -623,7 +632,7 @@ func (a *analyser) configRules(b *builder, rep *Report, fs *finalFS) {
 		rep.RootUser = true
 		b.add(Finding{
 			Rule: "config.root-user", Group: GroupConfig, Source: SourceImage, Certainty: Certain,
-			Evidence: fmt.Sprintf("User %q", sanitize(c.User, 40)),
+			Evidence: fmt.Sprintf("User \"%s\"", sanitize(c.User, 40)),
 			Reason:   "Processes run as root (UID 0) unless the container is started with --user.",
 			Unknown:  "whether containers are started with --user (the live findings say, for this daemon's)",
 		})
@@ -658,7 +667,7 @@ func (a *analyser) configRules(b *builder, rep *Report, fs *finalFS) {
 	case fs.complete() && !lookPath(fs, argv[0], c.Env):
 		b.add(Finding{
 			Rule: "config.inert", Group: GroupConfig, Source: SourceImage, Certainty: Likely,
-			Path: sanitize(argv[0], 200), Evidence: fmt.Sprintf("%s is not in the final filesystem", sanitize(argv[0], 120)),
+			Path: argv[0], Evidence: fmt.Sprintf("%s is not in the final filesystem", sanitize(argv[0], 120)),
 			Reason:  "The program the command names is not in the image: a container cannot start.",
 			Unknown: "programs a volume provides at run time, and links through more than 16 hops",
 		})

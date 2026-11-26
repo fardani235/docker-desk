@@ -206,7 +206,7 @@ func (m *Model) onDetail(msg detailMsg) {
 			m.detail.err = "This object no longer exists."
 			m.pending |= live.DirtyAll
 		} else {
-			m.detail.err = msg.err.Error()
+			m.detail.err = escErr(msg.err)
 		}
 		return
 	}
@@ -225,7 +225,12 @@ func (m *Model) onDetail(msg detailMsg) {
 	var pretty bytes.Buffer
 	if json.Indent(&pretty, raw, "", "  ") == nil {
 		off := m.inspect.off
-		m.inspect.set(strings.Split(pretty.String(), "\n"))
+		// The daemon's document, line by line, as text (jsonText).
+		lines := strings.Split(pretty.String(), "\n")
+		for i, l := range lines {
+			lines[i] = jsonText(l)
+		}
+		m.inspect.set(lines)
 		m.inspect.off = off
 	}
 }
@@ -255,19 +260,27 @@ func kvLines(pairs []kv, st styles) []string {
 	return out
 }
 
+// labelsSorted is a daemon's labels as drawn lines, `key=value`, in the
+// order of their keys as the daemon sent them. A key and a value are each
+// the daemon's to choose: each is escaped, and the `=` between them is the
+// desk's.
 func labelsSorted(m map[string]string, skipPrefix string) []string {
-	var out []string
-	for k, v := range m {
+	keys := make([]string, 0, len(m))
+	for k := range m {
 		if skipPrefix != "" && strings.HasPrefix(k, skipPrefix) {
 			continue
 		}
-		if v == "" {
-			out = append(out, k)
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := make([]string, 0, len(keys))
+	for _, k := range keys {
+		if v := m[k]; v == "" {
+			out = append(out, esc(k))
 		} else {
-			out = append(out, k+"="+v)
+			out = append(out, esc(k)+"="+esc(v))
 		}
 	}
-	sort.Strings(out)
 	return out
 }
 
@@ -292,21 +305,23 @@ func (m *Model) infoLines() []string {
 			}
 		}
 		d := m.detail.container
+		// Every value below is the daemon's: escaped, then given its
+		// tone. What a tone or a glyph is chosen by is the raw value.
 		p = append(p,
-			kv{"Name", c.Name},
-			kv{"ID", engine.ShortID(c.ID)},
-			kv{"Image", c.Image},
-			kv{"State", st.tone(stateTone(c.State), stateGlyph(c.State)+" "+c.State) + "   " + c.Status},
+			kv{"Name", esc(c.Name)},
+			kv{"ID", escID(c.ID)},
+			kv{"Image", esc(c.Image)},
+			kv{"State", st.tone(stateTone(c.State), stateGlyph(c.State)+" "+esc(c.State)) + "   " + esc(c.Status)},
 		)
 		if c.Health != "" {
 			t := toneGood
 			if c.Health != "healthy" {
 				t = toneWarn
 			}
-			p = append(p, kv{"Health", st.tone(t, c.Health)})
+			p = append(p, kv{"Health", st.tone(t, esc(c.Health))})
 		}
 		if proj := c.Project(); proj != "" {
-			p = append(p, kv{"Compose", proj + " / " + c.Service()})
+			p = append(p, kv{"Compose", esc(proj) + " / " + esc(c.Service())})
 		}
 		if d != nil && d.ID == c.ID {
 			p = append(p, kv{"Started", timeOrDash(d.StartedAt)})
@@ -321,26 +336,26 @@ func (m *Model) infoLines() []string {
 				p = append(p, kv{"", st.tone(toneBad, "Killed by the kernel: out of memory.")})
 			}
 			if d.Error != "" {
-				p = append(p, kv{"Error", st.tone(toneBad, d.Error)})
+				p = append(p, kv{"Error", st.tone(toneBad, esc(d.Error))})
 			}
 			cmd := strings.Join(append(append([]string{}, d.Entrypoint...), d.Cmd...), " ")
 			if cmd == "" {
 				cmd = strings.TrimSpace(d.Path + " " + strings.Join(d.Args, " "))
 			}
 			p = append(p,
-				kv{"Command", cmd},
-				kv{"Restart", fmt.Sprintf("%s (restarted %d×)", d.RestartPolicy, d.RestartCount)},
+				kv{"Command", esc(cmd)},
+				kv{"Restart", fmt.Sprintf("%s (restarted %d×)", esc(d.RestartPolicy), d.RestartCount)},
 			)
 			if d.WorkingDir != "" {
-				p = append(p, kv{"Workdir", d.WorkingDir})
+				p = append(p, kv{"Workdir", esc(d.WorkingDir)})
 			}
 			if d.User != "" {
-				p = append(p, kv{"User", d.User})
+				p = append(p, kv{"User", esc(d.User)})
 			}
 			extra := fmt.Sprintf("tty=%v  privileged=%v  env vars=%d", d.TTY, d.Privileged, d.EnvCount)
 			p = append(p, kv{"Runtime", extra}, kv{"Created", timeOrDash(d.Created)})
 		} else {
-			p = append(p, kv{"Command", c.Command}, kv{"Created", timeOrDash(c.Created)})
+			p = append(p, kv{"Command", esc(c.Command)}, kv{"Created", timeOrDash(c.Created)})
 		}
 		ports := c.Ports
 		if d != nil && d.ID == c.ID && len(d.Ports) > 0 {
@@ -356,9 +371,9 @@ func (m *Model) infoLines() []string {
 				if ip == "" {
 					ip = "*"
 				}
-				p = append(p, kv{v: fmt.Sprintf("  %s:%d → %d/%s", ip, port.HostPort, port.PrivatePort, port.Proto)})
+				p = append(p, kv{v: fmt.Sprintf("  %s:%d → %d/%s", esc(ip), port.HostPort, port.PrivatePort, esc(port.Proto))})
 			} else {
-				p = append(p, kv{v: fmt.Sprintf("  %d/%s  (not published)", port.PrivatePort, port.Proto)})
+				p = append(p, kv{v: fmt.Sprintf("  %d/%s  (not published)", port.PrivatePort, esc(port.Proto))})
 			}
 		}
 		nets := c.Networks
@@ -370,11 +385,11 @@ func (m *Model) infoLines() []string {
 			p = append(p, kv{v: st.tone(toneDim, "  none")})
 		}
 		for _, n := range nets {
-			line := "  " + n.Network
+			line := "  " + esc(n.Network)
 			if n.IP != "" {
-				line += "  " + n.IP
+				line += "  " + esc(n.IP)
 				if n.Gateway != "" {
-					line += "  gw " + n.Gateway
+					line += "  gw " + esc(n.Gateway)
 				}
 			} else {
 				line += st.tone(toneDim, "  (no address: not running)")
@@ -398,7 +413,7 @@ func (m *Model) infoLines() []string {
 			if !mt.RW {
 				mode = "ro"
 			}
-			p = append(p, kv{v: fmt.Sprintf("  %-6s %s → %s (%s)", mt.Type, src, mt.Destination, mode)})
+			p = append(p, kv{v: fmt.Sprintf("  %-6s %s → %s (%s)", esc(mt.Type), esc(src), esc(mt.Destination), mode)})
 		}
 		if ls := labelsSorted(c.Labels, "com.docker.compose."); len(ls) > 0 {
 			p = append(p, kv{}, section(st, "Labels"))
@@ -416,7 +431,7 @@ func (m *Model) infoLines() []string {
 		}
 		p = append(p,
 			kv{"Reference", r.name},
-			kv{"ID", engine.ShortID(img.ID)},
+			kv{"ID", escID(img.ID)},
 			kv{"Size", humanBytes(img.Size)},
 			kv{"Created", timeOrDash(img.Created) + "  (" + humanAge(img.Created, now) + " ago)"},
 		)
@@ -424,18 +439,18 @@ func (m *Model) infoLines() []string {
 			p = append(p, kv{"", st.tone(toneWarn, "Dangling: untagged and not referenced by another image.")})
 		}
 		if d := m.detail.image; d != nil && d.ID == img.ID {
-			p = append(p, kv{"Platform", d.OS + "/" + d.Architecture}, kv{"Layers", fmt.Sprintf("%d", d.Layers)})
+			p = append(p, kv{"Platform", esc(d.OS) + "/" + esc(d.Architecture)}, kv{"Layers", fmt.Sprintf("%d", d.Layers)})
 			if cmd := strings.Join(append(append([]string{}, d.Entrypoint...), d.Cmd...), " "); cmd != "" {
-				p = append(p, kv{"Command", cmd})
+				p = append(p, kv{"Command", esc(cmd)})
 			}
 			if d.WorkingDir != "" {
-				p = append(p, kv{"Workdir", d.WorkingDir})
+				p = append(p, kv{"Workdir", esc(d.WorkingDir)})
 			}
 			if d.User != "" {
-				p = append(p, kv{"User", d.User})
+				p = append(p, kv{"User", esc(d.User)})
 			}
 			if len(d.ExposedPorts) > 0 {
-				p = append(p, kv{"Exposes", strings.Join(d.ExposedPorts, " ")})
+				p = append(p, kv{"Exposes", escJoin(d.ExposedPorts, " ")})
 			}
 		}
 		p = append(p, kv{}, section(st, "References"))
@@ -444,7 +459,7 @@ func (m *Model) infoLines() []string {
 			p = append(p, kv{v: st.tone(toneDim, "  none (untagged)")})
 		}
 		for _, ref := range refs {
-			p = append(p, kv{v: "  " + ref})
+			p = append(p, kv{v: "  " + esc(ref)})
 		}
 		p = append(p, kv{}, section(st, "Used by"))
 		users := m.snap.ImageUsers(img)
@@ -452,7 +467,7 @@ func (m *Model) infoLines() []string {
 			p = append(p, kv{v: st.tone(toneDim, "  no container")})
 		}
 		for _, u := range users {
-			p = append(p, kv{v: "  " + st.tone(stateTone(u.State), stateGlyph(u.State)) + " " + u.Name + st.tone(toneDim, "  "+u.State)})
+			p = append(p, kv{v: "  " + st.tone(stateTone(u.State), stateGlyph(u.State)) + " " + esc(u.Name) + st.tone(toneDim, "  "+esc(u.State))})
 		}
 
 	case KindVolumes:
@@ -467,16 +482,16 @@ func (m *Model) infoLines() []string {
 			kind = "anonymous (created without a name)"
 		}
 		p = append(p,
-			kv{"Name", v.Name},
+			kv{"Name", esc(v.Name)},
 			kv{"Kind", kind},
-			kv{"Driver", v.Driver},
-			kv{"Scope", v.Scope},
-			kv{"Mountpoint", v.Mountpoint},
+			kv{"Driver", esc(v.Driver)},
+			kv{"Scope", esc(v.Scope)},
+			kv{"Mountpoint", esc(v.Mountpoint)},
 		)
 		if ts, err := time.Parse(time.RFC3339, v.CreatedAt); err == nil {
 			p = append(p, kv{"Created", timeOrDash(ts) + "  (" + humanAge(ts, now) + " ago)"})
 		} else if v.CreatedAt != "" {
-			p = append(p, kv{"Created", v.CreatedAt})
+			p = append(p, kv{"Created", esc(v.CreatedAt)})
 		}
 		p = append(p, kv{}, section(st, "Referenced by"))
 		users := m.snap.VolumeUsers(v.Name)
@@ -487,10 +502,10 @@ func (m *Model) infoLines() []string {
 			dest := ""
 			for _, mt := range u.Mounts {
 				if mt.Name == v.Name {
-					dest = " at " + mt.Destination
+					dest = " at " + esc(mt.Destination)
 				}
 			}
-			p = append(p, kv{v: "  " + st.tone(stateTone(u.State), stateGlyph(u.State)) + " " + u.Name + st.tone(toneDim, "  "+u.State+dest)})
+			p = append(p, kv{v: "  " + st.tone(stateTone(u.State), stateGlyph(u.State)) + " " + esc(u.Name) + st.tone(toneDim, "  "+esc(u.State)+dest)})
 		}
 		if ls := labelsSorted(v.Labels, ""); len(ls) > 0 {
 			p = append(p, kv{}, section(st, "Labels"))
@@ -507,19 +522,19 @@ func (m *Model) infoLines() []string {
 			}
 		}
 		p = append(p,
-			kv{"Name", n.Name},
-			kv{"ID", engine.ShortID(n.ID)},
-			kv{"Driver", n.Driver},
-			kv{"Scope", n.Scope},
+			kv{"Name", esc(n.Name)},
+			kv{"ID", escID(n.ID)},
+			kv{"Driver", esc(n.Driver)},
+			kv{"Scope", esc(n.Scope)},
 		)
 		if n.Predefined() {
 			p = append(p, kv{"", st.tone(toneDim, "Predefined by Docker; cannot be removed.")})
 		}
 		if len(n.Subnets) > 0 {
-			p = append(p, kv{"Subnets", strings.Join(n.Subnets, ", ")})
+			p = append(p, kv{"Subnets", escJoin(n.Subnets, ", ")})
 		}
 		if len(n.Gateways) > 0 {
-			p = append(p, kv{"Gateways", strings.Join(n.Gateways, ", ")})
+			p = append(p, kv{"Gateways", escJoin(n.Gateways, ", ")})
 		}
 		p = append(p, kv{"Internal", fmt.Sprintf("%v", n.Internal)}, kv{"IPv6", fmt.Sprintf("%v", n.IPv6)}, kv{"Created", timeOrDash(n.Created)})
 
@@ -536,9 +551,9 @@ func (m *Model) infoLines() []string {
 		}
 		sort.SliceStable(users, func(i, j int) bool { return users[i].Name < users[j].Name })
 		for _, u := range users {
-			line := "  " + st.tone(stateTone(u.State), stateGlyph(u.State)) + " " + u.Name
+			line := "  " + st.tone(stateTone(u.State), stateGlyph(u.State)) + " " + esc(u.Name)
 			if ip := addr[u.ID]; ip != "" {
-				line += "  " + ip
+				line += "  " + esc(ip)
 			} else if !u.IsActive() {
 				line += st.tone(toneDim, "  configured, not running")
 			}
@@ -557,10 +572,10 @@ func (m *Model) infoLines() []string {
 			return []string{st.tone(toneDim, "This project no longer has any containers.")}
 		}
 		p = append(p,
-			kv{"Project", proj.Name},
+			kv{"Project", esc(proj.Name)},
 			kv{"Containers", fmt.Sprintf("%d, %d running", len(proj.Containers), proj.Running)},
-			kv{"Working dir", proj.WorkingDir},
-			kv{"Config files", proj.ConfigFiles},
+			kv{"Working dir", esc(proj.WorkingDir)},
+			kv{"Config files", esc(proj.ConfigFiles)},
 			kv{"", st.tone(toneDim, "Grouped by the com.docker.compose.project label. The paths above are")},
 		)
 		for _, l := range m.declaredReadNote(proj) {
@@ -569,7 +584,7 @@ func (m *Model) infoLines() []string {
 		p = append(p, kv{}, section(st, "Services"))
 		for _, c := range proj.Containers {
 			p = append(p, kv{v: fmt.Sprintf("  %s %s  %s", st.tone(stateTone(c.State), stateGlyph(c.State)),
-				fit(c.Service(), 14), c.Name) + st.tone(toneDim, "  "+c.Status)})
+				fit(esc(c.Service()), 14), esc(c.Name)) + st.tone(toneDim, "  "+esc(c.Status))})
 		}
 		nets, vols := plan.ProjectLeftovers(m.snap, proj.Name)
 		p = append(p, kv{}, section(st, "Networks and volumes carrying this project's label"))
@@ -577,10 +592,10 @@ func (m *Model) infoLines() []string {
 			p = append(p, kv{v: st.tone(toneDim, "  none")})
 		}
 		for _, n := range nets {
-			p = append(p, kv{v: "  network  " + n})
+			p = append(p, kv{v: "  network  " + esc(n)})
 		}
 		for _, v := range vols {
-			p = append(p, kv{v: "  volume   " + v})
+			p = append(p, kv{v: "  volume   " + esc(v)})
 		}
 		p = append(p, kv{v: st.tone(toneDim, "  (never removed with the project; see their own kinds)")})
 	}
@@ -682,7 +697,7 @@ func (m *Model) renderLogs(w, h int) []string {
 	}
 	switch {
 	case st.Err != "":
-		status, t = "■ log stream failed: "+st.Err, toneBad
+		status, t = "■ log stream failed: "+esc(st.Err), toneBad
 	case !m.logFollow:
 		status, t = fmt.Sprintf("‖ scrolled back — %d %s · G or f follows again", newer, newerWhat), toneWarn
 	case st.Ended:
@@ -759,7 +774,7 @@ func (m *Model) renderStats(w, h int) []string {
 	st := m.st
 	if r.state != engine.StateRunning {
 		return []string{
-			st.tone(toneDim, fmt.Sprintf("%s is not running (%s).", r.name, r.state)),
+			st.tone(toneDim, fmt.Sprintf("%s is not running (%s).", r.name, esc(r.state))),
 			st.tone(toneDim, "Statistics are only collected for running containers."),
 		}
 	}
@@ -768,7 +783,7 @@ func (m *Model) renderStats(w, h int) []string {
 	case !state.Collected:
 		return []string{st.tone(toneDim, "Opening statistics stream…")}
 	case !state.HasSample && state.Err != "":
-		return []string{st.tone(toneBad, "Statistics stream failed: "+state.Err)}
+		return []string{st.tone(toneBad, "Statistics stream failed: "+esc(state.Err))}
 	case !state.HasSample:
 		return []string{st.tone(toneDim, "Waiting for the first samples…")}
 	}

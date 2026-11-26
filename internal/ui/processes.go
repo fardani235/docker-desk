@@ -124,7 +124,7 @@ func (m *Model) onProcesses(msg procMsg) {
 	case engine.IsUnavailable(msg.err) && p.list != nil:
 		p.stale = true // keep the last snapshot, marked as such
 	default:
-		p.err, p.list, p.stale, p.stopped = plainError(msg.err), nil, false, false
+		p.err, p.list, p.stale, p.stopped = escErr(msg.err), nil, false, false
 		p.view.set(nil)
 		if engine.IsNotFound(msg.err) {
 			p.err = "This container no longer exists."
@@ -143,7 +143,7 @@ func (m *Model) renderProcesses(w, h int) []string {
 	p := &m.proc
 	if r.state != engine.StateRunning {
 		return []string{
-			st.tone(toneDim, fit(fmt.Sprintf("%s is not running (%s).", r.name, r.state), w)),
+			st.tone(toneDim, fit(fmt.Sprintf("%s is not running (%s).", r.name, esc(r.state)), w)),
 			st.tone(toneDim, fit("Processes are available only for running containers.", w)),
 		}
 	}
@@ -207,12 +207,15 @@ func processTable(list *engine.ProcessList, w int) (string, []string) {
 	if cols == 0 {
 		return fit("", w), nil
 	}
+	// A title and a cell are the daemon's — a command line is whatever the
+	// process made of it — and are drawn as text: escaped, nothing dropped,
+	// no argument masked.
 	cell := func(row []string, i int) string {
 		switch {
 		case i < cols-1 && i < len(row):
-			return oneLine(row[i])
+			return esc(row[i])
 		case i == cols-1 && i < len(row):
-			return oneLine(strings.Join(row[i:], " "))
+			return esc(strings.Join(row[i:], " "))
 		}
 		return ""
 	}
@@ -254,17 +257,4 @@ func processTable(list *engine.ProcessList, w int) (string, []string) {
 		rows = append(rows, line(func(i int) string { return cell(r, i) }))
 	}
 	return header, rows
-}
-
-// oneLine makes a daemon-supplied value safe to draw in one row: escape
-// sequences are removed and control characters become spaces. The text is
-// otherwise shown as the daemon sent it — no argument is masked.
-func oneLine(s string) string {
-	s = ansi.Strip(s)
-	return strings.Map(func(r rune) rune {
-		if r < 0x20 || r == 0x7f || (r >= 0x80 && r < 0xa0) {
-			return ' '
-		}
-		return r
-	}, s)
 }

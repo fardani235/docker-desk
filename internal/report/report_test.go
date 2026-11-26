@@ -362,3 +362,18 @@ func TestParseFormat(t *testing.T) {
 		t.Error("xml accepted")
 	}
 }
+
+// A finding's field is the analysis's text: written as it is, so the file
+// says what the screen says — and a character that slipped in is still
+// written as an escape (review findings 3 and 8d).
+func TestTextFieldWritesTextOnce(t *testing.T) {
+	if got := textField(`a\x1b[8m\\b`); got != `a\x1b[8m\\b` {
+		t.Fatalf("textField changed text: %q", got)
+	}
+	if got := textField("a\x1b\u202eb\tc"); got != `a\x1b\u202eb\tc` {
+		t.Fatalf("textField let a raw character through: %q", got)
+	}
+	if textField("") != "-" {
+		t.Fatal("an empty field")
+	}
+}

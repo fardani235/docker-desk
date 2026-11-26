@@ -127,7 +127,7 @@ func ImageTag(snap Snapshot, imageID, input string) (Plan, error) {
 	if !imageIDForm.MatchString(img.ID) {
 		return Plan{}, na("the daemon lists this image under an ID that is not a sha256 digest (%s): it cannot be tagged by ID; nothing was sent", escape.Name(img.ID))
 	}
-	short := engine.ShortID(img.ID)
+	short := shortID(img.ID)
 	owner := snap.TagOwner(img.ID, target)
 	if owner.Kind == TagThisImage {
 		return Plan{}, na("%s already names this image (%s): there is nothing to tag. Nothing was sent.", target, short)
@@ -180,10 +180,10 @@ func executeTag(ctx context.Context, eng engine.Engine, st Step, run *jobs.Run) 
 	if engine.IsReadOnly(eng) {
 		return engine.ErrReadOnly
 	}
-	short := engine.ShortID(st.ID)
+	short := shortID(st.ID)
 	shown := "no image"
 	if st.Tag.Owner != "" {
-		shown = "image " + engine.ShortID(st.Tag.Owner)
+		shown = "image " + shortID(st.Tag.Owner)
 	}
 	run.Status("checking " + target)
 	now := ""
@@ -212,9 +212,9 @@ func executeTag(ctx context.Context, eng engine.Engine, st Step, run *jobs.Run) 
 		return nil
 	case trimSHA(now) != trimSHA(st.Tag.Owner):
 		return fmt.Errorf("the target changed: %s named %s when the form was read and names image %s now; nothing was tagged",
-			target, shown, escape.Name(engine.ShortID(now)))
+			target, shown, shortID(now))
 	default:
-		run.Logf("  %s moves from image %s to image %s", target, engine.ShortID(st.Tag.Owner), short)
+		run.Logf("  %s moves from image %s to image %s", target, shortID(st.Tag.Owner), short)
 	}
 	run.Status("tagging " + short)
 	if err := eng.TagImage(ctx, st.ID, target); err != nil {
@@ -282,12 +282,12 @@ func ImageUntag(snap Snapshot, imageID, ref string) (Plan, error) {
 	}
 	p.Title = "Untag image"
 	p.JobTitle = "untag image"
-	p.JobTarget = ref
+	p.JobTarget = text(ref)
 	p.Word = tag
 	p.Steps[0].IDFrom = -1
 	p.Steps[0].KeepsTag = true
 	p.Effects = append(p.Effects,
-		fmt.Sprintf("Immediately before the request, %s is checked to still name image %s and not to be its last reference; otherwise nothing is removed.", ref, engine.ShortID(img.ID)),
+		fmt.Sprintf("Immediately before the request, %s is checked to still name image %s and not to be its last reference; otherwise nothing is removed.", text(ref), shortID(img.ID)),
 		"Nothing is sent to a registry: a tag pushed earlier stays there.",
 	)
 	return p, nil

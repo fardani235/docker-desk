@@ -743,7 +743,8 @@ daemon's to choose: here, and in the Containers list Enter lands on, they are dr
 (`evil\x1b]0;…`), so none can act on the terminal or forge a row. Behind that, every frame the
 desk draws — any pane, any dialog — is stripped on its way out of everything that is neither a
 character nor a colour: an escape sequence a daemon slipped into a string the desk does not
-escape is removed, never sent to the terminal.
+escape is removed, never sent to the terminal. (A colour sequence is kept, and can hide the
+rest of its line: see *The safety model* for that limit and what stands in front of it.)
 
 **Without opening it.** The Containers STATE cell carries the health the daemon reports, and
 the Kinds pane and the Containers title count the containers the list alone is sure of — dead,
@@ -1421,11 +1422,23 @@ the desk back.
 Docker Desk changes and deletes real things, so it is deliberate by design rather than by your
 being careful.
 
-- **A daemon's text cannot drive your terminal.** Container names, images, status text and
-  errors are a daemon's to choose. Where the desk knows a string is one, it draws it escaped;
-  and every frame, whatever drew it, leaves with nothing in it but characters and colours — a
+- **A daemon's text cannot drive your terminal.** Container names, images, commands, labels,
+  mount paths, status text and errors are a daemon's to choose. Every one of them is drawn
+  escaped wherever it is drawn — the lists, Details, the confirmations, the Events pane and
+  Findings, the status line and the jobs — as the text of what it is: a conceal sequence in a
+  label reads `\x1b[8m`, a newline in a mount path `\n`, a right-to-left override `\u202e`, and
+  no byte of the value is dropped. Escaping changes only what is drawn: what is sent back to
+  the daemon, and what a lookup compares, is the value as the daemon gave it. Behind that,
+  every frame, whatever drew it, leaves with nothing in it but characters and colours — a
   window-title, cursor, clear-screen or any other control sequence is removed before the
-  terminal sees it, and a newline inside a line with it.
+  terminal sees it, and a newline inside a line with it. **The limit of that second line:**
+  a colour sequence is what the desk's own styling is made of, so the frame guard keeps it —
+  and a colour sequence can hide text (conceal, or a foreground the colour of the background).
+  A string that only the guard met could therefore hide the rest of its own line; it cannot
+  move, invent or forge text, and it cannot reach the next line, because every line that
+  leaves a colour set ends with a reset. The escaping is what keeps a daemon's string from
+  getting that far. Two things are not names and are not escaped this way: a file's contents
+  in the reader and a container's log lines, which have their own treatment.
 - **No single keystroke changes anything.** Every action key opens a dialog that names the
   exact object (name and ID), the exact effect in plain words, and the daemon it will be sent
   to. Nothing has been sent at that point.

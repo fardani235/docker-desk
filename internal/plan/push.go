@@ -36,35 +36,37 @@ func Push(snap Snapshot, imageID, ref string) (Plan, error) {
 		found = found || r == ref
 	}
 	if !found {
-		return Plan{}, na("%s is not a tag of image %s; nothing was sent", escape.Name(ref), engine.ShortID(img.ID))
+		return Plan{}, na("%s is not a tag of image %s; nothing was sent", escape.Name(ref), shortID(img.ID))
 	}
 	_, tag, domain, err := engine.PushableRef(ref)
 	if err != nil {
 		return Plan{}, na("%s cannot be pushed: %v", escape.Name(ref), err)
 	}
-	short := engine.ShortID(img.ID)
+	short := shortID(img.ID)
+	// What is sent is ref; shownRef is the same reference as text.
+	shownRef := text(ref)
 	p := Plan{
 		Title:     "Push image",
 		JobTitle:  "push image",
-		JobTarget: ref,
-		Target:    Target{Kind: "image", Name: ref, ID: short},
+		JobTarget: shownRef,
+		Target:    Target{Kind: "image", Name: shownRef, ID: short},
 		Registry:  domain,
-		Steps:     []Step{{Op: OpPushImage, Kind: "image", ID: ref, Name: ref, Detail: short, Pin: img.ID}},
+		Steps:     []Step{{Op: OpPushImage, Kind: "image", ID: ref, Name: shownRef, Detail: short, Pin: img.ID}},
 		Tier:      TierTyped,
 		Word:      tag,
 		Effects: []string{
-			fmt.Sprintf("Uploads %s to %s: the layers of image %s (%s on this daemon) that the registry does not already hold, then the manifest.", ref, domain, short, humanBytes(img.Size)),
-			fmt.Sprintf("The remote tag %s is created, or moved to this build if it names another one. This cannot be undone from this desk.", tag),
+			fmt.Sprintf("Uploads %s to %s: the layers of image %s (%s on this daemon) that the registry does not already hold, then the manifest.", shownRef, text(domain), short, humanBytes(img.Size)),
+			fmt.Sprintf("The remote tag %s is created, or moved to this build if it names another one. This cannot be undone from this desk.", text(tag)),
 			"The local image and its tags are not changed. Nothing is built, nothing is retagged, and no other tag is pushed.",
-			fmt.Sprintf("Immediately before the upload, %s is checked to still name image %s; if it does not, nothing is sent.", ref, short),
+			fmt.Sprintf("Immediately before the upload, %s is checked to still name image %s; if it does not, nothing is sent.", shownRef, short),
 			"It runs as a background job. Cancelling closes the stream: layers already uploaded may remain in the registry, and the tag may not have moved.",
 		},
 	}
 	switch others := len(img.Refs()) - 1; {
 	case others == 1:
-		p.Effects = append(p.Effects, fmt.Sprintf("The image's 1 other tag stays local: only %s is pushed.", ref))
+		p.Effects = append(p.Effects, fmt.Sprintf("The image's 1 other tag stays local: only %s is pushed.", shownRef))
 	case others > 1:
-		p.Effects = append(p.Effects, fmt.Sprintf("The image's %d other tags stay local: only %s is pushed.", others, ref))
+		p.Effects = append(p.Effects, fmt.Sprintf("The image's %d other tags stay local: only %s is pushed.", others, shownRef))
 	}
 	return p, nil
 }
@@ -142,10 +144,10 @@ func executePush(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run) 
 		return notSent("the image could not be checked", ref+" could not be checked: "+escape.Name(daemonMessage(err)))
 	}
 	if trimSHA(d.ID) != trimSHA(st.Pin) {
-		return notSent("the tag moved", fmt.Sprintf("the tag moved: %s now names %s, not the build %s that was shown", ref, engine.ShortID(d.ID), engine.ShortID(st.Pin)))
+		return notSent("the tag moved", fmt.Sprintf("the tag moved: %s now names %s, not the build %s that was shown", ref, shortID(d.ID), shortID(st.Pin)))
 	}
 
-	run.Logf("pushing %s (image %s) to %s, credential: %s", ref, engine.ShortID(st.Pin), escape.Name(p.Registry), credLabel(p.CredSource))
+	run.Logf("pushing %s (image %s) to %s, credential: %s", ref, shortID(st.Pin), escape.Name(p.Registry), credLabel(p.CredSource))
 	run.Status("pushing " + ref)
 	res, err := eng.PushImage(ctx, st.ID, auth, func(pr engine.PushProgress) {
 		status := escape.Name(pr.Status)
@@ -177,11 +179,11 @@ func executePush(ctx context.Context, eng engine.Engine, p Plan, run *jobs.Run) 
 		return errors.New(msg)
 	}
 	run.Logf("✓ push image %s done", ref)
-	run.Logf("  digest %s", res.Digest)
+	run.Logf("  digest %s", text(res.Digest))
 	run.Logf("  %s uploaded, %s already in the registry", plural(res.Pushed, "layer", "layers"), plural(res.Exists, "layer", "layers"))
 	run.Logf("  the daemon reports that %s now names this digest in %s", escape.Name(res.Tag), escape.Name(p.Registry))
 	run.Logf("%s", PushUnchangedNote)
-	run.Status("pushed " + engine.ShortID(res.Digest))
+	run.Status("pushed " + shortID(res.Digest))
 	run.Fraction(1)
 	return nil
 }

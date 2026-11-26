@@ -148,7 +148,7 @@ func (m *Model) syncFocus(now time.Time) tea.Cmd {
 	cmd := m.switchTo(f)
 	switch {
 	case m.cur != nil && prev == nil:
-		m.setStatus(toneGood, "Focused "+m.cur.Name()+" ("+m.endpoint.Host+"), the first daemon to answer.")
+		m.setStatus(toneGood, "Focused "+esc(m.cur.Name())+" ("+esc(m.endpoint.Host)+"), the first daemon to answer.")
 	case m.cur == nil && m.sess.Len() == 0:
 		m.setStatus(toneWarn, "No daemon is connected. "+keyDaemons+" opens the picker.")
 	}
@@ -189,7 +189,7 @@ func (m *Model) collectNotices(now time.Time) {
 func (m *Model) focusMember(id int) tea.Cmd {
 	mem, err := m.sess.Focus(id)
 	if err != nil {
-		m.setStatus(toneWarn, "Cannot focus that daemon: "+err.Error())
+		m.setStatus(toneWarn, "Cannot focus that daemon: "+errText(err))
 		return nil
 	}
 	return m.focused(mem)
@@ -200,7 +200,7 @@ func (m *Model) focused(mem *session.Member) tea.Cmd {
 		return nil
 	}
 	cmd := m.switchTo(mem)
-	m.setStatus(toneAccent, "Focused "+mem.Name()+" — "+mem.Endpoint().Host+". Loading its lists…")
+	m.setStatus(toneAccent, "Focused "+esc(mem.Name())+" — "+esc(mem.Endpoint().Host)+". Loading its lists…")
 	return cmd
 }
 
@@ -219,12 +219,15 @@ func (m *Model) cycleFocus(delta int) tea.Cmd {
 // startJob starts a job on the focused daemon, recording which one it is. A
 // job cannot start on a daemon being removed; it is then recorded as failed,
 // and fn never runs.
+//
+// A job's title and target are text: the caller escapes a daemon's name in
+// them, once. The error the job ends with is made text here (textJob).
 func (m *Model) startJob(title, target string, fn jobs.Func) int {
 	daemon := ""
 	if m.cur != nil {
 		daemon = m.cur.Daemon()
 	}
-	id, err := m.jobs.StartOn(daemon, title, target, fn)
+	id, err := m.jobs.StartOn(daemon, title, target, textJob(fn))
 	if err != nil {
 		m.setStatus(toneBad, "Not started: "+title+" "+target+" — "+err.Error())
 	}
@@ -436,9 +439,9 @@ func (m *Model) emptyBody(w, h int) []string {
 	if len(members) > 0 {
 		lines = append(lines, "", st.tone(toneAccent, "Still trying:"))
 		for _, mem := range members {
-			text := "  " + mem.Name() + " — " + mem.State().String()
+			text := "  " + esc(mem.Name()) + " — " + mem.State().String()
 			if r := mem.Reason(); r != "" {
-				text += ": " + r
+				text += ": " + esc(r) // the daemon's words, or the link's
 			}
 			for _, part := range wrapWords(text, w-6) {
 				lines = append(lines, st.tone(toneDim, part))
@@ -588,7 +591,7 @@ func (m *Model) onDaemonsKey(key string) tea.Cmd {
 		if e.member != nil {
 			mem, err := m.sess.Focus(e.member.ID())
 			if err != nil {
-				m.pickerNote(p, toneWarn, "Cannot focus "+e.member.Name()+": "+err.Error())
+				m.pickerNote(p, toneWarn, "Cannot focus "+esc(e.member.Name())+": "+errText(err))
 				return nil
 			}
 			m.dlg = nil
@@ -637,7 +640,7 @@ func (m *Model) addContext(p *daemonPicker, c dockerctx.Context) {
 	mem, existing, err := m.sess.Add(c.Endpoint)
 	switch {
 	case err != nil:
-		m.pickerNote(p, toneBad, c.Name+" cannot be added: "+err.Error())
+		m.pickerNote(p, toneBad, esc(c.Name)+" cannot be added: "+errText(err))
 	case existing:
 		p.selKey = fmt.Sprintf("m:%d", mem.ID())
 		m.pickerNote(p, toneWarn, c.Name+" is already in the session as "+mem.Name()+": one member per daemon.")
@@ -667,7 +670,7 @@ func (m *Model) removeMember(p *daemonPicker, id int) tea.Cmd {
 		if errors.As(err, &refused) {
 			m.pickerNote(p, toneBad, "Cannot remove "+mem.Name()+": "+jobsNamed(refused.Jobs)+". Let them finish, or cancel them in the Jobs pane (c), then remove it.")
 		} else {
-			m.pickerNote(p, toneBad, "Cannot remove "+mem.Name()+": "+err.Error())
+			m.pickerNote(p, toneBad, "Cannot remove "+esc(mem.Name())+": "+errText(err))
 		}
 		return nil
 	}
@@ -768,7 +771,7 @@ func (m *Model) daemonsBody(d *dialog, w, maxBody int) (string, []string) {
 			b = append(b, line)
 			b = append(b, wrapped(e.member.Endpoint().Host, toneNormal)...)
 			if r := e.member.Reason(); r != "" {
-				b = append(b, words(r, toneBad)...)
+				b = append(b, words(esc(r), toneBad)...)
 			}
 			if running := m.sess.RunningJobs(e.member); len(running) > 0 {
 				b = append(b, words(jobsNamed(running), toneWarn)...)

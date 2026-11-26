@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
-
-	"github.com/fardani235/docker-desk/internal/engine"
 )
 
 // ---- the create specification --------------------------------------------------------
@@ -66,7 +64,7 @@ func (m MountSpec) String() string {
 	if m.ReadOnly {
 		mode += ", ro"
 	}
-	return fmt.Sprintf("%s → %s (%s)", m.Source, m.Destination, mode)
+	return fmt.Sprintf("%s → %s (%s)", text(m.Source), text(m.Destination), mode)
 }
 
 // RestartSpec is a restart policy.
@@ -252,7 +250,7 @@ func ParseRestart(s string) (RestartSpec, error) {
 	r := RestartSpec{Name: name}
 	if hasCount {
 		if name != "on-failure" {
-			return RestartSpec{}, fmt.Errorf("only on-failure takes a retry limit, not %s", name)
+			return RestartSpec{}, fmt.Errorf("only on-failure takes a retry limit, not %s", text(name))
 		}
 		n, err := strconv.Atoi(count)
 		if err != nil || n < 0 {
@@ -388,7 +386,7 @@ func ContainerCreate(snap Snapshot, spec ContainerCreateSpec) (Plan, error) {
 		}
 		for _, c := range snap.Containers {
 			if strings.TrimPrefix(c.Name, "/") == spec.Name {
-				return Plan{}, fieldErr(FieldName, -1, fmt.Errorf("the name %q is taken by container %s (%s)", spec.Name, engine.ShortID(c.ID), c.State))
+				return Plan{}, fieldErr(FieldName, -1, fmt.Errorf("the name %q is taken by container %s (%s)", spec.Name, shortID(c.ID), text(c.State)))
 			}
 		}
 	}
@@ -411,7 +409,7 @@ func ContainerCreate(snap Snapshot, spec ContainerCreateSpec) (Plan, error) {
 		}
 		k := bind{ip, p.HostPort, p.Proto}
 		if seen[k] {
-			return Plan{}, fieldErr(FieldPorts, i, fmt.Errorf("host port %d/%s is published twice on the same address", p.HostPort, p.Proto))
+			return Plan{}, fieldErr(FieldPorts, i, fmt.Errorf("host port %d/%s is published twice on the same address", p.HostPort, text(p.Proto)))
 		}
 		seen[k] = true
 	}
@@ -422,7 +420,7 @@ func ContainerCreate(snap Snapshot, spec ContainerCreateSpec) (Plan, error) {
 	}
 	for i, m := range spec.Mounts {
 		if !strings.HasPrefix(m.Destination, "/") {
-			return Plan{}, fieldErr(FieldMounts, i, fmt.Errorf("%s: the destination must be an absolute path", m.Destination))
+			return Plan{}, fieldErr(FieldMounts, i, fmt.Errorf("%s: the destination must be an absolute path", text(m.Destination)))
 		}
 	}
 	if spec.Restart.Name == "" {
@@ -432,7 +430,7 @@ func ContainerCreate(snap Snapshot, spec ContainerCreateSpec) (Plan, error) {
 		return Plan{}, fieldErr(FieldRestart, -1, err)
 	}
 	if spec.Restart.Name != "on-failure" && spec.Restart.MaximumRetryCount != 0 {
-		return Plan{}, fieldErr(FieldRestart, -1, fmt.Errorf("only on-failure takes a retry limit, not %s", spec.Restart.Name))
+		return Plan{}, fieldErr(FieldRestart, -1, fmt.Errorf("only on-failure takes a retry limit, not %s", text(spec.Restart.Name)))
 	}
 
 	display := spec.Name

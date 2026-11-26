@@ -341,14 +341,14 @@ func (m *Model) createBody(d *dialog, w, maxBody int) []string {
 		from := len(lines)
 		switch f.kind {
 		case fieldText:
-			put(mark+label+f.rows[0].View(), i, 0)
+			put(mark+label+escInput(f.rows[0].View()), i, 0)
 		case fieldList:
 			for j := range f.rows {
 				prefix := pad
 				if j == 0 {
 					prefix = mark + label
 				}
-				put(prefix+f.rows[j].View(), i, j)
+				put(prefix+escInput(f.rows[j].View()), i, j)
 			}
 			if focused {
 				put(pad+st.tone(toneDim, fmt.Sprintf("entry %d of %d · Ctrl+N add · Ctrl+X remove", f.row+1, len(f.rows))), -1, 0)
@@ -368,7 +368,7 @@ func (m *Model) createBody(d *dialog, w, maxBody int) []string {
 			}
 			put(mark+label+cur+strings.Join(opts, ""), i, 0)
 			if f.choiceTakesValue() {
-				put(pad+st.tone(toneDim, "retry limit ")+f.rows[0].View(), i, 1)
+				put(pad+st.tone(toneDim, "retry limit ")+escInput(f.rows[0].View()), i, 1)
 			}
 		}
 		spans[i] = span{from, len(lines)}

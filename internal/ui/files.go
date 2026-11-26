@@ -292,7 +292,7 @@ func (m *Model) startFilesRead() {
 		plat, opts.Platform = fs.plat, fs.plat.String()
 	}
 	size := fs.imageSize
-	run.jobID = m.startJob("read the image archive", fs.imageRef, func(ctx context.Context, r *jobs.Run) error {
+	run.jobID = m.startJob("read the image archive", esc(fs.imageRef), func(ctx context.Context, r *jobs.Run) error {
 		r.Status("asking the daemon for the archive")
 		rc, err := eng.SaveImage(ctx, id, plat)
 		if err != nil {
@@ -320,7 +320,7 @@ func (m *Model) startFilesRead() {
 		if ix == nil {
 			return fmt.Errorf("the archive was read but no listing was made")
 		}
-		r.Logf("%s layout, %d layers, %s read", rep.Layout, len(rep.Layers), humanBytes(rep.BytesRead))
+		r.Logf("%s layout, %d layers, %s read", esc(fmt.Sprint(rep.Layout)), len(rep.Layers), humanBytes(rep.BytesRead))
 		r.Logf("%s entries indexed of %s seen; %d layer(s) not read", files.Count(ix.Kept), files.Count(ix.Seen), len(ix.Unread))
 		r.Status(fmt.Sprintf("%d layers · %s entries", len(rep.Layers), files.Count(ix.Entries)))
 		plat := rep.Platform
@@ -388,7 +388,7 @@ func (m *Model) onFilesChanges(msg filesChangesMsg) {
 	}
 	fs.chgBusy = false
 	if msg.err != nil {
-		fs.chgErr = plainError(msg.err)
+		fs.chgErr = escErr(msg.err)
 		return
 	}
 	cs := make([]files.Change, 0, len(msg.changes))
@@ -880,9 +880,9 @@ func (m *Model) filesBox(w, h int) []string {
 	if w < wideMinWidth {
 		title = "Files"
 	}
-	right := fs.imageRef
+	right := esc(fs.imageRef)
 	if container {
-		right = fs.containerName
+		right = esc(fs.containerName)
 	}
 	return st.box(title, right, padded, w, h, true)
 }
@@ -939,7 +939,7 @@ func (m *Model) filesHeaderLines(w int, ix *files.Index) []string {
 	}
 
 	if fs.kind == KindContainers {
-		add("container", fmt.Sprintf("%s · %s · from %s (%s)", files.Escape(fs.containerName), engine.ShortID(fs.containerID), fs.imageRef, engine.ShortID(fs.imageID)), toneNormal)
+		add("container", fmt.Sprintf("%s · %s · from %s (%s)", files.Escape(fs.containerName), escID(fs.containerID), esc(fs.imageRef), escID(fs.imageID)), toneNormal)
 		switch {
 		case fs.chgErr != "":
 			add("changes", "not read: "+fs.chgErr+" — r tries again", toneBad)
@@ -957,7 +957,7 @@ func (m *Model) filesHeaderLines(w int, ix *files.Index) []string {
 		}
 	}
 
-	facts := []string{fs.imageRef, engine.ShortID(fs.imageID)}
+	facts := []string{esc(fs.imageRef), escID(fs.imageID)}
 	if e := m.filesEntryFor(fs.imageID); e != nil && e.plat != "" {
 		facts = append(facts, files.Escape(e.plat))
 	} else if fs.platKnown {
@@ -1170,7 +1170,7 @@ func (m *Model) exportFiles() {
 	in := collect.FilesInput{
 		Version: m.opts.Version, Index: ix, ImageID: fs.imageID, Ref: fs.imageRef, Platform: plat, DaemonSize: fs.imageSize,
 	}
-	words, slug := fs.imageRef+"  "+engine.ShortID(fs.imageID), fs.imageRef
+	words, slug := esc(fs.imageRef)+"  "+escID(fs.imageID), fs.imageRef
 	if fs.kind == KindContainers && ix.Applied != nil {
 		in.ContainerID, in.ContainerName = fs.containerID, fs.containerName
 		words = files.Escape(fs.containerName) + " over " + words

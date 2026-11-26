@@ -188,13 +188,33 @@ func (m *Model) prepare(build func(plan.Snapshot) (plan.Plan, error), tmpl planM
 		defer cancel()
 		snap, err := plan.Take(ctx, eng)
 		if err != nil {
-			tmpl.err = fmt.Errorf("could not read the daemon's current state: %w", err)
+			// The daemon's own words, as text; the error is kept beneath.
+			tmpl.err = stateErr{err: err}
 			return tmpl
 		}
 		tmpl.plan, tmpl.err = build(snap)
 		return tmpl
 	}
 }
+
+// stateErr is why a plan could not be built: the daemon's current state
+// could not be read. Its text names the daemon's reason escaped — it is
+// drawn on the status line and in a form — and the error itself is still
+// there for whoever asks what it was.
+type stateErr struct {
+	err error
+	// what was being read, when it was not the lists: "" means them.
+	what string
+}
+
+func (e stateErr) Error() string {
+	what := e.what
+	if what == "" {
+		what = "current state"
+	}
+	return "could not read the daemon's " + what + ": " + escErr(e.err)
+}
+func (e stateErr) Unwrap() error { return e.err }
 
 func (m *Model) onPlan(msg planMsg) tea.Cmd {
 	if msg.seq != m.planSeq {
@@ -297,6 +317,7 @@ func (m *Model) runPlan(p plan.Plan) int {
 		return plan.Execute(ctx, eng, p, run)
 	})
 	m.jobSel = id
+	// The plan's strings are text already (plan's package documentation).
 	m.setStatus(toneAccent, "started: "+p.JobTitle+" "+p.JobTarget)
 	return id
 }
@@ -304,13 +325,14 @@ func (m *Model) runPlan(p plan.Plan) int {
 func (m *Model) onShellDone(msg shellDoneMsg) tea.Cmd {
 	m.pending |= 0xf // everything may have changed while the terminal was away
 	res := msg.session.Result
+	// The tail is what the process wrote: the container's bytes, as text.
 	lastLine := func() string {
 		lines := strings.Split(strings.TrimSpace(strings.ReplaceAll(res.Tail, "\r", "")), "\n")
-		return strings.TrimSpace(lines[len(lines)-1])
+		return esc(strings.TrimSpace(lines[len(lines)-1]))
 	}
 	switch {
 	case msg.err != nil:
-		m.setStatus(toneBad, "Shell in "+msg.name+" could not start: "+plainError(msg.err))
+		m.setStatus(toneBad, "Shell in "+msg.name+" could not start: "+escErr(msg.err))
 	case (res.ExitCode == 126 || res.ExitCode == 127) && res.Duration < 2*time.Second:
 		// The daemon reports a process that cannot start inside the stream
 		// and through these exit codes, not as an error.
@@ -439,7 +461,10 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 	st := m.st
 	var ident, info, tail []string
 
-	// What, exactly, and where.
+	// What, exactly, and where. Everything read from the plan below — its
+	// target, effects, warnings, blockers, steps and skipped entries — is
+	// text the plan composed and escaped once (D3): it is drawn as it is,
+	// and escaping it here would double every backslash.
 	if p.Target.Name != "" {
 		line := st.tone(toneDim, fit(p.Target.Kind, 10)) + " " + st.dialogTitle.Render(p.Target.Name)
 		if p.Target.ID != "" {
@@ -504,14 +529,17 @@ func (m *Model) planBody(d *dialog, w, maxBody int) (string, []string) {
 	case p.Nothing != "":
 		tail = append(tail, "", m.hints("Esc", "close"))
 	case p.Tier == plan.TierTyped:
-		prompt := "Type " + st.dialogTitle.Render(p.Word) + " and press Enter to proceed:"
+		// The word is compared as it is shown (typedWord): what has to be
+		// typed is what can be read.
+		word := typedWord(p)
+		prompt := "Type " + st.dialogTitle.Render(word) + " and press Enter to proceed:"
 		if d.fromSet {
 			// The word carries the count: what has to be read is how many.
-			prompt = "Type " + st.dialogTitle.Render(p.Word) + " to confirm, then press Enter:"
+			prompt = "Type " + st.dialogTitle.Render(word) + " to confirm, then press Enter:"
 		}
-		tail = append(tail, "", prompt, d.input.View())
+		tail = append(tail, "", prompt, escInput(d.input.View()))
 		if d.mismatch {
-			tail = append(tail, st.tone(toneBad, fmt.Sprintf("That is not %q. Nothing was sent.", p.Word)))
+			tail = append(tail, st.tone(toneBad, fmt.Sprintf("That is not %q. Nothing was sent.", word)))
 		}
 		tail = append(tail, "", m.hints("Enter", "proceed", "Esc", "cancel"))
 	default:
@@ -678,9 +706,9 @@ func (m *Model) formBody(d *dialog, w, maxBody int) (string, []string) {
 		title, prompt, verb = "Pull image", "Image reference:", "pull"
 		if strings.TrimSpace(text) != "" {
 			if ref, err := plan.NormalizeRef(text); err == nil {
-				notes = append(notes, "Will pull exactly: "+st.dialogTitle.Render(ref))
+				notes = append(notes, "Will pull exactly: "+st.dialogTitle.Render(esc(ref)))
 			} else {
-				notes = append(notes, st.tone(toneWarn, err.Error()))
+				notes = append(notes, st.tone(toneWarn, err.Error())) // the plan's text
 			}
 		} else {
 			notes = append(notes, st.tone(toneDim, "A name without a tag means :latest — one tag, never all of them."))
@@ -695,7 +723,7 @@ func (m *Model) formBody(d *dialog, w, maxBody int) (string, []string) {
 	case formShell:
 		title, prompt, verb = "Open a shell", "Command to run inside the container:", "open the shell"
 		daemon = st.tone(toneDim, fit("container", 10)) + " " + st.dialogTitle.Render(d.target.name) +
-			st.tone(toneDim, "  ("+engine.ShortID(d.target.containerID)+")") + "\n" + daemon
+			st.tone(toneDim, "  ("+escID(d.target.containerID)+")") + "\n" + daemon
 		notes = append(notes,
 			st.tone(toneDim, "The desk hands your terminal to this process. When it exits — or the"),
 			st.tone(toneDim, "container stops — you are back here, exactly where you left."),
@@ -704,7 +732,7 @@ func (m *Model) formBody(d *dialog, w, maxBody int) (string, []string) {
 	body := strings.Split(daemon, "\n")
 	body = append(body, "", prompt)
 	m.recordDialogRow(len(body), hitFormRow, 0, 0, "")
-	body = append(body, d.fields[0].rows[0].View(), "")
+	body = append(body, escInput(d.fields[0].rows[0].View()), "")
 	body = append(body, notes...)
 	if d.formErr != "" {
 		body = append(body, "")

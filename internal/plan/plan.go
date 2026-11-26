@@ -6,6 +6,32 @@
 // There is no second lookup between showing and doing, which is what makes
 // "confirm the exact object" and "a prune destroys only what it showed" true
 // by construction. See docs/DECISIONS.md, D11–D15.
+//
+// # Text the plan did not choose
+//
+// A plan names what a daemon named: a container, an image reference, a
+// network, a state, the daemon's own refusal. A daemon of the session may be
+// hostile, and those strings are its to choose, so the rule is the desk's
+// one rule (openspec change escape-daemon-text):
+//
+//   - A value is escaped when it becomes drawn text, never when it becomes
+//     a request or a comparison. A Step's ID, Other, Rename, Pin, Create,
+//     Clone and Copy, a Plan's PinRef and PinID and everything a lookup
+//     reads keep the bytes the daemon or the operator gave: they are what is
+//     sent and what is compared.
+//   - One layer escapes a value, once. This package composes every string a
+//     plan shows — Title, JobTitle, JobTarget, Target, Scope, Nothing,
+//     Effects, Warnings, Blockers, Skipped, SuccessNote, a Step's Name,
+//     OtherName, Detail and FailNote, the Reason of a NotApplicable, the
+//     text of the errors it returns and every line Execute writes to the
+//     job — and escapes the daemon's part with escape.Name as it does. They
+//     are text from then on: the dialog, the Jobs pane and the status line
+//     draw them as they are, and must not escape them again (escape.Name
+//     doubles a backslash, so a second pass shows).
+//
+// Word is the exception that is neither: it is compared with what the
+// operator types and sent nowhere. Every word a plan sets is a fixed verb,
+// a count or a tag this package has checked letter by letter.
 package plan
 
 import (
@@ -89,13 +115,15 @@ type Step struct {
 	// ID is the identifier sent to the daemon: a container ID, an image
 	// reference or ID, a volume name, a network ID.
 	ID string
-	// Name is how the object is shown to the operator.
+	// Name is how the object is shown to the operator: text, escaped once
+	// by the constructor that set it, and never sent.
 	Name string
 	// Other is the second object of a two-object request (the container ID
 	// for connect/disconnect), with OtherName for display.
 	Other     string
 	OtherName string
-	// Detail is extra display text (state, short ID).
+	// Detail is extra display text (state, short ID), escaped as Name is;
+	// OtherName likewise.
 	Detail string
 	Size   int64
 
@@ -245,8 +273,28 @@ type NotApplicable struct{ Reason string }
 
 func (e *NotApplicable) Error() string { return e.Reason }
 
+// na is the reason an action does not apply. The reason is drawn: every
+// daemon string among args is escaped by the caller (text, shortID).
 func na(format string, args ...any) error {
 	return &NotApplicable{Reason: fmt.Sprintf(format, args...)}
+}
+
+// text is a daemon's string — a name, a reference, a state — as the text a
+// plan shows: escape.Name, the mapping the screen and the exports share.
+// It is applied once, where the plan composes the string, and never to a
+// value that is sent or compared.
+func text(s string) string { return escape.Name(s) }
+
+// shortID is the short form of an identifier the daemon chose, as text.
+func shortID(id string) string { return escape.Name(engine.ShortID(id)) }
+
+// textList is each of a daemon's strings as text, joined by sep.
+func textList(items []string, sep string) string {
+	out := make([]string, len(items))
+	for i, s := range items {
+		out[i] = escape.Name(s)
+	}
+	return strings.Join(out, sep)
 }
 
 // ---- lookups ------------------------------------------------------------------------
@@ -333,7 +381,7 @@ func (s Snapshot) NetworkUsers(n engine.Network) []engine.Container {
 func describeContainers(cs []engine.Container) string {
 	parts := make([]string, 0, len(cs))
 	for _, c := range cs {
-		parts = append(parts, fmt.Sprintf("%s (%s)", c.Name, c.State))
+		parts = append(parts, fmt.Sprintf("%s (%s)", text(c.Name), text(c.State)))
 	}
 	sort.Strings(parts)
 	const max = 6
@@ -358,27 +406,30 @@ func Container(op Op, snap Snapshot, id string) (Plan, error) {
 	if !ok {
 		return Plan{}, na("that container no longer exists")
 	}
+	// The daemon's name and state as the plan shows them; what is sent is
+	// c.ID, and what the rules below read is c.State itself.
+	name, state := text(c.Name), text(c.State)
 	p := Plan{
-		Target:    Target{Kind: "container", Name: c.Name, ID: engine.ShortID(c.ID)},
-		JobTarget: c.Name,
-		Steps:     []Step{{Op: op, Kind: "container", ID: c.ID, Name: c.Name, Detail: c.State}},
+		Target:    Target{Kind: "container", Name: name, ID: shortID(c.ID)},
+		JobTarget: name,
+		Steps:     []Step{{Op: op, Kind: "container", ID: c.ID, Name: name, Detail: state}},
 		Tier:      TierConfirm,
 	}
 	switch op {
 	case OpStart:
 		switch c.State {
 		case engine.StateRunning:
-			return Plan{}, na("%s is already running", c.Name)
+			return Plan{}, na("%s is already running", name)
 		case engine.StatePaused:
-			return Plan{}, na("%s is paused — unpause it instead", c.Name)
+			return Plan{}, na("%s is paused — unpause it instead", name)
 		case engine.StateRestarting, engine.StateRemoving:
-			return Plan{}, na("%s is %s", c.Name, c.State)
+			return Plan{}, na("%s is %s", name, state)
 		}
 		p.Title, p.JobTitle = "Start container", "start container"
 		p.Effects = []string{"The container is started with its existing configuration."}
 	case OpStop:
 		if !c.IsActive() {
-			return Plan{}, na("%s is not running (%s)", c.Name, c.State)
+			return Plan{}, na("%s is not running (%s)", name, state)
 		}
 		p.Title, p.JobTitle = "Stop container", "stop container"
 		p.Effects = []string{
@@ -387,7 +438,7 @@ func Container(op Op, snap Snapshot, id string) (Plan, error) {
 		}
 	case OpRestart:
 		if c.State == engine.StateRemoving {
-			return Plan{}, na("%s is being removed", c.Name)
+			return Plan{}, na("%s is being removed", name)
 		}
 		p.Title, p.JobTitle = "Restart container", "restart container"
 		if c.IsActive() {
@@ -398,21 +449,21 @@ func Container(op Op, snap Snapshot, id string) (Plan, error) {
 	case OpPause:
 		switch {
 		case c.State == engine.StatePaused:
-			return Plan{}, na("%s is already paused", c.Name)
+			return Plan{}, na("%s is already paused", name)
 		case c.State != engine.StateRunning:
-			return Plan{}, na("%s is not running (%s)", c.Name, c.State)
+			return Plan{}, na("%s is not running (%s)", name, state)
 		}
 		p.Title, p.JobTitle = "Pause container", "pause container"
 		p.Effects = []string{"Every process in the container is frozen. Nothing is lost; unpause resumes them."}
 	case OpUnpause:
 		if c.State != engine.StatePaused {
-			return Plan{}, na("%s is not paused (%s)", c.Name, c.State)
+			return Plan{}, na("%s is not paused (%s)", name, state)
 		}
 		p.Title, p.JobTitle = "Unpause container", "unpause container"
 		p.Effects = []string{"Every process in the container resumes."}
 	case OpKill:
 		if !c.IsActive() {
-			return Plan{}, na("%s is not running (%s)", c.Name, c.State)
+			return Plan{}, na("%s is not running (%s)", name, state)
 		}
 		p.Title, p.JobTitle = "Kill container", "kill container"
 		p.Effects = []string{"The container's main process is sent SIGKILL immediately."}
@@ -437,7 +488,7 @@ func Container(op Op, snap Snapshot, id string) (Plan, error) {
 		}
 		if c.IsActive() {
 			p.Blockers = []string{
-				fmt.Sprintf("%s is %s. Docker Desk never force-removes: stop or kill it first.", c.Name, c.State),
+				fmt.Sprintf("%s is %s. Docker Desk never force-removes: stop or kill it first.", name, state),
 			}
 		}
 	default:
@@ -536,12 +587,12 @@ func PullPinned(snap Snapshot, p Pinned) (Plan, error) {
 	for _, img := range snap.Images {
 		for _, rd := range img.RepoDigests {
 			if n, ok := normalizeRef(rd); ok == nil && n == repo+"@"+p.Digest {
-				pl.Effects = append(pl.Effects, fmt.Sprintf("This build is already here (image %s): the daemon has nothing to fetch.", engine.ShortID(img.ID)))
+				pl.Effects = append(pl.Effects, fmt.Sprintf("This build is already here (image %s): the daemon has nothing to fetch.", shortID(img.ID)))
 			}
 		}
 	}
 	if p.NoBuildFor != "" {
-		pl.Blockers = []string{fmt.Sprintf("The tag's index publishes no build for %s, this daemon's platform: the daemon would refuse the pull. Nothing will be sent.", p.NoBuildFor)}
+		pl.Blockers = []string{fmt.Sprintf("The tag's index publishes no build for %s, this daemon's platform: the daemon would refuse the pull. Nothing will be sent.", text(p.NoBuildFor))}
 	}
 	return pl, nil
 }
@@ -560,19 +611,19 @@ func ImageRemove(snap Snapshot, imageID, ref string) (Plan, error) {
 			found = found || r == ref
 		}
 		if !found {
-			return Plan{}, na("the image no longer has the reference %s", ref)
+			return Plan{}, na("the image no longer has the reference %s", text(ref))
 		}
 	}
-	name := ref
+	name := text(ref)
 	target := ref
 	if ref == "" {
 		if len(refs) > 0 {
-			return Plan{}, na("that image now has a tag (%s); remove it by its reference", refs[0])
+			return Plan{}, na("that image now has a tag (%s); remove it by its reference", text(refs[0]))
 		}
-		name = "<untagged> " + engine.ShortID(img.ID)
+		name = "<untagged> " + shortID(img.ID)
 		target = img.ID
 	}
-	step := Step{Op: OpRemoveImage, Kind: "image", ID: target, Name: name, Detail: engine.ShortID(img.ID), Size: img.Size}
+	step := Step{Op: OpRemoveImage, Kind: "image", ID: target, Name: name, Detail: shortID(img.ID), Size: img.Size}
 	if ref != "" {
 		step.Pin = img.ID // the reference must still mean this image when the request is sent
 	}
@@ -580,7 +631,7 @@ func ImageRemove(snap Snapshot, imageID, ref string) (Plan, error) {
 		Title:     "Remove image",
 		JobTitle:  "remove image",
 		JobTarget: name,
-		Target:    Target{Kind: "image", Name: name, ID: engine.ShortID(img.ID)},
+		Target:    Target{Kind: "image", Name: name, ID: shortID(img.ID)},
 		Steps:     []Step{step},
 		Tier:      TierTyped,
 		Word:      "remove",
@@ -656,14 +707,14 @@ func ImagePrune(snap Snapshot, all bool) Plan {
 		case img.Dangling:
 			p.Steps = append(p.Steps, Step{
 				Op: OpRemoveImage, Kind: "image", ID: img.ID,
-				Name: "<untagged>", Detail: engine.ShortID(img.ID), Size: img.Size,
+				Name: "<untagged>", Detail: shortID(img.ID), Size: img.Size,
 			})
 		case all && len(refs) > 0:
 			// One request per reference: removing by ID would need force
 			// when an image has several tags. The last untag deletes it.
 			for i, r := range refs {
 				st := Step{
-					Op: OpRemoveImage, Kind: "image", ID: r, Name: r, Detail: engine.ShortID(img.ID),
+					Op: OpRemoveImage, Kind: "image", ID: r, Name: text(r), Detail: shortID(img.ID),
 					Pin: img.ID, MustBeUnused: true,
 				}
 				if i == len(refs)-1 {
@@ -742,7 +793,7 @@ func displayVolume(v engine.Volume) string {
 	if len(v.Name) == 64 && isHex(v.Name) {
 		return v.Name[:12] + "… (anonymous)"
 	}
-	return v.Name
+	return text(v.Name)
 }
 
 func isHex(s string) bool {
@@ -831,9 +882,9 @@ func NetworkRemove(snap Snapshot, id string) (Plan, error) {
 	p := Plan{
 		Title:     "Remove network",
 		JobTitle:  "remove network",
-		JobTarget: n.Name,
-		Target:    Target{Kind: "network", Name: n.Name, ID: engine.ShortID(n.ID)},
-		Steps:     []Step{{Op: OpRemoveNetwork, Kind: "network", ID: n.ID, Name: n.Name, Detail: engine.ShortID(n.ID)}},
+		JobTarget: text(n.Name),
+		Target:    Target{Kind: "network", Name: text(n.Name), ID: shortID(n.ID)},
+		Steps:     []Step{{Op: OpRemoveNetwork, Kind: "network", ID: n.ID, Name: text(n.Name), Detail: shortID(n.ID)}},
 		Effects:   []string{"The network is deleted."},
 		Tier:      TierTyped,
 		Word:      "remove",
@@ -867,7 +918,7 @@ func NetworkPrune(snap Snapshot) Plan {
 		if n.Predefined() || len(snap.NetworkUsers(n)) > 0 {
 			continue
 		}
-		p.Steps = append(p.Steps, Step{Op: OpRemoveNetwork, Kind: "network", ID: n.ID, Name: n.Name, Detail: engine.ShortID(n.ID)})
+		p.Steps = append(p.Steps, Step{Op: OpRemoveNetwork, Kind: "network", ID: n.ID, Name: text(n.Name), Detail: shortID(n.ID)})
 	}
 	if len(p.Steps) == 0 {
 		p.Nothing = "Nothing to prune: every custom network is referenced by a container."
@@ -910,7 +961,7 @@ func ConnectCandidates(snap Snapshot, networkID string) ([]engine.Container, err
 		}
 	}
 	if len(out) == 0 {
-		return nil, na("every container is already connected to %s", n.Name)
+		return nil, na("every container is already connected to %s", text(n.Name))
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out, nil
@@ -927,7 +978,7 @@ func DisconnectCandidates(snap Snapshot, networkID string) ([]engine.Container, 
 	}
 	out := snap.NetworkUsers(n)
 	if len(out) == 0 {
-		return nil, na("no container is connected to %s: nothing to disconnect", n.Name)
+		return nil, na("no container is connected to %s: nothing to disconnect", text(n.Name))
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out, nil
@@ -946,22 +997,23 @@ func NetworkConnect(snap Snapshot, networkID, containerID string) (Plan, error) 
 	if !ok {
 		return Plan{}, na("that container no longer exists")
 	}
+	nname, cname := text(n.Name), text(c.Name) // as shown; n.ID and c.ID are sent
 	for _, u := range snap.NetworkUsers(n) {
 		if u.ID == c.ID {
-			return Plan{}, na("%s is already connected to %s", c.Name, n.Name)
+			return Plan{}, na("%s is already connected to %s", cname, nname)
 		}
 	}
 	p := Plan{
 		Title:     "Connect container to network",
-		JobTitle:  "connect to " + n.Name,
-		JobTarget: c.Name,
-		Target:    Target{Kind: "network", Name: n.Name, ID: engine.ShortID(n.ID)},
+		JobTitle:  "connect to " + nname,
+		JobTarget: cname,
+		Target:    Target{Kind: "network", Name: nname, ID: shortID(n.ID)},
 		Steps: []Step{{
-			Op: OpConnect, Kind: "network", ID: n.ID, Name: n.Name,
-			Other: c.ID, OtherName: c.Name, Detail: engine.ShortID(c.ID),
+			Op: OpConnect, Kind: "network", ID: n.ID, Name: nname,
+			Other: c.ID, OtherName: cname, Detail: shortID(c.ID),
 		}},
 		Effects: []string{
-			fmt.Sprintf("Container %s (%s) is attached to network %s.", c.Name, engine.ShortID(c.ID), n.Name),
+			fmt.Sprintf("Container %s (%s) is attached to network %s.", cname, shortID(c.ID), nname),
 			"It gets an address there and can reach, and be reached by, the other containers on it.",
 		},
 		Tier: TierConfirm,
@@ -985,24 +1037,25 @@ func NetworkDisconnect(snap Snapshot, networkID, containerID string) (Plan, erro
 	if !ok {
 		return Plan{}, na("that container no longer exists")
 	}
+	nname, cname := text(n.Name), text(c.Name) // as shown; n.ID and c.ID are sent
 	attached := false
 	for _, u := range snap.NetworkUsers(n) {
 		attached = attached || u.ID == c.ID
 	}
 	if !attached {
-		return Plan{}, na("%s is not connected to %s", c.Name, n.Name)
+		return Plan{}, na("%s is not connected to %s", cname, nname)
 	}
 	p := Plan{
 		Title:     "Disconnect container from network",
-		JobTitle:  "disconnect from " + n.Name,
-		JobTarget: c.Name,
-		Target:    Target{Kind: "network", Name: n.Name, ID: engine.ShortID(n.ID)},
+		JobTitle:  "disconnect from " + nname,
+		JobTarget: cname,
+		Target:    Target{Kind: "network", Name: nname, ID: shortID(n.ID)},
 		Steps: []Step{{
-			Op: OpDisconnect, Kind: "network", ID: n.ID, Name: n.Name,
-			Other: c.ID, OtherName: c.Name, Detail: engine.ShortID(c.ID),
+			Op: OpDisconnect, Kind: "network", ID: n.ID, Name: nname,
+			Other: c.ID, OtherName: cname, Detail: shortID(c.ID),
 		}},
 		Effects: []string{
-			fmt.Sprintf("Container %s (%s) is detached from network %s.", c.Name, engine.ShortID(c.ID), n.Name),
+			fmt.Sprintf("Container %s (%s) is detached from network %s.", cname, shortID(c.ID), nname),
 			"Its connections over that network are dropped.",
 		},
 		Tier: TierConfirm,

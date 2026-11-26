@@ -693,7 +693,7 @@ func (m *Model) onPlanKey(k tea.KeyMsg) tea.Cmd {
 	switch p.Tier {
 	case plan.TierTyped:
 		if key == "enter" {
-			if d.input.Value() == p.Word {
+			if d.input.Value() == typedWord(p) {
 				m.confirmed(d)
 				return nil
 			}

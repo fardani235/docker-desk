@@ -17,10 +17,13 @@ import (
 // row is one line of the List pane. Its key is the object's identity, so the
 // highlight follows the object — not the position — across refreshes.
 type row struct {
-	key    string
-	cells  []string
-	tone   tone
-	name   string // for messages
+	key   string
+	cells []string
+	tone  tone
+	// name is how messages, titles and dialogs call the row: drawn text,
+	// escaped once here (ensureRows) and never again. What is sent or
+	// compared is in the fields below, as the daemon gave it.
+	name   string
 	search string // lower-cased text the filter matches
 
 	containerID string
@@ -248,13 +251,13 @@ func (m *Model) ensureRows(k Kind) {
 			if ir.img.Dangling {
 				used = "dangling"
 			}
-			name := ir.ref
+			name := escape.Name(ir.ref)
 			if name == "" {
-				name = "<untagged> " + engine.ShortID(ir.img.ID)
+				name = "<untagged> " + escID(ir.img.ID)
 			}
 			rows = append(rows, row{
 				key: ir.img.ID + "|" + ir.ref, name: name, imageID: ir.img.ID, imageRef: ir.ref, tone: t,
-				cells: []string{ir.repo, ir.tag, engine.ShortID(ir.img.ID), humanBytes(ir.img.Size), humanAge(ir.img.Created, now), used, ""},
+				cells: []string{escape.Name(ir.repo), escape.Name(ir.tag), escID(ir.img.ID), humanBytes(ir.img.Size), humanAge(ir.img.Created, now), used, ""},
 			})
 		}
 	case KindVolumes:
@@ -271,13 +274,14 @@ func (m *Model) ensureRows(k Kind) {
 			if len(users) > 0 {
 				use, t = fmt.Sprintf("%d ctr", len(users)), toneNormal
 				if len(users) == 1 {
-					use = users[0].Name
+					use = escape.Name(users[0].Name)
 				}
 			}
 			name := v.Name
 			if len(name) == 64 {
 				name = name[:12] + "…"
 			}
+			name = escape.Name(name)
 			if v.Anonymous() {
 				name += " (anonymous)"
 			}
@@ -286,8 +290,8 @@ func (m *Model) ensureRows(k Kind) {
 				created = humanAge(ts, now)
 			}
 			rows = append(rows, row{
-				key: v.Name, name: v.Name, volume: v.Name, tone: t,
-				cells: []string{name, v.Driver, use, created},
+				key: v.Name, name: escape.Name(v.Name), volume: v.Name, tone: t,
+				cells: []string{name, escape.Name(v.Driver), use, created},
 			})
 		}
 	case KindNetworks:
@@ -300,8 +304,8 @@ func (m *Model) ensureRows(k Kind) {
 				t = toneDim
 			}
 			rows = append(rows, row{
-				key: n.ID, name: n.Name, networkID: n.ID, tone: t,
-				cells: []string{n.Name, n.Driver, n.Scope, fmt.Sprintf("%d", users), strings.Join(n.Subnets, ","), engine.ShortID(n.ID)},
+				key: n.ID, name: escape.Name(n.Name), networkID: n.ID, tone: t,
+				cells: []string{escape.Name(n.Name), escape.Name(n.Driver), escape.Name(n.Scope), fmt.Sprintf("%d", users), escJoin(n.Subnets, ","), escID(n.ID)},
 			})
 		}
 	case KindCompose:
@@ -313,8 +317,8 @@ func (m *Model) ensureRows(k Kind) {
 				t = toneWarn
 			}
 			rows = append(rows, row{
-				key: p.Name, name: p.Name, project: p.Name, tone: t,
-				cells: []string{p.Name, fmt.Sprintf("%d", len(p.Containers)), fmt.Sprintf("%d", p.Running), p.WorkingDir},
+				key: p.Name, name: escape.Name(p.Name), project: p.Name, tone: t,
+				cells: []string{escape.Name(p.Name), fmt.Sprintf("%d", len(p.Containers)), fmt.Sprintf("%d", p.Running), escape.Name(p.WorkingDir)},
 			})
 		}
 	}
@@ -774,7 +778,7 @@ func (m *Model) listTitle() (title, right string) {
 	}
 	switch {
 	case m.filtering:
-		right = m.filterIn.View()
+		right = escInput(m.filterIn.View())
 	case m.filter[k] != "":
 		right = "filter: " + m.filter[k]
 	}

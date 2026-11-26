@@ -7,7 +7,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/escape"
 	"github.com/fardani235/docker-desk/internal/live"
 	"github.com/fardani235/docker-desk/internal/plan"
@@ -158,7 +157,7 @@ func (m *Model) submitTag() tea.Cmd {
 func (m *Model) tagBody(d *dialog, w int) (string, []string) {
 	st := m.st
 	t := d.tg
-	short := engine.ShortID(t.imageID)
+	short := escID(t.imageID)
 	var body []string
 	kv := func(k, v string, tn tone) {
 		for i, part := range wrapLine(v, max(w-11, 10)) {
@@ -169,7 +168,7 @@ func (m *Model) tagBody(d *dialog, w int) (string, []string) {
 			body = append(body, label+st.tone(tn, part))
 		}
 	}
-	kv("image", escape.Name(t.name)+"  ("+short+")", toneNormal)
+	kv("image", t.name+"  ("+short+")", toneNormal)
 	body = append(body, m.daemonLines(w, true)...)
 	if len(t.refs) == 0 {
 		kv("tags", "none: the image is untagged, and is tagged by its ID", toneDim)
@@ -181,7 +180,7 @@ func (m *Model) tagBody(d *dialog, w int) (string, []string) {
 	f.rows[0].Width = max(w-4, 10)
 	body = append(body, "", "New reference, repository[:tag]:")
 	m.recordDialogRow(len(body), hitFormRow, 0, 0, "")
-	body = append(body, f.rows[0].View())
+	body = append(body, escInput(f.rows[0].View()))
 	note := func(glyph string, tn tone, text string) {
 		body = append(body, bullets(st, glyph, tn, []string{text}, w)...)
 	}

@@ -50,10 +50,16 @@ func formatEvent(e live.EventEntry, st styles, w int, nameOf func(id string) str
 }
 
 // eventText is formatEvent's text, fitted to w, and its tone.
+//
+// An event is the daemon's, every field of it: the action, its outcome, the
+// object's name and the attributes are escaped as they become the line.
+// What the line is decided by — which columns an action takes, and its tone
+// — reads the raw values (D6): escaping first would turn `die` into
+// something no rule knows.
 func eventText(e live.EventEntry, w int, nameOf func(id string) string) (string, tone) {
 	ts := e.Time.Local().Format("15:04:05")
 	if e.Marker != "" {
-		return fit(ts+" ── "+e.Marker+" ──", w), toneWarn
+		return fit(ts+" ── "+esc(e.Marker)+" ──", w), toneWarn
 	}
 	ev := e.Event
 	name := ev.Name()
@@ -62,17 +68,20 @@ func eventText(e live.EventEntry, w int, nameOf func(id string) string) (string,
 	if i := strings.IndexByte(action, ':'); i >= 0 {
 		extra, action = strings.TrimSpace(action[i+1:]), action[:i]
 	}
+	// From here on, text: the raw action has chosen the columns below.
+	rawAction := action
+	action, extra = esc(action), esc(extra)
 	switch ev.Type {
 	case "container":
-		switch action {
+		switch rawAction {
 		case "die", "exec_die":
-			action += " exit " + ev.Attributes["exitCode"]
+			action += " exit " + esc(ev.Attributes["exitCode"])
 		case "kill":
-			action += " sig " + ev.Attributes["signal"]
+			action += " sig " + esc(ev.Attributes["signal"])
 		}
 	case "network":
 		if c := ev.Attributes["container"]; c != "" {
-			extra = "← " + nameOf(c)
+			extra = "← " + esc(nameOf(c))
 		}
 	case "image":
 		if n := ev.Attributes["name"]; n != "" {
@@ -90,10 +99,11 @@ func eventText(e live.EventEntry, w int, nameOf func(id string) string) (string,
 	if !ok {
 		kind = ev.Type
 		if len(kind) > 3 {
-			kind = kind[:3]
+			kind = strings.ToValidUTF8(kind[:3], "")
 		}
+		kind = esc(kind)
 	}
-	line := fmt.Sprintf("%s %-3s %-10s %s", ts, kind, action, name)
+	line := fmt.Sprintf("%s %-3s %-10s %s", ts, kind, action, esc(name))
 	if extra != "" {
 		line += "  " + extra
 	}
@@ -304,6 +314,12 @@ func (m *Model) jobsTitle() (title, right string) {
 }
 
 // jobOutput renders a job's full output for the output viewer.
+//
+// A job's title, target, status, log lines and error are text by the time
+// the job holds them: whoever starts a job or writes to its run escapes the
+// daemon's part once, there (the plan for a plan's job, the view for its
+// own). They are drawn here, and in the Jobs pane and the status line, as
+// they are — escaping them again would double every backslash.
 func jobOutput(j jobs.Job, st styles) []string {
 	glyph, t := jobGlyph(j, "…")
 	lines := []string{

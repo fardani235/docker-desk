@@ -93,7 +93,7 @@ func (m *Model) render() []string {
 		if m.cur == nil {
 			return []string{"Docker Desk — no daemon connected"}
 		}
-		return []string{"Docker Desk — " + m.endpoint.Host}
+		return []string{"Docker Desk — " + esc(m.endpoint.Host)}
 	}
 	if m.tooSmall() {
 		return m.renderTooSmall()
@@ -217,7 +217,7 @@ func (m *Model) tooSmallDaemon() string {
 	if m.cur == nil {
 		return "daemon: none connected"
 	}
-	return "daemon: " + m.endpoint.Host + m.linkSuffix()
+	return "daemon: " + esc(m.endpoint.Host) + m.linkSuffix()
 }
 
 // renderHeader shows which daemon the desk is pointed at: the focused one.
@@ -234,8 +234,10 @@ func (m *Model) renderHeader() string {
 	}
 	sep := st.headerKey.Render("  ")
 	title := st.header.Render(" Docker Desk")
-	endpoint := st.tone(toneAccent, m.endpoint.Host)
-	ctx := st.headerKey.Render("ctx ") + m.endpoint.Context
+	// The endpoint, the context and the link are this machine's
+	// configuration, not the daemon's — and are drawn as text all the same.
+	endpoint := st.tone(toneAccent, esc(m.endpoint.Host))
+	ctx := st.headerKey.Render("ctx ") + esc(m.endpoint.Context)
 	// The daemon says what it is called and which version it is: drawn as
 	// text, never as whatever control characters it chose to send.
 	eng := st.headerKey.Render("Engine ") + escape.Name(m.info.ServerVersion)
@@ -250,7 +252,7 @@ func (m *Model) renderHeader() string {
 	if m.link.Label != "" {
 		// Never dropped, like the endpoint: on a daemon that is not this
 		// machine's own socket, that is the first thing to know.
-		flags = sep + st.tone(m.linkTone(), "["+m.link.Label+"]")
+		flags = sep + st.tone(m.linkTone(), "["+esc(m.link.Label)+"]")
 	}
 	if m.readOnly {
 		flags += sep + st.tone(toneWarn, "[READ-ONLY]")
@@ -276,7 +278,7 @@ func (m *Model) renderHeader() string {
 	// cut off. The whole of it is in the help and in every dialog.
 	tail := sep + connShort + flags
 	room := max(m.width-ansi.StringWidth(tail), 12)
-	return fit(st.tone(toneAccent, middleTruncate(m.endpoint.Host, room))+tail, m.width)
+	return fit(st.tone(toneAccent, middleTruncate(esc(m.endpoint.Host), room))+tail, m.width)
 }
 
 // middleTruncate shortens s to w cells by replacing its middle with an
@@ -308,7 +310,7 @@ func (m *Model) linkSuffix() string {
 	if m.link.Label == "" {
 		return ""
 	}
-	return "  [" + m.link.Label + "]"
+	return "  [" + esc(m.link.Label) + "]"
 }
 
 // daemonLines names the daemon inside a dialog of inner width w: the

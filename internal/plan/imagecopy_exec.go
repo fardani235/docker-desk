@@ -135,7 +135,7 @@ func ExecuteCopy(ctx context.Context, src, dst engine.Engine, p Plan, run *jobs.
 
 	by := c.By()
 	shownBy := escape.Name(by)
-	short := engine.ShortID(c.ImageID)
+	short := shortID(c.ImageID)
 	from, to := daemonWords(c.Source), daemonWords(c.Target)
 	plat := c.Platform
 	platWords := escape.Name(plat.String())
@@ -176,7 +176,7 @@ func ExecuteCopy(ctx context.Context, src, dst engine.Engine, p Plan, run *jobs.
 		return notSent("the source could not be read", fmt.Sprintf("the source %s could not be read: %s", from, escape.Name(daemonMessage(err))))
 	case trimSHA(want.ID) != trimSHA(c.ImageID):
 		return notSent("the tag moved", fmt.Sprintf("the tag moved: %s now names %s on the source, not the image %s that was shown",
-			shownBy, escape.Name(engine.ShortID(want.ID)), short))
+			shownBy, shortID(want.ID), short))
 	case want.Platform() != plat:
 		return notSent("the platform changed", fmt.Sprintf("%s is now inspected as %s on the source, not the %s that was shown",
 			shownBy, escape.Name(want.Platform().String()), platWords))
@@ -186,7 +186,7 @@ func ExecuteCopy(ctx context.Context, src, dst engine.Engine, p Plan, run *jobs.
 	run.Status("checking the target")
 	shownOwner := "no image"
 	if c.TargetOwner != "" {
-		shownOwner = "image " + engine.ShortID(c.TargetOwner)
+		shownOwner = "image " + shortID(c.TargetOwner)
 	}
 	held, err := copyInspect(ctx, dst, by)
 	switch {
@@ -203,13 +203,13 @@ func ExecuteCopy(ctx context.Context, src, dst engine.Engine, p Plan, run *jobs.
 		return notSent("the target could not be read", fmt.Sprintf("the target %s answered for %s without an image ID", to, shownBy))
 	case trimSHA(held.ID) != trimSHA(c.TargetOwner):
 		return notSent("the target changed", fmt.Sprintf("the target changed: %s named %s on %s when the dialog was read and names image %s now",
-			shownBy, shownOwner, to, escape.Name(engine.ShortID(held.ID))))
+			shownBy, shownOwner, to, shortID(held.ID)))
 	case SameBuild(want, held) == "":
 		// The dialog blocks this; only a hand-made plan gets here.
-		return notSent("already present", fmt.Sprintf("%s already holds this build as %s (image %s)", to, shownBy, escape.Name(engine.ShortID(held.ID))))
+		return notSent("already present", fmt.Sprintf("%s already holds this build as %s (image %s)", to, shownBy, shortID(held.ID)))
 	}
 	if c.TargetOwner != "" {
-		run.Logf("the target's %s names image %s now: the load moves it to the copied image", shownBy, engine.ShortID(c.TargetOwner))
+		run.Logf("the target's %s names image %s now: the load moves it to the copied image", shownBy, shortID(c.TargetOwner))
 	}
 
 	// ---- the stream ----------------------------------------------------
@@ -411,13 +411,13 @@ func ExecuteCopy(ctx context.Context, src, dst engine.Engine, p Plan, run *jobs.
 		return unverified("the target could not be read after the load",
 			fmt.Sprintf("the target %s could not be read after the load (%s): the load may have completed, and nothing is claimed — inspect the target when it answers", to, escape.Name(daemonMessage(verr))))
 	}
-	gotShort := escape.Name(engine.ShortID(got.ID))
+	gotShort := shortID(got.ID)
 	if diff := SameBuild(want, got); diff != "" {
 		return unverified("the target holds another image",
 			fmt.Sprintf("the target %s holds another image as %s after the load: image %s, where %s. It is not the source's image %s", to, name, gotShort, diff, short))
 	}
 
-	run.Logf("✓ copy image %s done: %s streamed, platform %s", escape.Name(p.Steps[0].Name), humanBytes(n), platWords)
+	run.Logf("✓ copy image %s done: %s streamed, platform %s", p.Steps[0].Name, humanBytes(n), platWords)
 	if len(want.DiffIDs) == 0 {
 		// Nothing was compared that the content could be told by.
 		run.Logf("  the image has no layers: only its platform and config were compared with the source's, and they are the same")
@@ -433,7 +433,7 @@ func ExecuteCopy(ctx context.Context, src, dst engine.Engine, p Plan, run *jobs.
 	case c.Ref == "":
 		run.Logf("  it is untagged on the target (t tags it there)")
 	case c.TargetOwner != "":
-		run.Logf("  %s moved on the target: from image %s to image %s", shownBy, engine.ShortID(c.TargetOwner), gotShort)
+		run.Logf("  %s moved on the target: from image %s to image %s", shownBy, shortID(c.TargetOwner), gotShort)
 	default:
 		run.Logf("  %s was created on the target", shownBy)
 	}

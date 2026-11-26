@@ -117,7 +117,7 @@ func (m *Model) openSaveArchive(r row) tea.Cmd {
 		return nil
 	}
 	if m.si.pending != nil {
-		m.setStatus(toneDim, "Still reading the platform of "+escape.Name(m.si.pending.name)+"…")
+		m.setStatus(toneDim, "Still reading the platform of "+m.si.pending.name+"…")
 		return nil
 	}
 	t := saveImage{imageID: r.imageID, imageRef: r.imageRef, name: r.name, gen: m.gen}
@@ -136,7 +136,7 @@ func (m *Model) openSaveArchive(r row) tea.Cmd {
 	m.si.seq++
 	seq, gen, eng := m.si.seq, m.gen, m.eng
 	m.si.pending = &t
-	m.setStatus(toneDim, "Reading the image's platform… ("+escape.Name(t.name)+")")
+	m.setStatus(toneDim, "Reading the image's platform… ("+t.name+")")
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), saveInspectTimeout)
 		defer cancel()
@@ -151,7 +151,7 @@ func (m *Model) onSaveInspect(msg saveInspectMsg) {
 	}
 	m.si.pending = nil
 	t := msg.target
-	name := escape.Name(t.name)
+	name := t.name
 	switch {
 	case msg.err != nil && engine.IsNotFound(msg.err):
 		m.setStatus(toneWarn, name+" no longer exists on this daemon: nothing was saved.")
@@ -197,24 +197,25 @@ func checkSaveDest(abs string) string {
 	if fi, err := os.Lstat(abs); err == nil {
 		switch {
 		case fi.IsDir():
-			return abs + " is a folder: name a file inside it."
+			return esc(abs) + " is a folder: name a file inside it."
 		case fi.Mode()&fs.ModeSymlink != 0:
-			return abs + " is a symbolic link: the desk never writes through one, and never replaces a file. Choose another name."
+			return esc(abs) + " is a symbolic link: the desk never writes through one, and never replaces a file. Choose another name."
 		default:
-			return "A file is already there (" + abs + "): the desk never replaces one. Choose another name."
+			return "A file is already there (" + esc(abs) + "): the desk never replaces one. Choose another name."
 		}
 	} else if !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, syscall.ENOTDIR) {
-		return "Cannot check " + abs + ": " + err.Error() + "."
+		return "Cannot check " + esc(abs) + ": " + esc(err.Error()) + "."
 	}
 	dir := filepath.Dir(abs)
 	fi, err := os.Stat(dir)
+	dir = esc(dir) // from here on, the sentence's text
 	switch {
 	case errors.Is(err, syscall.ENOTDIR):
 		return dir + " is not a folder: something above it is a file."
 	case errors.Is(err, fs.ErrNotExist):
 		return "The folder " + dir + " does not exist: the folder must exist; none is created."
 	case err != nil:
-		return "Cannot check " + dir + ": " + err.Error() + "."
+		return "Cannot check " + dir + ": " + esc(err.Error()) + "."
 	case !fi.IsDir():
 		return dir + " is not a folder: the folder must be one."
 	}
@@ -228,7 +229,7 @@ func (m *Model) submitSaveImage() tea.Cmd {
 	t := d.si
 	abs, err := report.ExpandPath(d.formText(), m.homeDir(), m.workDir())
 	if err != nil {
-		d.formErr = capitalise(err.Error()) + "."
+		d.formErr = capitalise(esc(err.Error())) + "."
 		return nil
 	}
 	if why := checkSaveDest(abs); why != "" {
@@ -247,7 +248,7 @@ func (m *Model) submitSaveImage() tea.Cmd {
 		}
 		if !found {
 			m.dlg = nil
-			m.setStatus(toneWarn, escape.Name(t.name)+" no longer exists on this daemon: nothing was read or written.")
+			m.setStatus(toneWarn, t.name+" no longer exists on this daemon: nothing was read or written.")
 			return nil
 		}
 	}
@@ -261,7 +262,7 @@ func (m *Model) submitSaveImage() tea.Cmd {
 func (m *Model) startSaveImage(t saveImage, abs string) int {
 	eng := m.eng
 	readOnly := m.readOnly
-	name := escape.Name(t.name)
+	name := t.name
 	jobID := m.startJob("save image archive", name, func(ctx context.Context, r *jobs.Run) error {
 		if err := saveJob(ctx, r, eng, t, abs, readOnly); err != nil {
 			return escapedErr{err}
@@ -279,7 +280,7 @@ func (m *Model) startSaveImage(t saveImage, abs string) int {
 // by the caller; what it logs and its status it escapes itself.
 func saveJob(ctx context.Context, r *jobs.Run, eng engine.Engine, t saveImage, abs string, readOnly bool) error {
 	by := t.by()
-	short := engine.ShortID(t.imageID)
+	short := escID(t.imageID)
 	plat := t.platform
 	if t.imageRef != "" {
 		r.Logf("image %s, by its reference, pinned to %s", escape.Name(t.imageRef), short)
@@ -309,7 +310,7 @@ func saveJob(ctx context.Context, r *jobs.Run, eng engine.Engine, t saveImage, a
 		return nothing(err)
 	case d.ID != t.imageID:
 		return nothing(fmt.Errorf("the tag moved: %s now names %s, not the image the form showed (%s)",
-			by, engine.ShortID(d.ID), short))
+			by, escID(d.ID), short))
 	case d.Platform() != plat:
 		return nothing(fmt.Errorf("%s is now inspected as %s, not the %s the form showed",
 			by, platformWords(d.Platform()), platformWords(plat)))
@@ -409,7 +410,7 @@ func (m *Model) saveBody(d *dialog, w int) (string, []string) {
 			body = append(body, label+st.tone(tn, part))
 		}
 	}
-	kv("image", escape.Name(t.name)+"  ("+engine.ShortID(t.imageID)+")", toneNormal)
+	kv("image", t.name+"  ("+escID(t.imageID)+")", toneNormal)
 	body = append(body, m.daemonLines(w, true)...)
 	switch {
 	case t.tagged():
@@ -417,7 +418,7 @@ func (m *Model) saveBody(d *dialog, w int) (string, []string) {
 	case t.imageRef != "":
 		kv("saves", "the digest reference "+escape.Name(t.imageRef)+": the archive carries no tag", toneNormal)
 	default:
-		kv("saves", "the image ID "+engine.ShortID(t.imageID)+": the archive will be untagged", toneNormal)
+		kv("saves", "the image ID "+escID(t.imageID)+": the archive will be untagged", toneNormal)
 	}
 	kv("platform", escape.Name(platformWords(t.platform)), toneNormal)
 
@@ -425,10 +426,10 @@ func (m *Model) saveBody(d *dialog, w int) (string, []string) {
 	f.rows[0].Width = max(w-4, 10)
 	body = append(body, "", f.label)
 	m.recordDialogRow(len(body), hitFormRow, 0, 0, "")
-	body = append(body, f.rows[0].View())
+	body = append(body, escInput(f.rows[0].View()))
 	if text := d.formText(); strings.TrimSpace(text) != "" {
 		if abs, err := report.ExpandPath(text, m.homeDir(), m.workDir()); err != nil {
-			body = append(body, st.tone(toneWarn, "  "+capitalise(err.Error())+"."))
+			body = append(body, st.tone(toneWarn, "  "+capitalise(esc(err.Error()))+"."))
 		} else {
 			// Wrapped, never cut: the operator reads the whole path that
 			// will be written.

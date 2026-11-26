@@ -890,3 +890,23 @@ func TestRemovalRefusedForEitherDaemonOfACopy(t *testing.T) {
 		t.Fatalf("a copy started on removed daemons: err %v, ran %v", err, ran)
 	}
 }
+
+// A background daemon's notice is drawn on the status line, and what it
+// names — the container, its exit code — is the daemon's to choose: it is
+// text in the notice (openspec change escape-daemon-text, review finding 1).
+func TestNoticesNameAHostileContainerAsText(t *testing.T) {
+	a, b := startFake(t, "a", "a-web"), startFake(t, "b", "b-web")
+	s := newSession(t, Config{})
+	launch(t, s, a, false)
+	mb := add(t, s, endpoint(b.Host(), "staging"))
+	connected(t, mb)
+	waitFor(t, "b's event stream", func() bool { return b.EventSubscribers() == 1 })
+	TakeAll(s)
+	b.Emit("container", "die", "c1", map[string]string{"name": "db\x1b[8m\\x\u202e", "exitCode": "1)\x1b[8m"})
+	var got []Notice
+	waitFor(t, "a notice", func() bool { got = append(got, TakeAll(s)...); return len(got) > 0 })
+	const want = `staging: container db\x1b[8m\\x\u202e exited (code 1)\x1b[8m)`
+	if len(got) != 1 || got[0].Text != want {
+		t.Fatalf("the notice is %q, want %q", got[0].Text, want)
+	}
+}

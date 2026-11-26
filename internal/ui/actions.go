@@ -237,7 +237,7 @@ func (m *Model) preparePick(r row, connect bool) tea.Cmd {
 		defer cancel()
 		snap, err := plan.Take(ctx, eng)
 		if err != nil {
-			return pickMsg{seq: seq, err: fmt.Errorf("could not read the daemon's current state: %w", err)}
+			return pickMsg{seq: seq, err: stateErr{err: err}}
 		}
 		var cands []engine.Container
 		msg := pickMsg{seq: seq}
@@ -254,7 +254,8 @@ func (m *Model) preparePick(r row, connect bool) tea.Cmd {
 			return pickMsg{seq: seq, err: err}
 		}
 		for _, c := range cands {
-			msg.items = append(msg.items, pickItem{id: c.ID, label: c.Name, detail: c.State, tone: stateTone(c.State)})
+			// A picker's rows are text: the daemon's name and state, escaped.
+			msg.items = append(msg.items, pickItem{id: c.ID, label: esc(c.Name), detail: esc(c.State), tone: stateTone(c.State)})
 		}
 		msg.onPick = func(m *Model, containerID string) tea.Cmd {
 			return m.prepare(func(s plan.Snapshot) (plan.Plan, error) {
@@ -287,7 +288,7 @@ func (m *Model) openForm(kind formKind) tea.Cmd {
 
 func (m *Model) openShellForm(r row) tea.Cmd {
 	if r.state != engine.StateRunning {
-		m.setStatus(toneWarn, fmt.Sprintf("%s is not running (%s): there is nothing to open a shell in.", r.name, r.state))
+		m.setStatus(toneWarn, fmt.Sprintf("%s is not running (%s): there is nothing to open a shell in.", r.name, esc(r.state)))
 		return nil
 	}
 	d := &dialog{kind: dlgForm, form: formShell, hasInput: true, target: r, openedAt: time.Now(),

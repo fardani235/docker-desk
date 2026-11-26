@@ -112,11 +112,11 @@ func (m *Model) readComposeFile(path string) ([]byte, fs.FileInfo, error) {
 // startDeclared reads, parses and compares, as one job. Its lines carry the
 // desk's words, paths from the labels and counts — never the file's bytes.
 func (m *Model) startDeclared(t declaredTarget) {
-	run := &declaredRun{key: t.key, project: t.proj.Name}
+	run := &declaredRun{key: t.key, project: esc(t.proj.Name)} // as messages name it
 	paths := append([]string{}, t.paths...)
 	read := m.readComposeFile
 	actual := plan.ComposeActual(m.snap, t.proj.Name)
-	run.jobID = m.startJob("compare with the compose file", t.proj.Name, func(ctx context.Context, r *jobs.Run) error {
+	run.jobID = m.startJob("compare with the compose file", esc(t.proj.Name), func(ctx context.Context, r *jobs.Run) error {
 		out := &declaredOutcome{at: time.Now()}
 		defer func() {
 			run.mu.Lock()
@@ -128,7 +128,7 @@ func (m *Model) startDeclared(t declaredTarget) {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			r.Status(fmt.Sprintf("reading %s (%d of %d)", p, i+1, len(paths)))
+			r.Status(fmt.Sprintf("reading %s (%d of %d)", esc(p), i+1, len(paths)))
 			b, st, err := read(p)
 			if err != nil {
 				out.refusal = readRefusal(p, err)
@@ -136,12 +136,12 @@ func (m *Model) startDeclared(t declaredTarget) {
 			}
 			f, err := composefile.Parse(b)
 			if err != nil {
-				out.refusal = "Cannot be compared: " + p + " is " + err.Error() + "."
+				out.refusal = "Cannot be compared: " + esc(p) + " is " + esc(err.Error()) + "."
 				return errors.New(strings.TrimPrefix(out.refusal, "Cannot be compared: "))
 			}
 			out.files = append(out.files, declaredFile{path: p, written: st.ModTime()})
 			files = append(files, f)
-			r.Logf("%s: %d bytes, %d services declared, written %s", p, len(b), len(f.Services), timeOrDash(st.ModTime()))
+			r.Logf("%s: %d bytes, %d services declared, written %s", esc(p), len(b), len(f.Services), timeOrDash(st.ModTime()))
 		}
 		if err := ctx.Err(); err != nil {
 			return err
@@ -158,6 +158,9 @@ func (m *Model) startDeclared(t declaredTarget) {
 
 // readRefusal says, in one sentence, why a path was not read.
 func readRefusal(path string, err error) string {
+	// The path is a label's value — the daemon's — and the sentence is
+	// drawn in the tab, the job and the status line: escaped here, once.
+	path = esc(path)
 	var why string
 	switch {
 	case errors.Is(err, composefile.ErrNotFound):
@@ -176,9 +179,9 @@ func readRefusal(path string, err error) string {
 			if errors.As(re.Cause, &pe) {
 				cause = pe.Err
 			}
-			why = path + " cannot be opened: " + cause.Error() + "."
+			why = path + " cannot be opened: " + esc(cause.Error()) + "."
 		} else {
-			why = path + " cannot be opened: " + err.Error() + "."
+			why = path + " cannot be opened: " + esc(err.Error()) + "."
 		}
 	}
 	return "Cannot be compared: " + why
@@ -343,19 +346,19 @@ func (m *Model) declaredLines(t declaredTarget, w int) []string {
 		}
 	}
 
-	hang("project", lw, toneNormal, fmt.Sprintf("%s · %d containers, %d running", p.Name, len(p.Containers), p.Running))
-	hang("working dir", lw, toneNormal, orDash(p.WorkingDir))
+	hang("project", lw, toneNormal, fmt.Sprintf("%s · %d containers, %d running", esc(p.Name), len(p.Containers), p.Running))
+	hang("working dir", lw, toneNormal, esc(orDash(p.WorkingDir)))
 	if len(t.paths) == 0 {
 		hang("config file", lw, toneDim, "none recorded")
 	}
 	for i, path := range t.paths {
-		label, text := "", path
+		label, text := "", esc(path) // a label's value: the daemon's
 		if i == 0 {
 			label = "config file"
 		}
 		if len(t.paths) > 1 {
 			label = strings.Replace(label, "file", "files", 1)
-			text = fmt.Sprintf("%d.%s", i+1, path)
+			text = fmt.Sprintf("%d.%s", i+1, esc(path))
 		}
 		hang(label, lw, toneNormal, text)
 	}
@@ -365,7 +368,7 @@ func (m *Model) declaredLines(t declaredTarget, w int) []string {
 		hang("daemon", lw, toneWarn, "reached over "+m.link.Transport.String()+": the paths are on the machine that ran compose")
 	}
 	if newest.Container != "" {
-		hang("newest", lw, toneNormal, fmt.Sprintf("%s, created %s (%s ago)", newest.Container, timeOrDash(newest.Created), humanAge(newest.Created, now)))
+		hang("newest", lw, toneNormal, fmt.Sprintf("%s, created %s (%s ago)", esc(newest.Container), timeOrDash(newest.Created), humanAge(newest.Created, now)))
 	}
 	if oneOffs > 0 {
 		hang("one-offs", lw, toneDim, fmt.Sprintf("%d left by `docker compose run`; never compared", oneOffs))
@@ -423,7 +426,7 @@ func (m *Model) declaredLines(t declaredTarget, w int) []string {
 	cmp := composefile.Compare(res.file, actual)
 	hang("read", lw, toneNormal, fmt.Sprintf("%s (%s ago), compared as it is now; Enter reads again", res.at.Local().Format("15:04:05"), humanAge(res.at, now)))
 	if cmp.DeclaredName != "" && cmp.DeclaredName != p.Name {
-		hang("name", lw, toneWarn, "the file names the project "+cmp.DeclaredName+", the labels "+p.Name)
+		hang("name", lw, toneWarn, "the file names the project "+esc(cmp.DeclaredName)+", the labels "+esc(p.Name))
 	}
 	for i, f := range res.files {
 		if composefile.FileIsNewer(f.written, newest.Created) {
@@ -432,7 +435,7 @@ func (m *Model) declaredLines(t declaredTarget, w int) []string {
 				which = fmt.Sprintf("File %d", i+1)
 			}
 			hang("", lw, toneWarn, fmt.Sprintf("%s was written %s, after %s was created %s. That alone does not make it wrong.",
-				which, timeOrDash(f.written), newest.Container, timeOrDash(newest.Created)))
+				which, timeOrDash(f.written), esc(newest.Container), timeOrDash(newest.Created)))
 		}
 	}
 	hang("services", lw, toneNormal, fmt.Sprintf("%d: %s", len(cmp.Rows), declaredCounts(cmp)))
@@ -481,23 +484,23 @@ func (m *Model) declaredRow(row composefile.Row, lead func(string, int, tone, st
 	}
 	var parts []string
 	if row.Declared != "" {
-		parts = append(parts, "declares "+oneLine(row.Declared))
+		parts = append(parts, "declares "+esc(row.Declared))
 	}
 	if len(row.Containers) > 0 {
-		parts = append(parts, strings.Join(row.Containers, ", ")+" "+map[bool]string{true: "runs", false: "run"}[len(row.Containers) == 1]+" "+strings.Join(row.Images, ", "))
+		parts = append(parts, escJoin(row.Containers, ", ")+" "+map[bool]string{true: "runs", false: "run"}[len(row.Containers) == 1]+" "+escJoin(row.Images, ", "))
 	}
 	if row.Verdict == composefile.Differs {
-		label = "differs (" + row.Reason + ")"
+		label = "differs (" + esc(row.Reason) + ")"
 	}
-	prefix := st.tone(tn, fit(label, vw)) + fit(oneLine(row.Service), sw)
+	prefix := st.tone(tn, fit(label, vw)) + fit(esc(row.Service), sw)
 	lead(prefix, vw+sw, toneNormal, strings.Join(parts, " · "))
 	if row.Reason != "" && row.Verdict != composefile.Differs {
-		lead("", vw+sw, toneDim, oneLine(row.Reason))
+		lead("", vw+sw, toneDim, esc(row.Reason))
 	}
 	if len(row.ConfigHashes) > 0 {
 		hs := make([]string, len(row.ConfigHashes))
 		for i, h := range row.ConfigHashes {
-			hs[i] = shortHash(h)
+			hs[i] = esc(shortHash(h))
 		}
 		sort.Strings(hs)
 		lead("", vw+sw, toneDim, "config hash "+strings.Join(hs, ", "))

@@ -70,8 +70,11 @@ func TestGuardLine(t *testing.T) {
 	}
 }
 
-// Every frame the desk itself draws passes the guard unchanged: the guard
-// removes only what should never have been there.
+// Every frame the desk itself draws passes the guard with nothing removed:
+// the guard removes only what should never have been there. The one thing it
+// may add is the reset that ends a line (D7), and that is asserted here, not
+// tolerated: a line is written as it was drawn, or as it was drawn and then
+// a reset — and no line ends with an attribute still set.
 func TestGuardLeavesTheDesksOwnFramesAlone(t *testing.T) {
 	for _, size := range [][2]int{{140, 40}, {80, 24}} {
 		b := newBench(t, benchOpts{width: size[0], height: size[1]})
@@ -82,6 +85,22 @@ func TestGuardLeavesTheDesksOwnFramesAlone(t *testing.T) {
 			for i, l := range b.m.render() {
 				if !lineIsClean(l) {
 					t.Fatalf("%s, %dx%d: line %d of the desk's own frame would be changed by the guard: %q", what, size[0], size[1], i, l)
+				}
+				g := guardLine(l)
+				switch {
+				case g == l:
+					if sgrOpen(l) {
+						t.Fatalf("%s, %dx%d: line %d ends with an attribute set and was given no reset: %q", what, size[0], size[1], i, l)
+					}
+				case g == l+sgrReset:
+					if !sgrOpen(l) {
+						t.Fatalf("%s, %dx%d: line %d was given a reset it did not need: %q", what, size[0], size[1], i, l)
+					}
+				default:
+					t.Fatalf("%s, %dx%d: line %d was changed by more than the reset: %q → %q", what, size[0], size[1], i, l, g)
+				}
+				if ansi.StringWidth(g) != ansi.StringWidth(l) {
+					t.Fatalf("%s, %dx%d: line %d changed width", what, size[0], size[1], i)
 				}
 			}
 		}
@@ -139,4 +158,54 @@ func TestDeskDrawsHostileContainerTextAsText(t *testing.T) {
 	b.keys("esc")
 	b.kind(KindCompose)
 	frame("Compose")
+}
+
+// A colour or conceal sequence that reaches a line cannot carry into the
+// next one: every guarded line that holds a colour sequence ends with a
+// reset (D7). SGR 8 is conceal — what survives the guard can hide.
+func TestGuardEndsEveryColouredLineWithAReset(t *testing.T) {
+	const reset = "\x1b[0m"
+	clean := "the next line, as the desk laid it out"
+	got := guardFrame([]string{"label note=\x1b[8mhidden", clean, "\x1b[1mbold\x1b[0m", "\x1b[31mred\x1b[m", "\x1b[31mred\x1b[0m tail"})
+	if !strings.HasSuffix(got[0], reset) {
+		t.Fatalf("a line carrying a conceal sequence does not end with a reset: %q", got[0])
+	}
+	if got[1] != clean {
+		t.Fatalf("a line without a colour sequence was changed: %q", got[1])
+	}
+	// A line that already ends with a reset is not given a second one.
+	if got[2] != "\x1b[1mbold\x1b[0m" || got[3] != "\x1b[31mred\x1b[m" {
+		t.Fatalf("a line already ending with a reset was changed: %q, %q", got[2], got[3])
+	}
+	if got[4] != "\x1b[31mred\x1b[0m tail" {
+		t.Fatalf("plain text after a reset was given another: %q", got[4])
+	}
+	for i, l := range got {
+		// The reset takes no cell, and guarding again changes nothing.
+		if guardFrame([]string{l})[0] != l {
+			t.Errorf("line %d: guarding twice changes it", i)
+		}
+	}
+	if a, b := ansi.StringWidth("label note=\x1b[8mhidden"), ansi.StringWidth(got[0]); a != b {
+		t.Fatalf("the reset changed the line's width: %d → %d", a, b)
+	}
+	// What the terminal is left in after each line: no attribute set.
+	for i, l := range got {
+		if open := sgrOpen(l); open {
+			t.Errorf("line %d leaves an attribute set: %q", i, l)
+		}
+	}
+}
+
+// sgrOpen reports whether a line ends with an attribute still set: its last
+// colour sequence is not a reset.
+func sgrOpen(l string) bool {
+	open := false
+	for i := 0; i < len(l); i++ {
+		if n := sgrLen(l[i:]); n > 0 {
+			open = !isSGRReset(l[i : i+n])
+			i += n - 1
+		}
+	}
+	return open
 }

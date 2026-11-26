@@ -5481,7 +5481,14 @@ Info tab and the dialogs still draw container strings unescaped *underneath* it 
 now, and worth escaping properly in a round of their own.
 
 Stated as limits, not fixed. A colour sequence (SGR) inside a string the desk does not escape
-still reaches the terminal: it can colour text, not move, hide or forge it — the guard's line
+still reaches the terminal. **Corrected in round twenty-eight:** this entry used to say such a
+sequence "can colour text, not move, hide or forge it". Move, invent and forge were right; hide
+was wrong. What survives the guard is colour, attribute *and conceal*: SGR 8 hides the text
+after it, and so does a foreground equal to the background. So the limit is: a string only the
+guard met **cannot move, invent or forge; it can hide** — the rest of the line it is on, and,
+as the guard then stood, every following line until the desk's next reset. Round twenty-eight
+escapes those strings where they are drawn and ends every such line with a reset (ED1, ED7
+below); the guard's keep-rule itself is unchanged — the guard's line
 is "nothing that acts", and SGR is what the desk's own styling is made of. A hostile daemon can
 still lie in what it *says*: report a failing container as healthy, or send no event. The view
 shows what was read and when; it cannot show what a daemon withholds. And the view has never
@@ -5497,3 +5504,235 @@ the bound; the counts partition the total; `Certain` agrees with `Classify`.
 ### AT17 — Round twenty-seven: what was run
 
 See docs/TESTING.md, round twenty-seven, for the commands and their results.
+
+## Round twenty-eight — a daemon's text, drawn as text
+
+OpenSpec change `escape-daemon-text` (capability `terminal-safety`). The instruction for the
+round: apply the change as written, working autonomously — "where you would ask, decide and
+record" — and test and review it as QA and security would; vulnerable code is not acceptable.
+The change's decisions D1–D10 (design.md) were implemented as written except where ED2, ED4
+and ED10 say otherwise; ED1–ED14 are what was decided where the plan left room or met the
+code, ED15 is the review, and ED16 what was run.
+
+The debt it pays is the one AT16 named and left: Details › Info and the dialogs drew a daemon's
+strings raw, with the frame guard as the only thing between them and the terminal — and the
+guard keeps colour, and colour can hide (AT16's limit is corrected in place, above).
+
+### ED1 — The rule, and where it is written
+
+A value is escaped when it becomes drawn text, never when it becomes a request or a
+comparison; one layer escapes a value, once, and it is the layer that composes the string. It
+is the package documentation of `internal/ui` and of `internal/plan` (`go doc` prints it), and
+the helpers that apply it are in one file each: `internal/ui/esc.go` (`esc`, `escID`,
+`escJoin`, `escErr`) and `text`, `shortID`, `textList`, `shownMessage` in `internal/plan`. The
+mapping is `escape.Name` everywhere — the one the exports and the Files tree already used.
+
+### ED2 — Decided: a plan's display fields are text from the moment the plan is built
+
+D2 says a step's `Name` "keeps its raw bytes" and is escaped "when [the plan] composes a
+description"; task 5.1 says the dialog draws "the plan's already-escaped strings without
+escaping them again". Both cannot be literally true of `Step.Name`, which the dialog draws
+directly. And the code was already of two minds: the copy-in and tag plans escaped their
+targets when built, the image copy left its target raw for the UI to escape, and `describe`
+escaped some step names and not others.
+
+Decided for the tasks' reading, which is also the safer one: **every string a `Plan` shows is
+escaped by the constructor that sets it** — `Title`, `JobTitle`, `JobTarget`, `Target`,
+`Effects`, `Warnings`, `Blockers`, `Skipped`, a step's `Name`, `OtherName`, `Detail` and
+`FailNote`, a `NotApplicable`'s reason, the errors `plan` returns and every line `Execute`
+logs. What is sent stays raw in its own fields (`Step.ID`, `Other`, `Rename`, `Pin`, `Copy`,
+`Create`, `Clone`, `Plan.PinRef`). The dialog, the Jobs pane and the status line draw a plan's
+strings as they are; `describe` no longer escapes a step's name a second time, and the UI no
+longer escapes an image copy's job target. D2's intent — raw bytes are what is sent and
+compared, and one struct carries both — holds; only which field carries which changed.
+`TestStepDescriptionsAreEscapedOnce` counts backslashes: two for one, and four if anyone
+escapes again.
+
+### ED3 — Found: only the Containers list was escaped
+
+The proposal says the lists pass names through `escape.Name`. That was true of Containers
+(round twenty-seven). The Images, Volumes, Networks and Compose rows drew the daemon's
+repository, tag, driver, scope, subnet, project and working directory raw. They are escaped
+now, in `ensureRows`, and **a row's `name` is text for every kind**: it titles the Details
+pane and the action menu and is named in messages, and nothing compares or sends it — the
+row's identifiers (`containerID`, `imageRef`, `volume`, `networkID`, `project`) do that. Three
+sites that escaped an image row's name a second time (save, tag, copy) no longer do.
+
+### ED4 — Decided: an error's daemon text is escaped where the error becomes text
+
+D5 lists "daemon error prose" as untrusted, and the proposal changes no engine method. So
+`engine.Error.Msg` stays the daemon's bytes, as before, and the site that turns an error into
+a drawn string escapes it — the convention the push, tag and image-copy code already
+followed. `plan.shownMessage` does it for a job's log and error (an error the plan composed is
+text already and is returned as it is); `ui.escErr` for an inspect, a list, a statistics or a
+log-stream failure; `stateErr` for "could not read the daemon's current state"; and a job of
+the desk's own (analysis, comparison, read) has its returned error made text by `textJob`,
+which escapes the engine message inside it and nothing around it. `TestDaemonRefusalIsEscapedInTheJob`
+fails a stop with a refusal carrying conceal, a backslash and an OSC and reads the job.
+
+### ED5 — Found: a byte that is not UTF-8 cannot arrive through the Engine API
+
+The fixture seeds a working directory with a `\xff` in it, as task 1.1 asks. JSON cannot carry
+it: the daemon's encoder — and any decoder — puts U+FFFD in its place, so the engine's decoded
+value never holds the byte, hostile daemon or not. `TestHostileFixtureReachesTheDecodedTypes`
+asserts exactly that (the seeded value has the byte; the decoded one has U+FFFD) and prints
+every field. Where such a byte *can* arrive — an archive's entry names, a process table —
+`escape.Name` names it (`\xff`), which `TestNameIsInert` and the forensics tests cover.
+
+### ED6 — D7 as built: a reset only where a line ends with an attribute set
+
+`endLine` appends `ESC[0m` to a guarded line whose last colour sequence is not a reset
+(`ESC[m` or `ESC[0m`, nothing else counts — `ESC[0;8m` leaves conceal set and gets one). A
+line with no colour sequence, or one that already ends reset — how every line the desk styles
+ends — is written unchanged, so the desk's own frames are byte for byte what they were
+wherever they already closed their styles. `TestGuardLeavesTheDesksOwnFramesAlone` asserts it
+either way: each line is unchanged and ends with nothing set, or is unchanged plus the reset
+and needed it; any other difference fails. `TestGuardEndsEveryColouredLineWithAReset` is the
+concealed case; it fails against round twenty-seven's guard.
+
+### ED7 — Decided: the Inspect tab uses JSON's own escapes
+
+The Inspect tab draws the daemon's document, not a value out of it. `escape.Name` would double
+every backslash of the JSON and show a different document. So a character that could act or
+reorder — DEL, a C1 control, a format character such as U+202E — is written as JSON's
+`\uNNNN`, which is the same document, and a byte that is no character as U+FFFD. Found by the
+sweep: the right-to-left override in the fixture's command passed through the tab untouched,
+because JSON allows it raw and the guard does not remove characters.
+
+### ED8 — Decided: what "operator input drawn back" means for a text input
+
+The inputs are Bubbles' `textinput`, which drops every control character before it holds one:
+an ESC cannot be typed or pasted into a form (asserted in
+`TestCopyInDrawsTypedPathsAsTextAndSendsThemRaw`). What it keeps is a backslash and the
+characters that draw nothing and reorder. So: the **editing line** echoes the keystrokes, with
+a reordering character shown as `\u202e` and a backslash left as one (`escInput`) — doubling it
+there would show the operator something they did not type; and wherever the desk **draws the
+value back** — the resolved path, the confirmation, the status line, the job — it is
+`escape.Name`. The request carries what was typed.
+
+### ED9 — Decided: a typed confirmation is compared as it is shown
+
+The spec: "a confirmation that requires typing SHALL compare against the text it shows".
+Every word a plan sets is a fixed verb, a count or a tag the plan has validated, so shown and
+raw are the same string (`checkPlan` asserts it for every plan over the fixture). The dialog
+nevertheless draws and compares `escape.Name(Word)` (`typedWord`), so that the two can never
+come apart.
+
+### ED10 — Found, and outside the proposal's list: Findings and its export
+
+The proposal's Impact names `ui`, `plan` and `fakeengine`. Findings needed `internal/forensics`
+and one function of `internal/report`:
+
+- **Live findings named the container raw.** `forensics.LiveFindings` wrote a container's
+  name, state and port protocol into a finding's subject and evidence as the daemon sent them:
+  drawn raw in the Findings row and detail block, with only the guard behind them. (The export
+  was not a hole: the JSON format encodes control characters and the text format escaped each
+  field as it wrote it.) They are escaped where the sentence is written.
+- **One mapping.** Findings text went through forensics' own `sanitize`, which replaced what it
+  did not like with `?` — inert, but it dropped the byte, and the spec asks that every byte be
+  accounted for and that screen and export agree. `sanitize` is now a bounded `escape.Name`;
+  `builder.add` escapes a finding's path and only bounds its evidence, which is composed of
+  parts that are text already. A revealed secret keeps the old inert mapping (`inertValue`):
+  it is contents, read to be recognised, and must not gain a backslash.
+- **The text export** wrote finding fields through a second escape (`oneLine`), which would now
+  double each backslash and make the file differ from the screen. Finding fields go through
+  `textField`: written as they are, with a control character that slipped in still written as
+  an escape. `TestFindingsExportSaysWhatTheScreenSays` and
+  `TestFindingsDrawHostileArchiveNamesAsText` hold the two together, the second over an archive
+  whose entry names carry conceal, a backslash and an override, with a secret beside them that
+  stays masked.
+
+### ED11 — Decided: Images › Info does not gain a labels section
+
+Task 2.2 escapes "the image Info fields — references, labels, …". Images › Info draws no
+labels, and never did. Adding a section for them was tried and taken out: the demo's images
+carry labels, so it changed a captured screen (`02-images`), and the change's design and task
+6.2 both say the screens stay as they are. So there is nothing of an image's labels in Info to
+escape. They are drawn in one place, the Inspect document, with JSON's own escapes (ED7):
+`TestInfoDrawsHostileTextAsText` reads the fixture's `maintainer` label there, as
+`ops\u001b[8mhidden-maintainer`. The references, the platform, the command, the working
+directory, the user, the exposed ports and the containers using the image are escaped.
+
+### ED12 — Found: three older sanitisers that dropped bytes
+
+`oneLine` (the Processes table, the Declared rows, the Changes tab) stripped escape sequences
+and turned control characters into spaces: lossy, and it let a right-to-left override through
+(the sweep found the fixture's command in the Processes tab). It is gone; those cells are
+`escape.Name`. An identifier's short form (`engine.ShortID`) was drawn raw throughout — an ID
+is the daemon's to choose too — and goes through `escID` / `shortID`.
+
+### ED13 — What proves it (D9), and how it is built
+
+`internal/ui/hostile_test.go`. The check is made on the frame **before the guard**
+(`bench.inert`): no line may hold anything the guard would remove, the fixture's conceal or
+colour sequence, or a reordering character — so a string drawn raw fails even though the guard
+would have made it harmless — and then on the written frame, and on its geometry. Over that:
+Info for all five kinds at 120 and 80 columns with the literal escaped text; every tab of
+every kind, the action menu and every action's first dialog; confirmations, the status line
+and the job for a stop, a removal, a selection, two prunes, a project stop, a disconnect; the
+connect, disconnect, daemon and image-copy pickers; the Events pane with hostile actions and
+attributes (toned and laid out by the raw action); Space, Attention, Files and analysed
+Findings; a re-create's confirmation; the copy-in form; colour disabled. `internal/plan`'s
+`hostile_test.go` walks every plan constructor over the fixture and checks every shown string
+and every sent identifier.
+
+### ED14 — Stated as limits
+
+- **A site the sweep does not reach is not proven.** The reader's contents and log lines are
+  not names and keep their own treatment (D5). Text that comes from a *registry* — the
+  Upstream tab's reasons, the repository browser — keeps `freshness.Sanitize` (inert, lossy)
+  and tag names the registry package validates; it was not converted, and a hostile registry
+  is not this change's threat model.
+- **The guard still keeps colour.** A string nobody escaped can colour or conceal the rest of
+  its own line. It cannot reach the next one.
+- **A hostile daemon can still lie in what it says**, as AT16 notes.
+- The header's endpoint, context and link label are this machine's configuration, not a
+  daemon's; they are escaped all the same.
+
+### ED15 — The review: what an independent read found, and what was done
+
+The change was reviewed twice: by its author as it was written, with the sweep of ED13 as the
+instrument — which found raw draws in the Changes, Processes, Inspect, Findings, Declared,
+Space, Files and export views that reading alone had missed — and, with the code and the spec
+but none of the author's conclusions, by an independent reviewer holding it to the one threat
+model: **a daemon of the session may be hostile.**
+
+Nothing critical. It confirmed as sound: the guard (`sgrLen`, `isSGRReset`, `endLine` — only
+`ESC[m` and `ESC[0m` close a line, `ESC[0;8m` and the colon forms do not, nothing but SGR
+keeps its ESC, and the reset cannot be cut off or change a width because the guard runs once,
+after all layout); `jsonText`; the text inputs; the typed confirmation (every `Plan.Word` is a
+fixed verb, a count, a validated tag or a hex ID); every plan string it traced, escaped
+exactly once, with `ID`, `Other`, `Rename`, `Copy`, `Create`, `Clone` and `Pin` raw; Details ›
+Info for all five kinds, the lists, Events, pickers, Jobs, the header; `row.name`; and that
+the `sanitize` change breaks no comparison in forensics.
+
+What it found — every one where the fixture's sweep did not reach — all fixed in this round:
+
+| # | Finding | What was done |
+| --- | --- | --- |
+| 1 | Medium-high: an **unfocused** daemon's notice (a container's exit, why it cannot be reached, a lost link) was built in `internal/session` from the event's name and exit code, the member's reason and the link's problem, raw, and drawn on the status line | every part is escaped where the notice is written (`TestNoticesNameAHostileContainerAsText`) |
+| 2 | Medium: a member's reason — the daemon's own message when it answers the ping and refuses the rest — was drawn raw on the no-daemon screen and in the daemon picker | escaped at both sites (`TestUnreachableDaemonsReasonIsDrawnAsText`: a daemon whose `/info` fails with conceal, a backslash and an override) |
+| 3 | Medium, **and this round's own regression**: a private-key finding's evidence carries the key's header line, the file's bytes. Before, `builder.add` sanitised all evidence; ED10 made it bound evidence only, and this one composition had relied on the pass it lost | the header is escaped and bounded where it is taken (`TestEvidenceComposedFromFileBytesIsText`); every other evidence composition was read and is text |
+| 4 | Medium: two more "could not read the daemon's …" errors wrapped the daemon's message raw (the build-cache prune's account, a re-create's lists) | both are `stateErr`, as the other two were (`TestReviewFindingsStayFixed`) |
+| 5 | Medium-low: the Upstream tab drew the platform the daemon's inspect reports, and the digest of its `/distribution` answer, raw — in the verdict's sentences, the digest lines and the job's log | escaped where they are drawn and logged. No test: the path needs a registry the fake does not model for this case; stated here |
+| 6 | Low: `internal/changes` had its own `oneLine` — control characters and some bidirectional ones became spaces (bytes dropped), other format characters passed — for a config's user, working directory, labels, ports and the reference | those are `name`, a bounded `escape.Name`; `oneLine` now only bounds text that is text already (`TestNamesAreTextAndTextIsNotEscapedAgain`) |
+| 7 | Low: an SBOM attestation's digest, copied from the archive's index, was drawn raw in the Packages view | escaped where it is drawn. No test: it needs an archive whose index names a blob by a digest that is not one; stated here |
+| 8 | Low: **double escapes** — (a) the Changes tab escaped a finding's text the analysis had escaped; (b) `User %q` quoted an escaped user; (c) a command was JSON-quoted and then escaped; (d) the text exports passed the analysis's notes, instructions and unread-layer reasons through a second escape; (e) a job error whose daemon message ends in a backslash could be escaped again | (a) drawn as it is; (b), (c) each argument escaped once, in quotes the desk writes; (d) written through `textField`, which now also writes a reordering character as an escape; (e) `jobErrText` passes over a place where the escaped form already stands and still escapes a raw copy beside it (`TestEvidenceComposedFromFileBytesIsText`, `TestTextFieldWritesTextOnce`, `TestReviewFindingsStayFixed`) |
+| 9 | Low: **display text used as identity** — the Changes comparison passed the reference's escaped form to the analyser, which matches it against the archive's own tags; a reference with a backslash would not match (it was the old lossy form before, so this is older than the round) | the analyser is given the reference as the daemon gave it; only the job's title and the messages use the text. No test of its own: the comparison's existing tests pass a clean reference, for which the two are the same string; stated here |
+| 10 | Low: an error the engine layer writes about a value before sending it (`not a port: …`) is not an `engine.Error`, so `shownMessage` returned it as written — and on a re-create the value is the daemon's inspect | `sentErr` makes such an error text where the create is sent; a re-create's is always an `engine.Error`, whose message `shownMessage` escapes (`TestSentErrMakesAForeignErrorText`) |
+| 11 | Info: the Space view called any volume with a 64-byte name "(anonymous)" and showed 12 bytes of it, where the plans require 64 hex digits | it requires them too |
+
+Left as found, and said: the image text export's `# reference` line goes through the export's
+own `oneLine`, which is not `escape.Name` (a format character is written raw; a byte that is
+no character becomes U+FFFD) — it predates the round, the JSON document carries the reference
+as the daemon gave it by design, and changing the text line alone would make the two formats
+disagree; `clip` can end a bounded evidence line in the middle of an escape (cosmetic); a
+reordering character in a text input's echo is six cells where the input counted one, so a
+long line can be cut at the box's edge (cosmetic); a daemon whose inspect document is not
+JSON leaves the Inspect tab on "Loading inspect data…". The repository browser's registry
+strings were not audited in depth (ED14).
+
+### ED16 — Round twenty-eight: what was run
+
+See docs/TESTING.md, round twenty-eight, for the commands and their results — including the
+one that did not pass as a whole, `make race`, and why that is not this change.

@@ -117,7 +117,7 @@ func (m *Model) openCopyImage(r row) tea.Cmd {
 		m.setStatus(toneWarn, "Copying an image needs a second connected daemon: "+why+". "+keyDaemons+" opens the picker to add one. Nothing was sent.")
 		return nil
 	}
-	name, short := escape.Name(r.name), engine.ShortID(r.imageID)
+	name, short := r.name, escID(r.imageID)
 	imageID, imageRef, gen := r.imageID, r.imageRef, m.gen
 	sel := 0
 	for i, it := range items {
@@ -251,7 +251,7 @@ func (m *Model) livePlan(p plan.Plan) plan.Plan {
 func (m *Model) runCopyImage(p plan.Plan) int {
 	c := p.ImageCopy
 	if why := m.copyProblem(p); why != "" {
-		m.setStatus(toneBad, "Not started: "+p.JobTitle+" "+escape.Name(p.JobTarget)+" — "+why)
+		m.setStatus(toneBad, "Not started: "+p.JobTitle+" "+p.JobTarget+" — "+why)
 		return 0
 	}
 	src, dst := m.memberByKey(c.Source.Key), m.memberByKey(c.Target.Key)
@@ -260,7 +260,7 @@ func (m *Model) runCopyImage(p plan.Plan) int {
 		m.setStatus(toneBad, "Not started: "+p.JobTitle+" — a daemon of the copy is not connected. Nothing was sent.")
 		return 0
 	}
-	target := escape.Name(p.JobTarget)
+	target := p.JobTarget // the plan's string: text already
 	id, err := m.jobs.StartOnPair(dst.Daemon(), src.Daemon(), p.JobTitle, target, func(ctx context.Context, run *jobs.Run) error {
 		return plan.ExecuteCopy(ctx, srcEng, dstEng, p, run)
 	})

@@ -67,7 +67,8 @@ func (m *Model) readBack(delta int) {
 
 // eventTarget is where an event leads: a kind and the row that is its actor.
 type eventTarget struct {
-	kind  Kind
+	kind Kind
+	// name is how messages call the object: the event's words, escaped.
 	name  string
 	match []func(row) bool // tried in order; the first that accepts a row decides
 }
@@ -85,14 +86,14 @@ func targetOf(e live.EventEntry) (eventTarget, string) {
 	id := ev.ID
 	switch {
 	case unlistedTypes[ev.Type] || eventKinds[ev.Type] == "":
-		return eventTarget{}, "The desk does not list " + ev.Type + " objects, so there is no object to go to."
+		return eventTarget{}, "The desk does not list " + esc(ev.Type) + " objects, so there is no object to go to."
 	case id == "":
 		return eventTarget{}, "That event names no object."
 	}
 	switch ev.Type {
 	case "container":
 		// Exec events carry the container's ID too.
-		return eventTarget{kind: KindContainers, name: ev.Name(), match: []func(row) bool{
+		return eventTarget{kind: KindContainers, name: esc(ev.Name()), match: []func(row) bool{
 			func(r row) bool { return r.containerID == id },
 		}}, ""
 	case "image":
@@ -110,13 +111,13 @@ func targetOf(e live.EventEntry) (eventTarget, string) {
 			match = append(match, func(r row) bool { return r.imageRef == id })
 		}
 		match = append(match, func(r row) bool { return r.imageID == id })
-		return eventTarget{kind: KindImages, name: name, match: match}, ""
+		return eventTarget{kind: KindImages, name: esc(name), match: match}, ""
 	case "volume":
-		return eventTarget{kind: KindVolumes, name: id, match: []func(row) bool{
+		return eventTarget{kind: KindVolumes, name: esc(id), match: []func(row) bool{
 			func(r row) bool { return r.volume == id },
 		}}, ""
 	default: // network; connect and disconnect too: the actor is the network
-		return eventTarget{kind: KindNetworks, name: ev.Name(), match: []func(row) bool{
+		return eventTarget{kind: KindNetworks, name: esc(ev.Name()), match: []func(row) bool{
 			func(r row) bool { return r.networkID == id },
 		}}, ""
 	}

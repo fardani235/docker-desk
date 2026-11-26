@@ -144,16 +144,16 @@ func FilesText(f Files) []byte {
 			bd.DroppedEntries, bd.MaxEntries, bd.DroppedLongPath, bd.MaxPath, bd.DroppedText, bd.MaxText)
 	}
 	for _, u := range n.Unread {
-		fmt.Fprintf(&b, "# layer not read\t%d\t%s\n", u.Layer, oneLine(u.Reason))
+		fmt.Fprintf(&b, "# layer not read\t%d\t%s\n", u.Layer, textField(u.Reason))
 	}
 	if n.Removed+n.Hidden > 0 {
 		fmt.Fprintf(&b, "# removed by later layers\t%d\thidden beneath them or under opaque directories\t%d\n", n.Removed, n.Hidden)
 	}
 	for _, in := range n.Instructions {
-		fmt.Fprintf(&b, "# layer %d\t%s\n", in.Layer, oneLine(in.Instruction))
+		fmt.Fprintf(&b, "# layer %d\t%s\n", in.Layer, textField(in.Instruction))
 	}
 	for _, note := range n.Notes {
-		fmt.Fprintf(&b, "# note\t%s\n", oneLine(note))
+		fmt.Fprintf(&b, "# note\t%s\n", textField(note))
 	}
 	b.WriteString("\n## path\ttype\tsize\tmode\tlayer\tlink\tchange\n")
 	for _, e := range n.Entries {

@@ -129,22 +129,23 @@ func ProjectStop(snap Snapshot, name string) (Plan, error) {
 	if !ok {
 		return Plan{}, na("compose project %q no longer has any containers", name)
 	}
+	shownName := text(name) // the label's value as text; containers are found by name itself
 	p := Plan{
 		Title:     "Stop compose project",
 		JobTitle:  "stop project",
-		JobTarget: name,
+		JobTarget: shownName,
 		Tier:      TierConfirm,
 		Listed:    true,
 	}
 	for _, c := range proj.Containers {
 		if c.IsActive() {
-			p.Steps = append(p.Steps, Step{Op: OpStop, Kind: "container", ID: c.ID, Name: c.Name, Detail: c.State})
+			p.Steps = append(p.Steps, Step{Op: OpStop, Kind: "container", ID: c.ID, Name: text(c.Name), Detail: text(c.State)})
 		}
 	}
 	if len(p.Steps) == 0 {
 		return Plan{}, na("nothing to stop: no container of project %q is running", name)
 	}
-	p.Target = Target{Kind: "compose project", Name: fmt.Sprintf("%s (%s)", name, plural(len(p.Steps), "running container", "running containers"))}
+	p.Target = Target{Kind: "compose project", Name: fmt.Sprintf("%s (%s)", shownName, plural(len(p.Steps), "running container", "running containers"))}
 	p.Effects = []string{
 		"Each container listed below is stopped: stop signal, then killed after its grace period.",
 		"Containers are stopped one after another; nothing is removed.",
@@ -159,18 +160,19 @@ func ProjectRemove(snap Snapshot, name string) (Plan, error) {
 	if !ok {
 		return Plan{}, na("compose project %q no longer has any containers", name)
 	}
+	shownName := text(name) // the label's value as text; containers are found by name itself
 	p := Plan{
 		Title:     "Remove compose project",
 		JobTitle:  "remove project",
-		JobTarget: name,
-		Target:    Target{Kind: "compose project", Name: fmt.Sprintf("%s (%s)", name, plural(len(proj.Containers), "container", "containers"))},
+		JobTarget: shownName,
+		Target:    Target{Kind: "compose project", Name: fmt.Sprintf("%s (%s)", shownName, plural(len(proj.Containers), "container", "containers"))},
 		Tier:      TierTyped,
 		Word:      "remove",
 		Listed:    true,
 	}
 	var active []engine.Container
 	for _, c := range proj.Containers {
-		p.Steps = append(p.Steps, Step{Op: OpRemoveContainer, Kind: "container", ID: c.ID, Name: c.Name, Detail: c.State})
+		p.Steps = append(p.Steps, Step{Op: OpRemoveContainer, Kind: "container", ID: c.ID, Name: text(c.Name), Detail: text(c.State)})
 		if c.IsActive() {
 			active = append(active, c)
 		}
@@ -181,10 +183,10 @@ func ProjectRemove(snap Snapshot, name string) (Plan, error) {
 	if len(nets)+len(vols) > 0 {
 		var parts []string
 		if len(nets) > 0 {
-			parts = append(parts, "networks "+strings.Join(nets, ", "))
+			parts = append(parts, "networks "+textList(nets, ", "))
 		}
 		if len(vols) > 0 {
-			parts = append(parts, "volumes "+strings.Join(vols, ", "))
+			parts = append(parts, "volumes "+textList(vols, ", "))
 		}
 		left = "Left in place (this is not `compose down`): " + strings.Join(parts, "; ") + "."
 	}

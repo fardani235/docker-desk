@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/fardani235/docker-desk/internal/escape"
 	"sort"
 	"strconv"
 	"strings"
@@ -446,6 +447,47 @@ func oneLine(s string) string {
 	return b.String()
 }
 
+// textField is one field of a finding that is text already: the analysis
+// escaped every name in it (a path, a container, a reference) with the
+// mapping the screen draws, so the file says what the screen says. It is
+// written as it is — escaping it again would double each backslash and the
+// two would differ. Should a control character ever be in it all the same,
+// it is still written as an escape, and so is a character that would
+// reorder the line: no value starts a line of its own or reads as another.
+func textField(s string) string {
+	if s == "" {
+		return "-"
+	}
+	clean := true
+	for _, r := range s {
+		if r < 0x20 || r == 0x7f || (r >= 0x80 && r < 0xa0) || (r >= 0x80 && escape.Reorders(r)) {
+			clean = false
+			break
+		}
+	}
+	if clean {
+		return s
+	}
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r >= 0x80 && escape.Reorders(r):
+			b.WriteString(escape.Rune(r))
+		case r == '\t':
+			b.WriteString(`\t`)
+		case r == '\n':
+			b.WriteString(`\n`)
+		case r == '\r':
+			b.WriteString(`\r`)
+		case r < 0x20 || r == 0x7f || (r >= 0x80 && r < 0xa0):
+			fmt.Fprintf(&b, `\x%02x`, r)
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
 // ImageText lists the findings grouped by group, one line per finding,
 // tab-separated, in the document order. Lines beginning with # are not
 // findings.
@@ -462,7 +504,7 @@ func ImageText(img Image) []byte {
 	}
 	b.WriteString("\n")
 	for _, note := range n.Notes {
-		fmt.Fprintf(&b, "# unknown\t%s\n", oneLine(note))
+		fmt.Fprintf(&b, "# unknown\t%s\n", textField(note)) // the analysis's text
 	}
 	b.WriteString("# columns\trule\tcertainty\tsource\tlayer\tpath\tsubject\tevidence\treason\n")
 	group := "\x00"
@@ -487,7 +529,7 @@ func ImageText(img Image) []byte {
 		}
 		fmt.Fprintf(&b, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 			oneLine(f.Rule), oneLine(f.Certainty), oneLine(f.Source), layer,
-			oneLine(f.Path), oneLine(f.Subject), oneLine(ev), oneLine(f.Reason))
+			textField(f.Path), textField(f.Subject), textField(ev), textField(f.Reason))
 	}
 	if len(n.Findings) == 0 {
 		b.WriteString("\n# nothing to report\n")

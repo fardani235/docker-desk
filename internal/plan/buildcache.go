@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/fardani235/docker-desk/internal/engine"
-	"github.com/fardani235/docker-desk/internal/escape"
 	"github.com/fardani235/docker-desk/internal/jobs"
 )
 
@@ -176,6 +175,6 @@ func logIDs(run *jobs.Run, prefix string, ids []string) {
 			run.Logf("  … and %d more", len(ids)-maxLoggedIDs)
 			return
 		}
-		run.Logf("%s%s", prefix, escape.Name(engine.ShortID(id)))
+		run.Logf("%s%s", prefix, shortID(id))
 	}
 }

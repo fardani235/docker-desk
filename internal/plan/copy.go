@@ -65,16 +65,16 @@ func CopyIn(ctx context.Context, c ContainerRef, spec CopySpec) (Plan, error) {
 	if err != nil {
 		return Plan{}, err
 	}
-	shown := escape.Name(src)
-	where := escape.Name(c.Name) + ":" + escape.Name(dest)
+	shown, name := escape.Name(src), escape.Name(c.Name)
+	where := name + ":" + escape.Name(dest)
 	p := Plan{
 		Title:     "Copy into container",
 		JobTitle:  "copy into container",
 		JobTarget: where,
-		Target:    Target{Kind: "container", Name: c.Name, ID: engine.ShortID(c.ID)},
+		Target:    Target{Kind: "container", Name: name, ID: shortID(c.ID)},
 		Tier:      TierConfirm,
 		Steps: []Step{{
-			Op: OpCopyIn, Kind: "container", ID: c.ID, Name: c.Name, IDFrom: -1,
+			Op: OpCopyIn, Kind: "container", ID: c.ID, Name: name, IDFrom: -1,
 			Copy: &CopyStep{Source: src, Dest: dest, Scan: scan},
 		}},
 	}
@@ -145,7 +145,7 @@ func copyIn(ctx context.Context, eng engine.Engine, st Step, run *jobs.Run) erro
 	_ = pr.CloseWithError(errUploadEnded)
 	<-done
 	for _, s := range sent.Skipped {
-		run.Logf("  skipped %s", s)
+		run.Logf("  skipped %s", s) // transfer's own text: paths escaped there
 	}
 	switch {
 	case tarErr != nil && !errors.Is(tarErr, errUploadEnded):
@@ -155,7 +155,7 @@ func copyIn(ctx context.Context, eng engine.Engine, st Step, run *jobs.Run) erro
 		return err
 	}
 	run.Logf("  sent %s — %s — from %s to %s:%s", humanBytes(sent.Bytes), scanWords(sent),
-		escape.Name(cp.Source), escape.Name(st.Name), escape.Name(cp.Dest))
+		escape.Name(cp.Source), st.Name, escape.Name(cp.Dest))
 	if sent.Entries != cp.Scan.Entries || sent.Bytes != cp.Scan.Bytes {
 		run.Logf("  the source changed after the confirmation: it showed %s, %s", plural(cp.Scan.Entries, "entry", "entries"), humanBytes(cp.Scan.Bytes))
 	}

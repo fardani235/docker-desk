@@ -1649,6 +1649,115 @@ tests' sockets go on any machine that does not set it.
   wrong rule could do is drop a sequence the desk itself meant to send — and
   `TestGuardLeavesTheDesksOwnFramesAlone` shows the desk sends none.
 
+## Round twenty-eight: a daemon's text, drawn as text
+
+OpenSpec change `escape-daemon-text`. What had to be shown is negative — that nothing a daemon
+chose reaches a frame as anything but text — so the instrument is a fixture and a sweep, not a
+list of cases. No real daemon was contacted in this round, by a read or otherwise.
+
+### The fixture
+
+`fakeengine.SeedHostile` (not part of `SeedDemo`): one running container with its image, a
+volume and a network. Each field carries a different class of value — a label with SGR 8
+(conceal), a label with one backslash, a mount destination with a newline, a compose project
+label with a C1 control, a command with a right-to-left override, an image tag with a plain
+colour sequence, a name with a backslash and an OSC, a working directory with a byte that is
+not UTF-8, and a user, a health word and an error with conceal.
+`TestHostileFixtureReachesTheDecodedTypes` (`internal/engine`) prints every field as the
+engine decoded it and finds its sequence there — and finds U+FFFD where the byte that is no
+character was seeded, because JSON cannot carry one (DECISIONS ED5).
+
+### The check
+
+`bench.inert` (`internal/ui/hostile_test.go`) looks at the frame **as the desk drew it,
+before the frame guard**: no line may hold anything the guard would remove, the fixture's
+conceal or colour sequence, or a character that reorders text. A string drawn raw fails here
+although the guard would have made it harmless. It then looks at the frame as written, and at
+its geometry (every line exactly the terminal's width, exactly its height in lines). Every
+test below runs at 120×40 and 80×24 unless it says otherwise.
+
+| Test | Shows |
+| --- | --- |
+| `TestGuardEndsEveryColouredLineWithAReset` | a line carrying `ESC[8m` ends with a reset and the line after it is unchanged; fails against round twenty-seven's guard |
+| `TestGuardLeavesTheDesksOwnFramesAlone` | every line of the desk's own frames is unchanged, or unchanged plus a reset it needed — asserted, not tolerated |
+| `TestInfoDrawsHostileTextAsText` | Details › Info for all five kinds draws the literal escaped text (`note=shown\x1b[8mhidden-note`, `/data\nforged-line`, `proj\u009b2Jx`, `path=C:\\dir`…); a newline adds no line; nothing is escaped twice; an image's label is text in its Inspect document |
+| `TestEveryViewDrawsHostileTextAsText` | every tab of every kind, the action menu, and whatever each action opens or says |
+| `TestConfirmationsAndJobsOverHostileObjects` | a refused removal, a selection, a stop (`y`, the status line, the job's output, `POST …/<id>/stop`), a removal (typed, `DELETE …/<id>`), a volume and a network prune |
+| `TestProjectNamedByAHostileLabelIsStopped` | a project whose label carries a C1 control is drawn as text and its container is found and stopped by the label's real value |
+| `TestPickersOverHostileObjects`, `TestImageCopyPickerOverAHostileImage` | the connect, disconnect, daemon and image-copy pickers; a disconnect sent for the network's and the container's IDs |
+| `TestEventsDrawHostileTextAsText` | an event's action, exit code, name and attributes as text; a failing `die` still toned bad and a look-alike of `kill` given neither its tone nor its column |
+| `TestOverlayViewsDrawHostileTextAsText` | Space, Attention, Files (container and image, archive read) and analysed Findings |
+| `TestFindingsDrawHostileArchiveNamesAsText`, `TestFindingsExportSaysWhatTheScreenSays` | an archive whose entry names carry conceal, a backslash and an override: the row, the detail block and every export format say the same text, and the secret beside them stays masked |
+| `TestCopyInDrawsTypedPathsAsTextAndSendsThemRaw` | an ESC cannot be put into an input; a typed backslash and override are drawn as text in the form and the confirmation; the upload carries `a\b` with one backslash |
+| `TestRecreateConfirmationOverAHostileContainer`, `TestHostileTextWithColourDisabled` | a re-create's confirmation; the `mono` theme |
+| `TestUnreachableDaemonsReasonIsDrawnAsText`, `TestReviewFindingsStayFixed` | what the review found (DECISIONS ED15) |
+| `internal/plan`: `TestPlansOverTheHostileFixtureAreText` | every plan constructor over the fixture: every shown string is text, escaped once; every word can be typed as shown; every sent identifier is the daemon's |
+| `internal/plan`: `TestStepDescriptionsAreEscapedOnce` | one backslash is two in a target, a job target, a step and the job's log — and four if escaped again |
+| `internal/plan`: `TestRequestsCarryRawBytes`, `TestDaemonRefusalIsEscapedInTheJob`, `TestSentErrMakesAForeignErrorText` | a stop, a rename to a typed name and a volume removal reach the fake under the raw identifiers; a daemon's refusal is text in the job's log and error |
+| `internal/forensics`, `internal/changes`, `internal/report`, `internal/session` | live findings, evidence composed from file bytes, the Changes rows, the export's fields and a background daemon's notice |
+
+### The spec's scenarios
+
+| Scenario | Held by |
+| --- | --- |
+| A label carrying a colour sequence; a newline in a mount path | `TestInfoDrawsHostileTextAsText` |
+| A confirmation restates the object | `TestConfirmationsAndJobsOverHostileObjects` |
+| Colour disabled | `TestHostileTextWithColourDisabled` |
+| Operator input drawn back; a path with a backslash is copied in | `TestCopyInDrawsTypedPathsAsTextAndSendsThemRaw` |
+| A line the desk composed badly; the desk's own styling survives; an escaped line needs no repair | `TestGuardLine`, `TestGuardLeavesTheDesksOwnFramesAlone`, and `bench.inert` itself (an escaped line is one the guard has nothing to do to) |
+| A project named by a label | `TestProjectNamedByAHostileLabelIsStopped` |
+| A rename uses what was typed | `TestRequestsCarryRawBytes` |
+| A name in a view and in a file; every byte is accounted for | `TestFindingsExportSaysWhatTheScreenSays`, `TestFindingsDrawHostileArchiveNamesAsText`, `TestNameIsInert` |
+
+### What was run, and what it said
+
+- `gofmt -l ./cmd ./internal` — nothing. `go vet ./...` — clean.
+- `go test ./...` — **28 packages ok**, on the final tree. (Of three such runs during the
+  round, one had a single end-to-end subtest, `TestProcessesView/29-processes`, time out at its
+  8 s bound while the UI package ran beside it; it passed 12 of 12 alone, half of them under
+  the race detector.)
+- `./scripts/cli-crosscheck.sh` (the real `docker` CLI against the fake only) — **157 passed,
+  0 failed.**
+- `make e2e` — ok. **`docs/screens` is as committed**: the run rewrites the captures with new
+  clock times, statistics and temporary paths, and they were restored. To tell a real change
+  from that noise, the same run was made on the unmodified tree and the two sets compared
+  with digits, padding and sparklines ignored: 16 of 93 differ, each by what the capture's
+  moment decides — whether the inspect had landed (in either direction), a scroll position, a
+  path wrapping one character earlier — and none by a word the change introduced. A first
+  version of the change did change `02-images` (ED11); it was taken out for that reason.
+  Found, not caused: 45 of the committed captures predate the Daemons strip and no longer
+  match what the desk draws at HEAD.
+- **`make race` did not pass as a whole, on this machine, in three runs** — and it does not
+  pass on the unmodified tree either (one run: `TestReaderMouse`). No run reported a data
+  race. What fails is a different timing-bounded test each time (`TestComposeDeclared`,
+  `TestHubLogBufferIsBounded`, `TestReaderTakesEveryKey`, `TestProcessesView`,
+  `TestAttentionMemberDisconnectedMidRead`), each of which passes alone under the race
+  detector. Run one package at a time (`go test -race -p 1 ./...`), 27 of 28 packages pass
+  and only the end-to-end package fails, on its 8 s waits; that package alone under the race
+  detector passed 2 of 4 runs with the change and 3 of 3 without, and its `TestComposeDeclared`
+  — a scroll that can overshoot when a frame is late — fails 3 times in 16 on the unmodified
+  tree. So: the packages this round changed (`ui`, `plan`, `forensics`, `changes`, `report`,
+  `session`, `engine`, `fakeengine`) pass under the race detector; the suite's own timing
+  bounds are too tight for the detector on this machine, before and after.
+- The temporary directory: the fake daemon listens on a unix socket under `TMPDIR`, and a
+  socket path is at most 108 bytes. The session's own `TMPDIR` was longer than that, so the
+  runs above were made with `TMPDIR=/tmp`.
+- The independent review (DECISIONS ED15): nothing critical; eleven findings — one
+  medium-high, three medium, one medium-low, five low, one informational, one of them this
+  round's own regression — all fixed, eight with a test and three stated as fixed without one.
+
+### Not proven
+
+- **Any view the fixture does not reach.** The sweep proves what it draws; the review read the
+  rest, and found seven sites that way.
+- Text from a **registry** (the Upstream tab's reasons, the repository browser): not converted
+  to the one mapping, and not in this change's threat model.
+- A **real** daemon's strings: every value in this round came from the fake. What a real
+  engine allows in a name is narrower than what the fixture seeds; what a hostile one sends is
+  not.
+- The per-line reset on terminals other than the emulated one: it is four bytes of SGR, which
+  every terminal the desk's own styling works on honours.
+
 ## Running everything
 
 ```sh

@@ -33,7 +33,7 @@ import (
 type exportDialog struct {
 	doc     report.Document
 	kind    string // findings, packages, space: the prefilled name's
-	object  string // the object, in words
+	object  string // the object, in words: text, escaped by whoever opened the dialog
 	formats []report.Format
 	fsel    int
 	input   textinput.Model
@@ -105,7 +105,7 @@ func (m *Model) imageDocument(rep *forensics.Report, ref string) report.Document
 }
 
 func imageObject(rep *forensics.Report, ref string) (words, slug string) {
-	words = ref + "  " + engine.ShortID(rep.ImageID) + "  " + rep.Platform
+	words = esc(ref) + "  " + escID(rep.ImageID) + "  " + esc(rep.Platform)
 	return words, ref
 }
 
@@ -152,7 +152,7 @@ func (m *Model) exportSpace() {
 	if object == "" {
 		object = "engine"
 	}
-	m.openExport(report.Document{Space: &s}, "space", "the daemon's account (context "+object+")", object, report.JSON)
+	m.openExport(report.Document{Space: &s}, "space", "the daemon's account (context "+esc(object)+")", object, report.JSON)
 }
 
 // ---- keys ---------------------------------------------------------------------
@@ -169,7 +169,7 @@ func (m *Model) onExportKey(k tea.KeyMsg) tea.Cmd {
 			}
 			path, data, f := x.abs, x.data, x.formats[x.fsel]
 			m.dlg = nil
-			m.setStatus(toneDim, "Writing "+path+"…")
+			m.setStatus(toneDim, "Writing "+esc(path)+"…")
 			return func() tea.Msg {
 				err := report.WriteFile(path, data, false)
 				return exportDoneMsg{path: path, format: f, bytes: len(data), err: err}
@@ -216,12 +216,12 @@ func (m *Model) exportReview() {
 	x := d.exp
 	abs, err := report.ExpandPath(x.input.Value(), m.homeDir(), m.workDir())
 	if err != nil {
-		d.formErr = capitalise(err.Error()) + "."
+		d.formErr = capitalise(esc(err.Error())) + "."
 		return
 	}
 	if fi, err := os.Lstat(abs); err == nil {
 		if fi.IsDir() {
-			d.formErr = abs + " is a folder: name a file inside it."
+			d.formErr = esc(abs) + " is a folder: name a file inside it."
 		} else {
 			d.formErr = "A file is already there; the desk never replaces one. Choose another name."
 		}
@@ -229,7 +229,7 @@ func (m *Model) exportReview() {
 	}
 	data, err := report.Render(x.formats[x.fsel], x.doc)
 	if err != nil {
-		d.formErr = capitalise(err.Error()) + "."
+		d.formErr = capitalise(esc(err.Error())) + "."
 		return
 	}
 	x.abs, x.data, x.confirm = abs, data, true
@@ -241,13 +241,13 @@ func (m *Model) onExportDone(msg exportDoneMsg) {
 	if msg.err != nil {
 		var we *report.WriteError
 		if errors.As(msg.err, &we) {
-			m.setStatus(toneBad, "Not exported: "+we.Error()+".")
+			m.setStatus(toneBad, "Not exported: "+esc(we.Error())+".")
 			return
 		}
-		m.setStatus(toneBad, "Not exported: "+msg.err.Error()+".")
+		m.setStatus(toneBad, "Not exported: "+esc(msg.err.Error())+".")
 		return
 	}
-	m.setStatus(toneGood, fmt.Sprintf("Exported %s to %s (%d bytes, mode 0600).", msg.format, msg.path, msg.bytes))
+	m.setStatus(toneGood, fmt.Sprintf("Exported %s to %s (%d bytes, mode 0600).", msg.format, esc(msg.path), msg.bytes))
 }
 
 func capitalise(s string) string {
@@ -282,7 +282,7 @@ func (m *Model) exportBody(d *dialog, w int) (string, []string) {
 	if x.confirm {
 		f := x.formats[x.fsel]
 		body = append(body, "", st.dialogTitle.Render("Write this file?"), "")
-		body = append(body, kv("path", x.abs, toneNormal)...)
+		body = append(body, kv("path", esc(x.abs), toneNormal)...)
 		body = append(body, kv("format", f.DescribeFor(x.doc), toneNormal)...)
 		body = append(body, kv("size", fmt.Sprintf("%d bytes", len(x.data)), toneNormal)...)
 		body = append(body, kv("mode", "0600: only you can read it", toneNormal)...)
@@ -307,7 +307,7 @@ func (m *Model) exportBody(d *dialog, w int) (string, []string) {
 	x.input.Width = max(w-4, 10) // a long path scrolls; the cursor stays in view
 	body = append(body, "", "Path")
 	m.recordDialogRow(len(body), hitText, int(textExportPath), 0, "")
-	body = append(body, x.input.View(), "")
+	body = append(body, escInput(x.input.View()), "")
 	body = append(body, bullets(st, "•", toneDim, []string{
 		"~ is your home folder. The folder must exist; a file already there is never replaced.",
 	}, w)...)

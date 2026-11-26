@@ -13,7 +13,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"
 
-	"github.com/fardani235/docker-desk/internal/engine"
 	"github.com/fardani235/docker-desk/internal/freshness"
 	"github.com/fardani235/docker-desk/internal/jobs"
 	"github.com/fardani235/docker-desk/internal/plan"
@@ -821,7 +820,7 @@ func (m *Model) repoHeader(w int, now time.Time) []string {
 	var out []string
 	if m.rb.editing {
 		m.rb.name.Width = max(w-12, 10)
-		out = append(out, label("repository")+m.rb.name.View())
+		out = append(out, label("repository")+escInput(m.rb.name.View()))
 	} else {
 		name := m.rb.name.Value()
 		if name == "" {
@@ -1032,7 +1031,7 @@ func (m *Model) repoDetail(w int, now time.Time) []string {
 }
 
 func joinSentence(j repository.Join, repo registry.Ref) string {
-	id := engine.ShortID(j.ImageID)
+	id := escID(j.ImageID)
 	switch j.Here {
 	case repository.Present:
 		return "local image " + id + " records this digest"

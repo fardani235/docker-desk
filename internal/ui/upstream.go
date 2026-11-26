@@ -151,15 +151,17 @@ func (m *Model) startUpstream(t upstreamTarget, force bool) {
 	ck := m.up.checker
 	id, ref := t.imageID, t.ref
 	tg := m.describeUpstream(ref, true)
-	run := &upstreamRun{key: t.key, ref: ref}
-	run.jobID = m.startJob("check upstream", ref, func(ctx context.Context, r *jobs.Run) error {
-		r.Status("asking " + orDash(tg.Host))
+	run := &upstreamRun{key: t.key, ref: esc(ref)} // as messages name it
+	run.jobID = m.startJob("check upstream", esc(ref), func(ctx context.Context, r *jobs.Run) error {
+		r.Status("asking " + esc(orDash(tg.Host)))
 		v, err := ck.Check(ctx, id, ref, freshness.CheckOptions{Force: force})
 		if err != nil {
 			return err
 		}
+		// A verdict's sentences name what the daemon said of the image —
+		// its platform, the digest it answered with — as it said it.
 		for _, s := range v.Sentences() {
-			r.Logf("%s", s)
+			r.Logf("%s", esc(s))
 		}
 		r.Status(v.State.Word() + sourceWords(v))
 		return nil
@@ -222,8 +224,8 @@ func (m *Model) startUpstreamBatch() {
 		res := ck.Batch(ctx, items, func(done int, it freshness.Item, v freshness.Verdict) {
 			b.done.Add(1)
 			r.Steps(done, len(items))
-			r.Logf("%s  %s%s", it.Ref, v.State.Word(), sourceWords(v))
-			r.Status(fmt.Sprintf("%d of %d · %s %s", done, len(items), it.Ref, v.State.Word()))
+			r.Logf("%s  %s%s", esc(it.Ref), v.State.Word(), sourceWords(v))
+			r.Status(fmt.Sprintf("%d of %d · %s %s", done, len(items), esc(it.Ref), v.State.Word()))
 		})
 		switch {
 		case res.Cancelled:
@@ -340,14 +342,14 @@ func (m *Model) renderUpstream(w, _ int) []string {
 		if i == 0 {
 			tn = verdictTone(v.State)
 		}
-		add(tn, s)
+		add(tn, esc(s)) // the platform and the digests in it are the daemon's
 	}
 	out = append(out, "")
 	if v.LocalDigest != "" {
-		add(toneDim, "local digest     "+v.LocalDigest)
+		add(toneDim, "local digest     "+esc(v.LocalDigest))
 	}
 	if v.RemoteDigest != "" {
-		add(toneDim, "upstream digest  "+v.RemoteDigest)
+		add(toneDim, "upstream digest  "+esc(v.RemoteDigest))
 	}
 	src := "the registry, asked from this machine"
 	if v.Source == freshness.FromDaemon {

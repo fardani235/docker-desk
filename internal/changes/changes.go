@@ -9,6 +9,7 @@ package changes
 
 import (
 	"fmt"
+	"github.com/fardani235/docker-desk/internal/escape"
 	"sort"
 	"strings"
 
@@ -44,14 +45,14 @@ func FindPair(ref, runningID string, images []engine.Image) Pair {
 	case strings.HasPrefix(ref, "sha256:") || (len(bare) >= 12 && strings.HasPrefix(strings.TrimPrefix(runningID, "sha256:"), bare)):
 		p.Refusal = Refusal{"from-id", "Created from an image ID, not a tag: no name can move, so there is no other image to compare."}
 	case forensics.Pinned(ref):
-		p.Refusal = Refusal{"pinned", "Pinned to a digest (" + oneLine(ref, 100) + "): the reference names these bytes and no others, so there is no other image to compare."}
+		p.Refusal = Refusal{"pinned", "Pinned to a digest (" + name(ref, 100) + "): the reference names these bytes and no others, so there is no other image to compare."}
 	default:
 		now, ok := forensics.ResolveRef(images, ref)
 		switch {
 		case !ok:
-			p.Refusal = Refusal{"unresolved", oneLine(ref, 80) + " no longer resolves here: no local image carries that tag, so what it would name is unknown. This desk does not pull to find out."}
+			p.Refusal = Refusal{"unresolved", name(ref, 80) + " no longer resolves here: no local image carries that tag, so what it would name is unknown. This desk does not pull to find out."}
 		case now.ID == runningID:
-			p.Refusal = Refusal{"same", oneLine(ref, 80) + " still names the image this container runs: the same image on both sides."}
+			p.Refusal = Refusal{"same", name(ref, 80) + " still names the image this container runs: the same image on both sides."}
 		default:
 			p.NewID = now.ID
 		}
@@ -179,11 +180,11 @@ func CompareConfig(old, new engine.ImageFacts) []Change {
 	}
 	one("entrypoint", argv(old.Entrypoint), argv(new.Entrypoint))
 	one("command", argv(old.Cmd), argv(new.Cmd))
-	one("user", oneLine(old.User, 60), oneLine(new.User, 60))
-	one("workdir", oneLine(old.WorkingDir, 120), oneLine(new.WorkingDir, 120))
+	one("user", name(old.User, 60), name(new.User, 60))
+	one("workdir", name(old.WorkingDir, 120), name(new.WorkingDir, 120))
 	one("healthcheck", argv(old.Healthcheck), argv(new.Healthcheck))
 	for _, c := range setDiff(old.ExposedPorts, new.ExposedPorts) {
-		out = append(out, Change{Field: "port", Op: c.op, Name: oneLine(c.name, 40)})
+		out = append(out, Change{Field: "port", Op: c.op, Name: name(c.name, 40)})
 	}
 	keys := map[string]bool{}
 	for k := range old.Labels {
@@ -200,7 +201,7 @@ func CompareConfig(old, new engine.ImageFacts) []Change {
 	for _, k := range sorted {
 		a, inA := old.Labels[k]
 		b, inB := new.Labels[k]
-		c := Change{Field: "label", Name: oneLine(k, 80), Old: oneLine(a, 120), New: oneLine(b, 120)}
+		c := Change{Field: "label", Name: name(k, 80), Old: name(a, 120), New: name(b, 120)}
 		switch {
 		case inA && !inB:
 			c.Op, c.New = "removed", ""
@@ -214,7 +215,7 @@ func CompareConfig(old, new engine.ImageFacts) []Change {
 		out = append(out, c)
 	}
 	for _, c := range setDiff(old.EnvNames, new.EnvNames) {
-		out = append(out, Change{Field: "env", Op: c.op, Name: oneLine(c.name, 80)})
+		out = append(out, Change{Field: "env", Op: c.op, Name: name(c.name, 80)})
 	}
 	return out
 }
@@ -265,14 +266,23 @@ func argv(a []string) string {
 	return oneLine("["+strings.Join(q, ", ")+"]", 200)
 }
 
-// oneLine makes daemon-supplied text safe for one row, bounded to n runes.
+// name is a string the daemon or the image chose — a reference, a user, a
+// path, a label, a port — as the text a row shows: at most n of its
+// characters, then escape.Name, the mapping the rest of the desk draws and
+// writes. Nothing in it can act on a terminal or reorder the row, and no
+// byte is replaced by another.
+func name(s string, n int) string {
+	if r := []rune(s); len(r) > n {
+		return escape.Name(string(r[:n-1])) + "…"
+	}
+	return escape.Name(s)
+}
+
+// oneLine bounds text that is text already — a package's name and version
+// and a layer's instruction, which the analysis escaped, or an argument
+// list this package quoted — to n characters. It escapes nothing: a second
+// escape would double every backslash.
 func oneLine(s string, n int) string {
-	s = strings.Map(func(r rune) rune {
-		if r < 0x20 || r == 0x7f || (r >= 0x80 && r < 0xa0) || (r >= 0x202a && r <= 0x202e) || (r >= 0x2066 && r <= 0x2069) {
-			return ' '
-		}
-		return r
-	}, s)
 	if r := []rune(s); len(r) > n {
 		s = string(r[:n-1]) + "…"
 	}

@@ -12,6 +12,42 @@
 //   - No key handler sends a mutation. A handler can at most ask for a Plan,
 //     which opens a dialog; only completing that dialog starts a job, and the
 //     job executes the Plan the dialog displayed.
+//
+// # Text the desk did not choose
+//
+// Most of what the desk draws it did not write: a container's name, image,
+// command, labels and mount paths, a daemon's error, a compose project's
+// name (a label's value), an archive's paths, what the operator typed. A
+// daemon of the session may be hostile, and those strings are its to choose
+// (docs/DECISIONS.md, AT16 and round twenty-eight). One rule covers them:
+//
+//   - A value is escaped when it becomes drawn text, never when it becomes
+//     a request or a comparison. The engine's types, the snapshot, a row's
+//     identifiers (containerID, imageRef, volume, networkID, project) and
+//     everything a plan sends keep the bytes they were given: a lookup, a
+//     tone, a glyph, a filter's match on an identifier and every request
+//     read those. Escaping first would send `a\\b` for `a\b` and turn the
+//     state `die` into something no rule knows.
+//   - One layer escapes a value, once, and it is the layer that composes
+//     the string. This package escapes what it reads from an engine type as
+//     it builds a line (esc, escID, escJoin, escErr in esc.go) — the value
+//     first, then its tone, never the styled string. A row's name is
+//     escaped where the row is built and is text from then on. Package plan
+//     escapes every string a Plan shows, and forensics every sentence of a
+//     finding; those are drawn here as they are. escape.Name doubles a
+//     backslash, so a second pass is visible, and a test fails on it.
+//
+// The mapping is escape.Name, the one the exports and the Files tree use,
+// so what is drawn and what is written agree, and nothing is dropped: `\x1b`
+// says there was an ESC. Two things are not names and keep their own
+// treatment: file contents (the reader) and log lines. The Inspect tab
+// shows the daemon's JSON document and uses JSON's own escapes (jsonText).
+//
+// Behind all of it, every line of every frame passes the frame guard
+// (guard.go), which removes whatever takes no cell and is not a colour,
+// and ends a line that leaves an attribute set with a reset. The guard is
+// the second defence: it is what makes a missed escape harmless, not what
+// makes a string safe to draw.
 package ui
 
 import (
@@ -768,7 +804,7 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		m.invalidateProcesses() // a stale snapshot is taken again if shown
 		cmds = append(cmds, m.infoCmd())
 	} else if !connected && m.wasConnected {
-		m.setStatus(toneBad, "Lost the connection to the Docker daemon at "+m.endpoint.Host+" — retrying. Data on screen may be stale.")
+		m.setStatus(toneBad, "Lost the connection to the Docker daemon at "+esc(m.endpoint.Host)+" — retrying. Data on screen may be stale.")
 	}
 	m.wasConnected = connected
 	{
@@ -779,7 +815,7 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 			problem = m.cur.Problem()
 		}
 		if problem != "" && problem != m.linkProblem {
-			m.setStatus(toneBad, "The "+m.link.Transport.String()+" link to "+m.endpoint.Host+" is down — retrying: "+problem)
+			m.setStatus(toneBad, "The "+m.link.Transport.String()+" link to "+esc(m.endpoint.Host)+" is down — retrying: "+esc(problem))
 		}
 		m.linkProblem = problem
 	}
@@ -939,13 +975,11 @@ func (m *Model) logsVisible() bool {
 	return m.kind == KindContainers && m.tabName() == tabLogs
 }
 
-// errText is the daemon's own message, without the operation prefix the
-// engine layer adds: the pane it is shown in already says what failed.
+// errText is the daemon's own message as text, without the operation
+// prefix the engine layer adds: the pane it is shown in already says what
+// failed. The message is the daemon's to write, so it is escaped here.
 func errText(err error) string {
-	if err == nil {
-		return ""
-	}
-	return plainError(err)
+	return escErr(err)
 }
 
 // listFingerprint is what a list says that the disk account depends on:

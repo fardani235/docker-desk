@@ -26,6 +26,47 @@ import (
 // This is not the escaping: an escaped name shows what it contains
 // (`evil\x1b]0;…`), while a string that only this guard caught is drawn
 // with its sequences gone. It is what makes the missed case harmless.
+//
+// A colour sequence is kept, and a colour sequence can hide: SGR 8 is
+// conceal, and a foreground equal to the background does the same. So what
+// survives the guard cannot move, invent or forge text, and it can hide it.
+// That is bounded to the line it is on: a line whose last colour sequence is
+// not a reset is given one (endLine), so nothing a line set — the desk's
+// style or a daemon's sequence in a string nobody escaped — is still set
+// when the next line begins. The reset takes no cell.
+
+// sgrReset ends every attribute a line set.
+const sgrReset = "\x1b[0m"
+
+// isSGRReset reports whether seq, a whole colour sequence, is the reset and
+// nothing else: ESC [ m or ESC [ 0 m.
+func isSGRReset(seq string) bool {
+	return seq == "\x1b[m" || seq == sgrReset
+}
+
+// endLine returns a guarded line with a reset after it, unless no attribute
+// is set where it ends: it has no colour sequence, or its last one is a
+// reset already — which is how every line the desk styles itself ends.
+func endLine(s string) string {
+	open := false
+	for i := strings.IndexByte(s, 0x1b); i >= 0 && i < len(s); {
+		if n := sgrLen(s[i:]); n > 0 {
+			open = !isSGRReset(s[i : i+n])
+			i += n
+		} else {
+			i++
+		}
+		j := strings.IndexByte(s[i:], 0x1b)
+		if j < 0 {
+			break
+		}
+		i += j
+	}
+	if open {
+		return s + sgrReset
+	}
+	return s
+}
 
 // sgrLen is the length of the colour sequence s begins with — ESC [, then
 // parameters, then m — or 0 when s does not begin with one.
@@ -70,8 +111,14 @@ func lineIsClean(s string) bool {
 }
 
 // guardLine returns one line of a frame with everything removed that could
-// act on the terminal: see the note above.
+// act on the terminal, and no attribute left set at its end: see the note
+// above.
 func guardLine(s string) string {
+	return endLine(stripLine(s))
+}
+
+// stripLine removes what the guard removes.
+func stripLine(s string) string {
 	if lineIsClean(s) {
 		return s
 	}
