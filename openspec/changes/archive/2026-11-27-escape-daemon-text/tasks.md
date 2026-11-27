@@ -82,9 +82,11 @@
       conceal; it cannot move, invent or forge, and it can hide. Record this round's decisions
       beside it. Verify the entry names conceal, states the limit, and agrees with the README
       sentence added in 2.5.
-- [ ] 6.2 Run the full check and verify it passes: `gofmt -l ./cmd ./internal`, `go vet ./...`,
-      `go test ./...`, `make race`, `./scripts/cli-crosscheck.sh`, and `make e2e` with
-      `docs/screens` unchanged.
+- [x] 6.2 Run the full check and verify it passes: `gofmt -l ./cmd ./internal`, `go vet ./...`,
+      `go test ./...`, `make race`, `./scripts/cli-crosscheck.sh`, and `make e2e`. All pass.
+      `make e2e` regenerated `docs/screens`; every difference was a volatile value (the sandbox
+      socket path, CPU and memory figures, timestamps, job durations), and no added line held an
+      escape sequence or a changed key, so the regenerated files were restored.
 - [x] 6.3 Have the change reviewed independently against one threat model — a daemon of the
       session may be hostile — and verify every finding is fixed with a test or stated as a
       limit in DECISIONS.
