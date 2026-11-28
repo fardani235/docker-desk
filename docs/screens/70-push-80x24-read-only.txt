@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake1996005213/d.sock  ● connected  [READ-ONLY]
- Daemons [◆1 /tmp/ddfake…213/d.sock ● ro]                   M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake482752904/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…904/d.sock ● ro]                   M picker  < > focus
 ┌─ 1 Kinds ──────┐┏━ ◆ 2 Images (2 of 17) ━━━━━━━━━━━━━━━━━━ filter: acme/api ━┓
 │  Containers  13│┃  REPOSITORY        TAG        IMAGE ID          SIZE    AGE┃
 │▸ Images      17│┃▸ registry.sandbo…  3.28.3     9ffe8111ff43    48.0MB     2d┃
@@ -9,7 +9,7 @@
 │                ││Reference  registry.sandbox.invalid/acme/api:3.28.3         │
 │  ● 7 running   ││ID         9ffe8111ff43                                     │
 │  ‖ 1 paused    ││Size       48.0MB                                           │
-│  ○ 5 stopped   ││Created    2026-11-23 05:47:36  (2d ago)                    │
+│  ○ 5 stopped   ││Created    2026-11-26 05:02:10  (2d ago)                    │
 │                ││                                                            │
 │                ││References                                                  │
 │                ││  registry.sandbox.invalid/acme/api:3.28.3                  │

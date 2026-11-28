@@ -1,21 +1,21 @@
- Docker Desk  unix:///tmp/ddfake3348205606/d.sock  ● connected  [READ-ONLY]
+ Docker Desk  unix:///tmp/ddfake2922051797/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…797/d.sock ● ro]                   M picker  < > focus
 ┌─ 1 Kinds ──────┐┌─ 2 Compose (2) ────────────────────────────────────────────┐
 │  Containers  13││  PROJECT             CONTAINERS   RUNNING  WORKING DIR     │
 │  Images      16││  blog                         2         0  /tmp/TestCompos…│
 │  Volumes      7││▸ shop                         4         3  /tmp/TestCompos…│
-│  Networks     7││                                                            │
-│▸ Compose      2│└────────────────────────────────────────────────────────────┘
-│                │┏━ ◆ 3 Details: shop ━━━━━━━━━━━━━━━━━━━━━━ Info [Declared] ━┓
+│  Networks     7│└────────────────────────────────────────────────────────────┘
+│▸ Compose      2│┏━ ◆ 3 Details: shop ━━━━━━━━━━━━━━━━━━━━━━ Info [Declared] ━┓
+│                │┃             That alone does not make it wrong.             ┃
 │  ● 7 running   │┃services     6: 1 declared only, 1 differs, 1 present only, ┃
 │  ‖ 1 paused    │┃             2 not compared, 1 match                        ┃
 │  ○ 5 stopped   │┃                                                            ┃
 │                │┃declared only   cache          declares redis:7-alpine      ┃
 │                │┃                               no container of the project  ┃
-│                │┃                               carries this service         ┃
-│                │┃↑↓ scroll · 17–22 of 48                                     ┃
+│                │┃↑↓ scroll · 16–21 of 48                                     ┃
 └────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ────────────── 1 done ─┐
-│Waiting for engine events…                  ││▸ ✓ compare with the compos… 5ms│
+│Waiting for engine events…                  ││▸ ✓ compare with the compos… 0ms│
 │Everything the daemon does                  ││                                │
 │shows up here as it happens.                ││                                │
 │                                            ││                                │

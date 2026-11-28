@@ -38,6 +38,11 @@ type exportDialog struct {
 	fsel    int
 	input   textinput.Model
 
+	// capture, when set, is a pane's text collected by W (capture.go): one
+	// format, its bytes already made, and a sentence saying what they hold.
+	// doc is empty then.
+	capture *paneCapture
+
 	// confirm is the second step: the path below will be written.
 	confirm bool
 	abs     string
@@ -45,10 +50,11 @@ type exportDialog struct {
 }
 
 type exportDoneMsg struct {
-	path   string
-	format report.Format
-	bytes  int
-	err    error
+	path    string
+	format  report.Format
+	bytes   int
+	err     error
+	capture bool // a pane's text (W), not a report: said in its own words
 }
 
 func (m *Model) now() time.Time {
@@ -167,12 +173,12 @@ func (m *Model) onExportKey(k tea.KeyMsg) tea.Cmd {
 			if !m.armed() {
 				return nil // typed ahead of the question: not consent
 			}
-			path, data, f := x.abs, x.data, x.formats[x.fsel]
+			path, data, f, isCapture := x.abs, x.data, x.formats[x.fsel], x.capture != nil
 			m.dlg = nil
 			m.setStatus(toneDim, "Writing "+esc(path)+"…")
 			return func() tea.Msg {
 				err := report.WriteFile(path, data, false)
-				return exportDoneMsg{path: path, format: f, bytes: len(data), err: err}
+				return exportDoneMsg{path: path, format: f, bytes: len(data), err: err, capture: isCapture}
 			}
 		case "n", "N", "esc", "backspace":
 			x.confirm, x.abs, x.data = false, "", nil
@@ -202,6 +208,9 @@ func (m *Model) onExportKey(k tea.KeyMsg) tea.Cmd {
 
 func (m *Model) exportFormat(delta int) {
 	x := m.dlg.exp
+	if len(x.formats) < 2 {
+		return // a capture has one format: Tab and the arrows change nothing
+	}
 	x.fsel = (x.fsel + delta + len(x.formats)) % len(x.formats)
 	x.input.SetValue(report.SwapExt(x.input.Value(), x.formats[x.fsel]))
 	x.input.CursorEnd()
@@ -227,10 +236,15 @@ func (m *Model) exportReview() {
 		}
 		return
 	}
-	data, err := report.Render(x.formats[x.fsel], x.doc)
-	if err != nil {
-		d.formErr = capitalise(esc(err.Error())) + "."
-		return
+	var data []byte
+	if x.capture != nil {
+		data = x.capture.data // collected when W was pressed
+	} else {
+		data, err = report.Render(x.formats[x.fsel], x.doc)
+		if err != nil {
+			d.formErr = capitalise(esc(err.Error())) + "."
+			return
+		}
 	}
 	x.abs, x.data, x.confirm = abs, data, true
 	d.formErr = ""
@@ -238,16 +252,20 @@ func (m *Model) exportReview() {
 }
 
 func (m *Model) onExportDone(msg exportDoneMsg) {
+	not, done := "Not exported: ", "Exported"
+	if msg.capture {
+		not, done = "Not saved: ", "Saved"
+	}
 	if msg.err != nil {
 		var we *report.WriteError
 		if errors.As(msg.err, &we) {
-			m.setStatus(toneBad, "Not exported: "+esc(we.Error())+".")
+			m.setStatus(toneBad, not+esc(we.Error())+".")
 			return
 		}
-		m.setStatus(toneBad, "Not exported: "+esc(msg.err.Error())+".")
+		m.setStatus(toneBad, not+esc(msg.err.Error())+".")
 		return
 	}
-	m.setStatus(toneGood, fmt.Sprintf("Exported %s to %s (%d bytes, mode 0600).", msg.format, esc(msg.path), msg.bytes))
+	m.setStatus(toneGood, fmt.Sprintf("%s %s to %s (%d bytes, mode 0600).", done, msg.format, esc(msg.path), msg.bytes))
 }
 
 func capitalise(s string) string {
@@ -267,6 +285,9 @@ func (m *Model) exportBody(d *dialog, w int) (string, []string) {
 	st := m.st
 	x := d.exp
 	title := map[string]string{"findings": "Export findings", "packages": "Export packages", "space": "Export the Space account", "files": "Export the file listing"}[x.kind]
+	if x.capture != nil {
+		return m.captureBody(d, w)
+	}
 	kv := func(k, v string, t tone) []string {
 		var out []string
 		for i, part := range wrapLine(v, max(w-11, 10)) {

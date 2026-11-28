@@ -78,8 +78,9 @@ the prefilled name SHALL end in `.json`. The file SHALL parse as JSON.
 
 ### Requirement: A capture is not a report
 A capture SHALL hold the text the desk drew, with colour removed, and SHALL keep the daemon's
-values as they are — times, environment variable values and control characters included. This
-SHALL NOT change what a report may carry. The confirmation SHALL name the class in one line.
+values as they are — times and environment variable values included, and control characters as
+the desk shows them (as visible escapes, never raw). This SHALL NOT change what a report may
+carry. The confirmation SHALL name the class in one line.
 
 #### Scenario: The Inspect confirmation
 - **WHEN** an Inspect capture is confirmed

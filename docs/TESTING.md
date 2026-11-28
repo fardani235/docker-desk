@@ -1758,6 +1758,64 @@ test below runs at 120×40 and 80×24 unless it says otherwise.
 - The per-line reset on terminals other than the emulated one: it is four bytes of SGR, which
   every terminal the desk's own styling works on honours.
 
+## Round twenty-nine: a pane's text to a file
+
+OpenSpec change `capture-pane-text`. What had to be shown: `W` writes what a pane **holds**
+(not what fits), the same bytes from any terminal width, nothing that can act on a terminal,
+through the one consent and the one writer, and with no request to the daemon. No real daemon
+was contacted in this round.
+
+### The tests
+
+| Test | Shows |
+| --- | --- |
+| `internal/capture`: `TestTextIsPlainAndTrimmed` | SGR (`;` and `:` forms), OSC 0 and 52 (BEL, ST, C1 ST, unterminated), DCS, cursor moves, short escapes, a lone ESC, the 8-bit CSI, C0 controls, invalid UTF-8, a bidi override and isolate, a line separator and a tag character: none is raw in the file; visible escapes (`\x1b`) survive; padding is trimmed; one trailing newline; every header line is a `#` comment |
+| `internal/capture`: `TestHeaderValuesStayOnTheirLine`, `TestTextSplitsEmbeddedNewlines` | no header value can end the header or forge a body line |
+| `internal/capture`: `TestJSONIsTheDocument`, `TestJSONRefusesWhatDoesNotParse` | indented, first byte `{`, one newline, the same decoded document; U+202E, NEL, DEL and a tag character as `\u` escapes; empty, truncated, trailing and raw-control inputs are refused with no bytes |
+| `internal/capture`: `TestStandardLibraryOnly` | `go list -deps` names no package of the desk's |
+| `TestCaptureLogsAsksThenWritesOneFile` | `W` on Logs: the dialog, one format, `Tab` changes nothing, nothing before `y`, exactly one `0600` file after it, the status sentence, the bytes collected at `W` |
+| `TestCaptureNeverReplaces` | an existing file refused at review; one that appears after review refused by the writer; a missing folder refused and not created |
+| `TestCaptureRefusesAnEmptyPane` | Inspect loading, no log stream, Changes not built, Declared not compared, a job with no output: no dialog, no file, one sentence; Stats, Findings and the List: nothing at all, and no request |
+| `TestCaptureInReadOnlyModeSendsNothing` | `--read-only`: written, and the fake's request count is unchanged |
+| `TestCaptureInfoIsTheSameAtAnyWidth`, `TestCaptureLogsHoldsTheBuffer`, `TestCaptureProcessesKeepsEveryCellWhole`, `TestCaptureChangesWrapsAtThePage`, `TestCaptureDeclaredAfterTheComparison` | each captured at 80 and at 200 columns: identical bytes |
+| `TestCaptureInspectIsTheDaemonsDocument` | `.json`, parses, names the highlighted container, is `capture.JSON` of the daemon's bytes |
+| `TestCaptureLogsHoldsTheBuffer` | scrolled back to the top, every held line is in the file, oldest first; with a filter, only the matches and `2 of 5` in the header |
+| `TestCaptureLogsRefusesAnotherContainersStream` | a stream that is not the highlighted container's is never written under its name |
+| `TestCaptureEventsHoldsEveryEventWhole` | 40 events in a pane that shows fewer: all of them, no `…` |
+| `TestCaptureProcessesKeepsEveryCellWhole` | a 5,600-character Java command line and a 41-character user name whole; no new `/top` |
+| `TestCaptureJobOutputIsWhatTheViewerShows`, `TestCaptureReaderIsThePreview` | the job's output as the viewer builds it; the reader's preview |
+| `TestCaptureOfHostileLogIsInert` | a container that writes OSC 52, an OSC title, a screen clear, an 8-bit CSI, BEL, CR and a bidi override: the file holds none of them raw, and the text around them |
+| `TestCaptureKeyIsInTheFooterAndTheHelp`, `TestDocumentedCaptureKey` | the footers, the help next to `w`, and the README (it failed before the README was written) |
+| `internal/e2e`: `TestCaptureFromTheSandbox` | the built binary in a pseudo-terminal, `--read-only`, its own HOME: Logs and Inspect captured through `y`; the log file's body byte for byte with its OSC gone; the inspect file parses and names the container; no request was sent by either capture; two files and no more |
+
+### What was run, and what it said
+
+This machine's default `TMPDIR` is longer than a unix socket path allows (108 bytes), so every
+test that starts the fake daemon fails to bind under it, before and after this change. The
+runs below use `TMPDIR=/tmp`.
+
+- `go vet ./...`, `gofmt -l`: clean.
+- `TMPDIR=/tmp make test`: every package passes except `internal/e2e`'s `TestCopyIn` and
+  `TestFileReader`, which timed out (8 s) under the whole suite's load (load average about 9).
+  Both pass alone, three times in a row, and in `make e2e`.
+- `TMPDIR=/tmp make e2e`: passes; `docs/screens` regenerated (91 and 92 are new; twelve screens
+  now show `W save text`; the rest differ in socket paths and times, as every run does).
+- `-race` over `internal/capture`, `internal/report` and the capture, processes, events, reader
+  and export tests of `internal/ui`: pass. The capture tests also passed four times in a row
+  under `-race`.
+- `openspec validate capture-pane-text --strict`: valid.
+- Found failing on the unchanged tree too, with `TMPDIR=/tmp/cpt` (a short folder of its own):
+  `TestAddedDaemonDownThenUp` and `TestFilesCopyOutRefusesLocalPaths` (`internal/ui`) and
+  `TestTLSMaterialIsCheckedAtConstruction` (`internal/engine`) — the test guard's and the
+  dialog's view of a temporary folder that is not `/tmp`. They pass with `TMPDIR=/tmp`.
+
+### Not proven
+
+- A capture of a full 5,000-line log of 2 KiB lines (about 10 MB) is collected on the UI's
+  goroutine; its time was not measured. The design accepts the size and shows it before `y`.
+- How an editor or pager renders a text capture holding characters outside the basic plane was
+  not looked at; only that nothing in it can act on a terminal.
+
 ## Running everything
 
 ```sh

@@ -1,20 +1,20 @@
- Docker Desk  unix:///tmp/ddfake1849774395/d.sock  ● connected  [READ-ONLY]
- Daemons [◆1 /tmp/ddfake…395/d.sock ● ro] │  2 staging ● ro M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1742303767/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…767/d.sock ● ro] │  2 staging ● ro M picker  < > focus
 ┏━ ◆ Attention — 4 need you · 1 to watch · 20 containers on 2 daemons ━━━━━━━━━┓
-┃ ◆ /tmp/ddfake1849774395/d.sock  ● connected  ctx default  Engine 29.0.0-fak… ┃
-┃   unix:///tmp/ddfake1849774395/d.sock                                        ┃
-┃   14 containers · 2 need you · 0 to watch · read 11:04:04, 0s ago (the       ┃
+┃ ◆ /tmp/ddfake1742303767/d.sock  ● connected  ctx default  Engine 29.0.0-fak… ┃
+┃   unix:///tmp/ddfake1742303767/d.sock                                        ┃
+┃   14 containers · 2 need you · 0 to watch · read 05:01:09, 0s ago (the       ┃
 ┃   desk's list)                                                               ┃
 ┃ ▸ ● payments-api   running · unhealthy · Up 3 hours (unhealthy)              ┃
-┃   ○ shop-worker-1  exited 1 · finished 09:34:04, 1h ago · project shop       ┃
+┃   ○ shop-worker-1  exited 1 · finished 03:31:09, 1h ago · project shop       ┃
 ┃   1 fine · 6 unknown (no health verdict) · 5 not a problem (paused, exited   ┃
 ┃   0)                                                                         ┃
 ┃                                                                              ┃
 ┃   staging  ● connected  ctx staging  Engine 29.0.0-fake                      ┃
-┃   unix:///tmp/ddfake3788116762/d.sock                                        ┃
-┃   6 containers · 2 need you · 1 to watch · read 11:04:05, 0s ago             ┃
+┃   unix:///tmp/ddfake1422708841/d.sock                                        ┃
+┃   6 containers · 2 need you · 1 to watch · read 05:01:10, 0s ago             ┃
 ┃   ↻ billing-api    restarting · exit 1 · 14 restarts                         ┃
-┃   ○ report-batch   exited 137 · OOM-killed · finished 11:02:04, 2m ago       ┃
+┃   ○ report-batch   exited 137 · OOM-killed · finished 04:59:09, 2m ago       ┃
 ┃   watch                                                                      ┃
 ┃   ● edge-proxy     running · 5 restarts                                      ┃
 ┃   1 fine · 1 unknown (no health verdict) · 1 not a problem (paused, exited   ┃

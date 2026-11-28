@@ -1,24 +1,24 @@
- Docker Desk  unix:///tmp/ddfake2424458751/d.sock  ● connected  [READ-ONLY]
+ Docker Desk  unix:///tmp/ddfake3275626443/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…443/d.sock ● ro]                   M picker  < > focus
 ┌─ 1 Kinds ──────┐┌─ 2 Containers (1 of 13) ────────────────── filter: report ─┐
 │▸ Containers  13││  NAME            IMAGE         STATE          CPU       MEM│
 │  Images      16││▸ report-job      acme/report…  ○ exited                    │
 │  Volumes      7││                                                            │
-│  Networks     7││                                                            │
-│  Compose      2│└────────────────────────────────────────────────────────────┘
-│                │┏━ ◆ 3 Details: report-job ━━━━━━━━━━━━━━━━━━ [Changes] 2/6 ━┓
-│  ● 7 running   │┃                                                            ┃
-│  ‖ 1 paused    │┃packages 3 added, 1 removed, 2 version changed (dpkg)       ┃
-│  ○ 5 stopped   │┃  + curl 7.88.1-10+deb12u8 (L4)                             ┃
-│                │┃  + fonts-dejavu-core:all 2.37-6 (L4)                       ┃
+│  Networks     7│└────────────────────────────────────────────────────────────┘
+│  Compose      2│┏━ ◆ 3 Details: report-job ━━━━━━━━━━━━━━━━━━ [Changes] 2/6 ━┓
+│                │┃                                                            ┃
+│  ● 7 running   │┃packages 3 added, 1 removed, 2 version changed (dpkg)       ┃
+│  ‖ 1 paused    │┃  + curl 7.88.1-10+deb12u8 (L4)                             ┃
+│  ○ 5 stopped   │┃  + fonts-dejavu-core:all 2.37-6 (L4)                       ┃
 │                │┃  + libcurl4 7.88.1-10+deb12u8 (L4)                         ┃
 │                │┃  − netbase:all 6.4                                         ┃
-│                │┃↑↓ scroll · 26–31 of 43                                     ┃
+│                │┃↑↓ scroll · 26–31 of 46                                     ┃
 └────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ────────────── 1 done ─┐
-│Waiting for engine events…                  ││▸ ✓ compare images acme/re… 56ms│
+│Waiting for engine events…                  ││▸ ✓ compare images acme/re… 71ms│
 │Everything the daemon does                  ││                                │
 │shows up here as it happens.                ││                                │
 │                                            ││                                │
 └────────────────────────────────────────────┘└────────────────────────────────┘
  ✓ compare images acme/report:1.4
- / find  ↑↓ scroll  [ ] tab  s start  t stop  R resta… Tab pane  ? keys  q quit
+ / find  ↑↓ scroll  [ ] tab  W save text  s start  t … Tab pane  ? keys  q quit

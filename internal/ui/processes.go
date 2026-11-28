@@ -198,6 +198,19 @@ func (m *Model) renderProcesses(w, h int) []string {
 // titles leaves the rest empty; extra cells are joined into the last column
 // so nothing is silently dropped. Every row is exactly one line.
 func processTable(list *engine.ProcessList, w int) (string, []string) {
+	return processLayout(list, w, 24)
+}
+
+// processTableWhole is the table with no cell cut: every column as wide as
+// its widest cell, and lines that end where their text does — what a
+// capture writes. A command line is whatever length the process made it.
+func processTableWhole(list *engine.ProcessList) (string, []string) {
+	return processLayout(list, 0, 0)
+}
+
+// processLayout lays the table out in w cells with columns but the last
+// capped at capW; w 0 and capW 0 are "as wide as the cells are".
+func processLayout(list *engine.ProcessList, w, capW int) (string, []string) {
 	cols := len(list.Titles)
 	if cols == 0 {
 		for _, r := range list.Rows {
@@ -223,14 +236,14 @@ func processTable(list *engine.ProcessList, w int) (string, []string) {
 	for i := range titles {
 		titles[i] = cell(list.Titles, i)
 	}
-	const gap, capW = 1, 24
+	const gap = 1
 	widths := make([]int, cols)
 	for i := range widths {
 		widths[i] = ansi.StringWidth(titles[i])
 		for _, r := range list.Rows {
 			widths[i] = max(widths[i], ansi.StringWidth(cell(r, i)))
 		}
-		if i < cols-1 {
+		if i < cols-1 && capW > 0 {
 			widths[i] = min(widths[i], capW)
 		}
 	}
@@ -239,7 +252,9 @@ func processTable(list *engine.ProcessList, w int) (string, []string) {
 	for i := 0; i < cols-1; i++ {
 		used += widths[i] + gap
 	}
-	widths[cols-1] = max(w-used, 1)
+	if w > 0 {
+		widths[cols-1] = max(w-used, 1)
+	}
 
 	line := func(cells func(int) string) string {
 		var b strings.Builder
@@ -248,6 +263,9 @@ func processTable(list *engine.ProcessList, w int) (string, []string) {
 				b.WriteString(strings.Repeat(" ", gap))
 			}
 			b.WriteString(fit(cells(i), widths[i]))
+		}
+		if w <= 0 {
+			return strings.TrimRight(b.String(), " ")
 		}
 		return fit(b.String(), w)
 	}

@@ -1,10 +1,10 @@
- Docker Desk  unix:///tmp/ddfake3057865773/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…773/d.sock ●]                                                              M picker  < > focus
-┏━ ◆ Space — where the bytes went, and what removing something frees ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 09:11:48 ━┓
+ Docker Desk  unix:///tmp/ddfake3669930114/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…114/d.sock ●]                                                              M picker  < > focus
+┏━ ◆ Space — where the bytes went, and what removing something frees ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 05:01:11 ━┓
 ┃   TYPE         ┏━ ◆ Prune build cache ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                ┃
 ┃   Images       ┃                                                                                    ┃                ┃
 ┃   Containers   ┃ cache      6 records                                                               ┃                ┃
-┃   Local Volumes┃ daemon     unix:///tmp/ddfake3057865773/d.sock  (context default)                  ┃                ┃
+┃   Local Volumes┃ daemon     unix:///tmp/ddfake3669930114/d.sock  (context default)                  ┃                ┃
 ┃   Build Cache  ┃ scope      all unused build-cache records, internal and frontend included          ┃                ┃
 ┃   daemon (GET /┃            Tab switch to the default scope                                         ┃                ┃
 ┃   Reclaimable i┃                                                                                    ┃erd image       ┃
@@ -19,7 +19,7 @@
 ┃   <none> 8bae7d┃                                                                                    ┃  -             ┃
 ┃   nginx:1.27   ┃ ▲ The daemon may also remove cache created or released after this account, and may ┃ctr             ┃
 ┃   shop/worker:d┃   keep a listed record that has since come into use.                               ┃ctr             ┃
-┃   shop/api:dev ┃ ▲ The list below is the account of 09:11:48, not a pinned set; the job reports     ┃ctr             ┃
+┃   shop/api:dev ┃ ▲ The list below is the account of 05:01:11, not a pinned set; the job reports     ┃ctr             ┃
 ┃   redis:7      ┃   what the daemon actually removed.                                                ┃ctr             ┃
 ┃   acme/report:1┃                                                                                    ┃  -             ┃
 ┃   busybox:1.36 ┃ These 6 were unused at the last account; the daemon decides the final set:         ┃ctr             ┃

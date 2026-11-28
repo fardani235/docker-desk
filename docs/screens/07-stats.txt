@@ -1,11 +1,12 @@
- Docker Desk  unix:///tmp/ddfake3128835518/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake1851322069/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…069/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-web ━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  06:31:18 ctr kill sig 15 shop-web-1         │
-│  Images        16│┃▸ shop-web-1       nginx:1.27     ● running    90.5%    684MiB  Up 0 seconds    ┃│  06:31:18 ctr die exit 0 shop-web-1          │
-│  Volumes        7│┃                                                                                ┃│  06:31:18 net disconnect shop_default  ← sho…│
-│  Networks       7│┃                                                                                ┃│  06:31:18 ctr stop       shop-web-1          │
-│  Compose        2│┃                                                                                ┃│  06:31:18 net connect    shop_default  ← sho…│
-│                  │┃                                                                                ┃│  06:31:18 ctr start      shop-web-1          │
+│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  05:01:24 ctr kill sig 15 shop-web-1         │
+│  Images        16│┃▸ shop-web-1       nginx:1.27     ● running    90.4%    684MiB  Up 0 seconds    ┃│  05:01:24 ctr die exit 0 shop-web-1          │
+│  Volumes        7│┃                                                                                ┃│  05:01:24 net disconnect shop_default  ← sho…│
+│  Networks       7│┃                                                                                ┃│  05:01:24 ctr stop       shop-web-1          │
+│  Compose        2│┃                                                                                ┃│  05:01:24 net connect    shop_default  ← sho…│
+│                  │┃                                                                                ┃│  05:01:24 ctr start      shop-web-1          │
 │  ● 7 running     │┃                                                                                ┃│                                              │
 │  ‖ 1 paused      │┃                                                                                ┃│                                              │
 │  ○ 5 stopped     │┃                                                                                ┃│                                              │
@@ -15,21 +16,20 @@
 │                  │┃                                                                                ┃│                                              │
 │                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                              │
 │                  │┌─ 3 Details: shop-web-1 ────────── Info Changes Logs [Stats] Processes Inspect ─┐│                                              │
-│                  ││CPU     90.5%   peak 90.5%   (100% = one core)                                  ││                                              │
+│                  ││CPU     90.4%   peak 90.4%   (100% = one core)                                  ││                                              │
 │                  ││                                                                               █││                                              │
 │                  ││MEM     684MiB / 16.0GiB   4.2% of limit                                        ││                                              │
 │                  ││                                                                               █││                                              │
-│                  ││NET   ↓ 164kB/s    ↑ 3.4kB/s     total ↓ 23.2kB ↑ 477B                          ││                                              │
+│                  ││NET   ↓ 164kB/s    ↑ 3.4kB/s     total ↓ 22.2kB ↑ 458B                          ││                                              │
 │                  ││  ↓                                                                            █││                                              │
 │                  ││  ↑                                                                            █││                                              │
-│                  ││DISK  r 1.0MB/s    w 635kB/s     total r 142kB w 89.6kB                         ││                                              │
+│                  ││DISK  r 1.0MB/s    w 635kB/s     total r 136kB w 86.1kB                         ││                                              │
 │                  ││  r                                                                            █││                                              │
 │                  ││  w                                                                            █││                                              │
-│                  ││PIDS  24                                                                        ││                                              │
-│                  ││                                                                                │└──────────────────────────────────────────────┘
-│                  ││1 samples, about one per second; newest on the right.                           │┌─ 5 Jobs ──────────────────────────── 2 done ─┐
-│                  ││                                                                                ││▸ ✓ start container shop-web-1             2ms│
-│                  ││                                                                                ││  ✓ stop container shop-web-1              3ms│
+│                  ││PIDS  24                                                                        │└──────────────────────────────────────────────┘
+│                  ││                                                                                │┌─ 5 Jobs ──────────────────────────── 2 done ─┐
+│                  ││1 samples, about one per second; newest on the right.                           ││▸ ✓ start container shop-web-1             1ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              1ms│
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
@@ -39,4 +39,4 @@
 │                  ││                                                                                ││                                              │
 └──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
  ✓ start container shop-web-1
- ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell       Tab pane  ? keys  q quit
+ ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  n new  e she… Tab pane  ? keys  q quit

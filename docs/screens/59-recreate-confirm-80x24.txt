@@ -1,9 +1,9 @@
- Docker Desk  unix:///tmp/ddfake1707881382/d.sock  ctx default  ● connected
- Daemons [◆1 /tmp/ddfake…382/d.sock ●]                      M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3614034674/d.sock  ctx default  ● connected
+ Daemons [◆1 /tmp/ddfake…674/d.sock ●]                      M picker  < > focus
 ┌─┏━ ◆ Re-create container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓─┐
 │▸┃                                                                          ┃M│
 │ ┃ container  report-job  (47b571e57903)                                    ┃ │
-│ ┃ daemon     unix:///tmp/ddfake1707881382/d.sock  (context default)        ┃ │
+│ ┃ daemon     unix:///tmp/ddfake3614034674/d.sock  (context default)        ┃ │
 │ ┃                                                                          ┃─┘
 │ ┃ • report-job is renamed report-job-previous-47b571e57903 and kept,       ┃━┓
 │ ┃   stopped, with its data and configuration.                              ┃ ┃

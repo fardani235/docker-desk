@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake2778845815/d.sock  ctx default  Engine 29.0.0-fake  ● connected
- Daemons [◆1 /tmp/ddfake…815/d.sock ●]                                          M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1498183388/d.sock  ctx default  Engine 29.0.0-fake  ● connected
+ Daemons [◆1 /tmp/ddfake…388/d.sock ●]                                          M picker  < > focus
 ┌─ 1 Kinds ──────┐┌─ 2 Containers (1 of 14) ──────────────────────────────────── filter: priv-svc ─┐
 │▸ Containers  14││  NAME             IMAGE          STATE          CPU       MEM  STATUS          │
 │  Images      18││▸ priv-svc         acme/priv:1    ○ exited                      Exited (0) 12…  │
@@ -11,7 +11,7 @@
 │  ‖ 1 ┏━ ◆ Re-create container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓      │
 │  ○ 6 ┃                                                                                    ┃──────┘
 │      ┃ container  priv-svc  (5c4d08e66de9)                                                ┃pect ━┓
-│      ┃ daemon     unix:///tmp/ddfake2778845815/d.sock  (context default)                  ┃      ┃
+│      ┃ daemon     unix:///tmp/ddfake1498183388/d.sock  (context default)                  ┃      ┃
 │      ┃                                                                                    ┃      ┃
 │      ┃ • priv-svc is renamed priv-svc-previous-5c4d08e66de9 and kept, stopped, with its   ┃      ┃
 │      ┃   data and configuration.                                                          ┃      ┃
@@ -37,4 +37,4 @@
 │                                                        ││                                        │
 └────────────────────────────────────────────────────────┘└────────────────────────────────────────┘
 
- / find  ↑↓ scroll  [ ] tab  ⏎ compare contents  s start  t stop  R resta… Tab pane  ? keys  q quit
+ / find  ↑↓ scroll  [ ] tab  ⏎ compare contents  W save text  s start  t … Tab pane  ? keys  q quit

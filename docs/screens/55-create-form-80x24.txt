@@ -1,8 +1,8 @@
- Docker Desk  unix:///tmp/ddfake628709733/d.sock  ctx default  ● connected
- Daemons [◆1 /tmp/ddfake…733/d.sock ●]                      M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3231620134/d.sock  ctx default  ● connected
+ Daemons [◆1 /tmp/ddfake…134/d.sock ●]                      M picker  < > focus
 ┌─┏━ ◆ Create container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓━┓
 │▸┃                                                                          ┃M┃
-│ ┃ daemon     unix:///tmp/ddfake628709733/d.sock  (context default)         ┃B┃
+│ ┃ daemon     unix:///tmp/ddfake3231620134/d.sock  (context default)        ┃B┃
 │ ┃                                                                          ┃B┃
 │ ┃   Image       > hello-world                                              ┃━┛
 │ ┃   Name        > made-by-e2e                                              ┃─┐

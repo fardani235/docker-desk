@@ -1,16 +1,16 @@
- Docker Desk  unix:///tmp/ddfake231190752/d.sock  ctx default  ● connected
- Daemons [◆1 /tmp/ddfake…752/d.sock ●] │  2 staging ●       M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake154337019/d.sock  ctx default  ● connected
+ Daemons [◆1 /tmp/ddfake…019/d.sock ●] │  2 staging ●       M picker  < > focus
 ┌─┏━ ◆ Copy image to another daemon ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓━┓
 │ ┃                                                                          ┃E┃
 │▸┃ image      acme/report:1.4  (efc03945f57b)                               ┃s┃
-│ ┃ from       /tmp/ddfake231190752/d.sock                                   ┃ ┃
-│ ┃            unix:///tmp/ddfake231190752/d.sock  (context default)         ┃━┛
-│ ┃ to         staging  unix:///tmp/ddfake122796890/d.sock                   ┃─┐
+│ ┃ from       /tmp/ddfake154337019/d.sock                                   ┃ ┃
+│ ┃            unix:///tmp/ddfake154337019/d.sock  (context default)         ┃━┛
+│ ┃ to         staging  unix:///tmp/ddfake597180097/d.sock                   ┃─┐
 │ ┃            (context staging)                                             ┃ │
 │ ┃ platform   linux/amd64 · tag acme/report:1.4                             ┃ │
 │ ┃                                                                          ┃ │
 │ ┃ • Copies image efc03945f57b (114.4 MB as the source lists it), platform  ┃ │
-│ ┃   linux/amd64, from /tmp/ddfake231190752/d.sock to staging.              ┃ │
+│ ┃   linux/amd64, from /tmp/ddfake154337019/d.sock to staging.              ┃ │
 │ ┃ • The archive streams directly from the source daemon into the target    ┃ │
 │ ┃   daemon, through this desk's memory only: no file is written on this    ┃ │
 └─┃   machine and no registry is contacted.                                  ┃─┘

@@ -1,12 +1,12 @@
- Docker Desk  unix:///tmp/ddfake3297556798/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…798/d.sock ●]                                                              M picker  < > focus
-┏━ ◆ Space — where the bytes went, and what removing something frees ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 09:11:50 ━┓
+ Docker Desk  unix:///tmp/ddfake4134641945/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…945/d.sock ●]                                                              M picker  < > focus
+┏━ ◆ Space — where the bytes went, and what removing something frees ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 05:02:53 ━┓
 ┃   TYPE            TOTAL  ACTIVE      SIZE  RECLAIMABLE                                                               ┃
 ┃   Images             16      11    3.39GB  1.333GB (39%)                                                             ┃
 ┃   Containers         13       8   120.5MB  37.51MB (31%)                                                             ┃
 ┃   Local Volumes       7       4   2.443GB  1.872GB (76%)                                                             ┃
 ┃   Build Cache         4       0   511.7MB  511.7MB                                                                   ┃
-┃   daemon (GET /system/df) · 09:11:50, 0s ago                                                                         ┃
+┃   daemon (GET /system/df) · 05:02:53, 0s ago                                                                         ┃
 ┃   Reclaimable is the daemon's estimate. Nothing is freed until something is removed; with the containerd image       ┃
 ┃   store, the bytes go when its garbage collector runs.                                                               ┃
 ┃                                                                                                                      ┃

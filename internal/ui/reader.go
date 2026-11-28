@@ -31,7 +31,8 @@ import (
 // The reader is drawn in place of the tree and takes every key and wheel
 // notch while it is open. What it read lives in filesState.rd alone: it is
 // not in the index, the filter, the export or the job's output, and closing
-// the reader drops it.
+// the reader drops it. It reaches a file only through W (capture.go), on the
+// operator's consent to one path.
 
 // readerMeta is what the archive's header says of the file as it is in the
 // container now.
@@ -415,6 +416,8 @@ func (m *Model) onReaderKey(k tea.KeyMsg) tea.Cmd {
 		m.dlg.text.wrap = true
 	case "w":
 		rd.view.toggleWrap()
+	case keyCapture:
+		m.captureReaderPane()
 	case "down", "j":
 		rd.view.scroll(1)
 	case "up", "k":
@@ -451,7 +454,7 @@ func (m *Model) readerHints() []string {
 	if rd.view.wrap {
 		wrap = "no wrap"
 	}
-	return []string{"↑↓", "scroll", "PgUp PgDn", "page", "g G", "ends", "w", wrap}
+	return []string{"↑↓", "scroll", "PgUp PgDn", "page", "g G", "ends", "w", wrap, keyCapture, "save text"}
 }
 
 // ---- drawing --------------------------------------------------------------------------

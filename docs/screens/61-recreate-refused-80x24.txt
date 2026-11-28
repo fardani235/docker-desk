@@ -1,9 +1,9 @@
- Docker Desk  unix:///tmp/ddfake2222952366/d.sock  ctx default  ● connected
- Daemons [◆1 /tmp/ddfake…366/d.sock ●]                      M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3202676046/d.sock  ctx default  ● connected
+ Daemons [◆1 /tmp/ddfake…046/d.sock ●]                      M picker  < > focus
 ┌─┏━ ◆ Re-create container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓─┐
 │▸┃                                                                          ┃M│
 │ ┃ container  priv-svc  (5c4d08e66de9)                                      ┃ │
-│ ┃ daemon     unix:///tmp/ddfake2222952366/d.sock  (context default)        ┃ │
+│ ┃ daemon     unix:///tmp/ddfake3202676046/d.sock  (context default)        ┃ │
 │ ┃                                                                          ┃─┘
 │ ┃ • priv-svc is renamed priv-svc-previous-5c4d08e66de9 and kept, stopped,  ┃━┓
 │ ┃   with its data and configuration.                                       ┃ ┃
@@ -21,4 +21,4 @@
 │ ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛ │
 └────────────────────────────────────────────┘└────────────────────────────────┘
 
- / find  ↑↓ scroll  [ ] tab  ⏎ compare contents  s st… Tab pane  ? keys  q quit
+ / find  ↑↓ scroll  [ ] tab  ⏎ compare contents  W sa… Tab pane  ? keys  q quit

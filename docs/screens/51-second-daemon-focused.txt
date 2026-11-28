@@ -1,5 +1,5 @@
- Docker Desk  ssh://127.0.0.1:36445/tmp/ddfake3737419565/d.sock  ctx far  Engine 29.0.0-fake  on far-away  ● connected  [ssh]
- Daemons  1 /tmp/ddfake…538/d.sock ● │ [◆2 far ●]                                                                                           M picker  < > focus
+ Docker Desk  ssh://127.0.0.1:38585/tmp/ddfake2438287088/d.sock  ctx far  Engine 29.0.0-fake  on far-away  ● connected  [ssh]
+ Daemons  1 /tmp/ddfake…642/d.sock ● │ [◆2 far ●]                                                                                           M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (2) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ───────────────────────────── ● live ─┐
 │▸ Containers     2│┃  NAME           IMAGE        STATE          CPU       MEM  STATUS         PORTS       ┃│Waiting for engine events…                       │
 │  Images         2│┃▸ far-db         postgres:16  ● running        …         …  Up 10 minutes              ┃│Everything the daemon does                       │
@@ -20,11 +20,11 @@
 │                  ││ID       a40ab382b388                                                                  ││                                                 │
 │                  ││Image    postgres:16                                                                   ││                                                 │
 │                  ││State    ● running   Up 10 minutes                                                     ││                                                 │
-│                  ││Started  2026-11-11 10:49:15                                                           ││                                                 │
+│                  ││Started  2026-11-28 04:52:44                                                           ││                                                 │
 │                  ││Command  /bin/app                                                                      ││                                                 │
 │                  ││Restart  no (restarted 0×)                                                             ││                                                 │
 │                  ││Runtime  tty=false  privileged=false  env vars=1                                       ││                                                 │
-│                  ││Created  2026-11-11 10:49:15                                                           ││                                                 │
+│                  ││Created  2026-11-28 04:52:44                                                           ││                                                 │
 │                  ││                                                                                       ││                                                 │
 │                  ││Ports                                                                                  │└─────────────────────────────────────────────────┘
 │                  ││  none                                                                                 │┌─ 5 Jobs ────────────────────────────────────────┐
@@ -38,5 +38,5 @@
 │                  ││                                                                                       ││                                                 │
 │                  ││                                                                                       ││                                                 │
 └──────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└─────────────────────────────────────────────────┘
- Focused far — ssh://127.0.0.1:36445/tmp/ddfake3737419565/d.sock. Loading its lists…
- ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell                 Tab pane  ? keys  q quit
+ Focused far — ssh://127.0.0.1:38585/tmp/ddfake2438287088/d.sock. Loading its lists…
+ ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  n new  e shell          Tab pane  ? keys  q quit

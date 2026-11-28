@@ -57,9 +57,16 @@ func formatEvent(e live.EventEntry, st styles, w int, nameOf func(id string) str
 // — reads the raw values (D6): escaping first would turn `die` into
 // something no rule knows.
 func eventText(e live.EventEntry, w int, nameOf func(id string) string) (string, tone) {
+	line, t := eventLine(e, nameOf)
+	return fit(line, w), t
+}
+
+// eventLine is eventText's line before it is fitted to a width: what a
+// capture writes, where no value may be cut.
+func eventLine(e live.EventEntry, nameOf func(id string) string) (string, tone) {
 	ts := e.Time.Local().Format("15:04:05")
 	if e.Marker != "" {
-		return fit(ts+" ── "+esc(e.Marker)+" ──", w), toneWarn
+		return ts + " ── " + esc(e.Marker) + " ──", toneWarn
 	}
 	ev := e.Event
 	name := ev.Name()
@@ -107,7 +114,7 @@ func eventText(e live.EventEntry, w int, nameOf func(id string) string) (string,
 	if extra != "" {
 		line += "  " + extra
 	}
-	return fit(line, w), eventTone(ev)
+	return line, eventTone(ev)
 }
 
 // renderEvents draws the tail of the ring, or the held snapshot with its
@@ -143,16 +150,7 @@ func (m *Model) renderEvents(w, h int, focused bool) []string {
 			m.st.tone(toneDim, "shows up here as it happens."),
 		}
 	}
-	names := make(map[string]string, len(m.snap.Containers))
-	for _, c := range m.snap.Containers {
-		names[c.ID] = c.Name
-	}
-	nameOf := func(id string) string {
-		if n, ok := names[id]; ok {
-			return n
-		}
-		return engine.ShortID(id)
-	}
+	nameOf := m.eventNameOf()
 	out := make([]string, 0, h)
 	for i, e := range entries {
 		line, t := eventText(e, w-2, nameOf)
@@ -167,6 +165,21 @@ func (m *Model) renderEvents(w, h int, focused bool) []string {
 		}
 	}
 	return out
+}
+
+// eventNameOf resolves a container ID to its name when the desk knows it,
+// and to its short ID otherwise.
+func (m *Model) eventNameOf() func(id string) string {
+	names := make(map[string]string, len(m.snap.Containers))
+	for _, c := range m.snap.Containers {
+		names[c.ID] = c.Name
+	}
+	return func(id string) string {
+		if n, ok := names[id]; ok {
+			return n
+		}
+		return engine.ShortID(id)
+	}
 }
 
 func (m *Model) eventsTitle() (title, right string) {

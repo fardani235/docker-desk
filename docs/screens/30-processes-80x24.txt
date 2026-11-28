@@ -1,18 +1,18 @@
- Docker Desk  unix:///tmp/ddfake2747742823/d.sock  ctx default  ● connected
+ Docker Desk  unix:///tmp/ddfake2856280037/d.sock  ctx default  ● connected
+ Daemons [◆1 /tmp/ddfake…037/d.sock ●]                      M picker  < > focus
 ┌─ 1 Kinds ──────┐┌─ 2 Containers (1 of 13) ──────────────── filter: shop-web ─┐
 │▸ Containers  13││  NAME            IMAGE         STATE          CPU       MEM│
-│  Images      16││▸ shop-web-1      nginx:1.27    ● running    73.6%    488MiB│
+│  Images      16││▸ shop-web-1      nginx:1.27    ● running    73.5%    488MiB│
 │  Volumes      7││                                                            │
-│  Networks     7││                                                            │
-│  Compose      2│└────────────────────────────────────────────────────────────┘
-│                │┏━ ◆ 3 Details: shop-web-1 ━━━━━━━━━━━━━━━━ [Processes] 5/6 ━┓
-│  ● 7 running   │┃UID  PID  PPID C STIME TTY TIME     CMD                     ┃
-│  ‖ 1 paused    │┃root 1693 1692 0 03:31 ?   00:00:01 nginx -g daemon off;    ┃
-│  ○ 5 stopped   │┃root 1694 1693 0 03:31 ?   00:00:00 /bin/sh -c sleep infini…┃
+│  Networks     7│└────────────────────────────────────────────────────────────┘
+│  Compose      2│┏━ ◆ 3 Details: shop-web-1 ━━━━━━━━━━━━━━━━ [Processes] 5/6 ━┓
+│                │┃UID  PID  PPID C STIME TTY TIME     CMD                     ┃
+│  ● 7 running   │┃root 1102 1101 0 02:01 ?   00:00:01 nginx -g daemon off;    ┃
+│  ‖ 1 paused    │┃root 1103 1102 0 02:01 ?   00:00:00 /bin/sh -c sleep infini…┃
+│  ○ 5 stopped   │┃                                                            ┃
 │                │┃                                                            ┃
 │                │┃                                                            ┃
-│                │┃                                                            ┃
-│                │┃snapshot at 06:31:33 · 2 processes · r takes a new one      ┃
+│                │┃snapshot at 05:01:42 · 2 processes · r takes a new one      ┃
 └────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ───────────────────────┐
 │Waiting for engine events…                  ││No jobs yet.                    │
@@ -21,4 +21,4 @@
 │                                            ││                                │
 └────────────────────────────────────────────┘└────────────────────────────────┘
 
- / find  ↑↓ scroll  [ ] tab  r new snapshot  s start … Tab pane  ? keys  q quit
+ / find  ↑↓ scroll  [ ] tab  r new snapshot  W save t… Tab pane  ? keys  q quit

@@ -1,12 +1,12 @@
- Docker Desk  unix:///tmp/ddfake1024601468/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…468/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake2152001312/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…312/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ────────────────────────── ● live ─┐
 │▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│Waiting for engine events…                    │
-│  Images        16│┃▸ distroless-svc   gcr.io/distr…  ● running     8.7%   50.4MiB  Up 5 hours      ┃│Everything the daemon does                    │
-│  Volumes        7│┃  noisy-logger     alpine:3.20    ● running    38.0%    329MiB  Up 12 minutes   ┃│shows up here as it happens.                  │
+│  Images        16│┃▸ distroless-svc   gcr.io/distr…  ● running     8.8%   50.4MiB  Up 5 hours      ┃│Everything the daemon does                    │
+│  Volumes        7│┃  noisy-logger     alpine:3.20    ● running    38.1%    329MiB  Up 12 minutes   ┃│shows up here as it happens.                  │
 │  Networks       7│┃  paused-ba┏━ ◆ Create container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
 │  Compose        2│┃  redis-cac┃                                                                                    ┃                               │
-│                  │┃  shop-api-┃ daemon     unix:///tmp/ddfake1024601468/d.sock  (context default)                  ┃                               │
+│                  │┃  shop-api-┃ daemon     unix:///tmp/ddfake2152001312/d.sock  (context default)                  ┃                               │
 │  ● 7 running     │┃  shop-db-1┃                                                                                    ┃                               │
 │  ‖ 1 paused      │┃  shop-web-┃   Image       > hello-world                                                        ┃                               │
 │  ○ 5 stopped     │┃  slow-stop┃   Name        > made-by-e2e                                                        ┃                               │

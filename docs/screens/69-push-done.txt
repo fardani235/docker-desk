@@ -1,7 +1,7 @@
- Docker Desk  unix:///tmp/ddfake3943339999/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…999/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake361739802/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…802/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Images (2 of 17) ──────────────────────────────────────── filter: acme/api ─┐┌─ 4 Events ────────────────────────── ● live ─┐
-│  Containers    13││  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ││  05:47:36 img push       registry.sandbox.in…│
+│  Containers    13││  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ││  05:02:09 img push       registry.sandbox.in…│
 │▸ Images        17││▸ registry.sandbox.inva…  3.28.3        9ffe8111ff43    48.0MB     2d         - ││                                              │
 │  Volumes        7││  registry.sandbox.inva…  latest        9ffe8111ff43    48.0MB     2d         - ││                                              │
 │  Networks       7││                                                                                ││                                              │
@@ -14,8 +14,8 @@
 │                  ││           ┏━ ◆ Job #1 output ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
 │                  ││           ┃                                                                                    ┃                               │
 │                  ││           ┃ ✓ succeeded   push image registry.sandbox.invalid/acme/api:3.28.3                  ┃                               │
-│                  │└───────────┃ started 05:47:33 · ran 3.4s                                                        ┃                               │
-│                  │┌─ 3 Details┃ on daemon unix:///tmp/ddfake3943339999/d.sock                                      ┃                               │
+│                  │└───────────┃ started 05:02:06 · ran 3.4s                                                        ┃                               │
+│                  │┌─ 3 Details┃ on daemon unix:///tmp/ddfake361739802/d.sock                                       ┃                               │
 │                  ││Reference  ┃                                                                                    ┃                               │
 │                  ││ID         ┃ pushing registry.sandbox.invalid/acme/api:3.28.3 (image 9ffe8111ff43) to registry. ┃                               │
 │                  ││Size       ┃ sandbox.invalid, credential: auths                                                 ┃                               │
@@ -39,4 +39,4 @@
 │                  ││                                                                                │┃                                              ┃
 └──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
  ✓ push image registry.sandbox.invalid/acme/api:3.28.3
- ↑↓ move  Enter output  c cancel  x clear finished                                                                           Tab pane  ? keys  q quit
+ ↑↓ move  Enter output  c cancel  x clear finished  W save output                                                            Tab pane  ? keys  q quit

@@ -46,6 +46,12 @@ Entries marked **W** (writing files) belong to the eighteenth round, the OpenSpe
 are the change's design; W11 onwards were decided while building it. The round relaxes V14 and
 V22: a copy is the one reader of a container's archive, never the tree.
 
+Entries marked **PC** (pane capture) belong to the twenty-ninth round, the OpenSpec change
+`capture-pane-text`, and are collected in
+[their own section](#round-twenty-nine--a-panes-text-to-a-file). PC1–PC6 are the change's
+design; PC7 onwards were decided while building it. The change's tasks named them `Y1–Y6`;
+`Y` was already the fourteenth round's (PC7).
+
 Where a decision costs something, the cost is stated. Nothing here is presented as free.
 
 ---
@@ -5736,3 +5742,231 @@ strings were not audited in depth (ED14).
 
 See docs/TESTING.md, round twenty-eight, for the commands and their results — including the
 one that did not pass as a whole, `make race`, and why that is not this change.
+
+## Round twenty-nine — a pane's text to a file
+
+OpenSpec change `capture-pane-text` (capability `text-capture`). The instruction for the round:
+apply the change as written, working autonomously — "where you would ask, decide and record" —
+and test and validate it as QA and security would; vulnerable code is not acceptable. The
+change's design D1–D9 is implemented as written except where PC8 and PC10 say otherwise.
+
+The gap it closes: the desk runs in the alternate screen, so an inspect document, the log lines
+that explain a failure, a process snapshot or a job's output were gone when it closed — the log
+buffer earlier still, when the highlight moved. `w` wrote only computed reports.
+
+### PC1 — A capture is the held text, never the drawn frame
+
+**Decided:** each pane hands `W` its own source — Info's summary lines, the inspect document,
+the log ring, the event ring, the process snapshot, the Changes and Declared builders run
+again, `jobOutput`, the reader's preview — collected when `W` is pressed, as an export's
+document is, so nothing that changes behind the dialog changes the file. The mapping from pane
+to source is one function per pane in `internal/ui/capture.go`.
+
+**Considered:** capturing `m.frame`. It is a screenshot: clipped to the terminal, styled,
+wrapped at whatever width was last drawn, and holding only the rows in view — the spec's two
+scenarios (two widths, scrolled back) rule it out.
+
+**Cost:** a rebuilt pane (Changes, Declared) can drift from the view if its builder changes and
+this file does not; one test per pane captures at 80 and 200 columns and compares bytes.
+
+### PC2 — Two widths: whole for tables, a page for prose
+
+**Decided:** prose (Changes, Declared) is wrapped at `capture.PageWidth`, 200 columns. Tables
+and events are laid out with **no width at all** (PC8). Every line is then made plain and
+trimmed on the right.
+
+**Considered:** the terminal's width (two terminals, two files — forbidden by the spec); one
+width for everything (200 cuts a `java -cp` command line; 4,096 makes a paragraph one line).
+
+**Cost:** 200 is a judgement. It is one constant, and the header says the file was laid out
+for a page.
+
+### PC3 — A capture is not a report (X5 does not bind it)
+
+**Decided:** a capture keeps the daemon's text as the desk holds it — times, container IDs,
+command lines, environment variable values — and is a class of its own. X5's rules (no times,
+no host paths, no daemon address, no environment values, deterministic bytes) stay the rules of
+reports and only of reports. The class is said where consent is given — the dialog's warning
+line, before and at `y` — and in the file's own header (`# a capture: … not a report`). The
+README has the two classes side by side.
+
+**Considered:** redacting environment values in an inspect capture. That breaks the reason to
+keep the document; the operator asked for this file, the dialog says what is in it, and it is
+`0600`. A fourth `report.Document` kind: `report`'s documentation promises computed,
+deterministic, time-free evidence, which a capture is not.
+
+**Cost:** a capture can hold secrets. Nothing stops an operator from sharing one; the dialog's
+sentence is the guard, not a mask.
+
+### PC4 — Inspect is the daemon's document
+
+**Decided:** `json.Indent` of the inspect bytes, no header (JSON has no comments), `.json`, one
+trailing newline. A character JSON allows raw in a string but that could act on a terminal or
+reorder what is drawn around it — DEL, a C1 control, a format character such as U+202E, a line
+or paragraph separator — is written as JSON's own `\uNNNN` (a surrogate pair above the basic
+plane), and a byte that is no character as U+FFFD: the same document, as ED7 does on screen.
+A document that does not parse is not written, and the status line says so.
+
+**Considered:** the raw bytes, unindented (unreadable, and the screen already indents);
+`jsonText`'s lines joined (the same escapes, but tied to the UI package).
+
+**Cost:** `cat file.json` and `jq . file.json` show `\u202e` where the daemon sent the
+character. The decoded value is identical.
+
+### PC5 — The export dialog grows a capture, not a second dialog
+
+**Decided:** `exportDialog` carries an optional `*paneCapture` (bytes, format, the `holds`
+sentence, the class sentence). With one, there is one format line, `Tab` and the arrows do
+nothing, and the bytes are those collected at `W`. Path, `~` expansion, the absolute path at
+review, size, mode, the arming delay, `y`, the background write through `report.WriteFile` and
+the refusals are the export's own code. The status line says `Saved <format> to <path> (N
+bytes, mode 0600).` or `Not saved: <the writer's sentence>.`.
+
+**Considered:** a capture dialog of its own (a second copy of the consent rules, which would
+drift — X10's reason for one writer); reusing `Exported`/`Not exported` (a capture is not an
+export, and the operator should not confuse the two in the status line).
+
+**Cost:** `exportBody` and `onExportDone` branch on the capture; `captureBody` duplicates the
+key/value layout of `exportBody` (twenty lines) rather than parameterise it.
+
+### PC6 — `W`
+
+**Decided:** `W` (`keyCapture`), unbound before, the larger sibling of `w`. It is routed in the
+Details key switch before every tab's own keys, in `onEventsKey`, `onJobsKey` and
+`onReaderKey`. On Stats, Findings, Upstream and the List it does nothing — no dialog, no
+sentence, no action — as the spec says. It is in the help next to `w`, in the footers of the
+Details text tabs, the Events and Jobs panes and the reader, and in the README's key table.
+
+**Considered:** `ctrl+s` (flow control in many terminals; the desk's keys are unmodified
+letters).
+
+**Cost:** `w` and `W` differ by case and both concern text; the footers say `w wrap` and `W
+save text` side by side.
+
+### PC7 — Decided: the entries are PC, not Y
+
+The tasks asked for `Y1–Y6`. `Y1–Y15` are the fourteenth round's (compose), and the code cites
+them (`declared.go`: "Y1–Y9"). Reusing the letters would make every such citation ambiguous.
+`PC` (pane capture) was free.
+
+### PC8 — Decided: tables and events at their natural width, not at 4,096
+
+D2 runs table and event builders at a 4,096-cell capture width. Two things in the code made
+that a cut, not a bound: `processTable` caps every column but the last at 24 cells (a long user
+name, a `STIME` of another locale), and a Java classpath is routinely longer than 4,096. So
+`processTable` is now `processLayout(list, w, capW)`; the screen calls it with `(w, 24)` as
+before, and a capture with `(0, 0)` — every column as wide as its widest cell, lines ending where
+their text does (`processTableWhole`). `eventText` is now `fit(eventLine(…), w)`; a capture
+writes `eventLine`. Neither change alters a drawn frame (the existing Processes and Events tests
+pass unchanged).
+
+**Cost:** D2's "no width, builder unchanged" was rejected for the builders as they were; they
+are changed by one parameter and one split. `TestCaptureProcessesKeepsEveryCellWhole` and
+`TestCaptureEventsHoldsEveryEventWhole` assert no `…` anywhere.
+
+### PC9 — Decided: which control characters leave the desk
+
+The spec says a capture keeps "control characters included" and, in the same breath, that the
+file holds "no escape sequence". Read together with the desk's own rule (ED1: a daemon's text
+is drawn as text), decided: **what the desk draws is what is written** — and what the desk draws
+for a control character is its visible escape (`\x07`, `\n`, `\x1b` from `escape.Name`, the
+reader's inert preview, `live.Sanitize`'s logs). Those stay, byte for byte. What `capture.Plain`
+removes is everything that could act on a terminal when the file is later printed: every escape
+sequence (CSI, OSC to BEL or ST, DCS/SOS/PM/APC, the short escapes; an unterminated one to the
+end of the line; an OSC ended by the C1 string terminator U+009C too), a lone ESC, the C0
+controls but the tab, DEL, and the C1 controls (the 8-bit CSI U+009B among them). A character
+that draws nothing and reorders what is around it — a format character such as U+202E, a line or
+paragraph separator, `escape.Reorders`' set — is written as its visible escape, `\uNNNN`, as a
+name is (D8). Invalid UTF-8 becomes U+FFFD. In practice every source is already
+sanitised or escaped before `Plain` sees it; `Plain` is the second wall, not the first.
+
+**Considered:** writing the ring's bytes untouched. Log lines keep SGR colour on purpose
+(`live.Sanitize`), and a file of them `cat`-ed into another terminal would paint it — the kind of
+text-acting-on-a-terminal the desk refuses on screen.
+
+The spec's sentence "control characters included" is reworded in the change's delta to say
+this: the daemon's values are kept, and a control character is kept as the desk shows it.
+
+**Cost:** a log line with a right-to-left override reads differently in the file
+(`\u202eevil`) than in the Logs tab, which draws it raw; and a zero-width joiner in an emoji
+sequence is written as `\u200d`. The file is the one place where a misleading line could be read
+later, out of context, in an editor that honours the override. `TestCaptureOfHostileLogIsInert`
+and the e2e test plant an OSC 52 clipboard write, an OSC title, a screen clear, an 8-bit CSI,
+BEL, CR and a bidirectional override and isolate, and find none of them raw.
+
+### PC10 — Decided: Info is captured from its builder
+
+Task 3.1 says `m.info1.lines`. That field is set while the tab is drawn, so it can be a frame
+old or empty if the tab was never drawn at the current highlight. `captureInfo` calls
+`m.infoLines()`, which is what `info1` is set from — the same lines, current.
+
+### PC11 — Decided: what "nothing held" is, pane by pane
+
+Each refusal is one sentence beginning `Nothing to save:` (a write that fails after consent
+says `Not saved:`, PC5), and nothing opens:
+
+| Pane | Nothing held when |
+| --- | --- |
+| Inspect | the document for the highlighted object has not arrived (or the inspect failed: the reason is in the sentence), or it does not parse |
+| Logs | the stream is not the highlighted container's (`opening log stream…`), or no line has arrived |
+| Processes | no snapshot for this container is held (not running, loading, failed) |
+| Changes | the container's reference is not known yet, or the two images are still being read. A pair that is refused ("nothing to compare", and why) **is** held: the tab's answer is the sentence, and it is captured |
+| Declared | `Enter` has not compared the file yet, or the read is running |
+| Jobs | there is no job, or the highlighted one has no log, status or error yet |
+| reader | the file is still being read, was not read, or is not text |
+
+Info and Events always hold something once a row or an event exists.
+
+### PC12 — Decided: the Events capture is the ring, not the held snapshot
+
+When the Events pane is held, it draws a snapshot of the ring taken at the hold. "Every event
+the pane holds" is read as the ring — what the pane would show on resume — so a hold does not
+hide newer events from the file. The header says how many are held and the ring's bound
+(1,000).
+
+### PC13 — Found: the Jobs list carries no output
+
+`jobs.Manager.List` returns each job without its log; the output viewer reads `Get`. The first
+build captured from `List` and refused every job as "no output yet" —
+`TestCaptureJobOutputIsWhatTheViewerShows` found it. `captureJob` reads `Get`.
+
+### PC14 — Decided: the prefilled object for a job and for a file
+
+The spec names the object "the highlighted object's name". For a job that is its target
+(`docker-desk-output-<target>-…`; its title when it has none); for the reader, the file's base
+name (`docker-desk-file-nginx.conf-…`) — the container is in the header. Both go through
+`report.Slug`, so a name the container chose cannot reach a `/`, a `..` or a control
+character in the path.
+
+### PC15 — Decided: the header ends at the first lone `#`
+
+The header is `#` lines and then a line that is only `#`. Header values pass through `Plain`
+and have any line break made a space, so no value can end the header or start the body. A body
+line — a log line — may itself begin with `#`, and a log line `#` followed by `# pane: Inspect`
+looks like a second header; the header's last fact says it ends at the first line that is only
+`#`, and everything after that is the pane's text. The body is not escaped for it: it is the
+daemon's text, kept as it is (PC3).
+
+### PC16 — An independent review, before calling it done
+
+As B30 and ED15 did, the change was reviewed by a separate pass that was given the code and the
+spec, not this record, and asked for terminal bytes in the file, paths, unescaped text on
+screen, consent and requests, builder correctness and header forging. It found no
+vulnerability. What it found, and what was done:
+
+| # | Finding | What was done |
+| --- | --- | --- |
+| 1 | Low: a text capture kept format characters (U+202E, U+2066, U+2028) raw, while the JSON capture and `escape.Name` escape them | written as `\uNNNN` (PC9); `TestTextIsPlainAndTrimmed`, `TestCaptureOfHostileLogIsInert` |
+| 2 | Nit: an OSC ended by the C1 string terminator (U+009C) was not seen to end, and the rest of the line was dropped | it ends there (`TestTextIsPlainAndTrimmed`, "osc ended by c1 st"). The same input is cut earlier, at ingestion, by `live.Sanitize`, which predates the round and is left as it is |
+| 3 | Nit: with a filter, the matches were taken from the ring again after the lines were read; a line evicted in between made "N of M match" undercount | the lines read are matched directly, by the same `search.Contains` the pane's filter uses, and the scrolled-out count is the one `Read` returned |
+| 4 | Nit: a body line beginning with `#` can look like a header line | the header says where it ends (PC15) |
+| 5 | Nit: the spec says "control characters included" where the code removes them | the delta's wording is aligned (PC9) |
+
+Nothing was found on paths (the writer, `Slug` and the constant kinds), on unescaped text in
+the dialog or the status line, or on consent and requests.
+
+### PC17 — Round twenty-nine: what was run
+
+See docs/TESTING.md, round twenty-nine, for the tests, the commands and their results —
+including the tests that fail on this machine before and after the change, and why.
+

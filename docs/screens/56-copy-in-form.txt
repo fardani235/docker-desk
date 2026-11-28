@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake996123854/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…854/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1556056385/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…385/d.sock ●]                                                                                            M picker  < > focus
 ┏━ ◆ Files — the image's tree with the container's changes over it ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ shop-web-1 ━┓
 ┃ by name · 3 rows · filter: nginx.conf · 1 match of 13 searched                                                                                     ┃
 ┃   container  shop-web-1 · f948ec4de9e4 · from nginx:1.27 (f673addec473)                                                                            ┃
@@ -11,11 +11,11 @@
 ┃   image      The image's files┏━ ◆ Copy into the container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ then the rows are the         ┃
 ┃              container's chang┃                                                                                    ┃                               ┃
 ┃                               ┃ container  shop-web-1  (f948ec4de9e4)                                              ┃                               ┃
-┃   NAME                        ┃ daemon     unix:///tmp/ddfake996123854/d.sock  (context default)                   ┃ZE  TYPE      LAYER  CHANGE    ┃
+┃   NAME                        ┃ daemon     unix:///tmp/ddfake1556056385/d.sock  (context default)                  ┃ZE  TYPE      LAYER  CHANGE    ┃
 ┃   - etc/                      ┃                                                                                    ┃ —  dir       —      changed   ┃
 ┃     - nginx/                  ┃   Local source                                                                     ┃ —  dir       —      changed   ┃
 ┃ ▸       nginx.conf            ┃ > ~/assets                                                                         ┃ —  ?         —      changed   ┃
-┃                               ┃   will read /tmp/TestCopyIn4273587424/001/assets                                   ┃                               ┃
+┃                               ┃   will read /tmp/TestCopyIn928775999/001/assets                                    ┃                               ┃
 ┃                               ┃                                                                                    ┃                               ┃
 ┃                               ┃ ▸ Container destination                                                            ┃                               ┃
 ┃                               ┃ > /srv/assets                                                                      ┃                               ┃
@@ -39,4 +39,4 @@
 ┃                                                                                                                                                    ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
- ⏎ read the archive  ↑↓ move  →← open  s order  / filter  w export  r changes  o copy out  i copy in  Esc clear filter            F Esc close  ? keys
+ ⏎ read the file  a read the archive  ↑↓ move  →← open  s order  / filter  w export  r changes  o copy out  i copy in  Esc clear… F Esc close  ? keys

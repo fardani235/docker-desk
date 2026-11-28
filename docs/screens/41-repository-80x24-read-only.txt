@@ -1,19 +1,19 @@
- Docker Desk  unix:///tmp/ddfake2735565257/d.sock  ● connected  [READ-ONLY]
+ Docker Desk  unix:///tmp/ddfake900770503/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…503/d.sock ● ro]                   M picker  < > focus
 ┏━ ◆ Repository ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ repository 127.0.0.1:41905/acme/api                                          ┃
-┃ asks       127.0.0.1:41905 anonymously · 100 tags held · Tab asks for the    ┃
+┃ repository 127.0.0.1:38225/acme/api                                          ┃
+┃ asks       127.0.0.1:38225 anonymously · 100 tags held · Tab asks for the    ┃
 ┃            next page · listed 0s ago                                         ┃
 ┃            Text order, numbers by value: never by recency.                   ┃
 ┃   TAG                DIGEST               PLATFORMS        HERE              ┃
-┃   3.27.0                                                                     ┃
 ┃   3.28                                                                       ┃
 ┃   3.28.0                                                                     ┃
 ┃   3.28.1                                                                     ┃
 ┃   3.28.2             sha256:5343c588b2a1  amd64 arm64/v8   here              ┃
 ┃   3.28.3                                                                     ┃
 ┃ ▸ 3.29.0-rc.1        sha256:ffdcd7c49f8f  no amd64 · arm…  -                 ┃
-┃ ───────────────────────────────────────────────────────── rows 5–11 of 100 ─ ┃
-┃ 127.0.0.1:41905/acme/api:3.29.0-rc.1  · described 0s ago · r asks again      ┃
+┃ ───────────────────────────────────────────────────────── rows 6–11 of 100 ─ ┃
+┃ 127.0.0.1:38225/acme/api:3.29.0-rc.1  · described 0s ago · r asks again      ┃
 ┃ digest     sha256:ffdcd7c49f8fc0e99c8920e36be374394d500bfb8ba314b0e87b6b45c0 ┃
 ┃            7ecb1f                                                            ┃
 ┃ publishes  linux/arm64/v8                                                    ┃

@@ -1063,7 +1063,8 @@ func TestReaderIsDocumentedInTheKeys(t *testing.T) {
 		"Esc or q closes",
 		"At most 1 MiB, 10,000 lines and 2 KiB a line are kept",
 		"there is no hex view",
-		"never written, exported, searched or logged",
+		"never exported, searched or logged, written to a file only",
+		"by W and its confirmation",
 		"An image's files are not read",
 	} {
 		if !strings.Contains(text, want) {

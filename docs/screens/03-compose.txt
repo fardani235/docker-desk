@@ -1,4 +1,5 @@
- Docker Desk  unix:///tmp/ddfake3128835518/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake1851322069/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…069/d.sock ●]                                                                                            M picker  < > focus
 ┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Compose (2) ────────────────────────────────────────────────────────────────┐┌─ 4 Events ────────────────────────── ● live ─┐
 ┃  Containers    13┃│  PROJECT                       CONTAINERS   RUNNING  WORKING DIR               ││Waiting for engine events…                    │
 ┃  Images        16┃│▸ blog                                   2         0  /home/dev/src/blog        ││Everything the daemon does                    │
@@ -25,13 +26,12 @@
 ┃                  ┃│                                                                                ││                                              │
 ┃                  ┃│Services                                                                        ││                                              │
 ┃                  ┃│  ○ app             blog-app-1  Exited (0) 15 hours ago                         ││                                              │
-┃                  ┃│  ○ db              blog-db-1  Exited (0) 15 hours ago                          ││                                              │
-┃                  ┃│                                                                                │└──────────────────────────────────────────────┘
-┃                  ┃│Networks and volumes carrying this project's label                              │┌─ 5 Jobs ─────────────────────────────────────┐
-┃                  ┃│  network  blog_default                                                         ││No jobs yet.                                  │
-┃                  ┃│  volume   blog_db                                                              ││Everything that changes the daemon            │
-┃                  ┃│  (never removed with the project; see their own kinds)                         ││runs here, in the background.                 │
-┃                  ┃│                                                                                ││                                              │
+┃                  ┃│  ○ db              blog-db-1  Exited (0) 15 hours ago                          │└──────────────────────────────────────────────┘
+┃                  ┃│                                                                                │┌─ 5 Jobs ─────────────────────────────────────┐
+┃                  ┃│Networks and volumes carrying this project's label                              ││No jobs yet.                                  │
+┃                  ┃│  network  blog_default                                                         ││Everything that changes the daemon            │
+┃                  ┃│  volume   blog_db                                                              ││runs here, in the background.                 │
+┃                  ┃│  (never removed with the project; see their own kinds)                         ││                                              │
 ┃                  ┃│                                                                                ││                                              │
 ┃                  ┃│                                                                                ││                                              │
 ┃                  ┃│                                                                                ││                                              │

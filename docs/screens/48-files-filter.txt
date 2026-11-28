@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake2030380243/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…243/d.sock ●]                                                              M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3619398047/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…047/d.sock ●]                                                              M picker  < > focus
 ┏━ ◆ Files — the image's layers merged into one tree ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ python:3.12-slim ━┓
 ┃ by name · 7 rows · filter: requests · 2 matches of 18 searched                                                       ┃
 ┃   image      python:3.12-slim · 90db23bd5600 · linux/amd64 · 4 layers · 131MB (the daemon's size)                    ┃

@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake2126572422/d.sock  ● connected  [READ-ONLY]
- Daemons [◆1 /tmp/ddfake…422/d.sock ● ro]                   M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake4250669039/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…039/d.sock ● ro]                   M picker  < > focus
 ┏━ ◆ File ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ shop-web-1 ━┓
 ┃ path       /etc/nginx/nginx.conf                                             ┃
 ┃ container  shop-web-1 · f948ec4de9e4                                         ┃
@@ -21,4 +21,4 @@
 ┃                                                                              ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
  ✓ read a container file shop-web-1:/etc/nginx/nginx.conf
- ↑↓ scroll  PgUp PgDn page  g G ends  w no wrap             Esc q close  ? keys
+ ↑↓ scroll  PgUp PgDn page  g G ends  w no wrap  W save te… Esc q close  ? keys

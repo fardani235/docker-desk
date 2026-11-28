@@ -480,6 +480,9 @@ func (m *Model) renderHints() string {
 			default:
 				add("w", "wrap")
 			}
+			if m.tabName() != tabStats {
+				add(keyCapture, "save text")
+			}
 		}
 		for _, a := range kindActions[m.kind] {
 			if m.shadowed(a.key) {
@@ -497,14 +500,17 @@ func (m *Model) renderHints() string {
 		add("↑↓", "move")
 		add("⏎", "go to object")
 		add("Space", "resume")
+		add(keyCapture, "save events")
 	case m.focus == PaneEvents:
 		add("Space", "hold")
 		add("↑", "read back")
+		add(keyCapture, "save events")
 	case m.focus == PaneJobs:
 		add("↑↓", "move")
 		add("Enter", "output")
 		add("c", "cancel")
 		add("x", "clear finished")
+		add(keyCapture, "save output")
 	}
 	left := " " + m.hints(pairs...)
 	right := m.hints("Tab", "pane", "?", "keys", "q", "quit") + " "
@@ -620,6 +626,16 @@ func (m *Model) helpLines(w int) []string {
 	row("← →  or  h l", "switch tab")
 	row("f", "Logs: pause / resume following")
 	row("w", "toggle line wrapping (not Processes: one row per process)")
+	row(keyCapture, "save this tab's text to a file (asks first): Info, Logs, Processes, Changes,")
+	out = append(out,
+		"                   Declared as text; Inspect as the daemon's JSON document",
+		"  W writes what the tab holds, not what fits on screen: every held log line",
+		"  (or those the filter matches), every process with its whole command, prose",
+		"  wrapped at 200 columns, colour removed. It is a capture, not a report: times",
+		"  and the daemon's values, environment values included, are kept as they are.",
+		"  Nothing is sent to the daemon, so it works in read-only mode. Not on Stats,",
+		"  Findings or Upstream: they are not text.",
+	)
 
 	sect("Details pane: search (/)")
 	row("/", "Info, Inspect, Processes, Changes: find as you type; Logs: filter")
@@ -649,7 +665,8 @@ func (m *Model) helpLines(w int) []string {
 		"  Its time is shown; it is marked stale while the daemon is unreachable.",
 		"  Only running containers have processes; a stopped one says so.",
 		"  Command lines are shown exactly as the daemon reports them, arguments",
-		"  included — nothing is masked, and nothing is written to jobs, logs or files.",
+		"  included — nothing is masked, and nothing is written to jobs or logs; a",
+		"  file only when W is pressed here and its path confirmed.",
 	)
 
 	sect("Containers › Changes tab")
@@ -842,7 +859,7 @@ func (m *Model) helpLines(w int) []string {
 	}
 	row("c", "cancel the archive read in progress: nothing is kept")
 	row("Esc", "clear the filter; again, close: the desk is as it was")
-	row("in a file", "↑ ↓ PgUp PgDn g G scroll, w wraps, c cancels the read, Esc or q closes")
+	row("in a file", "↑ ↓ PgUp PgDn g G scroll, w wraps, W saves the text, c cancels, Esc or q closes")
 	out = append(out,
 		"  Opening reads nothing on an image, and on a container only the daemon's",
 		"  change list (what `docker diff` prints). Enter streams the image's archive",
@@ -868,10 +885,11 @@ func (m *Model) helpLines(w int) []string {
 		"  cut is named. Only valid UTF-8 without NUL bytes is shown, with control",
 		"  characters and escape sequences made visible (\\x1b); anything else gets",
 		"  its metadata and no bytes — there is no hex view. What is read is drawn in",
-		"  the reader only: never written, exported, searched or logged, and dropped",
-		"  when it closes. An image's files are not read (use a container, or save the",
-		"  archive: w in Images); links, devices, FIFOs, sockets and deleted paths are",
-		"  named, never followed or opened.",
+		"  the reader only: never exported, searched or logged, written to a file only",
+		"  by W and its confirmation, and dropped when it closes.",
+		"  An image's files are not read (use a container, or save the archive: w in",
+		"  Images); links, devices, FIFOs, sockets and deleted paths are named, never",
+		"  followed or opened.",
 	)
 
 	for k := Kind(0); k < kindCount; k++ {
@@ -945,6 +963,7 @@ func (m *Model) helpLines(w int) []string {
 	row("↑ ↓ PgUp PgDn", "move the cursor; ↑ PgUp g also hold a live view")
 	row("Enter", "held: go to the event's object in its own list")
 	row("↓ past the end, G", "resume following (Space and f too)")
+	row(keyCapture, "save every event the pane holds to a file, each line whole (asks first)")
 	out = append(out,
 		"  While held, new events keep being recorded and lists keep refreshing; the",
 		"  title counts them (held +N). Enter selects the container, image, volume or",
@@ -957,6 +976,7 @@ func (m *Model) helpLines(w int) []string {
 	row("Enter", "read the job's full output")
 	row("c", "cancel the highlighted running job")
 	row("x", "clear finished jobs")
+	row(keyCapture, "save the highlighted job's output to a file (asks first)")
 
 	sect("How changes are confirmed")
 	out = append(out,

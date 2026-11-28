@@ -1,16 +1,16 @@
- Docker Desk  unix:///tmp/ddfake2062145477/d.sock  ● connected  [READ-ONLY]
- Daemons [◆1 /tmp/ddfake…477/d.sock ● ro]                   M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1379839376/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…376/d.sock ● ro]                   M picker  < > focus
 ┌─┏━ ◆ Save the image archive ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓━┓
 │ ┃                                                                          ┃E┃
 │▸┃ image      nginx:1.27  (f673addec473)                                    ┃h┃
-│ ┃ daemon     unix:///tmp/ddfake2062145477/d.sock  (context default)        ┃ ┃
+│ ┃ daemon     unix:///tmp/ddfake1379839376/d.sock  (context default)        ┃ ┃
 │ ┃ saves      the reference nginx:1.27: the archive keeps the tag           ┃━┛
 │ ┃ platform   linux/amd64                                                   ┃─┐
 │ ┃                                                                          ┃ │
 │ ┃ Local file                                                               ┃ │
-│ ┃ > ~/docker-desk-image-nginx-1.27-20261124.tar                            ┃ │
+│ ┃ > ~/docker-desk-image-nginx-1.27-20261128.tar                            ┃ │
 │ ┃   will write /tmp/TestSaveImageArchive66-save-image-form-80x24-read-only ┃ │
-│ ┃              932796850/001/docker-desk-image-nginx-1.27-20261124.tar     ┃ │
+│ ┃              3692877832/001/docker-desk-image-nginx-1.27-20261128.tar    ┃ │
 │ ┃                                                                          ┃ │
 │ ┃ • The archive is a tar, as `docker save` writes it, for this one         ┃ │
 └─┃   platform.                                                              ┃─┘

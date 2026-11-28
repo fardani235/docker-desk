@@ -1,9 +1,10 @@
- Docker Desk  unix:///tmp/ddfake3128835518/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake1851322069/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…069/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-web ━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  06:31:18 ctr kill sig 15 shop-web-1         │
-│  Images        16│┃▸ shop-web-1       nginx:1.27     ○ exited                      Exited (0) 0 …  ┃│  06:31:18 ctr die exit 0 shop-web-1          │
-│  Volumes        7│┃                                                                                ┃│  06:31:18 net disconnect shop_default  ← sho…│
-│  Networks       7│┃                                                                                ┃│  06:31:18 ctr stop       shop-web-1          │
+│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  05:01:24 ctr kill sig 15 shop-web-1         │
+│  Images        16│┃▸ shop-web-1       nginx:1.27     ○ exited                      Exited (0) 0 …  ┃│  05:01:24 ctr die exit 0 shop-web-1          │
+│  Volumes        7│┃                                                                                ┃│  05:01:24 net disconnect shop_default  ← sho…│
+│  Networks       7│┃                                                                                ┃│  05:01:24 ctr stop       shop-web-1          │
 │  Compose        2│┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │  ● 6 running     │┃                                                                                ┃│                                              │
@@ -20,15 +21,15 @@
 │                  ││Image     nginx:1.27                                                            ││                                              │
 │                  ││State     ○ exited   Exited (0) 0 seconds ago                                   ││                                              │
 │                  ││Compose   shop / web                                                            ││                                              │
-│                  ││Started   2026-11-11 03:31:16                                                   ││                                              │
-│                  ││Finished  2026-11-11 06:31:18   exit code 0                                     ││                                              │
+│                  ││Started   2026-11-28 02:01:22                                                   ││                                              │
+│                  ││Finished  2026-11-28 05:01:24   exit code 0                                     ││                                              │
 │                  ││Command   nginx -g daemon off;                                                  ││                                              │
 │                  ││Restart   no (restarted 0×)                                                     ││                                              │
 │                  ││Runtime   tty=false  privileged=false  env vars=1                               ││                                              │
-│                  ││Created   2026-11-11 03:31:16                                                   ││                                              │
-│                  ││                                                                                │└──────────────────────────────────────────────┘
-│                  ││Ports                                                                           │┌─ 5 Jobs ──────────────────────────── 1 done ─┐
-│                  ││  none                                                                          ││▸ ✓ stop container shop-web-1              3ms│
+│                  ││Created   2026-11-28 02:01:22                                                   │└──────────────────────────────────────────────┘
+│                  ││                                                                                │┌─ 5 Jobs ──────────────────────────── 1 done ─┐
+│                  ││Ports                                                                           ││▸ ✓ stop container shop-web-1              1ms│
+│                  ││  none                                                                          ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││Networks                                                                        ││                                              │
 │                  ││  shop_default  (no address: not running)                                       ││                                              │
@@ -36,7 +37,6 @@
 │                  ││Mounts                                                                          ││                                              │
 │                  ││  none                                                                          ││                                              │
 │                  ││                                                                                ││                                              │
-│                  ││                                                                                ││                                              │
 └──────────────────┘└────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────┘
  ✓ stop container shop-web-1
- ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  e shell       Tab pane  ? keys  q quit
+ ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  n new  e she… Tab pane  ? keys  q quit

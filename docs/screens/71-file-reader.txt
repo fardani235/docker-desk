@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake854505461/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…461/d.sock ●]                                                                                  M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3407063112/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…112/d.sock ●]                                                                                  M picker  < > focus
 ┏━ ◆ File — read from the container, shown here only ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ shop-web-1 ━┓
 ┃ path       /etc/nginx/nginx.conf                                                                                                         ┃
 ┃ container  shop-web-1 · f948ec4de9e4                                                                                                     ┃
@@ -37,4 +37,4 @@
 ┃                                                                                                                                          ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
  ✓ read a container file shop-web-1:/etc/nginx/nginx.conf
- ↑↓ scroll  PgUp PgDn page  g G ends  w no wrap                                                                         Esc q close  ? keys
+ ↑↓ scroll  PgUp PgDn page  g G ends  w no wrap  W save text                                                            Esc q close  ? keys

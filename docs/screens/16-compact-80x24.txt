@@ -1,18 +1,18 @@
- Docker Desk  unix:///tmp/ddfake1056645322/d.sock  ctx default  ● connected
+ Docker Desk  unix:///tmp/ddfake1569453987/d.sock  ctx default  ● connected
+ Daemons [◆1 /tmp/ddfake…987/d.sock ●]                      M picker  < > focus
 ┌─ 1 Kinds ──────┐┏━ ◆ 2 Containers (13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 │▸ Containers  13│┃  NAME            IMAGE         STATE          CPU       MEM┃
 │  Images      16│┃▸ distroless-svc  gcr.io/dist…  ● running        …         …┃
 │  Volumes      7│┃  noisy-logger    alpine:3.20   ● running        …         …┃
-│  Networks     7│┃  paused-batch    alpine:3.20   ‖ paused                    ┃
-│  Compose      2│┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-│                │┌─ 3 Details: distroless-svc ─────────────────── [Info] 1/6 ─┐
-│  ● 7 running   ││Name     distroless-svc                                     │
-│  ‖ 1 paused    ││ID       86f975de6cbb                                       │
-│  ○ 5 stopped   ││Image    gcr.io/distroless/static:nonroot                   │
-│                ││State    ● running   Up 5 hours                             │
-│                ││Started  2026-11-11 01:31:24                                │
+│  Networks     7│┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+│  Compose      2│┌─ 3 Details: distroless-svc ─────────────────── [Info] 1/6 ─┐
+│                ││Name     distroless-svc                                     │
+│  ● 7 running   ││ID       86f975de6cbb                                       │
+│  ‖ 1 paused    ││Image    gcr.io/distroless/static:nonroot                   │
+│  ○ 5 stopped   ││State    ● running   Up 5 hours                             │
 │                ││Command  /svc                                               │
-│                ││Restart  no (restarted 0×)                                  │
+│                ││Created  2026-11-28 00:01:30                                │
+│                ││                                                            │
 └────────────────┘└────────────────────────────────────────────────────────────┘
 ┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ───────────────────────┐
 │Waiting for engine events…                  ││No jobs yet.                    │

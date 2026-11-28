@@ -1,4 +1,5 @@
- Docker Desk  unix:///tmp/ddfake2385402150/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/ddfake2538569357/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…357/d.sock ●]                                                              M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Containers (1 of 13) ────────────────── filter: report ─┐┌─ 4 Events ──────────────── ● live ─┐
 │▸ Containers    13││  NAME            IMAGE         STATE          CPU       MEM││Waiting for engine events…          │
 │  Images        16││▸ report-job      acme/report…  ○ exited                    ││Everything the daemon does          │
@@ -14,6 +15,7 @@
 │                  ││                                                            ││                                    │
 │                  │└────────────────────────────────────────────────────────────┘│                                    │
 │                  │┏━ ◆ 3 Details: report-job ━━━━━━━━━━━━━━━━━━ [Changes] 2/6 ━┓│                                    │
+│                  │┃              8d41e07                                       ┃│                                    │
 │                  │┃  label       org.opencontainers.image.version 1.4.0 → 1.4.2┃│                                    │
 │                  │┃  env         − DEBUG                                       ┃│                                    │
 │                  │┃  env         + FONT_DIR                                    ┃│                                    │
@@ -23,18 +25,16 @@
 │                  │┃                                                            ┃│                                    │
 │                  │┃packages 3 added, 1 removed, 2 version changed (dpkg)       ┃│                                    │
 │                  │┃  + curl 7.88.1-10+deb12u8 (L4)                             ┃│                                    │
-│                  │┃  + fonts-dejavu-core:all 2.37-6 (L4)                       ┃│                                    │
-│                  │┃  + libcurl4 7.88.1-10+deb12u8 (L4)                         ┃└────────────────────────────────────┘
-│                  │┃  − netbase:all 6.4                                         ┃┌─ 5 Jobs ────────────────── 1 done ─┐
-│                  │┃  ~ libssl3 3.0.11-1~deb12u2 → 3.0.15-1~deb12u1             ┃│▸ ✓ compare images acme/report… 55ms│
+│                  │┃  + fonts-dejavu-core:all 2.37-6 (L4)                       ┃└────────────────────────────────────┘
+│                  │┃  + libcurl4 7.88.1-10+deb12u8 (L4)                         ┃┌─ 5 Jobs ────────────────── 1 done ─┐
+│                  │┃  − netbase:all 6.4                                         ┃│▸ ✓ compare images acme/report… 42ms│
+│                  │┃  ~ libssl3 3.0.11-1~deb12u2 → 3.0.15-1~deb12u1             ┃│                                    │
 │                  │┃  ~ openssl 3.0.11-1~deb12u2 → 3.0.15-1~deb12u1             ┃│                                    │
 │                  │┃findings 1 appeared, 2 disappeared (from the archives; live ┃│                                    │
 │                  │┃         findings are on the image's own tab)               ┃│                                    │
 │                  │┃  + L5 secret.file /app/config.yml GitHub token:            ┃│                                    │
 │                  │┃    ghp_************ (40 chars)                             ┃│                                    │
-│                  │┃  − config.healthcheck no HEALTHCHECK                       ┃│                                    │
-│                  │┃  − config.root-user User ""                                ┃│                                    │
-│                  │┃↑↓ scroll · 20–39 of 43                                     ┃│                                    │
+│                  │┃↑↓ scroll · 19–37 of 46                                     ┃│                                    │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└────────────────────────────────────┘
  ✓ compare images acme/report:1.4
- / find  ↑↓ scroll  [ ] tab  s start  t stop  R restart  p pause  u unpause  K kill  d remove… Tab pane  ? keys  q quit
+ / find  ↑↓ scroll  [ ] tab  A re-create  W save text  s start  t stop  R restart  p pause  u… Tab pane  ? keys  q quit

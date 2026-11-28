@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake1068100915/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…915/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3669271629/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…629/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Images (1 of 19) ──────────────────────────────────────── filter: acme/web ─┐┌─ 4 Events ────────────────────────── ● live ─┐
 │  Containers    13││  REPOSITORY       TAG       IMAGE ID          SIZE    AGE   USED BY  UPSTREAM  ││Waiting for engine events…                    │
 │▸ Images        19││▸ registry.sandb…  2.3       457d5c729f1c    88.0MB     6d         -  moved     ││Everything the daemon does                    │
@@ -27,8 +27,8 @@
 │                  │┃24a0af37                                                                        ┃│                                              │
 │                  │┃upstream digest  sha256:375e7da52cb98e61490797ae046fe3e3eb375e582e5ae6d3f30392ac┃│                                              │
 │                  │┃22d89046                                                                        ┃└──────────────────────────────────────────────┘
-│                  │┃answered by the daemon (unix:///tmp/ddfake1068100915/d.sock), because the desk c┃┌─ 5 Jobs ──────────────────────────── 1 done ─┐
-│                  │┃ould not ask                                                                    ┃│▸ ✓ check upstream registry.sandbox.inval… 4ms│
+│                  │┃answered by the daemon (unix:///tmp/ddfake3669271629/d.sock), because the desk c┃┌─ 5 Jobs ──────────────────────────── 1 done ─┐
+│                  │┃ould not ask                                                                    ┃│▸ ✓ check upstream registry.sandbox.inval… 2ms│
 │                  │┃0s ago · r asks again                                                           ┃│                                              │
 │                  │┃P pulls the build the tag names now, by its digest: registry.sandbox.invalid/acm┃│                                              │
 │                  │┃e/web:2.3@sha256:375e7da52cb98e61490797ae046fe3e3eb375e582e5ae6d3f30392ac22d8904┃│                                              │

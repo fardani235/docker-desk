@@ -1,42 +1,42 @@
- Docker Desk  unix:///tmp/ddfake3888266259/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…259/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1851322069/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…069/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Conta┏━ ◆ Keys ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓────────────────────── ● live ─┐
 │▸ Containers    13│┃  NAME     ┃                                                                                    ┃kill sig 15 shop-web-1         │
-│  Images        17│┃  distroles┃   ↑ ↓ PgUp PgDn    move the cursor; ↑ PgUp g also hold a live view                 ┃die exit 0 shop-web-1          │
-│  Volumes        5│┃  noisy-log┃   Enter            held: go to the event's object in its own list                  ┃disconnect shop_default  ← sho…│
-│  Networks       7│┃  paused-ba┃   ↓ past the end,… resume following (Space and f too)                              ┃stop       shop-web-1          │
-│  Compose        2│┃  redis-cac┃   While held, new events keep being recorded and lists keep refreshing; the        ┃connect    shop_default  ← sho…│
-│                  │┃▸ shop-api-┃   title counts them (held +N). Enter selects the container, image, volume or       ┃start      shop-web-1          │
-│  ● 7 running     │┃  shop-db-1┃   network the event is about, clearing a filter that hides it. An object not       ┃pull       hello-world         │
-│  ‖ 1 paused      │┃  shop-web-┃   listed yet is waited for two seconds. Daemon, plugin and swarm events, and       ┃destroy    337d154abf4b…       │
-│  ○ 5 stopped     │┃  slow-stop┃   the stream's own markers, name no object. Going to one changes nothing.          ┃destroy    43ee5206a7f7…       │
-│                  │┃  blog-app-┃                                                                                    ┃exec_create shop-api-1  sh -c …│
-│                  │┃  blog-db-1┃ Jobs pane                                                                          ┃exec_start shop-api-1  sh -c c…│
-│                  │┃  old-migra┃   Enter            read the job's full output                                      ┃exec_die exit 0 shop-api-1     │
-│                  │┃  report-jo┃   c                cancel the highlighted running job                              ┃                               │
-│                  │┗━━━━━━━━━━━┃   x                clear finished jobs                                             ┃                               │
-│                  │┌─ 3 Details┃                                                                                    ┃                               │
-│                  ││Name     sh┃ How changes are confirmed                                                          ┃                               │
-│                  ││ID       e9┃   No key changes anything by itself. Every action above opens a dialog that        ┃                               │
-│                  ││Image    sh┃   names the exact object, the effect and the daemon.                               ┃                               │
-│                  ││State    ● ┃     • start, stop, restart, pause, unpause, kill, connect, disconnect,             ┃                               │
-│                  ││Compose  sh┃       stop project: press y. Enter does nothing.                                   ┃                               │
-│                  ││Started  20┃     • anything that deletes (remove, prune, remove project): type the word         ┃                               │
-│                  ││Command  no┃       shown and press Enter.                                                       ┃                               │
-│                  ││Restart  no┃     • a selection, whatever the action: type the word with the count shown         ┃                               │
-│                  ││Runtime  tt┃       (stop 3, remove 7) and press Enter. The dialog lists every object, and       ┃                               │
-│                  ││Created  20┃       under "Not included" each selected one left out, with the reason.            ┃                               │
-│                  ││           ┃     • pull, new volume/network, shell: you type the name; Enter submits.           ┃───────────────────────────────┘
+│  Images        17│┃  distroles┃   title counts them (held +N). Enter selects the container, image, volume or       ┃die exit 0 shop-web-1          │
+│  Volumes        5│┃  noisy-log┃   network the event is about, clearing a filter that hides it. An object not       ┃disconnect shop_default  ← sho…│
+│  Networks       7│┃  paused-ba┃   listed yet is waited for two seconds. Daemon, plugin and swarm events, and       ┃stop       shop-web-1          │
+│  Compose        2│┃  redis-cac┃   the stream's own markers, name no object. Going to one changes nothing.          ┃connect    shop_default  ← sho…│
+│                  │┃▸ shop-api-┃                                                                                    ┃start      shop-web-1          │
+│  ● 7 running     │┃  shop-db-1┃ Jobs pane                                                                          ┃pull       hello-world         │
+│  ‖ 1 paused      │┃  shop-web-┃   Enter            read the job's full output                                      ┃destroy    337d154abf4b…       │
+│  ○ 5 stopped     │┃  slow-stop┃   c                cancel the highlighted running job                              ┃destroy    43ee5206a7f7…       │
+│                  │┃  blog-app-┃   x                clear finished jobs                                             ┃exec_create shop-api-1  sh -c …│
+│                  │┃  blog-db-1┃   W                save the highlighted job's output to a file (asks first)        ┃exec_start shop-api-1  sh -c c…│
+│                  │┃  old-migra┃                                                                                    ┃exec_die exit 0 shop-api-1     │
+│                  │┃  report-jo┃ How changes are confirmed                                                          ┃                               │
+│                  │┗━━━━━━━━━━━┃   No key changes anything by itself. Every action above opens a dialog that        ┃                               │
+│                  │┌─ 3 Details┃   names the exact object, the effect and the daemon.                               ┃                               │
+│                  ││Name     sh┃     • start, stop, restart, pause, unpause, kill, connect, disconnect,             ┃                               │
+│                  ││ID       e9┃       stop project: press y. Enter does nothing.                                   ┃                               │
+│                  ││Image    sh┃     • anything that deletes (remove, prune, remove project): type the word         ┃                               │
+│                  ││State    ● ┃       shown and press Enter.                                                       ┃                               │
+│                  ││Compose  sh┃     • a selection, whatever the action: type the word with the count shown         ┃                               │
+│                  ││Started  20┃       (stop 3, remove 7) and press Enter. The dialog lists every object, and       ┃                               │
+│                  ││Command  no┃       under "Not included" each selected one left out, with the reason.            ┃                               │
+│                  ││Restart  no┃     • pull, new volume/network, shell, tag: you type the name; Enter submits.      ┃                               │
+│                  ││Runtime  tt┃     • untag, push: type the tag shown and press Enter.                             ┃                               │
+│                  ││Created  20┃     • copy to daemon: type the tag shown — the short image ID for an untagged      ┃                               │
+│                  ││           ┃       image — and press Enter. The dialog names both daemons.                      ┃───────────────────────────────┘
 │                  ││Ports      ┃   A dialog ignores those keys for its first quarter of a second, and a key         ┃────────────────────── 4 done ─┐
-│                  ││  0.0.0.0:3┃   pressed while a confirmation is still being prepared drops it: nothing typed     ┃es 2 volumes                1ms│
-│                  ││           ┃   ahead, or typed for something else, can consent. Esc always works at once.       ┃hello-world:latest        433ms│
-│                  ││Networks   ┃   Nothing is ever forced. If something is in use the dialog says by what and       ┃iner shop-web-1             4ms│
-│                  ││  shop_defa┃   refuses. A prune lists exactly what it will delete and deletes only that.        ┃ner shop-web-1              7ms│
+│                  ││  0.0.0.0:3┃   pressed while a confirmation is still being prepared drops it: nothing typed     ┃es 2 volumes               13ms│
+│                  ││           ┃   ahead, or typed for something else, can consent. Esc always works at once.       ┃hello-world:latest        423ms│
+│                  ││Networks   ┃   Nothing is ever forced. If something is in use the dialog says by what and       ┃iner shop-web-1             1ms│
+│                  ││  shop_defa┃   refuses. A prune lists exactly what it will delete and deletes only that.        ┃ner shop-web-1              1ms│
 │                  ││           ┃                                                                                    ┃                               │
 │                  ││Mounts     ┃ Inside a shell (e)                                                                 ┃                               │
 │                  ││  volume sh┃   exit, Ctrl-D     back to the desk                                                ┃                               │
 │                  ││           ┃   Ctrl-] ×3        leave at once, even if the daemon has stopped answering         ┃                               │
 │                  ││           ┃                                                                                    ┃                               │
-└──────────────────┘└───────────┃ ↑↓ PgUp PgDn scroll  Esc close  304–337 of 337                                     ┃───────────────────────────────┘
+└──────────────────┘└───────────┃ ↑↓ PgUp PgDn scroll  Esc close  431–464 of 464                                     ┃───────────────────────────────┘
  Back from the shell in shop-api┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
  ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  n new  e she… Tab pane  ? keys  q quit

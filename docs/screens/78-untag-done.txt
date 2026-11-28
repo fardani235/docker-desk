@@ -1,8 +1,8 @@
- Docker Desk  unix:///tmp/ddfake4208723272/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…272/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake2336586891/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…891/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (4 of 19) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: acme/api ━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│  03:18:11 img tag        acme/api:release-7  │
-│▸ Images        19│┃▸ acme/api                latest        8387789bd2a4    52.0MB     9d         - ┃│  03:18:12 img untag      acme/api:3.29.0     │
+│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│  05:02:55 img tag        acme/api:release-7  │
+│▸ Images        19│┃▸ acme/api                latest        8387789bd2a4    52.0MB     9d         - ┃│  05:02:56 img untag      acme/api:3.29.0     │
 │  Volumes        7│┃  acme/api                previous      8387789bd2a4    52.0MB     9d         - ┃│                                              │
 │  Networks       7│┃  acme/api                release-7     51d1711ee5b8    48.0MB     2d         - ┃│                                              │
 │  Compose        2│┃  acme/api                stable        51d1711ee5b8    48.0MB     2d         - ┃│                                              │
@@ -19,7 +19,7 @@
 │                  ││Reference  acme/api:latest                                                      ││                                              │
 │                  ││ID         8387789bd2a4                                                         ││                                              │
 │                  ││Size       52.0MB                                                               ││                                              │
-│                  ││Created    2026-11-17 03:18:11  (9d ago)                                        ││                                              │
+│                  ││Created    2026-11-19 05:02:54  (9d ago)                                        ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││References                                                                      ││                                              │
 │                  ││  acme/api:latest                                                               ││                                              │
@@ -28,7 +28,7 @@
 │                  ││Used by                                                                         ││                                              │
 │                  ││  no container                                                                  │└──────────────────────────────────────────────┘
 │                  ││                                                                                │┌─ 5 Jobs ──────────────────────────── 2 done ─┐
-│                  ││                                                                                ││▸ ✓ untag image acme/api:3.29.0            2ms│
+│                  ││                                                                                ││▸ ✓ untag image acme/api:3.29.0            3ms│
 │                  ││                                                                                ││  ✓ tag image acme/api:release-7           1ms│
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │

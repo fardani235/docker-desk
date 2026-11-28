@@ -961,10 +961,11 @@ mode), as a job with progress that `c` cancels.
   the path's own name: a directory, a link or another name is refused with what was received,
   unread.
 - **Kept nowhere.** What is read is held in memory for the open reader only. It is never
-  written, exported, searched, logged or put in a job's output (which holds the path, sizes and
-  bounds), and it is dropped when the reader closes. A missing path, a refusal, a cancelled
+  exported, searched, logged or put in a job's output (which holds the path, sizes and
+  bounds), and it is dropped when the reader closes. It reaches a file only when you press `W`
+  in the reader and confirm the path ([Capture](#capture--a-panes-text-to-a-file)). A missing path, a refusal, a cancelled
   read or a vanished container leaves the reason and no contents.
-- **Keys.** `↑` `↓` `PgUp` `PgDn` `g` `G` scroll, `w` toggles wrapping, `c` cancels a read in
+- **Keys.** `↑` `↓` `PgUp` `PgDn` `g` `G` scroll, `w` toggles wrapping, `W` saves the text, `c` cancels a read in
   progress, `Esc` or `q` closes back to the tree exactly as it was — cursor, open directories,
   order and filter. While it is open every key and wheel notch is the reader's; a click
   reaches nothing. Before the image's tree is read, `a` reads the archive from any row.
@@ -1214,6 +1215,65 @@ docker-desk --read-only --report ~/api.txt --report-format text --report-object 
 docker-desk --report ~/space.json --report-object :space
 ```
 
+### Capture — a pane's text to a file
+
+The desk runs in the terminal's alternate screen, so what it shows is gone when it closes — and
+a log buffer is dropped earlier still, when the highlight moves to another container. `W` keeps
+the text the focused pane holds as **one file on this machine**, through the same dialog and the
+same file writer as [Export](#export--evidence-to-a-file): one path, shown absolute before `y`,
+mode `0600`, never a replacement, the folder must exist, no partial file. It asks first.
+
+| Pane | The file holds | Prefilled name |
+| --- | --- | --- |
+| Details › Info | the summary lines | `~/docker-desk-info-<object>-<YYYYMMDD>.txt` |
+| Details › Inspect | the daemon's inspect document, indented JSON, no header | `~/docker-desk-inspect-<object>-<YYYYMMDD>.json` |
+| Details › Logs | every line the buffer holds, oldest first, markers included — or, with a filter, the lines it matches | `~/docker-desk-logs-shop-web-1-<YYYYMMDD>.txt` |
+| Details › Processes | the snapshot that was taken (no new one), every command line whole | `~/docker-desk-processes-<object>-<YYYYMMDD>.txt` |
+| Details › Changes | the comparison as the tab built it | `~/docker-desk-changes-<object>-<YYYYMMDD>.txt` |
+| Details › Declared | the comparison with the compose file, once `Enter` has made it | `~/docker-desk-declared-<project>-<YYYYMMDD>.txt` |
+| Events pane | every event the pane holds (at most 1,000), each line whole | `~/docker-desk-events-<context>-<YYYYMMDD>.txt` (`engine` with no context) |
+| Jobs pane | the highlighted job's output so far | `~/docker-desk-output-<target>-<YYYYMMDD>.txt` |
+| Files › a file's text | the text the reader holds, with its bounds named | `~/docker-desk-file-<name>-<YYYYMMDD>.txt` |
+
+Stats, Findings, Packages, Upstream and the List have no capture: `W` does nothing there.
+
+**Laid out for a page, not for the screen.** A capture is not a screenshot. Each pane hands over
+what it holds, not what fits: tables and events are laid out with no value cut, prose (Changes,
+Declared) is wrapped at 200 columns, colour is removed and the padding on the right is trimmed —
+so the same text captured from an 80-column terminal and from a 200-column one is the same file,
+byte for byte. A text capture begins with `#` lines naming the tool, the pane and the object, any
+filter with its query and `matched of held` count, the bound of the buffer, and that it was laid
+out for a page. Escape sequences and the control characters that could act on a terminal when
+the file is printed are removed, and a character that reorders the text around it (U+202E) is
+written as its visible escape; what the desk draws as visible escapes (`\x1b`) stays. The
+header's last line says it ends at the first line that is only `#`. An
+Inspect capture has no header — JSON has no comments — and is the daemon's document, indented:
+it parses, and a character that could reorder or act on a terminal is written as JSON's own
+`\uNNNN`, which is the same document.
+
+**A capture is not a report.** The two classes of file differ on purpose:
+
+| Capture (`W`) | Report (`w`) |
+| --- | --- |
+| the text the desk holds, kept as it is | what the desk computed, in a schema |
+| times, environment variable values, container IDs, command lines included | no times, host paths, daemon addresses, user names or environment values |
+| one pane, one moment: two captures differ when the pane did | deterministic: the same object, the same bytes, from the TUI or `--report` |
+| `text`, or the daemon's `json` for Inspect | `json`, `spdx`, `cyclonedx`, `text` |
+
+The dialog says which class the file belongs to, before `y`: an Inspect capture is *the daemon's
+inspect document as it sent it, environment variable values included*. Treat it like the
+container's own configuration. Nothing is redacted — that would defeat the point of keeping it.
+
+**Nothing else moves.** The text is collected when `W` is pressed, so nothing that changes
+behind the dialog changes the file. No request is sent to the daemon for a capture — not even a
+new process snapshot — so `W` works in `--read-only` mode. A capture holds what the desk holds:
+a log capture is bounded by the buffer (5,000 lines; the last 1,000 when the stream opened), and
+its header says so. When the pane holds nothing yet — an inspect document still loading, no log
+stream, a comparison not built, a job with no output — nothing is written and the status line
+says why (`Nothing to save: the comparison has not been built yet.`). The result is one
+sentence: `Saved text to /home/you/docker-desk-logs-shop-web-1-20261128.txt (5123 bytes, mode
+0600).`, or `Not saved: …` with the writer's reason.
+
 ### Themes
 
 | Theme | |
@@ -1256,6 +1316,7 @@ Press `?` inside the desk for the same list.
 | `B` | Repository: a registry's tags for the highlighted image's repository, and a pull by digest (see [Repository](#repository--a-registrys-tags-and-one-build-by-its-digest)) |
 | `M` | the daemon picker: this session's daemons and this machine's Docker contexts (see [Several daemons](#several-daemons-in-one-session)) |
 | `>` `<` | focus the next / previous connected daemon |
+| `W` | save the focused pane's text to a file: a Details tab (Info, Inspect, Logs, Processes, Changes, Declared), the Events pane, the highlighted job's output, or a file open in Files — asks first, sends nothing (see [Capture](#capture--a-panes-text-to-a-file)) |
 | `T` | next colour theme |
 | `?` | help |
 | `q`, `Ctrl+C` | quit (asks first if jobs are running) |
@@ -1355,7 +1416,8 @@ container, and on `r` — never on a timer; its capture time is in the status ro
 processes are available only for running containers. Long values are cut to the pane width;
 the movement keys scroll the rows. Command lines are shown as the daemon reports them,
 arguments included — nothing is masked, so a secret passed on a command line is visible here,
-as it is to `docker top`; process rows are never written to jobs, the status line or files.
+as it is to `docker top`; process rows are never written to jobs or the status line, and reach a
+file only when you press `W` on the tab and confirm its path ([Capture](#capture--a-panes-text-to-a-file)).
 **Changes** (Containers): `↑` `↓` scroll · `Enter` compare the contents of both images (a
 job; nothing is read before it) · `c` cancel the comparison.
 **Declared** (Compose): `↑` `↓` scroll · `Enter` read the project's compose file and compare it
@@ -1456,6 +1518,9 @@ being careful.
     destination and that same-named files there are replaced; press `y`. Copying *out* changes
     nothing on the daemon: Enter on its form writes only the one local path it shows, never
     one that exists, and is allowed in read-only mode.
+  - capture a pane's text (`W`) → the same: the dialog names the object, what the file holds
+    and that it is a capture, not a report; `y` writes only the one local path it shows, never
+    one that exists. Nothing is sent to the daemon; allowed in read-only mode.
   - save an image's archive (`w` on Images) → the same: the form names the image, the tag or
     ID, the platform and the one local path; Enter sends only the archive `GET` (after
     re-checking the tag), never replaces a file, removes a partial one on cancel or failure,
@@ -1795,6 +1860,8 @@ internal/forensics     what an image's own archive holds, read as one stream: fi
 internal/report        evidence files: pure serializers (json, SPDX 2.3, CycloneDX 1.5, text) of plain
                        structs, and the one writer of files, whole or streamed (0600, never a partial one)
 internal/report/collect  what a view or --report has computed, as report's structs: the one conversion
+internal/capture       a pane's text laid out for a page (W): colour and controls removed, padding
+                       trimmed, the # header, the inspect document as JSON; standard library only
 internal/jobs          background jobs and their ledger
 internal/live          bounded buffers and stream supervision for logs, stats and events
 internal/shell         the interactive exec session and the terminal hand-off

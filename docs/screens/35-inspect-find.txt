@@ -1,4 +1,4 @@
- Docker Desk  unix:///tmp/TestSearchInTheSandbox2383402514/001/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/TestSearchInTheSandbox3194215655/001/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
  Daemons [◆1 /tmp/TestSe…01/sb.sock ●]                                                                                  M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Containers (1 of 13) ─────────────────────────────── filter: shop-db ─┐┌─ 4 Events ────────────────────── ● live ─┐
 │▸ Containers    13││  NAME           IMAGE        STATE          CPU       MEM  STATUS        ││Waiting for engine events…                │
@@ -18,7 +18,7 @@
 │                  │┃{                                                                         ┃│                                          │
 │                  │┃  "Id": "e4787a232c7582e869c00faa6e6e5fe85243fc0b3bebb6458f4c380986cb64aa"┃│                                          │
 │                  │┃,                                                                         ┃│                                          │
-│                  │┃  "Created": "2026-11-26T01:04:26.531847534Z",                            ┃│                                          │
+│                  │┃  "Created": "2026-11-27T19:01:37.968147318Z",                            ┃│                                          │
 │                  │┃  "Path": "postgres",                                                     ┃│                                          │
 │                  │┃  "Args": [],                                                             ┃│                                          │
 │                  │┃  "State": {                                                              ┃│                                          │
@@ -31,11 +31,11 @@
 │                  │┃    "Pid": 4242,                                                          ┃│Everything that changes the daemon        │
 │                  │┃    "ExitCode": 0,                                                        ┃│runs here, in the background.             │
 │                  │┃    "Error": "",                                                          ┃│                                          │
-│                  │┃    "StartedAt": "2026-11-26T01:04:26.531847534Z",                        ┃│                                          │
+│                  │┃    "StartedAt": "2026-11-27T19:01:37.968147318Z",                        ┃│                                          │
 │                  │┃    "FinishedAt": "0001-01-01T00:00:00Z",                                 ┃│                                          │
 │                  │┃    "Health": {                                                           ┃│                                          │
 │                  │┃      "Status": "healthy",                                                ┃│                                          │
 │                  │┃find: status  2 of 2  at State.Health.Status                              ┃│                                          │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────┘
 
- n N next / prev  Esc clear find  ↑↓ scroll  [ ] tab  w wrap  s start  t stop  R restart  p pause  u unpause  K k… Tab pane  ? keys  q quit
+ n N next / prev  Esc clear find  ↑↓ scroll  [ ] tab  w wrap  W save text  s start  t stop  R restart  p pause  u… Tab pane  ? keys  q quit

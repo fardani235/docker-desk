@@ -176,6 +176,9 @@ func (m *Model) onKey(k tea.KeyMsg) tea.Cmd {
 	return nil
 }
 
+// keyCapture writes the focused pane's text to a file (capture.go).
+const keyCapture = "W"
+
 const droppedNotice = "Dropped the pending action: a key was pressed before its confirmation appeared."
 
 // setTheme repaints the desk in another palette. Nothing is stored: every
@@ -331,6 +334,13 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 	if m.onSearchOpenKey(key) {
 		return nil
 	}
+	if key == keyCapture {
+		// The pane's text to a file (capture.go). Before the tabs' own
+		// keys: no tab gives W another meaning, and Stats, Findings and
+		// Upstream, which are not text, do nothing with it.
+		m.captureDetails()
+		return nil
+	}
 	if m.tabName() == tabFindings && m.onFindingsKey(key) {
 		return nil
 	}
@@ -463,6 +473,8 @@ func (m *Model) onEventsKey(key string) tea.Cmd {
 		}
 	case "enter":
 		m.jumpToEvent()
+	case keyCapture:
+		m.captureEventsPane()
 	case "esc":
 		m.focus = PaneList
 	}
@@ -485,6 +497,8 @@ func (m *Model) onJobsKey(key string) tea.Cmd {
 			m.dlg = &dialog{kind: dlgJob, jobID: list[i].ID, follow: true}
 			m.dlg.text.wrap = true
 		}
+	case keyCapture:
+		m.captureJobPane()
 	case "c":
 		m.cancelSelectedJob()
 	case "x":

@@ -1,16 +1,16 @@
- Docker Desk  unix:///tmp/ddfake161356155/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…155/d.sock ●] │  2 staging ●                                                                                       M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3300907733/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…733/d.sock ●] │  2 staging ●                                                                                       M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (14) · 1 needs attention — H reads exit codes and restarts too ━━━━━━━┓┌─ 4 Events ───────────────────────────── ● live ─┐
 │▸ Containers    14│┃  NAME           IMAGE        STATE           CPU       MEM  STATUS        PORTS       ┃│Waiting for engine events…                       │
-│  Images        17│┃▸ distroless-s…  gcr.io/dis…  ● running      9.0%   50.0MiB  Up 5 hours                ┃│Everything the daemon does                       │
-│  Volumes        7│┃  noisy-logger   alpine:3.20  ● running     38.5%    329MiB  Up 12 minut…              ┃│shows up here as it happens.                     │
+│  Images        17│┃▸ distroless-s…  gcr.io/dis…  ● running      9.3%   49.5MiB  Up 5 hours                ┃│Everything the daemon does                       │
+│  Volumes        7│┃  noisy-logger   alpine:3.20  ● running     38.9%    328MiB  Up 12 minut…              ┃│shows up here as it happens.                     │
 │  Networks       7│┃  paused-batch   alpine:3.20  ‖ paused                       Up 50 minut…              ┃│                                                 │
-│  Compose        2│┃  payments-api   acme/payme…  ● unhealthy   14.8%    313MiB  Up 3 hours …              ┃│                                                 │
-│                  │┃  redis-cache    redis:7      ● running      7.3%    379MiB  Up 26 hours   6379→6379…  ┃│                                                 │
-│  ● 8 running     │┃  shop-api-1     shop/api:d…  ● running     70.9%    411MiB  Up 3 hours    3000→3000…  ┃│                                                 │
-│  ‖ 1 paused      │┃  shop-db-1      postgres:16  ● healthy    134.8%    701MiB  Up 3 hours …  5432/tcp    ┃│                                                 │
-│  ○ 5 stopped     │┃  shop-web-1     nginx:1.27   ● running     75.5%    489MiB  Up 3 hours    8080→80/t…  ┃│                                                 │
-│  ▲ 1 needs you   │┃  slow-stopper   busybox:1.…  ● running      9.4%    467MiB  Up 40 minut…              ┃│                                                 │
+│  Compose        2│┃  payments-api   acme/payme…  ● unhealthy   16.0%    312MiB  Up 3 hours …              ┃│                                                 │
+│                  │┃  redis-cache    redis:7      ● running      7.8%    384MiB  Up 26 hours   6379→6379…  ┃│                                                 │
+│  ● 8 running     │┃  shop-api-1     shop/api:d…  ● running     78.7%    417MiB  Up 3 hours    3000→3000…  ┃│                                                 │
+│  ‖ 1 paused      │┃  shop-db-1      postgres:16  ● healthy    133.9%    707MiB  Up 3 hours …  5432/tcp    ┃│                                                 │
+│  ○ 5 stopped     │┃  shop-web-1     nginx:1.27   ● running     79.9%    492MiB  Up 3 hours    8080→80/t…  ┃│                                                 │
+│  ▲ 1 needs you   │┃  slow-stopper   busybox:1.…  ● running     10.9%    461MiB  Up 40 minut…              ┃│                                                 │
 │    H reads more  │┃  blog-app-1     ghost:5      ○ exited                       Exited (0) …              ┃│                                                 │
 │                  │┃  blog-db-1      mysql:8      ○ exited                       Exited (0) …              ┃│                                                 │
 │                  │┃  old-migration  shop/api:d…  ○ exited                       Exited (0) …              ┃│                                                 │
@@ -21,11 +21,11 @@
 │                  ││ID       86f975de6cbb                                                                  ││                                                 │
 │                  ││Image    gcr.io/distroless/static:nonroot                                              ││                                                 │
 │                  ││State    ● running   Up 5 hours                                                        ││                                                 │
-│                  ││Started  2026-11-26 06:04:02                                                           ││                                                 │
+│                  ││Started  2026-11-28 00:01:06                                                           ││                                                 │
 │                  ││Command  /svc                                                                          ││                                                 │
 │                  ││Restart  no (restarted 0×)                                                             ││                                                 │
 │                  ││Runtime  tty=false  privileged=false  env vars=1                                       ││                                                 │
-│                  ││Created  2026-11-26 06:04:02                                                           ││                                                 │
+│                  ││Created  2026-11-28 00:01:06                                                           ││                                                 │
 │                  ││                                                                                       ││                                                 │
 │                  ││Ports                                                                                  │└─────────────────────────────────────────────────┘
 │                  ││  none                                                                                 │┌─ 5 Jobs ────────────────────────────────────────┐

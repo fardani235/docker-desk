@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake1476113602/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…602/d.sock ●]                                                                                  M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake2563485487/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…487/d.sock ●]                                                                                  M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┌─ 4 Events ────────────────────── ● live ─┐
 │▸ Containers    13│┃  NAME           IMAGE        STATE          CPU       MEM  STATUS        ┃│Waiting for engine events…                │
 │  Images        16│┃▸ distroless-s…  gcr.io/dis…  ● running        …         …  Up 5 hours    ┃│Everything the daemon does                │
@@ -19,11 +19,11 @@
 │                  ││ID       86f975de6cbb                                                     ││                                          │
 │                  ││Image    gcr.io/distroless/static:nonroot                                 ││                                          │
 │                  ││State    ● running   Up 5 hours                                           ││                                          │
-│                  ││Started  2026-11-26 06:05:24                                              ││                                          │
+│                  ││Started  2026-11-28 00:02:39                                              ││                                          │
 │                  ││Command  /svc                                                             ││                                          │
 │                  ││Restart  no (restarted 0×)                                                ││                                          │
 │                  ││Runtime  tty=false  privileged=false  env vars=1                          ││                                          │
-│                  ││Created  2026-11-26 06:05:24                                              ││                                          │
+│                  ││Created  2026-11-28 00:02:39                                              ││                                          │
 │                  ││                                                                          ││                                          │
 │                  ││Ports                                                                     │└──────────────────────────────────────────┘
 │                  ││  none                                                                    │┌─ 5 Jobs ─────────────────────────────────┐
