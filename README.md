@@ -251,7 +251,7 @@ each `ro`.
 | --- | --- |
 | **1 Kinds** | Containers, Images, Volumes, Networks, Compose — with live counts. Moving the highlight is enough; the list follows. |
 | **2 List** | The objects of that kind. Containers show live CPU and memory, and — in the STATE cell, when the daemon reports one — their health (`● running · unhealthy`, in the warning colour when it is not healthy; a container without a healthcheck is never called healthy). The highlight follows the *object* when the list changes underneath it. |
-| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON; `/` finds a key or value and names its path), for containers **Changes** (what the image its tag names now would bring; see below), **Logs** (live follow; `/` filters), **Stats** (CPU, memory, network, disk — with history) and **Processes** (a snapshot of `docker top`; see below), for images **Findings** (what the image's own bytes hold; see below) and **Upstream** (whether the tag names another build today; see below), and for compose projects **Declared** (what the project's compose file says now against what runs; see [Compose, honestly](#compose-honestly)). |
+| **3 Details** | The highlighted object: **Info** (readable summary), **Inspect** (the daemon's full JSON; `/` finds a key or value and names its path), for containers **Changes** (what the image its tag names now would bring; see below), **Logs** (live follow; `/` filters), **Stats** (CPU, memory, network, disk — with history) and **Processes** (a snapshot of `docker top`; see below), for images **Findings** (what the image's own bytes hold; see below), **Upstream** (whether the tag names another build today; see below) and **Layers** (what the build did, step by step, and which images hold the same layers; see below), and for compose projects **Declared** (what the project's compose file says now against what runs; see [Compose, honestly](#compose-honestly)). |
 | **4 Events** | The engine's event stream as it happens. It is the answer to everything you do — and to everything anyone else does to this daemon. |
 | **5 Jobs** | Every change you asked for, running in the background: progress while it runs, the daemon's answer when it ends. |
 | **Attention** (`H`) | Not a pane: one full screen for every daemon of the session — the containers that need a person, first. See [Attention](#attention--is-anything-wrong-anywhere). |
@@ -499,6 +499,80 @@ check has answered, is filled only by checks, and is the first column to go when
 narrow. `--no-registry` forbids every
 registry request, by the desk or through the daemon; `--read-only` does not, as the check only
 reads. Plain HTTP is used for loopback registries only; there is no private-CA option yet.
+
+### Layers — what the build did, step by step
+
+Images › **Layers** is the last of an image's tabs — `Info`, `Inspect`, `Findings`, `Upstream`, `Layers` — so no
+earlier tab moved; `[` from Info reaches it in one key. It lists the build: **one row per step
+of the image's history, oldest first**, so `L1` is the base layer, as in Findings and Files. A
+step that made no layer (`ENV`, `LABEL`, `CMD`, …) is a row too, marked `config`: on a current
+image those are most of the history — 11 of `nginx`'s 18 steps.
+
+```
+3 of 5 layers are held by another image here · the other 2 hold 63.0MB (the daemon's history) · …
+8 steps · 5 layers · the archive's history (exact: its empty_layer says which steps made a layer)
+   # layer      size   files held  instruction
+   1 L1       28.4MB       1    1  ADD file:51c0ffee in /
+   2 config                        ENV LANG=C.UTF-8
+▸  3 L2       61.2MB       1    -  RUN make build  (build args: BUILD_TOKEN)
+   4 L3           0B       0    1  WORKDIR /app
+```
+
+Under the list, the highlighted step's block: the whole instruction; the layer it made; which
+images hold the same layer; the daemon's size for the step, and — once the archive is read —
+the bytes its files hold and the bytes the archive stores for it; the files and directories it
+wrote, the paths it deleted and the opaque directories it set; the layer's content digest and
+whether it matches the config's `diff_id`; and the findings about that layer. A config-only
+step says what that means — it changed the image's configuration, not its files — and has no
+digest. In a narrow pane the files column goes first, then the size; the instruction and the
+layer always stay, and the block still states the figures.
+
+**Two sources for the steps, and the tab says which is shown.**
+
+- *the daemon's history* — available at once, from one inspect and one history request for the
+  highlighted image. It lists the steps but does not say which made a layer, so a step is bound
+  to a layer **only when exactly as many entries carry a size as the image has layers**; the
+  header then says the binding was counted. Otherwise no row names a layer (`?`), and the tab
+  says why and that the archive's history would. The daemon's `EmptyLayer` field is never
+  read: the Docker 29 engine this was measured on reports it false for every entry, which
+  would make an 18-step, 7-layer image 18 layers.
+- *the archive's history* — exact. The image config's history marks each step `empty_layer` or
+  not, and the desk reads it with the rest of the archive. This is the **Findings analysis**:
+  the same job, the same report, the same rules — an image analysed on Findings is drawn here
+  with no request, a remote image over 500 MB waits for `Enter`, `c` cancels. When the exact
+  list arrives the cursor stays on the same step and the header changes to say so.
+
+Every instruction is shown as Findings shows it: one line, build-argument values left out
+(`RUN make build  (build args: BUILD_TOKEN)`), secret-shaped text masked. The daemon's own
+`created_by` string is not kept, so no view, file or job can show it.
+
+**Shared means the same content, not stored bytes.** A layer is *held by* another image when
+that image has a layer with the same diff ID — the digest of the layer's content — at any
+depth. The image itself never counts, and an image holding the same content several times
+counts once. This is not the Space view's figure, on purpose: [Space](#space--where-the-bytes-went-and-what-removing-something-frees)
+counts bytes, by chain ID, because a classic store keeps a layer under the stack below it —
+the same content on two different stacks is two copies there. Layers answers a different
+question, *do I build on the same content?*, and chain IDs cannot: an image on this machine
+holds the empty layer at five depths, its whole 34 shared bytes are that blob, and by chain it
+shares nothing with anyone. So the two views can name different sets; this tab never says a
+byte is stored once, and Space never says two images have a layer in common that the store
+keeps twice.
+
+**The holders are read when you ask.** Knowing who holds a layer needs every image's diff IDs:
+one inspect and one history request per image. Opening the tab reads only the highlighted
+image; the summary line says how many others there are, and `s` reads them — as one job the
+Jobs pane cancels, `GET` only. What is read is kept for the session and shared with the Space
+view, so whichever was opened first, each image is asked once. Until then the tab says the
+holders are not known, never zero. If some images could not be read, the held layers are *at
+least* and what the others hold *at most*, with the count of images not read, and `s` tries
+those again. Where no step is bound to a layer, a line names the held layers by number.
+
+The tab never claims more than it has: a history that does not bind, an image with no history
+or no layers, an analysis that failed (`Enter` tries again), a layer the archive could not
+walk, an archive that is not of the layers the daemon lists — each is one line with its
+reason, and no row is invented. It sends `GET` requests only and works in `--read-only` mode.
+`W` writes the whole build — every step with its block, not only the rows in view — as a text
+[capture](#capture--a-panes-text-to-a-file).
 
 ### Repository — a registry's tags, and one build by its digest
 
@@ -1231,6 +1305,7 @@ mode `0600`, never a replacement, the folder must exist, no partial file. It ask
 | Details › Processes | the snapshot that was taken (no new one), every command line whole | `~/docker-desk-processes-<object>-<YYYYMMDD>.txt` |
 | Details › Changes | the comparison as the tab built it | `~/docker-desk-changes-<object>-<YYYYMMDD>.txt` |
 | Details › Declared | the comparison with the compose file, once `Enter` has made it | `~/docker-desk-declared-<project>-<YYYYMMDD>.txt` |
+| Details › Layers | the whole build: every step with its layer, holders, sizes, contents, digest and findings — not only the rows in view | `~/docker-desk-layers-shop-api-dev-<YYYYMMDD>.txt` |
 | Events pane | every event the pane holds (at most 1,000), each line whole | `~/docker-desk-events-<context>-<YYYYMMDD>.txt` (`engine` with no context) |
 | Jobs pane | the highlighted job's output so far | `~/docker-desk-output-<target>-<YYYYMMDD>.txt` |
 | Files › a file's text | the text the reader holds, with its bounds named | `~/docker-desk-file-<name>-<YYYYMMDD>.txt` |
@@ -1239,7 +1314,7 @@ Stats, Findings, Packages, Upstream and the List have no capture: `W` does nothi
 
 **Laid out for a page, not for the screen.** A capture is not a screenshot. Each pane hands over
 what it holds, not what fits: tables and events are laid out with no value cut, prose (Changes,
-Declared) is wrapped at 200 columns, colour is removed and the padding on the right is trimmed —
+Declared, Layers) is wrapped at 200 columns, colour is removed and the padding on the right is trimmed —
 so the same text captured from an 80-column terminal and from a 200-column one is the same file,
 byte for byte. A text capture begins with `#` lines naming the tool, the pane and the object, any
 filter with its query and `matched of held` count, the bound of the buffer, and that it was laid
@@ -1316,7 +1391,7 @@ Press `?` inside the desk for the same list.
 | `B` | Repository: a registry's tags for the highlighted image's repository, and a pull by digest (see [Repository](#repository--a-registrys-tags-and-one-build-by-its-digest)) |
 | `M` | the daemon picker: this session's daemons and this machine's Docker contexts (see [Several daemons](#several-daemons-in-one-session)) |
 | `>` `<` | focus the next / previous connected daemon |
-| `W` | save the focused pane's text to a file: a Details tab (Info, Inspect, Logs, Processes, Changes, Declared), the Events pane, the highlighted job's output, or a file open in Files — asks first, sends nothing (see [Capture](#capture--a-panes-text-to-a-file)) |
+| `W` | save the focused pane's text to a file: a Details tab (Info, Inspect, Logs, Processes, Changes, Declared, Layers), the Events pane, the highlighted job's output, or a file open in Files — asks first, sends nothing (see [Capture](#capture--a-panes-text-to-a-file)) |
 | `T` | next colour theme |
 | `?` | help |
 | `q`, `Ctrl+C` | quit (asks first if jobs are running) |
@@ -1426,6 +1501,18 @@ read. Also reached from the project's action menu: *compare with the compose fil
 **Findings** (Images): `↑` `↓` move between findings · `o` order by layer / group / certainty ·
 `v` reveal the highlighted secret · `i` the image's packages · `w` export… · `c` cancel the analysis ·
 `Enter` analyse when asked first or after a failure.
+**Layers** (Images; Details pane focused):
+
+| Key | |
+| --- | --- |
+| `↑` `↓` `j` `k` | Layers: move between build steps, oldest first |
+| `g` `G` | Layers: first / last step |
+| `PgUp` `PgDn` `Space` | Layers: a page of steps |
+| `s` | Layers: read every listed image's layers (one inspect and one history request each, `GET` only, one cancellable job), to say which images hold the same layer |
+| `Enter` | Layers: analyse — the consent a large image on a remote daemon waits for, and the retry after a failed analysis |
+| `c` | Layers: cancel the analysis in progress |
+| `W` | Layers: save the whole build to a text file (asks first) |
+
 **Packages** (`i` on Findings): `↑` `↓` move · `/` search name, version, licence and purl ·
 `o` order by name / state / layer / licence · `s` show all, the disagreements, or one state ·
 `S` show all · `w` export… (SPDX first) · `Esc` clear the search, then close.
@@ -1769,7 +1856,11 @@ resolves, so Images › Upstream falls back to the fake daemon, which says `acme
 registry of its own, in plain HTTP on a free loopback port, holding `acme/api` (105 tags,
 arm64-only `3.29.0-rc.1` among them) and three local images of it, so `B` on
 `127.0.0.1:<port>/acme/api:3.28.2` shows `here`, `here, the tag moved upstream` and
-`same build as stable`, and `Enter` on `3.28.3` pulls it by digest — plus, for Files (`F`),
+`same build as stable`, and `Enter` on `3.28.3` pulls it by digest — plus, for Images › Layers,
+`acme/steps:1` and its base `acme/steps-base:1`: a history of eight steps for five layers, three
+of them config only, a sealed build argument, the base layer shared at the same depth and an
+empty layer shared at different ones, with daemon sizes that do not bind by counting, so the
+tab shows `?` until the archive is read — plus, for Files (`F`),
 `nginx:1.27`, whose archive has a deep tree, a file a later layer replaces, a whiteout, an opaque
 directory, a symlink, a hard link, a device, a FIFO, a traversal-shaped name and a **hostile name**
 (an ANSI colour, a newline and a byte that is not UTF-8, drawn escaped), and `shop-web-1`, made
@@ -1849,7 +1940,8 @@ internal/session       the session's daemons: which is focused, adding (never as
                        and the Attention view's reads of every member, which end with the view
 internal/engine        the only door to the daemon (Docker's client library behind a narrow interface)
 internal/plan          what a mutation will do, decided by pure code before anything is sent
-internal/space         which bytes images share, and what removing a set of them frees (pure)
+internal/space         which bytes images share, what removing a set of them frees, and which images
+                       hold the same layer content (pure)
 internal/attention     which containers need a person: the ladder, the order, the counts (pure)
 internal/changes       what differs between the image a container runs and the one its tag names (pure)
 internal/registry      the registry client: references, credentials, challenges, tags/list, manifests

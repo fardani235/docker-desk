@@ -27,9 +27,11 @@ const (
 	tabInspect = "Inspect"
 )
 
+// Layers is appended to the Images tabs: no existing tab's position changes
+// (docs/DECISIONS.md, LY8).
 var kindTabs = [kindCount][]string{
 	KindContainers: {tabInfo, tabChanges, tabLogs, tabStats, tabProcesses, tabInspect},
-	KindImages:     {tabInfo, tabInspect, tabFindings, tabUpstream},
+	KindImages:     {tabInfo, tabInspect, tabFindings, tabUpstream, tabLayers},
 	KindVolumes:    {tabInfo, tabInspect},
 	KindNetworks:   {tabInfo, tabInspect},
 	KindCompose:    {tabInfo, tabDeclared},
@@ -911,6 +913,8 @@ func (m *Model) renderTab(w, h int) []string {
 		return m.renderFindings(w, h)
 	case tabUpstream:
 		return m.renderUpstream(w, h)
+	case tabLayers:
+		return m.renderLayers(w, h)
 	case tabLogs:
 		return m.renderLogs(w, h)
 	case tabStats:

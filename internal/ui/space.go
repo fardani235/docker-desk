@@ -38,14 +38,6 @@ const (
 	srcArchive  = "archive"
 )
 
-// layerInfo is what the daemon said about one image's layers. An image ID
-// names its content, so this never needs to be read again.
-type layerInfo struct {
-	chains []string
-	sizes  []int64 // nil when the history did not map onto the layers
-	err    string
-}
-
 type spaceState struct {
 	open bool
 	// What the desk looked like when the view opened; put back on close.
@@ -53,12 +45,13 @@ type spaceState struct {
 	prevKind  Kind
 	prevKey   string
 
-	du     *engine.DiskUsage
-	duAt   time.Time
-	duErr  string
-	layers map[string]layerInfo
-	ix     *space.Index
-	run    *spaceRun
+	du    *engine.DiskUsage
+	duAt  time.Time
+	duErr string
+	// The layers themselves are the desk's (layercache.go): Images ›
+	// Layers reads the same ones.
+	ix  *space.Index
+	run *spaceRun
 
 	sizes    map[string]engine.ContainerSize
 	sizesAt  time.Time
@@ -144,9 +137,19 @@ func (m *Model) stale(t time.Time) bool { return t.Before(m.changedAt) }
 // startDiskUsage asks the daemon for its account, then for the layers of
 // every image not seen before, as one cancellable job.
 func (m *Model) startDiskUsage() {
-	known := make(map[string]bool, len(m.sp.layers))
-	for id, l := range m.sp.layers {
+	// Known, or on their way from the Layers tab's own read: one request
+	// per image per session, whichever view asked.
+	known := make(map[string]bool, len(m.lc.byID))
+	for id, l := range m.lc.byID {
 		known[id] = l.err == ""
+	}
+	if lr := m.lc.run; lr != nil {
+		for id := range lr.ids {
+			known[id] = true
+		}
+	}
+	for id := range m.lc.own {
+		known[id] = true
 	}
 	run := &spaceRun{layer: map[string]layerInfo{}}
 	eng := m.eng
@@ -168,31 +171,15 @@ func (m *Model) startDiskUsage() {
 				todo = append(todo, it.ID)
 			}
 		}
-		for i, id := range todo {
-			if err := ctx.Err(); err != nil {
-				return err
-			}
-			r.Steps(i, len(todo))
-			r.Status(fmt.Sprintf("layers of image %d of %d (inspect, history)", i+1, len(todo)))
-			l, err := eng.ImageLayers(ctx, id)
-			info := layerInfo{}
-			if err != nil {
-				if ctx.Err() != nil {
-					return ctx.Err()
-				}
-				info.err = escErr(err)
-			} else {
-				info.chains = space.ChainIDs(l.DiffIDs)
-				if sizes, ok := space.LayerSizes(len(l.DiffIDs), l.History); ok {
-					info.sizes = sizes
-				}
-			}
+		err = readLayers(ctx, r, eng, todo, " (inspect, history)", func(id string, info layerInfo) {
 			run.mu.Lock()
 			run.layer[id] = info
 			run.ver++
 			run.mu.Unlock()
+		})
+		if err != nil {
+			return err
 		}
-		r.Steps(len(todo), len(todo))
 		r.Status(fmt.Sprintf("account read · layers of %d new image(s)", len(todo)))
 		return nil
 	})
@@ -301,11 +288,10 @@ func (m *Model) collectSpace() {
 			if du != nil && !at.Equal(m.sp.duAt) {
 				m.takeAccount(*du, at)
 			}
-			if m.sp.layers == nil {
-				m.sp.layers = map[string]layerInfo{}
-			}
 			for k, v := range layers {
-				m.sp.layers[k] = v
+				if !m.layerKnown(k) {
+					m.putLayers(k, v)
+				}
 			}
 			m.rebuildIndex()
 			m.dirty = true
@@ -359,15 +345,7 @@ func (m *Model) takeAccount(du engine.DiskUsage, at time.Time) {
 		}
 	}
 	m.sp.du, m.sp.duAt, m.sp.duErr = &du, at, ""
-	present := map[string]bool{}
-	for _, it := range du.ImageItems {
-		present[it.ID] = true
-	}
-	for id := range m.sp.layers {
-		if !present[id] {
-			delete(m.sp.layers, id) // bounded by what the daemon holds
-		}
-	}
+	m.pruneLayers() // bounded by what the daemon holds
 }
 
 func (m *Model) rebuildIndex() {
@@ -378,7 +356,7 @@ func (m *Model) rebuildIndex() {
 	imgs := make([]space.Image, 0, len(m.sp.du.ImageItems))
 	for _, it := range m.sp.du.ImageItems {
 		si := space.Image{ID: it.ID, Size: it.Size, SharedSize: it.SharedSize}
-		if l, ok := m.sp.layers[it.ID]; ok && l.err == "" {
+		if l, ok := m.lc.byID[it.ID]; ok && l.err == "" {
 			si.Chains, si.Sizes = l.chains, l.sizes
 		}
 		imgs = append(imgs, si)

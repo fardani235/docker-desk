@@ -442,6 +442,11 @@ func (m *Model) renderHints() string {
 				add("c", "cancel")
 			}
 			add("[ ]", "tab")
+		} else if m.tabName() == tabLayers {
+			add("↑↓", "step")
+			pairs = append(pairs, m.layersHints()...)
+			add(keyCapture, "save build")
+			add("[ ]", "tab")
 		} else if m.tabName() == tabFindings {
 			m.searchHints(add)
 			add("↑↓", "finding")
@@ -628,13 +633,14 @@ func (m *Model) helpLines(w int) []string {
 	row("w", "toggle line wrapping (not Processes: one row per process)")
 	row(keyCapture, "save this tab's text to a file (asks first): Info, Logs, Processes, Changes,")
 	out = append(out,
-		"                   Declared as text; Inspect as the daemon's JSON document",
+		"                   Declared, Layers as text; Inspect as the daemon's JSON document",
 		"  W writes what the tab holds, not what fits on screen: every held log line",
 		"  (or those the filter matches), every process with its whole command, prose",
 		"  wrapped at 200 columns, colour removed. It is a capture, not a report: times",
 		"  and the daemon's values, environment values included, are kept as they are.",
-		"  Nothing is sent to the daemon, so it works in read-only mode. Not on Stats,",
-		"  Findings or Upstream: they are not text.",
+		"  Nothing is sent to the daemon, so it works in read-only mode. On Layers it",
+		"  writes every build step with its facts, not only the rows in view. Not on",
+		"  Stats, Findings or Upstream: they are not text.",
 	)
 
 	sect("Details pane: search (/)")
@@ -713,6 +719,25 @@ func (m *Model) helpLines(w int) []string {
 		"  Opening the tab reads the image's own archive (GET /images/get) once and",
 		"  keeps the report for its ID and platform. Findings name a rule, a source",
 		"  (daemon, image, desk), a certainty, the layer and the build instruction.",
+	)
+
+	sect("Images › Layers tab (Details pane focused)")
+	row("↑ ↓  j k", "move between build steps, oldest first; L1 is the base layer")
+	row("g G  PgUp PgDn", "first / last step; a page up / down (Space pages down)")
+	row("s", "read every listed image's layers, to say which hold the same layer")
+	row("Enter", "analyse (when asked first, or after a failure)")
+	row("c", "cancel the analysis in progress")
+	row(keyCapture, "save the whole build to a text file (asks first)")
+	out = append(out,
+		"  One row per step of the image's history; a step that made no layer is a",
+		"  row marked config. The steps come from the daemon's history, bound to the",
+		"  layers only when exactly as many entries carry a size as there are layers,",
+		"  and from the archive's history once the image is analysed (the Findings",
+		"  analysis: one job, one report), where empty_layer binds them exactly. A",
+		"  layer is shared when another image here holds the same diff ID at any",
+		"  depth: content, not stored bytes — the Space view counts those. s sends",
+		"  one inspect and one history request per image not read before, as one job",
+		"  the Jobs pane cancels. Instructions are shown masked, as on Findings.",
 	)
 
 	sect("Images › Upstream tab, and U")

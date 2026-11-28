@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake3275626443/d.sock  ● connected  [READ-ONLY]
- Daemons [◆1 /tmp/ddfake…443/d.sock ● ro]                   M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake359712006/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…006/d.sock ● ro]                   M picker  < > focus
 ┌─ 1 Kinds ──────┐┌─ 2 Containers (1 of 13) ────────────────── filter: report ─┐
 │▸ Containers  13││  NAME            IMAGE         STATE          CPU       MEM│
 │  Images      16││▸ report-job      acme/report…  ○ exited                    │
@@ -15,7 +15,7 @@
 │                │┃↑↓ scroll · 26–31 of 46                                     ┃
 └────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ────────────── 1 done ─┐
-│Waiting for engine events…                  ││▸ ✓ compare images acme/re… 71ms│
+│Waiting for engine events…                  ││▸ ✓ compare images acme/re… 51ms│
 │Everything the daemon does                  ││                                │
 │shows up here as it happens.                ││                                │
 │                                            ││                                │

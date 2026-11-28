@@ -1,8 +1,8 @@
- Docker Desk  unix:///tmp/ddfake76036655/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…655/d.sock ●]                                                                                  M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake2327549623/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…623/d.sock ●]                                                                                  M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Containers (1 of 13) ────────────────────────────── filter: shop-web ─┐┌─ 4 Events ────────────────────── ● live ─┐
 │▸ Containers    13││  NAME           IMAGE        STATE          CPU       MEM  STATUS        ││Waiting for engine events…                │
-│  Images        16││▸ shop-web-1     nginx:1.27   ● running    73.1%    488MiB  Up 3 hours    ││Everything the daemon does                │
+│  Images        16││▸ shop-web-1     nginx:1.27   ● running    72.1%    487MiB  Up 3 hours    ││Everything the daemon does                │
 │  Volumes        7││                                                                          ││shows up here as it happens.              │
 │  Networks       7││                                                                          ││                                          │
 │  Compose        2││                                                                          ││                                          │
@@ -16,8 +16,8 @@
 │                  │└──────────────────────────────────────────────────────────────────────────┘│                                          │
 │                  │┏━ ◆ 3 Details: shop-web-1 ━━ Info Changes Logs Stats [Processes] Inspect ━┓│                                          │
 │                  │┃UID  PID  PPID C STIME TTY TIME     CMD                                   ┃│                                          │
-│                  │┃root 1101 1100 0 02:01 ?   00:00:01 nginx -g daemon off;                  ┃│                                          │
-│                  │┃root 1102 1101 0 02:01 ?   00:00:00 /bin/sh -c sleep infinity             ┃│                                          │
+│                  │┃root 1036 1035 0 15:37 ?   00:00:01 nginx -g daemon off;                  ┃│                                          │
+│                  │┃root 1037 1036 0 15:37 ?   00:00:00 /bin/sh -c sleep infinity             ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
@@ -34,7 +34,7 @@
 │                  │┃                                                                          ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
-│                  │┃snapshot at 05:01:41 · 2 processes · r takes a new one                    ┃│                                          │
+│                  │┃snapshot at 18:37:17 · 2 processes · r takes a new one                    ┃│                                          │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────┘
 
  / find  ↑↓ scroll  [ ] tab  r new snapshot  W save text  s start  t stop  R restart  p pause  u unpause  K kill … Tab pane  ? keys  q quit

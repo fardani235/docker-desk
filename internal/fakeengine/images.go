@@ -29,6 +29,10 @@ type Image struct {
 	layers []Layer
 	// config is what inspect reports; nil means the fake's default.
 	config *ImageConfig
+	// history, oldest first, is what GET /images/{id}/history reports
+	// when set: a fixture's own history, with the entries that made no
+	// layer. Nil means one entry per layer and one for CMD.
+	history []HistoryStep
 }
 
 // normalizeRef returns the familiar form of a reference with ":latest"

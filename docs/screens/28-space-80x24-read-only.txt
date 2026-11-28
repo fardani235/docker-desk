@@ -1,6 +1,6 @@
- Docker Desk  unix:///tmp/ddfake1070666789/d.sock  ● connected  [READ-ONLY]
- Daemons [◆1 /tmp/ddfake…789/d.sock ● ro]                   M picker  < > focus
-┏━ ◆ Space — where the bytes went ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 05:02:54 ━┓
+ Docker Desk  unix:///tmp/ddfake3741616067/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…067/d.sock ● ro]                   M picker  < > focus
+┏━ ◆ Space — where the bytes went ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ as of 18:38:30 ━┓
 ┃   collector runs.                                                            ┃
 ┃                                                                              ┃
 ┃   IMAGES  size, unique and shared as the daemon reports them · 0s ago        ┃

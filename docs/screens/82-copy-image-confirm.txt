@@ -1,18 +1,18 @@
- Docker Desk  unix:///tmp/ddfake1089997581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…581/d.sock ●] │  2 staging ●                                                                                       M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1942106279/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…279/d.sock ●] │  2 staging ●                                                                                       M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (1 of 16) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: acme/report ━┓┌─ 4 Events ───────────────────────────── ● live ─┐
 │  Containers    13│┃  REPOSITORY                   TAG             IMAGE ID          SIZE    AGE   USED BY ┃│Waiting for engine events…                       │
-│▸ Images        16│┃▸ acme/report                  1.4             efc03945f57b     114MB     1s         - ┃│Everything the daemon does                       │
+│▸ Images        16│┃▸ acme/report                  1.4             efc03945f57b     114MB     0s         - ┃│Everything the daemon does                       │
 │  Volumes        7│┃                ┏━ ◆ Copy image to another daemon ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ as it happens.                     │
 │  Networks       7│┃                ┃                                                                                    ┃                                    │
 │  Compose        2│┃                ┃ image      acme/report:1.4  (efc03945f57b)                                         ┃                                    │
-│                  │┃                ┃ from       /tmp/ddfake1089997581/d.sock  unix:///tmp/ddfake1089997581/d.sock       ┃                                    │
+│                  │┃                ┃ from       /tmp/ddfake1942106279/d.sock  unix:///tmp/ddfake1942106279/d.sock       ┃                                    │
 │  ● 7 running     │┃                ┃            (context default)                                                       ┃                                    │
-│  ‖ 1 paused      │┃                ┃ to         staging  unix:///tmp/ddfake57268157/d.sock  (context staging)           ┃                                    │
+│  ‖ 1 paused      │┃                ┃ to         staging  unix:///tmp/ddfake1559425850/d.sock  (context staging)         ┃                                    │
 │  ○ 5 stopped     │┃                ┃ platform   linux/amd64 · tag acme/report:1.4                                       ┃                                    │
 │                  │┃                ┃                                                                                    ┃                                    │
 │                  │┃                ┃ • Copies image efc03945f57b (114.4 MB as the source lists it), platform            ┃                                    │
-│                  │┃                ┃   linux/amd64, from /tmp/ddfake1089997581/d.sock to staging.                       ┃                                    │
+│                  │┃                ┃   linux/amd64, from /tmp/ddfake1942106279/d.sock to staging.                       ┃                                    │
 │                  │┃                ┃ • The archive streams directly from the source daemon into the target daemon,      ┃                                    │
 │                  │┃                ┃   through this desk's memory only: no file is written on this machine and no       ┃                                    │
 │                  │┗━━━━━━━━━━━━━━━━┃   registry is contacted.                                                           ┃                                    │

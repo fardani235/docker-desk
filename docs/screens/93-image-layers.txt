@@ -1,0 +1,42 @@
+ Docker Desk  unix:///tmp/ddfake1060597305/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…305/d.sock ●]                                                              M picker  < > focus
+┌─ 1 Kinds ────────┐┌─ 2 Images (2 of 18) ─────────────────────── filter: steps ─┐┌─ 4 Events ──────────────── ● live ─┐
+│  Containers    13││  REPOSITORY        TAG        IMAGE ID          SIZE    AGE││Waiting for engine events…          │
+│▸ Images        18││▸ acme/steps        1          95beb1cbd99a    91.5MB     2d││Everything the daemon does          │
+│  Volumes        7││  acme/steps-base   1          abd330ce4e3d    28.4MB    20d││shows up here as it happens.        │
+│  Networks       7││                                                            ││                                    │
+│  Compose        2││                                                            ││                                    │
+│                  ││                                                            ││                                    │
+│  ● 7 running     ││                                                            ││                                    │
+│  ‖ 1 paused      ││                                                            ││                                    │
+│  ○ 5 stopped     ││                                                            ││                                    │
+│                  ││                                                            ││                                    │
+│                  ││                                                            ││                                    │
+│                  ││                                                            ││                                    │
+│                  ││                                                            ││                                    │
+│                  │└────────────────────────────────────────────────────────────┘│                                    │
+│                  │┏━ ◆ 3 Details: acme/steps:1 ━━━━━━━━━━━━━━━━━ [Layers] 5/5 ━┓│                                    │
+│                  │┃3 of 5 layers are held by another image here · the other 2  ┃│                                    │
+│                  │┃hold 63.0MB (the daemon's history) · holders from the diff …┃│                                    │
+│                  │┃8 steps · 5 layers · the archive's history (exact: its      ┃│                                    │
+│                  │┃empty_layer says which steps made a layer)                  ┃│                                    │
+│                  │┃   # layer  held  instruction                               ┃│                                    │
+│                  │┃▸  1 L1        1  ADD file:51c0ffee in /                    ┃│                                    │
+│                  │┃   2 config       ENV LANG=C.UTF-8                          ┃│                                    │
+│                  │┃   3 L2        -  RUN make build  (build args: BUILD_TOKEN) ┃│                                    │
+│                  │┃   4 L3        1  WORKDIR /app                              ┃│                                    │
+│                  │┃   5 L4        -  COPY app /app                             ┃│                                    │
+│                  │┃   6 config       LABEL org.opencontainers.image.title=steps┃└────────────────────────────────────┘
+│                  │┃   7 L5        1  WORKDIR /srv                              ┃┌─ 5 Jobs ────────────────── 2 done ─┐
+│                  │┃   8 config       CMD ["/app/server"]                       ┃│▸ ✓ read image layers 17 image… 39ms│
+│                  │┃─────────────────────────────────────────────────── 1 of 8 ─┃│  ✓ analyse image acme/steps:1  25ms│
+│                  │┃step     1 of 8 · made layer L1 of 5 (bound by the archive's┃│                                    │
+│                  │┃         history)                                           ┃│                                    │
+│                  │┃held by  1 other image: acme/steps-base:1                   ┃│                                    │
+│                  │┃size     28.4MB (the daemon's history) · its files hold 9B ·┃│                                    │
+│                  │┃         the archive stores 2.0kB (uncompressed)            ┃│                                    │
+│                  │┃wrote    1 file · 0 directories · deleted 0 paths · 0 opaque┃│                                    │
+│                  │┃         directories                                        ┃│                                    │
+└──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└────────────────────────────────────┘
+ ✓ read image layers 17 image(s), GET inspect and history
+ ↑↓ step  W save build  [ ] tab  P pull  p push  d remove  X prune  t tag  u untag  C copy to… Tab pane  ? keys  q quit

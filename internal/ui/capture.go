@@ -101,6 +101,8 @@ func (m *Model) captureDetails() {
 		c = m.captureChanges(r)
 	case tabDeclared:
 		c = m.captureDeclared(r)
+	case tabLayers:
+		c = m.captureLayers(r)
 	default:
 		return
 	}
@@ -304,6 +306,32 @@ func (m *Model) captureDeclared(r row) *paneCapture {
 	return m.textCapture("declared", "Declared", r.name, r.name,
 		"the comparison with the compose file as the desk built it, prose wrapped for a page", lines,
 		"the file's side is what it said at "+res.at.Format(time.RFC3339)+"; the containers' side is as listed when captured")
+}
+
+// captureLayers: the whole build — every step with the facts its block
+// states — built again at the page's width from the tab's own facts, so the
+// file does not depend on the terminal, the scroll or the cursor.
+func (m *Model) captureLayers(r row) *paneCapture {
+	t, ok := m.layersTarget()
+	if !ok {
+		return nil
+	}
+	v := m.layersView(t)
+	switch {
+	case v.ownErr != "":
+		m.nothingToSave("this image's layers could not be read (s reads them again).")
+		return nil
+	case !v.have:
+		m.nothingToSave("this image's layers have not been read yet.")
+		return nil
+	}
+	lines := m.layersLines(v, capture.PageWidth)
+	holds := "the build of this image: " + files.Plural(len(v.steps), "step", "steps") + ", each with its layer and what the desk knows of it"
+	if v.rep == nil {
+		holds += "; the archive was not read, so the layers' contents are not in it"
+	}
+	return m.textCapture("layers", "Layers", r.name, r.name, holds, lines,
+		"image "+escID(v.id)+"; instructions are masked: build-argument values left out, secret-shaped text hidden")
 }
 
 // captureJob: the highlighted job's output so far, as the output viewer

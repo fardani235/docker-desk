@@ -1,8 +1,8 @@
- Docker Desk  unix:///tmp/ddfake2336586891/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…891/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1510356350/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…350/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (4 of 19) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: acme/api ━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│  05:02:55 img tag        acme/api:release-7  │
-│▸ Images        19│┃▸ acme/api                latest        8387789bd2a4    52.0MB     9d         - ┃│  05:02:56 img untag      acme/api:3.29.0     │
+│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│  18:38:31 img tag        acme/api:release-7  │
+│▸ Images        19│┃▸ acme/api                latest        8387789bd2a4    52.0MB     9d         - ┃│  18:38:32 img untag      acme/api:3.29.0     │
 │  Volumes        7│┃  acme/api                previous      8387789bd2a4    52.0MB     9d         - ┃│                                              │
 │  Networks       7│┃  acme/api                release-7     51d1711ee5b8    48.0MB     2d         - ┃│                                              │
 │  Compose        2│┃  acme/api                stable        51d1711ee5b8    48.0MB     2d         - ┃│                                              │
@@ -15,11 +15,11 @@
 │                  │┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                              │
-│                  │┌─ 3 Details: acme/api:latest ──────────────── [Info] Inspect Findings Upstream ─┐│                                              │
+│                  │┌─ 3 Details: acme/api:latest ───────── [Info] Inspect Findings Upstream Layers ─┐│                                              │
 │                  ││Reference  acme/api:latest                                                      ││                                              │
 │                  ││ID         8387789bd2a4                                                         ││                                              │
 │                  ││Size       52.0MB                                                               ││                                              │
-│                  ││Created    2026-11-19 05:02:54  (9d ago)                                        ││                                              │
+│                  ││Created    2026-11-19 18:38:30  (9d ago)                                        ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││References                                                                      ││                                              │
 │                  ││  acme/api:latest                                                               ││                                              │
@@ -28,8 +28,8 @@
 │                  ││Used by                                                                         ││                                              │
 │                  ││  no container                                                                  │└──────────────────────────────────────────────┘
 │                  ││                                                                                │┌─ 5 Jobs ──────────────────────────── 2 done ─┐
-│                  ││                                                                                ││▸ ✓ untag image acme/api:3.29.0            3ms│
-│                  ││                                                                                ││  ✓ tag image acme/api:release-7           1ms│
+│                  ││                                                                                ││▸ ✓ untag image acme/api:3.29.0            2ms│
+│                  ││                                                                                ││  ✓ tag image acme/api:release-7           3ms│
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │

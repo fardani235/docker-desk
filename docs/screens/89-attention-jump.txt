@@ -1,8 +1,8 @@
- Docker Desk  unix:///tmp/ddfake3220915918/d.sock  ctx staging  Engine 29.0.0-fake  on staging-host  ● connected
- Daemons  1 /tmp/ddfake…733/d.sock ● │ [◆2 staging ●]                                                                                       M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake2251246836/d.sock  ctx staging  Engine 29.0.0-fake  on staging-host  ● connected
+ Daemons  1 /tmp/ddfake…081/d.sock ● │ [◆2 staging ●]                                                                                       M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (6) · 1 needs attention — H reads exit codes and restarts too ━━━━━━━━┓┌─ 4 Events ───────────────────────────── ● live ─┐
-│▸ Containers     6│┃  NAME          IMAGE       STATE            CPU       MEM  STATUS        PORTS        ┃│  05:01:09 ctr die exit 3 queue                  │
-│  Images         5│┃▸ billing-api   acme/bill…  ↻ restarting                    Restarting                 ┃│  05:01:09 net disconnect bridge  ← queue        │
+│▸ Containers     6│┃  NAME          IMAGE       STATE            CPU       MEM  STATUS        PORTS        ┃│  18:36:49 ctr die exit 3 queue                  │
+│  Images         5│┃▸ billing-api   acme/bill…  ↻ restarting                    Restarting                 ┃│  18:36:49 net disconnect bridge  ← queue        │
 │  Volumes        0│┃  billing-db    postgres:…  ● healthy          …         …  Up 26 hours…               ┃│                                                 │
 │  Networks       3│┃  edge-proxy    nginx:1.27  ● running          …         …  Up 2 hours                 ┃│                                                 │
 │  Compose        0│┃  migrate       acme/bill…  ○ exited                        Exited (0) …               ┃│                                                 │
@@ -21,11 +21,11 @@
 │                  ││ID       33d0ba784229                                                                  ││                                                 │
 │                  ││Image    acme/billing:7                                                                ││                                                 │
 │                  ││State    ↻ restarting   Restarting                                                     ││                                                 │
-│                  ││Started  2026-11-28 04:51:06                                                           ││                                                 │
+│                  ││Started  2026-11-28 18:26:47                                                           ││                                                 │
 │                  ││Command  /bin/app                                                                      ││                                                 │
 │                  ││Restart  no (restarted 14×)                                                            ││                                                 │
 │                  ││Runtime  tty=false  privileged=false  env vars=1                                       ││                                                 │
-│                  ││Created  2026-11-28 04:51:06                                                           ││                                                 │
+│                  ││Created  2026-11-28 18:26:47                                                           ││                                                 │
 │                  ││                                                                                       ││                                                 │
 │                  ││Ports                                                                                  │└─────────────────────────────────────────────────┘
 │                  ││  none                                                                                 │┌─ 5 Jobs ────────────────────────────────────────┐

@@ -101,6 +101,10 @@ type Server struct {
 	// the labels name paths on no machine at all.
 	ComposeDir string
 
+	// historyDelay is the pause before GET /images/{id}/history answers
+	// (SetHistoryDelay): a daemon that is slow to describe an image.
+	historyDelay time.Duration
+
 	// ArchiveChunkDelay is the pause after each 32 KiB of a container
 	// archive (GET /containers/{id}/archive).
 	ArchiveChunkDelay time.Duration

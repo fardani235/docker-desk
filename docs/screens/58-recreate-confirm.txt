@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake2144311420/d.sock  ctx default  Engine 29.0.0-fake  ● connected
- Daemons [◆1 /tmp/ddfake…420/d.sock ●]                                          M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1743997946/d.sock  ctx default  Engine 29.0.0-fake  ● connected
+ Daemons [◆1 /tmp/ddfake…946/d.sock ●]                                          M picker  < > focus
 ┌─ 1 Kinds ──────┐┌─ 2 Containers (1 of 14) ────────────────────────────────── filter: report-job ─┐
 │▸ Containers  14││  NAME             IMAGE          STATE          CPU       MEM  STATUS          │
 │  Images      18││▸ report-job       acme/report:…  ○ exited                      Exited (0) 10…  │
@@ -11,7 +11,7 @@
 │  ‖ 1 ┏━ ◆ Re-create container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓      │
 │  ○ 6 ┃                                                                                    ┃──────┘
 │      ┃ container  report-job  (47b571e57903)                                              ┃pect ━┓
-│      ┃ daemon     unix:///tmp/ddfake2144311420/d.sock  (context default)                  ┃      ┃
+│      ┃ daemon     unix:///tmp/ddfake1743997946/d.sock  (context default)                  ┃      ┃
 │      ┃                                                                                    ┃      ┃
 │      ┃ • report-job is renamed report-job-previous-47b571e57903 and kept, stopped, with   ┃      ┃
 │      ┃   its data and configuration.                                                      ┃      ┃

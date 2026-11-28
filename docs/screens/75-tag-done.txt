@@ -1,7 +1,7 @@
- Docker Desk  unix:///tmp/ddfake2336586891/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…891/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1510356350/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…350/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (5 of 19) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: acme/api ━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│  05:02:55 img tag        acme/api:release-7  │
+│  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│  18:38:31 img tag        acme/api:release-7  │
 │▸ Images        19│┃▸ acme/api                3.29.0        51d1711ee5b8    48.0MB     2d         - ┃│                                              │
 │  Volumes        7│┃  acme/api                latest        8387789bd2a4    52.0MB     9d         - ┃│                                              │
 │  Networks       7│┃  acme/api                previous      8387789bd2a4    52.0MB     9d         - ┃│                                              │
@@ -15,11 +15,11 @@
 │                  │┃                                                                                ┃│                                              │
 │                  │┃                                                                                ┃│                                              │
 │                  │┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛│                                              │
-│                  │┌─ 3 Details: acme/api:3.29.0 ──────────────── [Info] Inspect Findings Upstream ─┐│                                              │
+│                  │┌─ 3 Details: acme/api:3.29.0 ───────── [Info] Inspect Findings Upstream Layers ─┐│                                              │
 │                  ││Reference  acme/api:3.29.0                                                      ││                                              │
 │                  ││ID         51d1711ee5b8                                                         ││                                              │
 │                  ││Size       48.0MB                                                               ││                                              │
-│                  ││Created    2026-11-26 05:02:54  (2d ago)                                        ││                                              │
+│                  ││Created    2026-11-26 18:38:30  (2d ago)                                        ││                                              │
 │                  ││Platform   linux/amd64                                                          ││                                              │
 │                  ││Layers     2                                                                    ││                                              │
 │                  ││Command    /bin/app                                                             ││                                              │
@@ -28,7 +28,7 @@
 │                  ││References                                                                      ││                                              │
 │                  ││  acme/api:3.29.0                                                               │└──────────────────────────────────────────────┘
 │                  ││  acme/api:stable                                                               │┌─ 5 Jobs ──────────────────────────── 1 done ─┐
-│                  ││  acme/api:release-7                                                            ││▸ ✓ tag image acme/api:release-7           1ms│
+│                  ││  acme/api:release-7                                                            ││▸ ✓ tag image acme/api:release-7           3ms│
 │                  ││                                                                                ││                                              │
 │                  ││Used by                                                                         ││                                              │
 │                  ││  no container                                                                  ││                                              │

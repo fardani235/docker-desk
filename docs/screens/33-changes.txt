@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake2538569357/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…357/d.sock ●]                                                              M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake2170117553/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…553/d.sock ●]                                                              M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Containers (1 of 13) ────────────────── filter: report ─┐┌─ 4 Events ──────────────── ● live ─┐
 │▸ Containers    13││  NAME            IMAGE         STATE          CPU       MEM││Waiting for engine events…          │
 │  Images        16││▸ report-job      acme/report…  ○ exited                    ││Everything the daemon does          │
@@ -27,7 +27,7 @@
 │                  │┃  + curl 7.88.1-10+deb12u8 (L4)                             ┃│                                    │
 │                  │┃  + fonts-dejavu-core:all 2.37-6 (L4)                       ┃└────────────────────────────────────┘
 │                  │┃  + libcurl4 7.88.1-10+deb12u8 (L4)                         ┃┌─ 5 Jobs ────────────────── 1 done ─┐
-│                  │┃  − netbase:all 6.4                                         ┃│▸ ✓ compare images acme/report… 42ms│
+│                  │┃  − netbase:all 6.4                                         ┃│▸ ✓ compare images acme/report… 37ms│
 │                  │┃  ~ libssl3 3.0.11-1~deb12u2 → 3.0.15-1~deb12u1             ┃│                                    │
 │                  │┃  ~ openssl 3.0.11-1~deb12u2 → 3.0.15-1~deb12u1             ┃│                                    │
 │                  │┃findings 1 appeared, 2 disappeared (from the archives; live ┃│                                    │

@@ -337,7 +337,8 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 	if key == keyCapture {
 		// The pane's text to a file (capture.go). Before the tabs' own
 		// keys: no tab gives W another meaning, and Stats, Findings and
-		// Upstream, which are not text, do nothing with it.
+		// Upstream, which are not text, do nothing with it. Layers hands
+		// over its whole build, not the rows in view.
 		m.captureDetails()
 		return nil
 	}
@@ -353,6 +354,9 @@ func (m *Model) onDetailsKey(key string) tea.Cmd {
 		return nil
 	}
 	if m.tabName() == tabUpstream && m.onUpstreamKey(key) {
+		return nil
+	}
+	if m.tabName() == tabLayers && m.onLayersKey(key) {
 		return nil
 	}
 	page := max(m.detailHeight-2, 1)
@@ -432,8 +436,12 @@ func (m *Model) scrollDetails(delta int) {
 	if _, ok := m.currentRow(); !ok {
 		return
 	}
-	if m.tabName() == tabFindings {
+	switch m.tabName() {
+	case tabFindings:
 		m.moveFindingsCursor(delta)
+		return
+	case tabLayers:
+		m.moveLayersCursor(delta)
 		return
 	}
 	m.scrollTab(delta)

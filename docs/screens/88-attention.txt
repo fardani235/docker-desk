@@ -1,18 +1,18 @@
- Docker Desk  unix:///tmp/ddfake3300907733/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…733/d.sock ●] │  2 staging ●                                                                                       M picker  < > focus
-┏━ ◆ Attention — 4 need you · 1 to watch · 20 containers on 2 daemons ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ⠹ reading ━┓
-┃ ◆ /tmp/ddfake3300907733/d.sock  ● connected  ctx default  Engine 29.0.0-fake  focused                                                                        ┃
-┃   unix:///tmp/ddfake3300907733/d.sock                                                                                                                        ┃
-┃   14 containers · 2 need you · 0 to watch · read 05:01:06, 0s ago (the desk's list) · ⠹ reading                                                              ┃
+ Docker Desk  unix:///tmp/ddfake1158817081/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…081/d.sock ●] │  2 staging ●                                                                                       M picker  < > focus
+┏━ ◆ Attention — 4 need you · 1 to watch · 20 containers on 2 daemons ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ oldest read 18:36:47 ━┓
+┃ ◆ /tmp/ddfake1158817081/d.sock  ● connected  ctx default  Engine 29.0.0-fake  focused                                                                        ┃
+┃   unix:///tmp/ddfake1158817081/d.sock                                                                                                                        ┃
+┃   14 containers · 2 need you · 0 to watch · read 18:36:47, 0s ago (the desk's list)                                                                          ┃
 ┃ ▸ ● payments-api   running · unhealthy · Up 3 hours (unhealthy)                                                               acme/payments:2.1              ┃
-┃   ○ shop-worker-1  exited 1 · finished 03:31:06, 1h ago                                                                       shop/worker:dev  [shop]        ┃
-┃   1 fine · 5 unknown (no health verdict) · 5 not a problem (paused, exited 0) · 1 still being read                                                           ┃
+┃   ○ shop-worker-1  exited 1 · finished 17:06:47, 1h ago                                                                       shop/worker:dev  [shop]        ┃
+┃   1 fine · 6 unknown (no health verdict) · 5 not a problem (paused, exited 0)                                                                                ┃
 ┃                                                                                                                                                              ┃
 ┃   staging  ● connected  ctx staging  Engine 29.0.0-fake                                                                                                      ┃
-┃   unix:///tmp/ddfake3220915918/d.sock                                                                                                                        ┃
-┃   6 containers · 2 need you · 1 to watch · read 05:01:07, 0s ago                                                                                             ┃
+┃   unix:///tmp/ddfake2251246836/d.sock                                                                                                                        ┃
+┃   6 containers · 2 need you · 1 to watch · read 18:36:47, 0s ago                                                                                             ┃
 ┃   ↻ billing-api    restarting · exit 1 · 14 restarts                                                                          acme/billing:7                 ┃
-┃   ○ report-batch   exited 137 · OOM-killed · finished 04:59:06, 2m ago                                                        acme/report:1.4                ┃
+┃   ○ report-batch   exited 137 · OOM-killed · finished 18:34:47, 2m ago                                                        acme/report:1.4                ┃
 ┃   watch                                                                                                                                                      ┃
 ┃   ● edge-proxy     running · 5 restarts                                                                                       nginx:1.27                     ┃
 ┃   1 fine · 1 unknown (no health verdict) · 1 not a problem (paused, exited 0)                                                                                ┃

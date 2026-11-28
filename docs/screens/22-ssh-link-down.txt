@@ -1,25 +1,25 @@
- Docker Desk  ssh://127.0.0.1:40903/tmp/ddfake2081922713/d.sock  ctx default  Engine 29.0.0-fake  on far-away  ✗ DISCONNECTED — retrying  [ssh]
+ Docker Desk  ssh://127.0.0.1:44123/tmp/ddfake1301871786/d.sock  ctx default  Engine 29.0.0-fake  on far-away  ✗ DISCONNECTED — retrying  [ssh]
  Daemons [◆1 127.0.0.1 ✗ disconnected]                                                                                                                M picker  < > focus
 ┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Images (16, 17 refs) ─────────────────────────────────────────────────────────────────────┐┌─ 4 Events ──────────────────────── ✗ disconnected ─┐
-┃  Containers    13┃│  REPOSITORY                        TAG                IMAGE ID          SIZE    AGE   USED BY││  05:02:24 ctr kill sig 15 shop-web-1               │
-┃▸ Images        16┃│▸ acme/report                       1.4                efc03945f57b     114MB     3s         -││  05:02:24 ctr die exit 0 shop-web-1                │
-┃  Volumes        7┃│  alpine                            3.20               bbfb6bb5502a     7.8MB    24h     2 ctr││  05:02:24 net disconnect shop_default  ← shop-web-1│
-┃  Networks       7┃│  busybox                           1.36               b227a1c6d0d2     4.3MB    24h     1 ctr││  05:02:24 ctr stop       shop-web-1                │
-┃  Compose        2┃│  gcr.io/distroless/static          nonroot            37588eec338e     2.0MB    24h     1 ctr││  05:02:25 ctr exec_create shop-api-1  sh -c comman…│
-┃                  ┃│  ghost                             5                  da2f78b4d6ff     494MB    24h     1 ctr││  05:02:25 ctr exec_start shop-api-1  sh -c command…│
-┃  ● 6 running     ┃│  mysql                             8                  11a7b13fbf86     584MB    24h     1 ctr││  05:02:25 ctr exec_die exit 0 shop-api-1           │
-┃  ‖ 1 paused      ┃│  nginx                             1.27               f673addec473     188MB    24h     1 ctr││  05:02:25 ── event stream interrupted: events: une…│
+┃  Containers    13┃│  REPOSITORY                        TAG                IMAGE ID          SIZE    AGE   USED BY││  18:38:00 ctr kill sig 15 shop-web-1               │
+┃▸ Images        16┃│▸ acme/report                       1.4                efc03945f57b     114MB     2s         -││  18:38:00 ctr die exit 0 shop-web-1                │
+┃  Volumes        7┃│  alpine                            3.20               bbfb6bb5502a     7.8MB    24h     2 ctr││  18:38:00 net disconnect shop_default  ← shop-web-1│
+┃  Networks       7┃│  busybox                           1.36               b227a1c6d0d2     4.3MB    24h     1 ctr││  18:38:00 ctr stop       shop-web-1                │
+┃  Compose        2┃│  gcr.io/distroless/static          nonroot            37588eec338e     2.0MB    24h     1 ctr││  18:38:01 ctr exec_create shop-api-1  sh -c comman…│
+┃                  ┃│  ghost                             5                  da2f78b4d6ff     494MB    24h     1 ctr││  18:38:01 ctr exec_start shop-api-1  sh -c command…│
+┃  ● 6 running     ┃│  mysql                             8                  11a7b13fbf86     584MB    24h     1 ctr││  18:38:01 ctr exec_die exit 0 shop-api-1           │
+┃  ‖ 1 paused      ┃│  nginx                             1.27               f673addec473     188MB    24h     1 ctr││  18:38:01 ── event stream interrupted: events: une…│
 ┃  ○ 6 stopped     ┃│  node                              22-alpine          3b9daf1cabe0     154MB    40d         -││                                                    │
 ┃                  ┃│  node                              lts-alpine         3b9daf1cabe0     154MB    40d         -││                                                    │
 ┃                  ┃│  postgres                          16                 bf2c21e18612     424MB    24h     1 ctr││                                                    │
 ┃                  ┃│  python                            3.12-slim          90db23bd5600     131MB    14d         -││                                                    │
 ┃                  ┃│  redis                             7                  742705926f80     116MB    24h     1 ctr││                                                    │
 ┃                  ┃└──────────────────────────────────────────────────────────────────────────────────────────────┘│                                                    │
-┃                  ┃┌─ 3 Details: acme/report:1.4 ────────────────────────────── [Info] Inspect Findings Upstream ─┐│                                                    │
+┃                  ┃┌─ 3 Details: acme/report:1.4 ─────────────────────── [Info] Inspect Findings Upstream Layers ─┐│                                                    │
 ┃                  ┃│Reference  acme/report:1.4                                                                    ││                                                    │
 ┃                  ┃│ID         efc03945f57b                                                                       ││                                                    │
 ┃                  ┃│Size       114MB                                                                              ││                                                    │
-┃                  ┃│Created    2026-11-28 05:02:22  (3s ago)                                                      ││                                                    │
+┃                  ┃│Created    2026-11-28 18:37:59  (2s ago)                                                      ││                                                    │
 ┃                  ┃│                                                                                              ││                                                    │
 ┃                  ┃│References                                                                                    ││                                                    │
 ┃                  ┃│  acme/report:1.4                                                                             ││                                                    │
@@ -28,7 +28,7 @@
 ┃                  ┃│  no container                                                                                ││                                                    │
 ┃                  ┃│                                                                                              │└────────────────────────────────────────────────────┘
 ┃                  ┃│                                                                                              │┌─ 5 Jobs ────────────────────────────────── 1 done ─┐
-┃                  ┃│                                                                                              ││▸ ✓ stop container shop-web-1                    0ms│
+┃                  ┃│                                                                                              ││▸ ✓ stop container shop-web-1                    1ms│
 ┃                  ┃│                                                                                              ││                                                    │
 ┃                  ┃│                                                                                              ││                                                    │
 ┃                  ┃│                                                                                              ││                                                    │
@@ -38,5 +38,5 @@
 ┃                  ┃│                                                                                              ││                                                    │
 ┃                  ┃│                                                                                              ││                                                    │
 ┗━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────────────┘
- The ssh link to ssh://127.0.0.1:40903/tmp/ddfake2081922713/d.sock is down — retrying: Connection to 127.0.0.1 closed by remote host.
+ The ssh link to ssh://127.0.0.1:44123/tmp/ddfake1301871786/d.sock is down — retrying: Connection to 127.0.0.1 closed by remote host.
  ↑↓ pick a kind  Enter go to list                                                                                                                Tab pane  ? keys  q quit

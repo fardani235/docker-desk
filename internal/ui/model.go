@@ -287,6 +287,11 @@ type Model struct {
 
 	// ---- space view ----
 	sp spaceState
+	// lc is what the daemon said about each image's layers, read once and
+	// shared by the Space view and Images › Layers (layercache.go); ly is
+	// that tab.
+	lc layerCache
+	ly layersState
 	// ---- files view (F, on an image or a container) ----
 	fs filesState
 	// ---- repository browser (B) ----
@@ -629,6 +634,11 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.onFacts(msg)
 		return m, nil
 
+	case ownLayersMsg:
+		m.dirty = true
+		m.onOwnLayers(msg)
+		return m, nil
+
 	case planMsg:
 		m.dirty = true
 		cmd := m.onPlan(msg)
@@ -753,6 +763,9 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 		if cmd := m.syncFindings(); cmd != nil {
 			cmds = append(cmds, cmd)
 		}
+		if cmd := m.syncLayers(); cmd != nil {
+			cmds = append(cmds, cmd)
+		}
 		m.syncUpstream()
 	} else {
 		m.collectFindings()
@@ -765,6 +778,7 @@ func (m *Model) onFrame(now time.Time) tea.Cmd {
 	// The Space view's measurements, and its ages, which move each second;
 	// and a compose file read for the Declared tab.
 	m.collectSpace()
+	m.collectLayers()
 	m.collectDeclared()
 	m.collectFiles()
 	m.collectReader()

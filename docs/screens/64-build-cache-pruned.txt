@@ -1,19 +1,19 @@
- Docker Desk  unix:///tmp/ddfake3669930114/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…114/d.sock ●]                                                              M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake2585177091/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…091/d.sock ●]                                                              M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Containers (13) ────────────────────────────────────────┐┌─ 4 Events ──────────────── ● live ─┐
 │▸ Containers    13││  NAME            IMAGE         STATE          CPU       MEM││Waiting for engine events…          │
-│  Images        16││▸ distroless-svc  gcr.io/dist…  ● running     9.8%   48.6MiB││Everything the daemon does          │
-│  Volumes        7││  noisy-logger    alpine:3.20   ● running    39.5%    327MiB││shows up here as it happens.        │
+│  Images        16││▸ distroless-svc  gcr.io/dist…  ● running     9.2%   49.6MiB││Everything the daemon does          │
+│  Volumes        7││  noisy-logger    alpine:3.20   ● running    38.8%    328MiB││shows up here as it happens.        │
 │  Networks       7││  paused-batch    alpine:3.20   ‖ paused                    ││                                    │
-│  Compose        2││  redis-cache     redis:7       ● running     8.8%    393MiB││                                    │
-│                  ││  shop-api-1      shop/api:dev  ● running    94.3%    427MiB││                                    │
-│  ● 7 running     ││  shop-db-1       postgres:16   ● healthy   131.9%    718MiB││                                    │
-│  ‖ 1 paused      ││  shop-web-1      nginx:1.27    ● running    89.1%    498MiB││                                    │
+│  Compose        2││  redis-cache     redis:7       ● running     7.7%    383MiB││                                    │
+│                  ││  shop-api-1      shop/api:dev  ● running    76.7%    416MiB││                                    │
+│  ● 7 running     ││  shop-db-1       postgres:16   ● healthy   134.2%    705MiB││                                    │
+│  ‖ 1 paused      ││  shop-web-1      nginx:1.27    ● running    78.9%    491MiB││                                    │
 │  ○ 5 stopped   ┏━ ◆ Job #2 output ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                │
 │                ┃                                                                                    ┃                │
 │                ┃ ✓ succeeded   prune build cache 6 records                                          ┃                │
-│                ┃ started 05:01:12 · ran 1ms                                                         ┃                │
-│                ┃ on daemon unix:///tmp/ddfake3669930114/d.sock                                      ┃                │
+│                ┃ started 18:36:51 · ran 1ms                                                         ┃                │
+│                ┃ on daemon unix:///tmp/ddfake2585177091/d.sock                                      ┃                │
 │                ┃                                                                                    ┃                │
 │                ┃ the daemon deleted 6 build-cache records and reported 585.0 MB reclaimed           ┃                │
 │                ┃   deleted kq3x9w2m7v4n                                                             ┃                │
@@ -27,9 +27,9 @@
 │                ┃                                                                                    ┃                │
 │                ┃ ↑↓ PgUp PgDn scroll  Esc close                                                     ┃────────────────┘
 │                ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛━━━━━━━ 3 done ━┓
-│                  ││                                                            │┃  ✓ measure disk usage GET /sy… 18ms┃
+│                  ││                                                            │┃  ✓ measure disk usage GET /sys… 5ms┃
 │                  ││Networks                                                    │┃▸ ✓ prune build cache 6 records  1ms┃
-│                  ││  bridge  172.17.0.5  gw 172.17.0.1                         │┃  ✓ measure disk usage GET /s… 137ms┃
+│                  ││  bridge  172.17.0.5  gw 172.17.0.1                         │┃  ✓ measure disk usage GET /sy… 23ms┃
 │                  ││                                                            │┃                                    ┃
 │                  ││Mounts                                                      │┃                                    ┃
 │                  ││  none                                                      │┃                                    ┃

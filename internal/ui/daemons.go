@@ -108,6 +108,11 @@ func (m *Model) bind(mem *session.Member) {
 func (m *Model) switchTo(mem *session.Member) tea.Cmd {
 	m.dropRepoRequests()
 	m.closeReader() // a file being read is the previous daemon's: cancelled, and nothing kept
+	if run := m.lc.run; run != nil {
+		// The layer read is the previous daemon's and fills a cache that
+		// is dropped here: it is stopped, not left asking for nothing.
+		m.jobs.Cancel(run.jobID)
+	}
 	keep := *m
 	dlg := keep.dlg
 	if dlg != nil && dlg.kind != dlgDaemons {

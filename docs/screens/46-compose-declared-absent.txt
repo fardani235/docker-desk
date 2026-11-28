@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake3937332971/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…971/d.sock ●]                                                                                  M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3496832184/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…184/d.sock ●]                                                                                  M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Compose (2) ──────────────────────────────────────────────────────────┐┌─ 4 Events ────────────────────── ● live ─┐
 │  Containers    13││  PROJECT                    CONTAINERS   RUNNING  WORKING DIR            ││Waiting for engine events…                │
 │  Images        16││▸ blog                                2         0  /tmp/TestComposeDeclar…││Everything the daemon does                │
@@ -16,19 +16,19 @@
 │                  │└──────────────────────────────────────────────────────────────────────────┘│                                          │
 │                  │┏━ ◆ 3 Details: blog ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Info [Declared] ━┓│                                          │
 │                  │┃project      blog · 2 containers, 0 running                               ┃│                                          │
-│                  │┃working dir  /tmp/TestComposeDeclared44-compose-declared1981153547/001/blo┃│                                          │
-│                  │┃             g                                                            ┃│                                          │
-│                  │┃config file  /tmp/TestComposeDeclared44-compose-declared1981153547/001/blo┃│                                          │
-│                  │┃             g/compose.yaml                                               ┃│                                          │
+│                  │┃working dir  /tmp/TestComposeDeclared44-compose-declared45766303/001/blog ┃│                                          │
+│                  │┃config file  /tmp/TestComposeDeclared44-compose-declared45766303/001/blog/┃│                                          │
+│                  │┃             compose.yaml                                                 ┃│                                          │
 │                  │┃daemon       local (unix socket): the paths are on this machine           ┃│                                          │
-│                  │┃newest       blog-app-1, created 2026-11-26 23:01:15 (30h ago)            ┃│                                          │
+│                  │┃newest       blog-app-1, created 2026-11-27 12:36:54 (30h ago)            ┃│                                          │
 │                  │┃written      unknown: nothing has been read                               ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
 │                  │┃Cannot be compared: there is no file at                                   ┃│                                          │
-│                  │┃/tmp/TestComposeDeclared44-compose-declared1981153547/001/blog/compose.yam┃└──────────────────────────────────────────┘
-│                  │┃l on this machine.                                                        ┃┌─ 5 Jobs ────────────────────── 1 failed ─┐
-│                  │┃Enter reads the file again.                                               ┃│▸ ✗ compare with the compose file blog 1ms│
-│                  │┃                                                                          ┃│  ✓ compare with the compose file shop 3ms│
+│                  │┃/tmp/TestComposeDeclared44-compose-declared45766303/001/blog/compose.yaml ┃│                                          │
+│                  │┃on this machine.                                                          ┃└──────────────────────────────────────────┘
+│                  │┃Enter reads the file again.                                               ┃┌─ 5 Jobs ────────────────────── 1 failed ─┐
+│                  │┃                                                                          ┃│▸ ✗ compare with the compose file blog 0ms│
+│                  │┃                                                                          ┃│  ✓ compare with the compose file shop 1ms│
 │                  │┃                                                                          ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
@@ -36,5 +36,5 @@
 │                  │┃                                                                          ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────┘
- ✗ compare with the compose file blog: there is no file at /tmp/TestComposeDeclared44-compose-declared1981153547/001/blog/compose.yaml on t…
+ ✗ compare with the compose file blog: there is no file at /tmp/TestComposeDeclared44-compose-declared45766303/001/blog/compose.yaml on thi…
  / find  ↑↓ scroll  [ ] tab  ⏎ compare with the file  W save text  t stop project  d remove project                Tab pane  ? keys  q quit

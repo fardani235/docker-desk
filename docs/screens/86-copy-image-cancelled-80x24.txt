@@ -1,13 +1,13 @@
- Docker Desk  unix:///tmp/ddfake154337019/d.sock  ctx default  ● connected
- Daemons [◆1 /tmp/ddfake…019/d.sock ●] │  2 staging ●       M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3142125277/d.sock  ctx default  ● connected
+ Daemons [◆1 /tmp/ddfake…277/d.sock ●] │  2 staging ●       M picker  < > focus
 ┌─┏━ ◆ Job #1 output ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓─┐
 │ ┃                                                                          ┃E│
-│▸┃ from daemon unix:///tmp/ddfake154337019/d.sock                           ┃s│
+│▸┃ from daemon unix:///tmp/ddfake3142125277/d.sock                          ┃s│
 │ ┃                                                                          ┃ │
 │ ┃ image acme/report:1.4, by its tag, pinned to efc03945f57b                ┃─┘
 │ ┃ platform linux/amd64                                                     ┃─┐
-│ ┃ from /tmp/ddfake154337019/d.sock (unix:///tmp/ddfake154337019/d.sock)    ┃ │
-│ ┃ to   staging (unix:///tmp/ddfake597180097/d.sock)                        ┃ │
+│ ┃ from /tmp/ddfake3142125277/d.sock (unix:///tmp/ddfake3142125277/d.sock)  ┃ │
+│ ┃ to   staging (unix:///tmp/ddfake3816257069/d.sock)                       ┃ │
 │ ┃ the target's acme/report:1.4 names image b40bd0435a3f now: the load move ┃ │
 │ ┃ s it to the copied image                                                 ┃ │
 │ ┃ streaming: GET /images/get on the source → POST /images/load on the targ ┃ │
@@ -20,5 +20,5 @@
 │s┃ Error: cancelled                                                         ┃ ┃
 │ ┃                                                                          ┃ ┃
 └─┃ ↑↓ PgUp PgDn scroll  Esc close  4–19 of 19                               ┃━┛
- c┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛s…
+ c┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛.…
  ↑↓ move  Enter output  c cancel  x clear finished  W… Tab pane  ? keys  q quit

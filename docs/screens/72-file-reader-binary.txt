@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake3407063112/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…112/d.sock ●]                                                                                  M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake2579965099/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…099/d.sock ●]                                                                                  M picker  < > focus
 ┏━ ◆ File — read from the container, shown here only ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ shop-web-1 ━┓
 ┃ path       /var/lib/nginx/state.db                                                                                                       ┃
 ┃ container  shop-web-1 · f948ec4de9e4                                                                                                     ┃

@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake1851322069/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…069/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3437055837/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…837/d.sock ●]                                                                                            M picker  < > focus
 ┏━ ◆ 1 Kinds ━━━━━━┓┌─ 2 Compose (2) ────────────────────────────────────────────────────────────────┐┌─ 4 Events ────────────────────────── ● live ─┐
 ┃  Containers    13┃│  PROJECT                       CONTAINERS   RUNNING  WORKING DIR               ││Waiting for engine events…                    │
 ┃  Images        16┃│▸ blog                                   2         0  /home/dev/src/blog        ││Everything the daemon does                    │

@@ -264,10 +264,28 @@ type Report struct {
 	// for layer i+1; "" where the history does not map. Instruction reads
 	// it by 1-based layer.
 	Instructions []string
+	// Steps is every entry of the config's history, oldest first: the
+	// same array Instructions is read from, with the entries that made no
+	// layer kept. Nil when the archive holds no config history. It is the
+	// desk's (Images › Layers) and is not part of the exported report.
+	Steps []Step
 	// Files is every layer's headers, in ModeFiles and ModeBoth; nil in
 	// ModeFindings. It is tens of megabytes at its bound, so it is never
 	// serialised with the report.
 	Files *FileListing `json:"-"`
+}
+
+// Step is one entry of the image config's history.
+type Step struct {
+	// Instruction is the entry's created_by as the findings show it: one
+	// line, build-argument values left out, secret-shaped text masked.
+	Instruction string
+	// Empty is the config's empty_layer: the step changed the image's
+	// configuration and not its files.
+	Empty bool
+	// Layer is the 1-based layer the step made; 0 when it made none, or
+	// when the history does not bind to the layers (never a guess).
+	Layer int
 }
 
 // Instruction is the build instruction of a 1-based layer, or "unknown"

@@ -1,15 +1,15 @@
- Docker Desk  unix:///tmp/ddfake98702453/d.sock  ● connected  [READ-ONLY]
- Daemons [◆1 /tmp/ddfake…453/d.sock ● ro]                   M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake2362731888/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…888/d.sock ● ro]                   M picker  < > focus
 ┌─ 1 Kinds ──────┐┏━ ◆ 2 Images (4 of 19) ━━━━━━━━━━━━━━━━━━ filter: acme/api ━┓
 │  Containers  13│┃  REPOSITORY        TAG        IMAGE ID          SIZE    AGE┃
 │▸ Images      19│┃▸ acme/api          3.29.0     51d1711ee5b8    48.0MB     2d┃
 │  Volumes      7│┃  acme/api          latest     8387789bd2a4    52.0MB     9d┃
 │  Networks     7│┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-│  Compose      2│┌─ 3 Details: acme/api:3.29.0 ────────────────── [Info] 1/4 ─┐
+│  Compose      2│┌─ 3 Details: acme/api:3.29.0 ────────────────── [Info] 1/5 ─┐
 │                ││Reference  acme/api:3.29.0                                  │
 │  ● 7 running   ││ID         51d1711ee5b8                                     │
 │  ‖ 1 paused    ││Size       48.0MB                                           │
-│  ○ 5 stopped   ││Created    2026-11-26 05:02:56  (2d ago)                    │
+│  ○ 5 stopped   ││Created    2026-11-26 18:38:32  (2d ago)                    │
 │                ││Platform   linux/amd64                                      │
 │                ││Layers     2                                                │
 │                ││Command    /bin/app                                         │

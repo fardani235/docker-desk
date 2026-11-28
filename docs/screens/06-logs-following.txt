@@ -1,12 +1,12 @@
- Docker Desk  unix:///tmp/ddfake1851322069/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…069/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3437055837/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…837/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-web ━┓┌─ 4 Events ────────────────────────── ● live ─┐
-│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  05:01:24 ctr kill sig 15 shop-web-1         │
-│  Images        16│┃▸ shop-web-1       nginx:1.27     ● running        …         …  Up 0 seconds    ┃│  05:01:24 ctr die exit 0 shop-web-1          │
-│  Volumes        7│┃                                                                                ┃│  05:01:24 net disconnect shop_default  ← sho…│
-│  Networks       7│┃                                                                                ┃│  05:01:24 ctr stop       shop-web-1          │
-│  Compose        2│┃                                                                                ┃│  05:01:24 net connect    shop_default  ← sho…│
-│                  │┃                                                                                ┃│  05:01:24 ctr start      shop-web-1          │
+│▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          ┃│  18:37:02 ctr kill sig 15 shop-web-1         │
+│  Images        16│┃▸ shop-web-1       nginx:1.27     ● running        …         …  Up 0 seconds    ┃│  18:37:02 ctr die exit 0 shop-web-1          │
+│  Volumes        7│┃                                                                                ┃│  18:37:02 net disconnect shop_default  ← sho…│
+│  Networks       7│┃                                                                                ┃│  18:37:02 ctr stop       shop-web-1          │
+│  Compose        2│┃                                                                                ┃│  18:37:03 net connect    shop_default  ← sho…│
+│                  │┃                                                                                ┃│  18:37:03 ctr start      shop-web-1          │
 │  ● 7 running     │┃                                                                                ┃│                                              │
 │  ‖ 1 paused      │┃                                                                                ┃│                                              │
 │  ○ 5 stopped     │┃                                                                                ┃│                                              │
@@ -28,8 +28,8 @@
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                │└──────────────────────────────────────────────┘
 │                  ││                                                                                │┌─ 5 Jobs ──────────────────────────── 2 done ─┐
-│                  ││                                                                                ││▸ ✓ start container shop-web-1             1ms│
-│                  ││                                                                                ││  ✓ stop container shop-web-1              1ms│
+│                  ││                                                                                ││▸ ✓ start container shop-web-1             0ms│
+│                  ││                                                                                ││  ✓ stop container shop-web-1              8ms│
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │
 │                  ││                                                                                ││                                              │

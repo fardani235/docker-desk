@@ -38,10 +38,10 @@ e2e: build ## scripted pseudo-terminal session against the fake daemon; screens 
 
 real-readonly-check: ## read-only decode and export check against the REAL daemon (GET/HEAD only, enforced)
 	DOCKER_DESK_REAL_HOST=$${DOCKER_HOST:-unix:///var/run/docker.sock} \
-		go test ./internal/engine/ ./internal/space/ ./internal/plan/ -run 'TestRealDaemonRecreateReadOnly|TestRealDaemonReadOnly|TestRealDaemonExportReadOnly|TestRealDaemonDiskUsageReadOnly|TestRealDaemonPackagesReadOnly|TestRealDaemonFilesReadOnly|TestRealDaemonCopyReadOnly|TestRealDaemonBuildCacheReadOnly|TestRealDaemonImageCopyGuardReadOnly' -count=1 -v
+		go test ./internal/engine/ ./internal/space/ ./internal/plan/ -run 'TestRealDaemonRecreateReadOnly|TestRealDaemonReadOnly|TestRealDaemonExportReadOnly|TestRealDaemonDiskUsageReadOnly|TestRealDaemonLayersReadOnly|TestRealDaemonPackagesReadOnly|TestRealDaemonFilesReadOnly|TestRealDaemonCopyReadOnly|TestRealDaemonBuildCacheReadOnly|TestRealDaemonImageCopyGuardReadOnly' -count=1 -v
 
 sandbox: build ## start the fake daemon and open the desk on it — nothing real is touched
-	@$(BIN)/fake-dockerd -socket $(SANDBOX_SOCKET) -registry $(SANDBOX_REGISTRY) -compose-dir $(SANDBOX_COMPOSE) >/dev/null & fake=$$!; \
+	@$(BIN)/fake-dockerd -socket $(SANDBOX_SOCKET) -registry $(SANDBOX_REGISTRY) -compose-dir $(SANDBOX_COMPOSE) -layers >/dev/null & fake=$$!; \
 	for i in 1 2 3 4 5 6 7 8 9 10; do [ -S $(SANDBOX_SOCKET) ] && break; sleep 0.1; done; \
 	DOCKER_HOST=unix://$(SANDBOX_SOCKET) $(BIN)/docker-desk; status=$$?; \
 	kill $$fake 2>/dev/null; wait $$fake 2>/dev/null; exit $$status

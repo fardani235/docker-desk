@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake3619398047/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…047/d.sock ●]                                                              M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake655743198/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…198/d.sock ●]                                                              M picker  < > focus
 ┏━ ◆ Files — the image's tree with the container's changes over it ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ shop-web-1 ━┓
 ┃ by name · 13 rows                                                                                                    ┃
 ┃   container  shop-web-1 · f948ec4de9e4 · from nginx:1.27 (f673addec473)                                              ┃
@@ -26,5 +26,5 @@
 ┃                                                                                                                      ┃
 ┃                                                                                                                      ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
- Exported text to /tmp/TestFilesView120x30746669970/001/docker-desk-files-python-3.12-slim-20261128.txt (1600 bytes, mo…
+ Exported text to /tmp/TestFilesView120x301384656947/001/docker-desk-files-python-3.12-slim-20261128.txt (1600 bytes, m…
  ⏎ read the archive  ↑↓ move  →← open  s order  / filter  w export  r changes  o copy out  i copy … F Esc close  ? keys

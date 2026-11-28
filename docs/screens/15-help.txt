@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake1851322069/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…069/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3437055837/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…837/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Conta┏━ ◆ Keys ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓────────────────────── ● live ─┐
 │▸ Containers    13│┃  NAME     ┃                                                                                    ┃kill sig 15 shop-web-1         │
 │  Images        17│┃  distroles┃   title counts them (held +N). Enter selects the container, image, volume or       ┃die exit 0 shop-web-1          │
@@ -28,15 +28,15 @@
 │                  ││Created  20┃     • copy to daemon: type the tag shown — the short image ID for an untagged      ┃                               │
 │                  ││           ┃       image — and press Enter. The dialog names both daemons.                      ┃───────────────────────────────┘
 │                  ││Ports      ┃   A dialog ignores those keys for its first quarter of a second, and a key         ┃────────────────────── 4 done ─┐
-│                  ││  0.0.0.0:3┃   pressed while a confirmation is still being prepared drops it: nothing typed     ┃es 2 volumes               13ms│
-│                  ││           ┃   ahead, or typed for something else, can consent. Esc always works at once.       ┃hello-world:latest        423ms│
-│                  ││Networks   ┃   Nothing is ever forced. If something is in use the dialog says by what and       ┃iner shop-web-1             1ms│
-│                  ││  shop_defa┃   refuses. A prune lists exactly what it will delete and deletes only that.        ┃ner shop-web-1              1ms│
+│                  ││  0.0.0.0:3┃   pressed while a confirmation is still being prepared drops it: nothing typed     ┃es 2 volumes                3ms│
+│                  ││           ┃   ahead, or typed for something else, can consent. Esc always works at once.       ┃hello-world:latest        425ms│
+│                  ││Networks   ┃   Nothing is ever forced. If something is in use the dialog says by what and       ┃iner shop-web-1             0ms│
+│                  ││  shop_defa┃   refuses. A prune lists exactly what it will delete and deletes only that.        ┃ner shop-web-1              8ms│
 │                  ││           ┃                                                                                    ┃                               │
 │                  ││Mounts     ┃ Inside a shell (e)                                                                 ┃                               │
 │                  ││  volume sh┃   exit, Ctrl-D     back to the desk                                                ┃                               │
 │                  ││           ┃   Ctrl-] ×3        leave at once, even if the daemon has stopped answering         ┃                               │
 │                  ││           ┃                                                                                    ┃                               │
-└──────────────────┘└───────────┃ ↑↓ PgUp PgDn scroll  Esc close  431–464 of 464                                     ┃───────────────────────────────┘
+└──────────────────┘└───────────┃ ↑↓ PgUp PgDn scroll  Esc close  450–483 of 483                                     ┃───────────────────────────────┘
  Back from the shell in shop-api┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
  ↑↓ move  Space select  / filter  ⏎ actions  s start  t stop  R restart  p pause  u unpause  K kill  d remove  n new  e she… Tab pane  ? keys  q quit

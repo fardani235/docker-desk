@@ -1816,6 +1816,97 @@ runs below use `TMPDIR=/tmp`.
 - How an editor or pager renders a text capture holding characters outside the basic plane was
   not looked at; only that nothing in it can act on a terminal.
 
+## Round thirty: the Layers tab
+
+OpenSpec change `add-layers-tab`. What had to be shown: one row per build step; a step bound to
+a layer only from evidence that cannot be wrong; sharing by layer content, with the image
+itself never counted; nothing read engine-wide before `s`; the Findings analysis reused, not
+repeated; the daemon's `created_by` never shown raw; `GET` only, in read-only mode too; and the
+whole build in one file, the same at any width.
+
+### The tests
+
+| Test | Shows |
+| --- | --- |
+| `internal/forensics`: `TestStepsKeepEveryHistoryEntry` | a 5-entry history over 3 layers, in both archive layouts: order, the `Empty` flags, layers 1, 0, 2, 3, 0 |
+| `internal/forensics`: `TestStepsDoNotBindWhenTheCountDisagrees` | two layer-making entries for three layers: `Layer` 0 on every step, the flags kept |
+| `internal/forensics`: `TestStepsAndInstructionsAgree` | for every step that made a layer, `Report.Instruction(step.Layer)` and the layer's own instruction are the step's |
+| `internal/forensics`: `TestStepsHoldNoBuildArgumentValue` | `RUN |1 TOKEN=…`: the step names the argument and the command and holds no value |
+| `internal/report/collect`: `TestExportedImageReportHasNoStepList` | a config-only step is in the analysis and in none of the four exported formats; the JSON has no step field; no golden file changed |
+| `internal/space`: `TestContentHoldersIgnoreDepth` | the same diff ID at the base's second depth and the app's third, fifth and sixth: each names the other, once; holders sorted; chain sharing finds nothing; an unread image has no answer |
+| `internal/space`: `TestContentHoldersAreCopies`, `TestDiffsDoNotChangeTheByteAccounting` | a returned slice cannot change the index; `Groups`, `Frees` and `Agrees` are the same with and without diff IDs |
+| `internal/fakeengine`: `TestSeedLayersServesStepsAndASharedLayerAtTwoDepths`, `TestImageHistoryOverride` | the sandbox's two images: 8 entries for 5 layers, newest first, 3 with a size, `EmptyLayer` never set; the base layer at one depth and the empty layer at different ones; one shared chain |
+| `TestSpaceOpenedTwiceReadsNoLayersAgain`, `TestLayersTabUsesWhatSpaceRead` | the second open and `r` make no history request; the tab states holders from the Space view's read without `s` |
+| `TestLayerReadFetchesOnlyWhatTheCacheLacks`, `TestLayerReadProgressLine` | three images, one cached: two inspects and two histories; `layers of image 12 of 412`; a second read starts nothing |
+| `TestLayersFirstOpenSecondOpenAndMovingOn` | nothing asked while the tab is hidden; first open: one history, one archive; second open: neither; moving to another image cancels the first analysis |
+| `TestLayersDrawsTheFindingsReport` | analysed on Findings first: exact steps at once, no second archive request |
+| `TestLayersDaemonListBindsOnlyByCount` | 18 entries, 7 layers, 7 sized: 11 `config` rows, `L1`–`L7` in order, the header says the binding was counted, no archive requested |
+| `TestLayersDaemonListRefusesAMismatch` | 3 sized entries for 5 layers and `EmptyLayer` false on all 8: no row names a layer or is called config, and the header and the block say why |
+| `TestLayersExactListReplacesTheCountedOne`, `TestLayersCursorIsClampedWhenTheListShrinks` | Enter gives consent; the exact list replaces the daemon's; the cursor stays on the same index; a shorter list clamps it |
+| `TestLayersRowsAtThreeWidths` | at 120, 80 and 60 cells and at 7, 12 and 30 rows: which columns are drawn, no line wider than the pane, the instruction and layer always there, the block's figures at 60; the frame's geometry on every step at 120×40 and 80×24 |
+| `TestLayersBlockForALayerAConfigStepAndAnUnreadLayer`, `TestLayersBlockBeforeTheArchive` | a layer step's every figure with its source; a config step's sentence and no digest, size or holders; a zstd layer: the reason, the daemon's size, no file count or archive bytes; before the archive: the daemon's figures and "not known yet" |
+| `TestLayersSummary`, `TestLayersSummaryOfAnIncompleteRead` | before `s`; a shared base with both figures and their sources; nothing shared, not "0 of"; three images that cannot be inspected: `at least`, the count, and `s` reads only those three |
+| `TestLayersStatesWithNothingToShow` | no history; no layers; the image's own layers unreadable (not retried by a frame, read again by `s`); the analysis running and cancelled; a failed analysis and Enter; an archive of other layers — one line each, no row invented |
+| `TestLayersManyHolders` | 40 holders: the row says 40, the block names what fits and `+N more` adding up to 40, the file names all 40, the untagged one by short ID |
+| `TestLayersTabPositionAndCursorKeys` | the strip, `]` four times from Info, `[` back; `G g j k ↑ ↓ Home End Space PgUp PgDn`; no mutating request |
+| `TestLayersKeysStartConsentAndCancel`, `TestLayersKeysAreInTheHelpAndTheFooter` | `s` starts one job for 17 images and says so; a second `s` starts nothing; cancelled: not known, and `s` again; Enter on a remote 2.4 GB image; `c`; the help section and the footer |
+| `TestLayersInReadOnlyModeSendsOnlyGets` | `--read-only`: steps, sharing, analysis and capture; every request is a GET or HEAD |
+| `TestLayersNeverHoldTheDaemonsRawInstruction` | a history carrying a build argument's value, a token and terminal escapes: none is in the cache, the frame, the capture, a job or the status line |
+| `TestCaptureLayersIsTheWholeBuildAtAnyWidth`, `TestCaptureLayersWithoutTheArchive`, `TestCaptureOffersLayersAndNotTheTabsThatAreNotText` | 80 and 200 columns: identical bytes; scrolled to the last step, the file holds the first; the prefilled `layers-` name; independent of the cursor; without the archive it says so; `W` still does nothing on Findings and Upstream |
+| `TestDocumentedLayersTab` | the README names the tab, its position, both sources, the content rule and every key, and the tab handles each key listed (it failed before the README was written) |
+| `internal/e2e`: `TestImageLayers` | the built binary in a pseudo-terminal at 120×42 and at 80×24 `--read-only`: the steps and the config rows, `s`, the holders, the same content at another depth; one archive request, 18 history requests for 18 images, no request that is not a GET |
+| `internal/space`: `TestRealDaemonLayersReadOnly` (opt-in) | a real daemon through the read-only engine: per image, layers, history entries and sized entries; sharers by chain and by content; chain sharing implies content sharing |
+
+### What was run, and what it said
+
+As in round twenty-nine, the runs use `TMPDIR=/tmp`: this machine's default is longer than a
+unix socket path allows.
+
+- `go vet ./...`, `gofmt -l`: clean.
+- `TMPDIR=/tmp make test`: run three times. The first and the last passed whole. The second
+  failed in this round's own `TestLayersKeysStartConsentAndCancel`: under the whole suite's
+  load the analysis it meant to cancel had already finished. The three tests that must catch
+  an analysis while it runs now slow the fake's archive to 500 ms a chunk instead of 40; they
+  passed four times in a row, and then the whole suite did.
+- `TMPDIR=/tmp make e2e`: run three times. The first failed in one test whose name was not
+  kept (the output was cut to its last lines — a mistake of the run, not of the test); the
+  second and third passed whole, and `TestImageLayers` passed six times in a row alone. Taken
+  with the two e2e tests earlier rounds name as intermittent under load, it is recorded as
+  not diagnosed rather than as fixed. `docs/screens` regenerated: 93 and 94 are new; the image
+  tabs' screens now read `3/5` and show `Layers` in the strip; the rest differ in socket paths
+  and times, as every run does.
+- `-race`, by the reviewer, over the layer read, summary, states, cursor and raw-instruction
+  tests of `internal/ui`: pass.
+- `openspec validate add-layers-tab --strict`: valid.
+- `make sandbox`: not opened interactively. `fake-dockerd -layers` was started as the target
+  starts it and answered `GET /images/acme/steps:1/history` and the image list over its socket.
+- `make crosscheck`: not run; the default sandbox it drives is unchanged (DECISIONS LY19).
+
+**The real daemon** (Docker 29.10.0, containerd image store, 11 images), read only:
+
+- `TestRealDaemonLayersReadOnly`, through the read-only engine (GET and HEAD only, refused
+  below the wrapper too): one image list, and one inspect and one history per image. All 11
+  histories bind by counting; 6 images share a layer by chain and 7 by content; one 26-layer
+  image shares 5 layers by content and none by chain, and holds one diff ID more than once.
+- The built binary, `--read-only`, in a pseudo-terminal, on `nginx`: 18 steps, 7 layers, 11
+  config-only rows; bound by counting before the archive and exactly after; `L1` held by
+  `redis:latest`; 2,855 files and a matching `diff_id` on the base layer. This streamed that
+  one image's archive (`GET /images/get`, 243 MB, to memory, nothing written) and, after `s`,
+  made one inspect and one history request for each of the other 10 images. Nothing else was
+  asked, and nothing that changes the daemon can be sent in that mode. The probe was a
+  temporary test and is not in the tree.
+
+### Not proven
+
+- The `?` rows — a history that does not bind — on a real engine: this one binds everywhere
+  (DECISIONS LY21). The state is shown by the fake, which reports 0 for a layer holding
+  nothing.
+- A read of hundreds of images: the largest engine read had 18 (the fake) and 11 (real).
+  The job is sequential and cancellable; its time on a large remote engine was not measured.
+- A daemon on another machine: the consent path is tested with the fake presented as remote.
+- The two block lines no UI test reaches (DECISIONS LY23): a digest that does not match the
+  config, and a layer the archive lacks.
+
 ## Running everything
 
 ```sh

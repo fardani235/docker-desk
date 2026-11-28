@@ -5970,3 +5970,314 @@ the dialog or the status line, or on consent and requests.
 See docs/TESTING.md, round twenty-nine, for the tests, the commands and their results —
 including the tests that fail on this machine before and after the change, and why.
 
+
+## Round thirty — the Layers tab
+
+OpenSpec change `add-layers-tab` (new capability `image-layers`; `text-capture` modified). The
+instruction for the round: apply the change as written, working autonomously — "where you would
+ask, decide and record" — and test and validate it as QA and as a security engineer would;
+vulnerable code is not accepted. The change's design D1–D11 is implemented as LY1–LY11 below,
+as written; LY12 onward are what had to be decided or was found while building it.
+
+The gap it closes: the desk could say what an image contains, what it costs and how it differs
+from another build, and not what the build did, step by step, or which other image holds the
+layer a step made.
+
+### LY1 — A step is the row, not a layer
+
+**Decided:** one row per entry of the image's history, oldest first, the entries that made no
+layer included and marked `config`. The layer a step made is a column.
+
+**Considered:** one row per layer — it loses `ENV`, `CMD`, `LABEL` and `ARG`, which are 11 of
+`nginx:latest`'s 18 entries on this machine, and cannot answer "what did the build do" for
+them. Two lists, layers and config steps — two cursors and two orders for one build.
+
+**Cost:** the rows are bound again when the exact list arrives (LY3), and a config-only row has
+no size, no files and no holders to show.
+
+### LY2 — A cursor list with a block under it, not a text view
+
+**Decided:** Findings' shape — rows above, the highlighted row's facts below, the list
+scrolling under a cursor. `tabView()` is untouched, so the tab has no `/` find.
+
+**Considered:** a text view like Changes, which would get find and `W` for free — each step
+then takes four or five lines, 26 layers become 130, and the sharing column, the thing to scan
+for, is gone. A section per step inside Findings — Findings lists rule results in a chosen
+order, not a build.
+
+**Cost:** a cursor, an offset and a list height to keep, and a `W` builder that is not the
+drawn rows (LY9).
+
+### LY3 — The archive's history is the authority; the daemon's is a labelled fallback
+
+**Decided:** when the image has been analysed and its config has a history, the steps are
+`Report.Steps`, where `empty_layer` says which made a layer. Before that they are the daemon's
+history, and an entry is bound to a layer only when exactly as many entries carry a non-zero
+size as the image has layers; otherwise every row's layer is `?` and the header says why, and
+that the archive's history would say. The daemon's `EmptyLayer` is never consulted — the
+engine wrapper does not even decode it.
+
+**Considered:** trusting `EmptyLayer` — on this machine's Docker 29.10 engine it is false on
+all 18 entries of a 7-layer image. Drawing nothing until the archive is read — blank until
+consent on a large remote image, and blank for ever where the archive cannot be read. A
+second, small request for the config alone — there is no such endpoint; `GET /images/get` is
+the whole archive.
+
+**Cost:** until the archive arrives the binding is a count, and the tab has to say which list
+it shows. The header line does, in every state.
+
+### LY4 — Sharing is by layer content, not by chain
+
+**Decided:** a layer is held by another image when that image has a layer with the same diff
+ID, at any depth. The image itself never counts; an image holding the diff ID several times
+counts once (`space.Index.ContentHolders`, `ContentSharers`).
+
+**The evidence:** the empty layer. Its diff ID sits at five depths inside one 26-layer image
+on this machine, so chain IDs make it five unrelated layers; its blob is nevertheless the
+whole of that image's `SharedSize`, 34 bytes. Run read-only against the real engine
+(`TestRealDaemonLayersReadOnly`), that image shares **five layers by content and nothing by
+chain**; over all 11 images, 6 share a layer by chain and 7 by content.
+
+**Considered:** chain IDs, as Space uses — they find nothing shared for exactly that image.
+Both identities in two columns — two answers to one word. Detecting the store and choosing —
+the API does not promise a store name on every platform, and "do I build on the same content"
+has one answer whatever the store.
+
+**Cost:** Space counts bytes and this tab counts content, so the two can name different sets.
+`disk-space` is untouched — `Diffs` is read by nothing in the byte accounting, and
+`TestDiffsDoNotChangeTheByteAccounting` holds it there — and the README says how the two
+differ.
+
+### LY5 — The engine-wide read is a key, one job, one cache
+
+**Decided:** opening the tab reads the highlighted image's layers (one inspect, one history).
+`s` reads every other listed image the cache lacks, as one cancellable job; the summary line
+states the count before it is pressed and the status line when it is.
+
+**Considered:** starting it on open, as Space does — Space is the accounting view; this is one
+image's tab, and on a 412-image remote engine the operator did not ask for 824 requests. A
+count threshold above which the key is required — a threshold that exists to hide a cost is
+worse than a line that states it.
+
+**Cost:** one keypress the first time in a session before any holder is shown.
+
+### LY6 — The report keeps every step
+
+**Decided:** `forensics.Report` gains `Steps []Step` — the masked instruction, the config's
+`empty_layer`, the layer made (0 when none, or when nothing binds) — filled in the loop that
+already built `Instructions`, from the same array, by the same `cleanInstruction`. A layer's
+instruction is now copied from its step, so the two cannot differ.
+
+**Considered:** rebuilding the list in the UI from the daemon's history — it cannot be exact
+(LY3). Keeping the raw config in the report and masking in the UI — secret-shaped text in a
+second place under a second rule.
+
+**Cost:** the report grows by a slice of tens of entries, and a reader of `Report` must know
+`Instructions` and `Steps` describe one array. `report/collect.Image` maps fields by name and
+does not map this one; `TestExportedImageReportHasNoStepList` proves no exported format
+carries a config-only step, and no golden file changed.
+
+### LY7 — Two byte figures, each named
+
+**Decided:** the row shows the daemon's history size for the step — the number `docker
+history` shows, and the one there is before the archive is read. The block adds the archive's
+two: the bytes the layer's files hold, and the bytes the archive stores. The summary names the
+source of the sizes it adds up.
+
+**Considered:** the archive's stored bytes in the row — the column would change meaning when
+the analysis arrives. One figure — `nginx` states 243 MB while its history sizes add to 177 MB;
+one number hides that.
+
+**Cost:** three numbers that are not one unit. The tab never adds two of them together.
+
+### LY8 — Appended after Upstream
+
+**Decided:** `Info, Inspect, Findings, Upstream, Layers`. No tab moved.
+
+**Considered:** after Info — the cheap structural view first reads better, and moves three
+tabs under every operator's `[`/`]` count.
+
+**Cost:** at 80 columns the strip collapses to `[Layers] 5/5`; `[` from Info reaches it in one
+key, which the README says.
+
+### LY9 — `W` writes the build, and no new report class
+
+**Decided:** `W` writes every step with its block, at the page's width, as a text capture
+under the text-capture rules (kind `layers`). It is built from the tab's facts, not from the
+drawn rows: the same bytes at 80 and 200 columns, scrolled or not, wherever the cursor is.
+
+**Considered:** extending the JSON image report with steps and holders — a schema change and a
+version question for what one text file already carries. No capture — this would be the one
+computed view that cannot be kept.
+
+**Cost:** a second layout of the same facts; `TestCaptureLayersIsTheWholeBuildAtAnyWidth`
+holds the two together.
+
+### LY10 — One layer cache, owned by the desk
+
+**Decided:** `layerInfo` and the per-image map left `spaceState` for `Model.lc`
+(`layercache.go`). The Space job and the Layers read share the fetch loop (`readLayers`) and
+the cache; each tells the other what it is already reading, so an image is asked once per
+session whichever view asked. The cache is the focused daemon's: a focus change rebuilds the
+model and drops it.
+
+**Considered:** a second cache in the tab — two views in one session would double the requests
+to the same engine. The tab using only what happens to be cached — LY14.
+
+**Cost:** a refactor of the Space job. Its tests pass unchanged, and
+`TestSpaceOpenedTwiceReadsNoLayersAgain` and `TestLayersTabUsesWhatSpaceRead` hold the sharing.
+
+### LY11 — What the tab refuses to say
+
+- that a layer's bytes are stored once: that is Space's claim, and it depends on the store;
+- that a holder set is complete when some image was not read: `at least`, with the count;
+- that a step made a layer, from a count it cannot trust; and a raw `created_by`, ever;
+- that a config-only step is "empty": the block says it changed the image's configuration and
+  not its files, which is what `empty_layer` means.
+
+**Cost:** more words on screen than a number would take. Each is one line.
+
+### LY12 — Decided: which columns go, and in which order
+
+Task 4.4 lists "the instruction, the layer, the size, the holders count, with the columns
+dropped in that order"; the spec's scenario says that at 60 cells "the files and size columns
+may be dropped, the instruction stays". Read literally the task drops the instruction first,
+which the spec forbids. **Decided:** the task's list is the order of what is kept. The files
+column needs 100 cells, the size 72; the layer and the instruction are always drawn, and the
+holders column — four cells, and the question the tab exists for — is drawn whenever the
+holders are known. So at 120: everything; at 80: no files; at 60: neither files nor size.
+The widths are the pane's, not the terminal's: a 120-column terminal gives the Details pane
+60 cells. **Cost:** at the common 120-column layout the row is the short form, and the block
+carries the figures.
+
+### LY13 — Decided: `at least` governs the holders, not the own bytes
+
+The spec's incomplete-read scenario says "the holders and the own figure are stated as `at
+least`". The holders are a lower bound when an image was not read. The bytes of the layers no
+other image holds are not: an unread image can only move a layer out of that set, so that
+figure is an upper bound, and "at least 126 MB" would be false. **Decided:** the sentence
+begins `at least N of M layers are held by another image here`, the own figure follows as what
+the other layers hold `at most`, and the line ends with how many images were not read and that
+a layer may have more holders. **Cost:** the wording departs from the scenario's letter to keep its
+requirement, "nothing is claimed that is not known". Flagged to the owner in the round's
+summary.
+
+### LY14 — Decided: a partial read shows no holders at all
+
+Two different things can be missing: an image never asked (not read yet, or the read was
+cancelled) and an image asked that could not answer. **Decided:** while any listed image has
+never been asked, no holder is shown anywhere — the summary says the holders are not known
+and names `s` — because a partial set drawn as the answer is worse than none (the design's
+reason for LY10). Once every image has been asked, the ones that failed make the figures `at
+least`. A new image appearing after a complete read puts the tab back to "not known", with a
+count of one. **Cost:** a cancelled read of 400 images shows nothing for the 399 it did read
+until `s` finishes the rest; they are not read again.
+
+### LY15 — Decided: the daemon's `created_by` is masked where it is stored
+
+D11 says the masked form is the only form. Masking at draw time would leave the raw string —
+which can hold a sealed build argument's value — in the cache, one mistake away from a view, a
+job log or a capture. **Decided:** `newLayerInfo` passes every history entry through
+`forensics.Instruction` (argument values left out, secret-shaped text masked, control
+characters escaped) and keeps only that; the engine's raw answer is dropped when the function
+returns. A daemon's history is cut at 2,000 entries, and the header says so if it was.
+**Cost:** nothing in the desk can show the raw instruction even where that would be harmless.
+`TestLayersNeverHoldTheDaemonsRawInstruction` checks the cache, the frame, the capture, the
+jobs and the status line.
+
+### LY16 — Found and decided: an archive that is not of the daemon's layers
+
+The sandbox's `shop/api:dev` is listed by the fake with six layers while its archive holds
+four — a property of the demo seed, older than this round. Laying that report over the
+daemon's list would bind steps to layers they did not make. **Decided:** a report is used only
+when it has as many layers as the daemon's inspect names and the same diff ID wherever the
+archive's layer could be hashed; otherwise nothing of it is drawn, and one line says the
+archive that was analysed is of other layers. **Cost:** an archive with one unhashable layer
+is matched on the others alone.
+
+### LY17 — Decided: the pane names what fits; the file names everyone
+
+The spec asks for `+N more` when the holders do not fit the pane. **Decided:** in the block
+the holders are one line — as many names as it holds, then `+N more` — and likewise the
+findings on the layer. The capture is not bound by a pane: it names every holder and every
+finding, wrapped at the page's width. **Cost:** the file's line for a base layer held by 400
+images is long. It is the point of keeping the file.
+
+### LY18 — Decided: the count rule is the spec's, stricter than Space's
+
+`space.LayerSizes` and `changes.MapHistory` also accept a history with exactly as many entries
+as layers ("every entry made one"). The spec names one rule — as many entries with a non-zero
+size as layers — and the tab uses only that for binding. **Cost:** an image whose every step
+made a layer, one of them holding nothing, is not bound until its archive is read.
+
+### LY19 — Decided: the sandbox's two images are behind `-layers`
+
+`scripts/cli-crosscheck.sh` pins the default sandbox's image count and totals (`Images 19 11
+3.562GB`), and the demo's figures are pinned by many tests. **Decided:** `SeedLayers` is
+separate from `SeedDemo`, as `SeedChanges` is; `fake-dockerd -layers` adds it and `make
+sandbox` passes the flag. The fake reports a fixture's own history now, entries that made no
+layer included, with size 0 for a layer that holds nothing — so the sandbox's history does not
+bind by counting, and the `?` rows and their reason can be seen without a real engine.
+**Cost:** `make crosscheck` does not exercise the two new images.
+
+### LY20 — Decided: the highlighted image's read is a command, and is not retried by a frame
+
+One inspect and one history request do not need a job in the Jobs pane; the read is a
+`tea.Cmd` with a 20-second bound, dropped by generation if the daemon changed. If it fails,
+the tab says why and waits: `s` reads it again, as the spec says. A frame never does — a
+daemon that refuses would be asked 200 times a second. **Cost:** a transient failure stays on
+screen until `s`.
+
+### LY21 — Found: on this engine the count binds everywhere
+
+The proposal's Why reads as if the daemon's history could not bind steps to layers. What
+cannot be trusted is `EmptyLayer`. The sizes do bind here: read-only against the real engine,
+all 11 images have exactly as many sized entries as layers — the containerd store gives even
+the empty layer a size. The refusal (LY3) is therefore reached on this machine only in the
+sandbox, which models a store that reports 0 for a layer holding nothing. It stays, because
+the rule must not guess on the engine where it would be wrong. **Cost:** the `?` state is
+proven by the fake alone.
+
+### LY22 — Decided: head lines wrap to two rows, and the block takes only what it needs
+
+The first layout cut each head line to one row; in the 60-cell pane of an 80- or 120-column
+terminal that hid the key that reads the holders, and the consent sentence's `Enter`.
+**Decided:** in a pane of 16 rows or more a head line may take two rows; each sentence leads
+with the fact and the key and ends with its sources, so what is cut is the least needed; in a
+pane under 12 rows only the summary and the line that asks for something are kept. The block
+takes the rows its facts need, up to a little under half the pane, and the list has the rest.
+**Cost:** in the 7-row pane of an 80×24 terminal the block shows three facts; `W` writes all.
+
+### LY23 — An independent review, before calling it done
+
+As PC16 and ED15 did, the change was read by a separate pass that was given the code and the
+spec, not this record, and asked for unescaped or unmasked text on any surface, requests other
+than GET, claims without evidence, index and overflow faults under a hostile daemon, races and
+lifecycle, and scenarios no test holds. **It found no vulnerability**: every instruction is
+masked where it is stored, every name, digest, error and host is escaped where it is drawn,
+the job's words are the desk's, the file's name goes through `report.Slug`, and the tab calls
+nothing but `ImageLayers` and the existing `SaveImage`. What it found, and what was done:
+
+| # | Finding | What was done |
+| --- | --- | --- |
+| 1 | Low: a history whose every entry is `empty_layer`, over an image that has layers, was called exact and bound | bound only when there is no layer either; otherwise the reason is given (`TestLayersReviewFindingsStayFixed`) |
+| 2 | Low: a history cut at 2,000 entries was still counted from, and one of exactly 2,000 was called cut | the cut is recorded where it happens, and a cut history never binds (`TestLayersSizesNeedAnAgreeingHistory`) |
+| 3 | Low: on an incomplete read the own-bytes figure was stated unqualified | it says `at most` (LY13); the test now asserts both bounds |
+| 4 | Low: a failed read from the job could replace layers the image's own read had just stored, and `s` could ask again for an image already on its way | a failure never replaces a held entry; `s` and the Space job skip an image whose own read is in flight |
+| 5 | Low: where no step names a layer, the summary counted held layers and nothing said which, or who holds them | one line names the held layers by number with their holders, on screen and whole in the file |
+| 6 | Low: the daemon's sizes were laid on the archive's steps whenever the two lists were as long; a size on an `empty_layer` step was dropped silently and a negative one added up | the lists must agree — no size on a config-only step, none negative — or the sizes come from the count or the archive |
+| 7 | Low: the line before `s` counted the images never asked, while `s` also reads those that failed | it counts both |
+| 8 | Low: after a daemon switch the layer read went on asking the previous daemon for a cache already dropped | the switch cancels it. The Space job has the same habit and predates the round; left as it is |
+| 9 | Nit: Layers binds by the spec's one rule where Space also accepts "every entry made a layer" | LY18; kept |
+| 10 | Nit: an own read of an image removed later stays cached until the next read or account | bounded by the images highlighted in a session; kept |
+| — | Unconfirmed: a layer's `Unreadable` reason is drawn as the analysis wrote it | traced: it is the desk's own sentence or Go's `archive/tar` error, neither carrying archive text, and the exported report already writes it as it is. Escaping it again would double the escapes of text that is text. Left |
+
+Scenarios it named as held by no test, and still not: the digest that does *not* match the
+config, and a layer the manifest lists and the archive lacks, are drawn by code that no UI
+test reaches; the stale answer of an own read after a daemon switch is dropped by generation,
+by inspection only.
+
+### LY24 — Round thirty: what was run
+
+See docs/TESTING.md, round thirty. Unlike round twenty-nine, a real daemon was read in this
+round, and only read: see there for exactly what was asked of it.

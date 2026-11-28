@@ -140,15 +140,20 @@ func (a *analyser) finish() (*Report, error) {
 	layerOfHistory := map[int]int{}
 	if cfg != nil {
 		var made []int
+		// Every entry is kept as a step, masked by the one rule; the
+		// layer's instruction below is the step's, not a second parse.
 		for hi, h := range cfg.History {
+			line, _ := cleanInstruction(h.CreatedBy)
+			rep.Steps = append(rep.Steps, Step{Instruction: line, Empty: h.EmptyLayer})
 			if !h.EmptyLayer {
 				made = append(made, hi)
 			}
 		}
 		if len(made) == len(entry.Layers) {
 			for li, hi := range made {
-				instr[li], _ = cleanInstruction(cfg.History[hi].CreatedBy)
+				instr[li] = rep.Steps[hi].Instruction
 				rep.Layers[li].Instruction = instr[li]
+				rep.Steps[hi].Layer = li + 1
 				layerOfHistory[hi] = li + 1
 			}
 		} else if len(cfg.History) > 0 {

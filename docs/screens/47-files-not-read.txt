@@ -1,7 +1,7 @@
- Docker Desk  unix:///tmp/ddfake3619398047/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…047/d.sock ●]                                                              M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake655743198/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…198/d.sock ●]                                                              M picker  < > focus
 ┏━ ◆ Files — the image's layers merged into one tree ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ python:3.12-slim ━┓
-┃   image      python:3.12-slim · 90db23bd5600 · linux/amd64 · 4 layers · 131MB (the daemon's size)                    ┃
+┃   image      python:3.12-slim · 90db23bd5600 · platform: the daemon's default · 131MB (the daemon's size)            ┃
 ┃   not read   Nothing has been read. Enter reads the image's archive (131MB from the daemon) as one job and builds    ┃
 ┃              the index of its paths; c cancels it. No file's contents are read.                                      ┃
 ┃                                                                                                                      ┃

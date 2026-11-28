@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake1569453987/d.sock  ctx default  ● connected
- Daemons [◆1 /tmp/ddfake…987/d.sock ●]                      M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake4231154336/d.sock  ctx default  ● connected
+ Daemons [◆1 /tmp/ddfake…336/d.sock ●]                      M picker  < > focus
 ┌─ 1 Kinds ──────┐┏━ ◆ 2 Containers (13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 │▸ Containers  13│┃  NAME            IMAGE         STATE          CPU       MEM┃
 │  Images      16│┃▸ distroless-svc  gcr.io/dist…  ● running        …         …┃
@@ -11,7 +11,7 @@
 │  ‖ 1 paused    ││Image    gcr.io/distroless/static:nonroot                   │
 │  ○ 5 stopped   ││State    ● running   Up 5 hours                             │
 │                ││Command  /svc                                               │
-│                ││Created  2026-11-28 00:01:30                                │
+│                ││Created  2026-11-28 13:37:09                                │
 │                ││                                                            │
 └────────────────┘└────────────────────────────────────────────────────────────┘
 ┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ───────────────────────┐

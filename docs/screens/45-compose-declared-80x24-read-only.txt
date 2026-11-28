@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake2922051797/d.sock  ● connected  [READ-ONLY]
- Daemons [◆1 /tmp/ddfake…797/d.sock ● ro]                   M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1780749374/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…374/d.sock ● ro]                   M picker  < > focus
 ┌─ 1 Kinds ──────┐┌─ 2 Compose (2) ────────────────────────────────────────────┐
 │  Containers  13││  PROJECT             CONTAINERS   RUNNING  WORKING DIR     │
 │  Images      16││  blog                         2         0  /tmp/TestCompos…│

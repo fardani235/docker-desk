@@ -66,6 +66,28 @@ func (s *Server) SetImageFixture(ref string, f fixture.Image, sizes ...int64) bo
 		img.layers = append(img.layers, Layer{Name: l.DiffID(), Size: size, CreatedBy: l.CreatedBy, DiffID: l.DiffID()})
 		img.Size += size
 	}
+	// A fixture with a history of its own is reported with it: the
+	// entries that made no layer too, each layer-making entry with its
+	// layer's size. One that does not bind to the layers is reported as
+	// it is, with no size at all.
+	img.history = nil
+	if len(f.History) > 0 {
+		made := 0
+		for _, h := range f.History {
+			if !h.EmptyLayer {
+				made++
+			}
+		}
+		next := 0
+		for _, h := range f.History {
+			step := HistoryStep{CreatedBy: h.CreatedBy}
+			if !h.EmptyLayer && made == len(img.layers) {
+				step.Size = img.layers[next].Size
+				next++
+			}
+			img.history = append(img.history, step)
+		}
+	}
 	return true
 }
 
@@ -93,6 +115,72 @@ func (s *Server) SeedMovedTag(spec ContainerSpec, old, now fixture.Image, oldSiz
 	newID = s.MoveTag(spec.Image, 0)
 	s.SetImageFixture(newID, now, newSizes...)
 	return oldID, newID
+}
+
+// LayersApp and LayersBase are the two images SeedLayers adds.
+const (
+	LayersApp  = "acme/steps:1"
+	LayersBase = "acme/steps-base:1"
+)
+
+// LayersFixtures are the two images of SeedLayers as fixtures: an
+// application and the base it was built on. Their histories hold steps
+// that made no layer (ENV, LABEL, CMD) beside those that did, and two of
+// the layer-making steps (WORKDIR) made a layer that holds nothing — the
+// same content, so the same diff ID, at the base's second depth and at the
+// application's third and fifth. The application's RUN carries a sealed
+// build argument whose value no view may show.
+func LayersFixtures() (app, base fixture.Image) {
+	file := func(path, body string) []fixture.File { return []fixture.File{{Path: path, Body: []byte(body)}} }
+	baseLayer := fixture.Layer{CreatedBy: "/bin/sh -c #(nop) ADD file:51c0ffee in / ", Files: file("etc/os-release", "ID=steps\n")}
+	empty := fixture.Layer{CreatedBy: "WORKDIR /app"}
+	base = fixture.Image{
+		OS: "linux", Architecture: "amd64", Cmd: []string{"/bin/sh"}, WorkingDir: "/app",
+		Layers: []fixture.Layer{baseLayer, empty},
+		History: []fixture.History{
+			{CreatedBy: baseLayer.CreatedBy},
+			{CreatedBy: "/bin/sh -c #(nop)  ENV LANG=C.UTF-8", EmptyLayer: true},
+			{CreatedBy: "WORKDIR /app"},
+			{CreatedBy: `/bin/sh -c #(nop)  CMD ["/bin/sh"]`, EmptyLayer: true},
+		},
+	}
+	app = fixture.Image{
+		OS: "linux", Architecture: "amd64", Cmd: []string{"/app/server"}, WorkingDir: "/srv",
+		Layers: []fixture.Layer{
+			baseLayer,
+			{CreatedBy: "RUN make build", Files: file("usr/local/bin/tool", "#!/bin/sh\nexit 0\n")},
+			empty,
+			{CreatedBy: "COPY app /app", Files: file("app/server", "#!/bin/sh\nexec true\n")},
+			empty,
+		},
+		History: []fixture.History{
+			{CreatedBy: baseLayer.CreatedBy},
+			{CreatedBy: "/bin/sh -c #(nop)  ENV LANG=C.UTF-8", EmptyLayer: true},
+			{CreatedBy: "RUN |1 BUILD_TOKEN=tok-5ecr3t-value-0123456789 /bin/sh -c make build # buildkit"},
+			{CreatedBy: "WORKDIR /app"},
+			{CreatedBy: "COPY app /app # buildkit"},
+			{CreatedBy: `/bin/sh -c #(nop)  LABEL org.opencontainers.image.title=steps`, EmptyLayer: true},
+			{CreatedBy: "WORKDIR /srv"},
+			{CreatedBy: `/bin/sh -c #(nop)  CMD ["/app/server"]`, EmptyLayer: true},
+		},
+	}
+	return app, base
+}
+
+// SeedLayers adds what Images › Layers is about: an image whose history
+// has config-only steps, and a second image holding one of its layers at
+// the same depth and another at a different one. The daemon reports the
+// two empty layers with size 0, so its history does not bind to the
+// layers by counting; the archive's does. Like SeedChanges it is not part
+// of SeedDemo: tests and `fake-dockerd -layers` add it.
+func (s *Server) SeedLayers() (appID, baseID string) {
+	app, base := LayersFixtures()
+	day := 24 * time.Hour
+	baseID = s.AddImage(0, 20*day, LayersBase)
+	s.SetImageFixture(baseID, base, 28_400_000, 0)
+	appID = s.AddImage(0, 2*day, LayersApp)
+	s.SetImageFixture(appID, app, 28_400_000, 61_200_000, 0, 1_850_000, 0)
+	return appID, baseID
 }
 
 // SeedChanges adds a container for every case in which the Changes tab has

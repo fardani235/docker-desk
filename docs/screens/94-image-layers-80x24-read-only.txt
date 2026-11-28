@@ -1,0 +1,24 @@
+ Docker Desk  unix:///tmp/ddfake718593191/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…191/d.sock ● ro]                   M picker  < > focus
+┌─ 1 Kinds ──────┐┌─ 2 Images (2 of 18) ─────────────────────── filter: steps ─┐
+│  Containers  13││  REPOSITORY        TAG        IMAGE ID          SIZE    AGE│
+│▸ Images      18││▸ acme/steps        1          95beb1cbd99a    91.5MB     2d│
+│  Volumes      7││  acme/steps-base   1          abd330ce4e3d    28.4MB    20d│
+│  Networks     7│└────────────────────────────────────────────────────────────┘
+│  Compose      2│┏━ ◆ 3 Details: acme/steps:1 ━━━━━━━━━━━━━━━━━ [Layers] 5/5 ━┓
+│                │┃3 of 5 layers are held by another image here · the other 2 …┃
+│  ● 7 running   │┃8 steps · 5 layers · the archive's history (exact: its empt…┃
+│  ‖ 1 paused    │┃▸  1 L1        1  ADD file:51c0ffee in /                    ┃
+│  ○ 5 stopped   │┃   2 config       ENV LANG=C.UTF-8                          ┃
+│                │┃step     1 of 8 · made layer L1 of 5 (bound by the archive's┃
+│                │┃         history)                                           ┃
+│                │┃held by  1 other image: acme/steps-base:1                   ┃
+└────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+┌─ 4 Events ──────────────────────── ● live ─┐┌─ 5 Jobs ────────────── 2 done ─┐
+│Waiting for engine events…                  ││▸ ✓ read image layers 17 i… 73ms│
+│Everything the daemon does                  ││  ✓ analyse image acme/step… 9ms│
+│shows up here as it happens.                ││                                │
+│                                            ││                                │
+└────────────────────────────────────────────┘└────────────────────────────────┘
+ ✓ read image layers 17 image(s), GET inspect and history
+ ↑↓ step  W save build  [ ] tab  P pull  p push  d re… Tab pane  ? keys  q quit

@@ -1,8 +1,8 @@
- Docker Desk  unix:///tmp/ddfake3178561887/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected  [READ-ONLY]
- Daemons [◆1 /tmp/ddfake…887/d.sock ● ro]                                                                                         M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake2949653137/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…137/d.sock ● ro]                                                                                         M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Containers (1 of 14) ────────────────────────────────────── filter: talker ─┐┌─ 4 Events ────────────────────────── ● live ─┐
 │▸ Containers    14││  NAME             IMAGE          STATE          CPU       MEM  STATUS          ││Waiting for engine events…                    │
-│  Images        16││▸ talker           alpine:3.20    ● running    57.2%   59.4MiB  Up 10 minutes   ││Everything the daemon does                    │
+│  Images        16││▸ talker           alpine:3.20    ● running    59.1%   59.1MiB  Up 10 minutes   ││Everything the daemon does                    │
 │  Volumes        7││                                                                                ││shows up here as it happens.                  │
 │  Networks       7││                                                                                ││                                              │
 │  Compose        2││                                                                                ││                                              │
@@ -15,8 +15,8 @@
 │                  ││           ┃                                                                                    ┃                               │
 │                  │└───────────┃ Write this file?                                                                   ┃                               │
 │                  │┏━ ◆ 3 Detai┃                                                                                    ┃                               │
-│                  │┃{          ┃ path       /tmp/TestCaptureFromTheSandbox3094845358/001/docker-desk-inspect-       ┃                               │
-│                  │┃  "Id": "6f┃            talker-20261128.json                                                    ┃                               │
+│                  │┃{          ┃ path       /tmp/TestCaptureFromTheSandbox161864809/001/docker-desk-inspect-talker- ┃                               │
+│                  │┃  "Id": "6f┃            20261128.json                                                           ┃                               │
 │                  │┃  "Created"┃ format     JSON — the daemon's document, indented; no header                       ┃                               │
 │                  │┃  "Path": "┃ size       3678 bytes                                                              ┃                               │
 │                  │┃  "Args": [┃ mode       0600: only you can read it                                              ┃                               │
@@ -30,11 +30,11 @@
 │                  │┃    "Pid": ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                               │
 │                  │┃    "ExitCode": 0,                                                              ┃│Everything that changes the daemon            │
 │                  │┃    "Error": "",                                                                ┃│runs here, in the background.                 │
-│                  │┃    "StartedAt": "2026-11-27T21:51:13.213323377Z",                              ┃│                                              │
+│                  │┃    "StartedAt": "2026-11-28T11:26:52.450937769Z",                              ┃│                                              │
 │                  │┃    "FinishedAt": "0001-01-01T00:00:00Z"                                        ┃│                                              │
 │                  │┃  },                                                                            ┃│                                              │
 │                  │┃  "Image": "sha256:bbfb6bb5502a04d7538cb6790ab5bedea7bb04a513b427b691ce1dab0713b┃│                                              │
 │                  │┃6a4",                                                                           ┃│                                              │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────────┘
- Saved text to /tmp/TestCaptureFromTheSandbox3094845358/001/docker-desk-logs-talker-20261128.txt (621 bytes, mode 0600).
+ Saved text to /tmp/TestCaptureFromTheSandbox161864809/001/docker-desk-logs-talker-20261128.txt (621 bytes, mode 0600).
  / find  ↑↓ scroll  [ ] tab  w wrap  W save text  s start  t stop  R restart  p pause  u unpause  K kill  d remove  n new  … Tab pane  ? keys  q quit

@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake4250669039/d.sock  ● connected  [READ-ONLY]
- Daemons [◆1 /tmp/ddfake…039/d.sock ● ro]                   M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1360287947/d.sock  ● connected  [READ-ONLY]
+ Daemons [◆1 /tmp/ddfake…947/d.sock ● ro]                   M picker  < > focus
 ┏━ ◆ File ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ shop-web-1 ━┓
 ┃ path       /etc/nginx/nginx.conf                                             ┃
 ┃ container  shop-web-1 · f948ec4de9e4                                         ┃

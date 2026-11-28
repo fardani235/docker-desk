@@ -1,8 +1,8 @@
- Docker Desk  unix:///tmp/ddfake1089997581/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…581/d.sock ●] │  2 staging ●                                                                                       M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1942106279/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…279/d.sock ●] │  2 staging ●                                                                                       M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (1 of 16) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: acme/report ━┓┌─ 4 Events ───────────────────────────── ● live ─┐
 │  Containers    13│┃  REPOSITORY                   TAG             IMAGE ID          SIZE    AGE   USED BY ┃│Waiting for engine events…                       │
-│▸ Images        16│┃▸ acme/report                  1.4             efc03945f57b     114MB     1s         - ┃│Everything the daemon does                       │
+│▸ Images        16│┃▸ acme/report                  1.4             efc03945f57b     114MB     0s         - ┃│Everything the daemon does                       │
 │  Volumes        7│┃                                                                                       ┃│shows up here as it happens.                     │
 │  Networks       7│┃                                                                                       ┃│                                                 │
 │  Compose        2│┃                                                                                       ┃│                                                 │
@@ -16,12 +16,12 @@
 │                  │┃                                                                                       ┃│                                                 │
 │                  │┃                ┏━ ◆ Copy image to another daemon ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                    │
 │                  │┗━━━━━━━━━━━━━━━━┃                                                                                    ┃                                    │
-│                  │┌─ 3 Details: acm┃ daemon     unix:///tmp/ddfake1089997581/d.sock                                     ┃                                    │
+│                  │┌─ 3 Details: acm┃ daemon     unix:///tmp/ddfake1942106279/d.sock                                     ┃                                    │
 │                  ││Reference  acme/┃ Copy acme/report:1.4 (efc03945f57b) from this daemon to:                           ┃                                    │
 │                  ││ID         efc03┃                                                                                    ┃                                    │
-│                  ││Size       114MB┃ ▸ staging  unix:///tmp/ddfake57268157/d.sock                    Docker 29.0.0-fake ┃                                    │
+│                  ││Size       114MB┃ ▸ staging  unix:///tmp/ddfake1559425850/d.sock                  Docker 29.0.0-fake ┃                                    │
 │                  ││Created    2026-┃                                                                                    ┃                                    │
-│                  ││Platform   linux┃ staging — unix:///tmp/ddfake57268157/d.sock (context staging)                      ┃                                    │
+│                  ││Platform   linux┃ staging — unix:///tmp/ddfake1559425850/d.sock (context staging)                    ┃                                    │
 │                  ││Layers     5    ┃ engine staging-host, Docker 29.0.0-fake, API 1.56                                  ┃                                    │
 │                  ││Command    pytho┃                                                                                    ┃                                    │
 │                  ││Workdir    /app ┃ ↑↓ choose  Enter read both daemons, then confirm  Esc cancel                       ┃                                    │

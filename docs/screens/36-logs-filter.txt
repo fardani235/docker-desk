@@ -1,8 +1,8 @@
- Docker Desk  unix:///tmp/TestSearchInTheSandbox3194215655/001/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Docker Desk  unix:///tmp/TestSearchInTheSandbox4235358602/001/sb.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
  Daemons [◆1 /tmp/TestSe…01/sb.sock ●]                                                                                  M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Containers (1 of 13) ───────────────────────────────── filter: noisy ─┐┌─ 4 Events ────────────────────── ● live ─┐
 │▸ Containers    13││  NAME           IMAGE        STATE          CPU       MEM  STATUS        ││Waiting for engine events…                │
-│  Images        22││▸ noisy-logger   alpine:3.20  ● running        …         …  Up 12 minutes ││Everything the daemon does                │
+│  Images        24││▸ noisy-logger   alpine:3.20  ● running        …         …  Up 12 minutes ││Everything the daemon does                │
 │  Volumes        7││                                                                          ││shows up here as it happens.              │
 │  Networks       7││                                                                          ││                                          │
 │  Compose        2││                                                                          ││                                          │
@@ -35,7 +35,7 @@
 │                  │┃0                                                                         ┃│                                          │
 │                  │┃line 21576 level=error msg="upstream timed out" path=/api/orders status=50┃│                                          │
 │                  │┃0                                                                         ┃│                                          │
-│                  │┃filter: error  ● following · 161 of 5000 match · 2400 older lines scrolle…┃│                                          │
+│                  │┃filter: error  ● following · 161 of 5000 match · 2000 older lines scrolle…┃│                                          │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────┘
 
  Esc clear filter  ↑↓ scroll  [ ] tab  f follow  w wrap  W save text  s start  t stop  R restart  p pause  u unpa… Tab pane  ? keys  q quit

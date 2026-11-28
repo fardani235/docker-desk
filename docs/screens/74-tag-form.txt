@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake2336586891/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…891/d.sock ●]                                                                                            M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake1510356350/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…350/d.sock ●]                                                                                            M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Images (4 of 19) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: acme/api ━┓┌─ 4 Events ────────────────────────── ● live ─┐
 │  Containers    13│┃  REPOSITORY              TAG           IMAGE ID          SIZE    AGE   USED BY ┃│Waiting for engine events…                    │
 │▸ Images        19│┃▸ acme/api                3.29.0        51d1711ee5b8    48.0MB     2d         - ┃│Everything the daemon does                    │
@@ -13,7 +13,7 @@
 │                  │┃           ┏━ ◆ Tag image ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               │
 │                  │┃           ┃                                                                                    ┃                               │
 │                  │┃           ┃ image      acme/api:3.29.0  (51d1711ee5b8)                                         ┃                               │
-│                  │┃           ┃ daemon     unix:///tmp/ddfake2336586891/d.sock  (context default)                  ┃                               │
+│                  │┃           ┃ daemon     unix:///tmp/ddfake1510356350/d.sock  (context default)                  ┃                               │
 │                  │┗━━━━━━━━━━━┃ tags       acme/api:3.29.0, acme/api:stable                                        ┃                               │
 │                  │┌─ 3 Details┃                                                                                    ┃                               │
 │                  ││Reference  ┃ New reference, repository[:tag]:                                                   ┃                               │

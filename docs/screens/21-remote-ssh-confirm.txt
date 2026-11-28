@@ -1,8 +1,8 @@
- Docker Desk  ssh://127.0.0.1:40903/tmp/ddfake2081922713/d.sock  ctx default  Engine 29.0.0-fake  on far-away  ● connected  [ssh]
+ Docker Desk  ssh://127.0.0.1:44123/tmp/ddfake1301871786/d.sock  ctx default  Engine 29.0.0-fake  on far-away  ● connected  [ssh]
  Daemons [◆1 127.0.0.1 ●]                                                                                                                             M picker  < > focus
 ┌─ 1 Kinds ────────┐┏━ ◆ 2 Containers (1 of 13) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ filter: shop-web ━┓┌─ 4 Events ──────────────────────────────── ● live ─┐
 │▸ Containers    13│┃  NAME             IMAGE          STATE          CPU       MEM  STATUS          PORTS         ┃│Waiting for engine events…                          │
-│  Images        16│┃▸ shop-web-1       nginx:1.27     ● running    87.0%    497MiB  Up 3 hours      8080→80/tcp   ┃│Everything the daemon does                          │
+│  Images        16│┃▸ shop-web-1       nginx:1.27     ● running    85.1%    495MiB  Up 3 hours      8080→80/tcp   ┃│Everything the daemon does                          │
 │  Volumes        7│┃                                                                                              ┃│shows up here as it happens.                        │
 │  Networks       7│┃                                                                                              ┃│                                                    │
 │  Compose        2│┃                                                                                              ┃│                                                    │
@@ -16,7 +16,7 @@
 │                  │┃                     ┏━ ◆ Stop container ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                         │
 │                  │┗━━━━━━━━━━━━━━━━━━━━━┃                                                                                    ┃                                         │
 │                  │┌─ 3 Details: shop-web┃ container  shop-web-1  (f948ec4de9e4)                                              ┃                                         │
-│                  ││running  f673addec473┃ daemon     ssh://127.0.0.1:40903/tmp/ddfake2081922713/d.sock  (context default)    ┃                                         │
+│                  ││running  f673addec473┃ daemon     ssh://127.0.0.1:44123/tmp/ddfake1301871786/d.sock  (context default)    ┃                                         │
 │                  ││from     nginx:1.27  ┃            [ssh]                                                                   ┃                                         │
 │                  ││                     ┃                                                                                    ┃                                         │
 │                  ││Nothing to compare. n┃ • The container is sent its stop signal (SIGTERM unless configured otherwise).     ┃                                         │

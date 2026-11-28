@@ -174,7 +174,9 @@ func (m *Model) store(key string, rep *forensics.Report) {
 // on screen, except collect.
 func (m *Model) syncFindings() tea.Cmd {
 	m.collectFindings()
-	if !m.findingsVisible() {
+	// Images › Layers draws the same report: one job, one cache, one
+	// consent rule, whichever of the two tabs is shown.
+	if !m.findingsVisible() && !m.layersVisible() {
 		return nil
 	}
 	t, ok := m.findingsTarget()
@@ -191,7 +193,7 @@ func (m *Model) syncFindings() tea.Cmd {
 	if m.fx.cache[t.key] == nil && m.fx.run == nil && m.fx.failed[t.key] == "" && !m.needsConsent(t) {
 		m.startAnalysis(t)
 	}
-	if m.fx.cache[t.key] != nil && m.fx.factsFor != m.dataVersion && !m.fx.factsBusy {
+	if m.findingsVisible() && m.fx.cache[t.key] != nil && m.fx.factsFor != m.dataVersion && !m.fx.factsBusy {
 		return m.inspectUsers(t.img)
 	}
 	return nil
@@ -309,27 +311,40 @@ func (m *Model) currentFindings(rep *forensics.Report, img engine.Image) []foren
 
 // ---- keys -------------------------------------------------------------------
 
+// analyseNow is Enter on Findings and on Layers: the consent a large remote
+// image waits for, and the retry of an analysis that ended without a report.
+func (m *Model) analyseNow(t findingsTarget) {
+	if m.fx.cache[t.key] != nil || m.fx.run != nil {
+		return
+	}
+	if m.fx.consent == nil {
+		m.fx.consent = map[string]bool{}
+	}
+	m.fx.consent[t.key] = true
+	delete(m.fx.failed, t.key)
+	m.startAnalysis(t)
+}
+
+// cancelAnalysis is c on Findings and on Layers.
+func (m *Model) cancelAnalysis(t findingsTarget) {
+	if run := m.fx.run; run != nil && run.key == t.key {
+		m.jobs.Cancel(run.jobID)
+		m.setStatus(toneWarn, "Cancelling: analyse image "+run.ref)
+	}
+}
+
 // onFindingsKey handles the tab's own keys; it reports whether key was one.
 func (m *Model) onFindingsKey(key string) bool {
 	t, ok := m.findingsTarget()
 	switch key {
 	case "enter":
-		if !ok {
-			return true
-		}
-		if m.fx.cache[t.key] == nil && m.fx.run == nil {
-			if m.fx.consent == nil {
-				m.fx.consent = map[string]bool{}
-			}
-			m.fx.consent[t.key] = true
-			delete(m.fx.failed, t.key)
-			m.startAnalysis(t)
+		if ok {
+			m.analyseNow(t)
 		}
 		return true
 	case "c":
-		if run := m.fx.run; run != nil && ok && run.key == t.key {
-			m.jobs.Cancel(run.jobID)
-			m.setStatus(toneWarn, "Cancelling: analyse image "+run.ref)
+		if ok {
+			m.cancelAnalysis(t)
 		}
 		return true
 	case "i":

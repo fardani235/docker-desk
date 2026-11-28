@@ -798,3 +798,52 @@ carried across a re-read, unbounded per-frame work — are fixed with tests.
 `go vet` is clean; every package passes; the two e2e tests that failed across three full runs
 are the ones earlier rounds name as intermittent, one of them diagnosed and steadied here
 (TESTING, round twenty-seven). Nothing was committed.
+
+## 47. Round thirty — the Layers tab
+
+The brief: Images gains a fifth tab that lists the build — one row per step of the image's
+history, the steps that made no layer included — with what each step made and which other
+images here hold the same layer; exact once the archive is read, labelled as counted before;
+sharing by content, read engine-wide only on `s`; `W` keeps the whole build. Applied without
+the owner in the loop, as QA and as security reviewer too.
+
+The two packages under the view came first: `forensics.Report.Steps`, filled in the loop that
+already built the per-layer instructions, and a content index beside the chain index in
+`internal/space`. Then the layer cache left the Space view for the desk, so the two views ask
+each image once; then the tab, its keys, its capture; then the fake daemon learned to report a
+fixture's real history — config-only entries, and size 0 for a layer that holds nothing — and
+two images that share one layer at the same depth and another at different ones.
+
+**What was run.** Every package's tests, `go vet`, `make e2e` three times, the strict
+validation; and, read-only, the real engine on this machine — a GET-only test through the
+read-only engine, and the built binary with `--read-only` on `nginx`.
+
+**What the real engine showed.** The proposal's numbers, on screen: 18 steps for 7 layers, 11
+of them config only, the base layer held by `redis:latest`. And the reason for content over
+chain, measured: a 26-layer image that shares five layers by content and none by chain.
+
+**Where the plan met something it did not expect.**
+
+- The daemon's history binds by counting for every image on this engine: the containerd store
+  gives even the empty layer a size. What cannot be trusted is `EmptyLayer`, not the sizes. The
+  refusal to bind is reached only in the sandbox (DECISIONS LY21).
+- A 120-column terminal gives the Details pane 60 cells, so "at 120, 80 and 60 cells" is about
+  the pane; and the task's column order, read literally, dropped the instruction first (LY12).
+- The spec asks for the own-bytes figure as `at least` on an incomplete read. It is an upper
+  bound; the tab says `at most` (LY13). This is the one place the round departs from a
+  scenario's letter, and it is for the owner to confirm.
+- The demo's `shop/api:dev` has six layers in the fake's inspect and four in its archive. The
+  tab now refuses a report that is not of the daemon's layers (LY16).
+- One line of head per sentence hid the key that reads the holders in a 60-cell pane (LY22).
+- The new screens were first numbered 71 and 72, which exist; they are 93 and 94.
+- Coming back to the tab through Upstream costs a history request — Upstream's own, not this
+  tab's; the test that counts requests goes round the other way.
+
+The independent review found no vulnerability and eight things that were wrong or unproven —
+an all-`empty_layer` history called exact, a cut history counted from, a failure overwriting a
+good read, held layers left unnamed where nothing binds, sizes laid on steps by length alone,
+a read left running against a daemon no longer focused. All are fixed with tests (LY23).
+
+`go vet` is clean and every package passes. `make e2e` failed once in three runs, in a test
+whose name the run did not keep; the Layers test passed six times alone (TESTING, round
+thirty). Nothing was committed.

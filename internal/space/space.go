@@ -73,6 +73,11 @@ type Image struct {
 	// Chains are the layers' chain IDs, bottom first; nil when the layers
 	// could not be read.
 	Chains []string
+	// Diffs are the layers' diff IDs, bottom first: the identity of each
+	// layer's content, whatever lies under it. Nil when not read. They
+	// name content holders (ContentHolders) and take no part in the byte
+	// accounting, which is by chain.
+	Diffs []string
 	// Sizes are the layers' sizes from the history; nil when it did not
 	// map onto the layers.
 	Sizes []int64
@@ -84,7 +89,10 @@ type Index struct {
 	images  map[string]*Image
 	order   []string
 	holders map[string][]string // chain → images holding it, sorted
-	size    map[string]int64    // chain → bytes, where known
+	// content is diff ID → images holding that layer content at any
+	// depth, sorted; an image holding it several times is listed once.
+	content map[string][]string
+	size    map[string]int64 // chain → bytes, where known
 	agrees  map[string]bool
 }
 
@@ -93,7 +101,7 @@ type Index struct {
 // they do not (the containerd image store counts content the history does
 // not), the daemon's figure stands and the layers stay unattributed.
 func Build(images []Image) *Index {
-	ix := &Index{images: map[string]*Image{}, holders: map[string][]string{}, size: map[string]int64{}, agrees: map[string]bool{}}
+	ix := &Index{images: map[string]*Image{}, holders: map[string][]string{}, content: map[string][]string{}, size: map[string]int64{}, agrees: map[string]bool{}}
 	for i := range images {
 		img := images[i]
 		if _, dup := ix.images[img.ID]; dup {
@@ -108,8 +116,18 @@ func Build(images []Image) *Index {
 				ix.holders[c] = append(ix.holders[c], img.ID)
 			}
 		}
+		held := map[string]bool{}
+		for _, d := range img.Diffs {
+			if !held[d] {
+				held[d] = true
+				ix.content[d] = append(ix.content[d], img.ID)
+			}
+		}
 	}
 	for _, h := range ix.holders {
+		sort.Strings(h)
+	}
+	for _, h := range ix.content {
 		sort.Strings(h)
 	}
 	for _, id := range ix.order {
@@ -197,6 +215,34 @@ func (ix *Index) Sharers(id string) []string {
 	for _, o := range ix.order {
 		if set[o] {
 			out = append(out, o)
+		}
+	}
+	return out
+}
+
+// ContentHolders returns the images holding a layer with this diff ID, at
+// any depth, sorted. An image that holds it more than once is one holder.
+// This is content, not storage: a classic store keeps the same content
+// under two chains as two copies, so nothing here says a byte is stored
+// once (docs/DECISIONS.md, LY4).
+func (ix *Index) ContentHolders(diffID string) []string {
+	return append([]string(nil), ix.content[diffID]...)
+}
+
+// ContentSharers returns, for each layer of id bottom first, the other
+// images holding the same layer content, sorted; the image itself never
+// counts. Nil when the image's diff IDs are not known.
+func (ix *Index) ContentSharers(id string) [][]string {
+	img, ok := ix.images[id]
+	if !ok || img.Diffs == nil {
+		return nil
+	}
+	out := make([][]string, len(img.Diffs))
+	for i, d := range img.Diffs {
+		for _, h := range ix.content[d] {
+			if h != id {
+				out[i] = append(out[i], h)
+			}
 		}
 	}
 	return out

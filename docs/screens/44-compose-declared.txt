@@ -1,5 +1,5 @@
- Docker Desk  unix:///tmp/ddfake3937332971/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
- Daemons [◆1 /tmp/ddfake…971/d.sock ●]                                                                                  M picker  < > focus
+ Docker Desk  unix:///tmp/ddfake3496832184/d.sock  ctx default  Engine 29.0.0-fake  on sandbox  ● connected
+ Daemons [◆1 /tmp/ddfake…184/d.sock ●]                                                                                  M picker  < > focus
 ┌─ 1 Kinds ────────┐┌─ 2 Compose (2) ──────────────────────────────────────────────────────────┐┌─ 4 Events ────────────────────── ● live ─┐
 │  Containers    13││  PROJECT                    CONTAINERS   RUNNING  WORKING DIR            ││Waiting for engine events…                │
 │  Images        16││  blog                                2         0  /tmp/TestComposeDeclar…││Everything the daemon does                │
@@ -15,7 +15,6 @@
 │                  ││                                                                          ││                                          │
 │                  │└──────────────────────────────────────────────────────────────────────────┘│                                          │
 │                  │┏━ ◆ 3 Details: shop ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Info [Declared] ━┓│                                          │
-│                  │┃differs (tag)   web            declares nginx:1.26 · shop-web-1 runs      ┃│                                          │
 │                  │┃                               nginx:1.27                                 ┃│                                          │
 │                  │┃                               config hash 97375646b1de                   ┃│                                          │
 │                  │┃present only    worker         shop-worker-1 runs shop/worker:dev         ┃│                                          │
@@ -25,16 +24,17 @@
 │                  │┃                               shop-api-1 runs shop/api:dev               ┃│                                          │
 │                  │┃                               the image is a template                    ┃│                                          │
 │                  │┃                               (shop/api:${API_TAG:-dev}); the desk does  ┃│                                          │
-│                  │┃                               not interpolate                            ┃└──────────────────────────────────────────┘
-│                  │┃                               config hash 737a40b9f86b                   ┃┌─ 5 Jobs ──────────────────────── 1 done ─┐
-│                  │┃not compared    debug          declares busybox:1.36                      ┃│▸ ✓ compare with the compose file shop 3ms│
-│                  │┃                               declared with profiles (debug); the desk   ┃│                                          │
+│                  │┃                               not interpolate                            ┃│                                          │
+│                  │┃                               config hash 737a40b9f86b                   ┃└──────────────────────────────────────────┘
+│                  │┃not compared    debug          declares busybox:1.36                      ┃┌─ 5 Jobs ──────────────────────── 1 done ─┐
+│                  │┃                               declared with profiles (debug); the desk   ┃│▸ ✓ compare with the compose file shop 1ms│
 │                  │┃                               cannot know if they were enabled           ┃│                                          │
 │                  │┃match           db             declares postgres:16 · shop-db-1 runs      ┃│                                          │
 │                  │┃                               postgres:16                                ┃│                                          │
 │                  │┃                               config hash ad9c1afeaa0f                   ┃│                                          │
 │                  │┃                                                                          ┃│                                          │
-│                  │┃↑↓ scroll · 19–37 of 40                                                   ┃│                                          │
+│                  │┃Compared: which services exist, and literal images. Not compared: scale,  ┃│                                          │
+│                  │┃↑↓ scroll · 19–37 of 39                                                   ┃│                                          │
 └──────────────────┘┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛└──────────────────────────────────────────┘
  ✓ compare with the compose file shop
  / find  ↑↓ scroll  [ ] tab  ⏎ compare with the file  W save text  t stop project  d remove project                Tab pane  ? keys  q quit

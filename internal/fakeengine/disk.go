@@ -31,6 +31,15 @@ type Layer struct {
 	DiffID string
 }
 
+// HistoryStep is one entry of an image's history as the daemon reports it:
+// the instruction and the size of the layer it made, 0 when it made none —
+// and 0, too, for a step that made a layer holding nothing, which is why a
+// size alone does not say which steps made layers.
+type HistoryStep struct {
+	CreatedBy string
+	Size      int64
+}
+
 func (l Layer) diffID() string {
 	if l.DiffID != "" {
 		return l.DiffID
@@ -123,7 +132,32 @@ func (s *Server) handleImageHistory(w http.ResponseWriter, ref string) {
 	created := img.Created
 	id := img.ID
 	cmd, _ := json.Marshal(img.configLocked().Cmd)
+	steps := append([]HistoryStep(nil), img.history...)
+	if img.history != nil && steps == nil {
+		steps = []HistoryStep{} // an image whose history is empty, not one with none set
+	}
+	delay := s.historyDelay
 	s.mu.Unlock()
+	if delay > 0 {
+		time.Sleep(delay)
+	}
+
+	if steps != nil {
+		// The image's own history, newest first. Every entry says
+		// EmptyLayer false, as the engine this was measured on does
+		// (Docker 29, containerd store): the field cannot be trusted,
+		// and a client that trusts it is caught here.
+		out := make([]image.HistoryResponseItem, 0, len(steps))
+		for i := len(steps) - 1; i >= 0; i-- {
+			item := image.HistoryResponseItem{ID: "<missing>", Created: created.Unix(), CreatedBy: steps[i].CreatedBy, Size: steps[i].Size, Tags: []string{}}
+			if i == len(steps)-1 {
+				item.ID = "sha256:" + id
+			}
+			out = append(out, item)
+		}
+		writeJSON(w, http.StatusOK, out)
+		return
+	}
 
 	// Newest first, as the daemon lists it, with the entry for CMD on top:
 	// it made no layer, and its size is 0.
@@ -441,4 +475,26 @@ func nonNil[T any](s []T) []T {
 		return []T{}
 	}
 	return s
+}
+
+// SetImageHistory makes the history the daemon reports for an image these
+// entries, oldest first; none at all reports an empty history. It reports
+// whether the image exists.
+func (s *Server) SetImageHistory(ref string, steps ...HistoryStep) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	img := s.findImageLocked(ref)
+	if img == nil {
+		return false
+	}
+	img.history = append([]HistoryStep{}, steps...)
+	return true
+}
+
+// SetHistoryDelay makes every GET /images/{id}/history wait this long
+// before it answers.
+func (s *Server) SetHistoryDelay(d time.Duration) {
+	s.mu.Lock()
+	s.historyDelay = d
+	s.mu.Unlock()
 }
